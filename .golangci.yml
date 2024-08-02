@@ -30,7 +30,7 @@ linters-settings:
   goimports:
     # Put imports beginning with prefix after 3rd-party packages;
     # it's a comma-separated list of prefixes.
-    local-prefixes: github.com/nobl9/your-module-name
+    local-prefixes: github.com/nobl9/govy
   govet:
     # False positives and reporting on error shadowing (which is intended).
     # Quoting Robi Pike:

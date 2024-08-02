@@ -2,7 +2,7 @@
 MAKEFLAGS += --silent --no-print-directory
 
 BIN_DIR := ./bin
-APP_NAME := your-module-name
+APP_NAME := govy
 LDFLAGS += -s -w
 
 # renovate datasource=github-releases depName=securego/gosec
@@ -35,7 +35,7 @@ define _print_check_step
 endef
 
 .PHONY: build
-## Build your-module-name binary.
+## Build govy binary.
 build:
 	go build -ldflags="$(LDFLAGS)" -o $(BIN_DIR)/$(APP_NAME) ./cmd
 
@@ -117,7 +117,7 @@ format/go:
 	echo "Formatting Go files..."
 	$(call _ensure_installed,binary,goimports)
 	go fmt ./...
-	$(BIN_DIR)/goimports -local=github.com/nobl9/your-module-name -w .
+	$(BIN_DIR)/goimports -local=github.com/nobl9/govy -w .
 
 ## Format cspell config file.
 format/cspell:

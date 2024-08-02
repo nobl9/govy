@@ -1,3 +1,3 @@
-module github.com/nobl9/your-module-name
+module github.com/nobl9/govy
 
 go 1.22
