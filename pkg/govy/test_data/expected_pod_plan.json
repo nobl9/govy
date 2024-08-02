@@ -1,0 +1,164 @@
+[
+  {
+    "path": "$.apiVersion",
+    "type": "string",
+    "rules": [
+      {
+        "description": "must be one of: v1, v2",
+        "errorCode": "one_of"
+      }
+    ]
+  },
+  {
+    "path": "$.kind",
+    "type": "string",
+    "rules": [
+      {
+        "description": "should be equal to 'Pod'",
+        "errorCode": "equal_to"
+      }
+    ]
+  },
+  {
+    "path": "$.metadata.annotations",
+    "type": "Annotations",
+    "package": "github.com/nobl9/nobl9-go/internal/validation",
+    "rules": [
+      {
+        "description": "length must be less than or equal to 10",
+        "errorCode": "map_max_length"
+      }
+    ]
+  },
+  {
+    "path": "$.metadata.annotations.*",
+    "type": "MapItem[string,string]",
+    "package": "github.com/nobl9/nobl9-go/internal/validation",
+    "rules": [
+      {
+        "description": "key and value must not be equal"
+      }
+    ]
+  },
+  {
+    "path": "$.metadata.labels",
+    "type": "Labels",
+    "package": "github.com/nobl9/nobl9-go/internal/validation",
+    "rules": [
+      {
+        "description": "length must be less than or equal to 10",
+        "errorCode": "map_max_length"
+      }
+    ]
+  },
+  {
+    "path": "$.metadata.labels.*",
+    "type": "string",
+    "rules": [
+      {
+        "description": "length must be less than or equal to 120",
+        "errorCode": "string_max_length"
+      }
+    ]
+  },
+  {
+    "path": "$.metadata.labels.~",
+    "type": "string",
+    "rules": [
+      {
+        "description": "length must be between 1 and 63",
+        "errorCode": "string_length"
+      },
+      {
+        "description": "string must match regular expression: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?$' (e.g. 'my-name', '123-abc')",
+        "details": "a DNS-1123 compliant name must consist of lower case alphanumeric characters or '-', and must start and end with an alphanumeric character",
+        "errorCode": "string_match_regexp"
+      }
+    ]
+  },
+  {
+    "path": "$.metadata.name",
+    "type": "string",
+    "rules": [
+      {
+        "description": "string cannot be empty",
+        "errorCode": "string_not_empty"
+      }
+    ]
+  },
+  {
+    "path": "$.metadata.namespace",
+    "type": "string",
+    "rules": [
+      {
+        "description": "string cannot be empty",
+        "errorCode": "string_not_empty"
+      }
+    ]
+  },
+  {
+    "path": "$.spec.containers",
+    "type": "[]Container",
+    "package": "github.com/nobl9/nobl9-go/internal/validation",
+    "rules": [
+      {
+        "description": "length must be less than or equal to 10",
+        "errorCode": "slice_max_length"
+      },
+      {
+        "description": "elements must be unique",
+        "errorCode": "slice_unique"
+      }
+    ]
+  },
+  {
+    "path": "$.spec.containers[*].env",
+    "type": "[]EnvVar",
+    "package": "github.com/nobl9/nobl9-go/internal/validation"
+  },
+  {
+    "path": "$.spec.containers[*].env[*]",
+    "type": "EnvVar",
+    "package": "github.com/nobl9/nobl9-go/internal/validation",
+    "rules": [
+      {
+        "description": "custom error!"
+      }
+    ]
+  },
+  {
+    "path": "$.spec.containers[*].image",
+    "type": "string",
+    "rules": [
+      {
+        "description": "string cannot be empty",
+        "errorCode": "string_not_empty"
+      }
+    ]
+  },
+  {
+    "path": "$.spec.containers[*].name",
+    "type": "string",
+    "rules": [
+      {
+        "description": "length must be between 1 and 63",
+        "errorCode": "string_length"
+      },
+      {
+        "description": "string must match regular expression: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?$' (e.g. 'my-name', '123-abc')",
+        "details": "a DNS-1123 compliant name must consist of lower case alphanumeric characters or '-', and must start and end with an alphanumeric character",
+        "errorCode": "string_match_regexp"
+      }
+    ]
+  },
+  {
+    "path": "$.spec.dnsPolicy",
+    "type": "string",
+    "rules": [
+      {
+        "description": "must be one of: ClusterFirst, Default",
+        "errorCode": "one_of"
+      }
+    ]
+  }
+]

@@ -1,0 +1,2 @@
+- 'prop' with value '123z':
+  - strconv.Atoi: parsing "123z": invalid syntax
