@@ -9,7 +9,7 @@ import (
 
 	"github.com/nobl9/go-yaml"
 
-	"github.com/nobl9/nobl9-go/internal/validation"
+	validation "github.com/nobl9/govy/pkg/govy"
 )
 
 type Teacher struct {

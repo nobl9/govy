@@ -25,16 +25,20 @@ ignorePaths:
   - CODEOWNERS
   - bin/**
 words:
+  - atoi
   - endef
   - gobin
   - goimports
   - golangci
   - gosec
   - govulncheck
+  - govy
   - ldflags
   - nobl
   - plantuml
+  - rtmp
   - sloctl
+  - strconv
   - tpng
   - vuln
   - vulns
