@@ -1,4 +1,4 @@
-package validation
+package rules
 
 import (
 	"regexp"
@@ -6,6 +6,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/nobl9/govy/internal"
+	"github.com/nobl9/govy/pkg/govy"
 )
 
 func TestStringNotEmpty(t *testing.T) {
@@ -16,7 +19,7 @@ func TestStringNotEmpty(t *testing.T) {
 	t.Run("fails", func(t *testing.T) {
 		err := StringNotEmpty().Validate("     ")
 		assert.Error(t, err)
-		assert.True(t, HasErrorCode(err, ErrorCodeStringNotEmpty))
+		assert.True(t, govy.HasErrorCode(err, ErrorCodeStringNotEmpty))
 	})
 }
 
@@ -29,12 +32,12 @@ func TestStringMatchRegexp(t *testing.T) {
 	t.Run("fails", func(t *testing.T) {
 		err := StringMatchRegexp(re).Validate("cd")
 		assert.EqualError(t, err, "string must match regular expression: '[ab]+'")
-		assert.True(t, HasErrorCode(err, ErrorCodeStringMatchRegexp))
+		assert.True(t, govy.HasErrorCode(err, ErrorCodeStringMatchRegexp))
 	})
 	t.Run("examples output", func(t *testing.T) {
 		err := StringMatchRegexp(re, "ab", "a", "b").Validate("cd")
 		assert.EqualError(t, err, "string must match regular expression: '[ab]+' (e.g. 'ab', 'a', 'b')")
-		assert.True(t, HasErrorCode(err, ErrorCodeStringMatchRegexp))
+		assert.True(t, govy.HasErrorCode(err, ErrorCodeStringMatchRegexp))
 	})
 }
 
@@ -47,12 +50,12 @@ func TestStringDenyRegexp(t *testing.T) {
 	t.Run("fails", func(t *testing.T) {
 		err := StringDenyRegexp(re).Validate("ab")
 		assert.EqualError(t, err, "string must not match regular expression: '[ab]+'")
-		assert.True(t, HasErrorCode(err, ErrorCodeStringDenyRegexp))
+		assert.True(t, govy.HasErrorCode(err, ErrorCodeStringDenyRegexp))
 	})
 	t.Run("examples output", func(t *testing.T) {
 		err := StringDenyRegexp(re, "ab", "a", "b").Validate("ab")
 		assert.EqualError(t, err, "string must not match regular expression: '[ab]+' (e.g. 'ab', 'a', 'b')")
-		assert.True(t, HasErrorCode(err, ErrorCodeStringDenyRegexp))
+		assert.True(t, govy.HasErrorCode(err, ErrorCodeStringDenyRegexp))
 	})
 }
 
@@ -83,8 +86,8 @@ func TestStringIsDNSSubdomain(t *testing.T) {
 		} {
 			err := StringIsDNSSubdomain().Validate(input)
 			assert.Error(t, err)
-			for _, e := range err.(ruleSetError) {
-				assert.True(t, HasErrorCode(e, ErrorCodeStringIsDNSSubdomain))
+			for _, e := range err.(internal.RuleSetError) {
+				assert.True(t, govy.HasErrorCode(e, ErrorCodeStringIsDNSSubdomain))
 			}
 		}
 	})
@@ -114,7 +117,7 @@ func TestStringASCII(t *testing.T) {
 		} {
 			err := StringASCII().Validate(input)
 			assert.Error(t, err)
-			assert.True(t, HasErrorCode(err, ErrorCodeStringASCII))
+			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringASCII))
 		}
 	})
 }
@@ -141,7 +144,7 @@ func TestStringUUID(t *testing.T) {
 		} {
 			err := StringUUID().Validate(input)
 			assert.Error(t, err)
-			assert.True(t, HasErrorCode(err, ErrorCodeStringUUID))
+			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringUUID))
 		}
 	})
 }
@@ -154,7 +157,7 @@ func TestStringDescription(t *testing.T) {
 	t.Run("fails", func(t *testing.T) {
 		err := StringDescription().Validate(strings.Repeat("l", 1051))
 		assert.Error(t, err)
-		assert.True(t, HasErrorCode(err, ErrorCodeStringDescription))
+		assert.True(t, govy.HasErrorCode(err, ErrorCodeStringDescription))
 	})
 }
 
@@ -169,7 +172,7 @@ func TestStringIsURL(t *testing.T) {
 		for _, input := range invalidURLs {
 			err := StringURL().Validate(input)
 			assert.Error(t, err)
-			assert.True(t, HasErrorCode(err, ErrorCodeStringURL))
+			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringURL))
 		}
 	})
 }
@@ -182,7 +185,7 @@ func TestStringJSON(t *testing.T) {
 	t.Run("fails", func(t *testing.T) {
 		err := StringJSON().Validate(`{]}`)
 		assert.Error(t, err)
-		assert.True(t, HasErrorCode(err, ErrorCodeStringJSON))
+		assert.True(t, govy.HasErrorCode(err, ErrorCodeStringJSON))
 	})
 }
 
@@ -195,7 +198,7 @@ func TestStringContains(t *testing.T) {
 		err := StringContains("th", "ht").Validate("one")
 		assert.Error(t, err)
 		assert.EqualError(t, err, "string must contain the following substrings: 'th', 'ht'")
-		assert.True(t, HasErrorCode(err, ErrorCodeStringContains))
+		assert.True(t, govy.HasErrorCode(err, ErrorCodeStringContains))
 	})
 }
 
@@ -213,12 +216,12 @@ func TestStringStartsWith(t *testing.T) {
 		err := StringStartsWith("th").Validate("one")
 		assert.Error(t, err)
 		assert.EqualError(t, err, "string must start with 'th' prefix")
-		assert.True(t, HasErrorCode(err, ErrorCodeStringStartsWith))
+		assert.True(t, govy.HasErrorCode(err, ErrorCodeStringStartsWith))
 	})
 	t.Run("fails with multiple prefixes", func(t *testing.T) {
 		err := StringStartsWith("th", "ht").Validate("one")
 		assert.Error(t, err)
 		assert.EqualError(t, err, "string must start with one of the following prefixes: 'th', 'ht'")
-		assert.True(t, HasErrorCode(err, ErrorCodeStringStartsWith))
+		assert.True(t, govy.HasErrorCode(err, ErrorCodeStringStartsWith))
 	})
 }

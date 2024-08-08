@@ -1,7 +1,9 @@
-package validation
+package govy
 
 import (
 	"fmt"
+
+	"github.com/nobl9/govy/internal"
 )
 
 // Rule is the interface for all validation rules.
@@ -116,7 +118,7 @@ type RuleSet[T any] struct {
 // except each aggregated rule is validated individually.
 // The errors are aggregated and returned as a single error which serves as a container for them.
 func (r RuleSet[T]) Validate(v T) error {
-	var errs ruleSetError
+	var errs internal.RuleSetError
 	for i := range r.rules {
 		if err := r.rules[i].Validate(v); err != nil {
 			switch ev := err.(type) {

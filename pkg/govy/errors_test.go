@@ -1,4 +1,4 @@
-package validation
+package govy_test
 
 import (
 	"embed"
@@ -9,48 +9,51 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/nobl9/govy/internal"
+	"github.com/nobl9/govy/pkg/govy"
 )
 
 //go:embed test_data
 var errorsTestData embed.FS
 
 func TestValidatorError(t *testing.T) {
-	for name, err := range map[string]*ValidatorError{
+	for name, err := range map[string]*govy.ValidatorError{
 		"no_name": {
-			Errors: PropertyErrors{
+			Errors: govy.PropertyErrors{
 				{
 					PropertyName:  "this",
 					PropertyValue: "123",
-					Errors:        []*RuleError{{Message: "this is an error"}},
+					Errors:        []*govy.RuleError{{Message: "this is an error"}},
 				},
 				{
 					PropertyName: "that",
-					Errors:       []*RuleError{{Message: "that is an error"}},
+					Errors:       []*govy.RuleError{{Message: "that is an error"}},
 				},
 			},
 		},
 		"with_name": {
 			Name: "Teacher",
-			Errors: PropertyErrors{
+			Errors: govy.PropertyErrors{
 				{
 					PropertyName:  "this",
 					PropertyValue: "123",
-					Errors:        []*RuleError{{Message: "this is an error"}},
+					Errors:        []*govy.RuleError{{Message: "this is an error"}},
 				},
 				{
 					PropertyName: "that",
-					Errors:       []*RuleError{{Message: "that is an error"}},
+					Errors:       []*govy.RuleError{{Message: "that is an error"}},
 				},
 			},
 		},
 		"prop_no_name": {
-			Errors: PropertyErrors{
+			Errors: govy.PropertyErrors{
 				{
-					Errors: []*RuleError{{Message: "no name"}},
+					Errors: []*govy.RuleError{{Message: "no name"}},
 				},
 				{
 					PropertyName: "that",
-					Errors:       []*RuleError{{Message: "that is an error"}},
+					Errors:       []*govy.RuleError{{Message: "that is an error"}},
 				},
 			},
 		},
@@ -63,18 +66,18 @@ func TestValidatorError(t *testing.T) {
 
 func TestNewPropertyError(t *testing.T) {
 	t.Run("string value", func(t *testing.T) {
-		err := NewPropertyError("name", "value",
-			&RuleError{Message: "top", Code: "1"},
-			ruleSetError{
-				&RuleError{Message: "rule1", Code: "2"},
-				&RuleError{Message: "rule2", Code: "3"},
+		err := govy.NewPropertyError("name", "value",
+			&govy.RuleError{Message: "top", Code: "1"},
+			internal.RuleSetError{
+				&govy.RuleError{Message: "rule1", Code: "2"},
+				&govy.RuleError{Message: "rule2", Code: "3"},
 			},
-			&RuleError{Message: "top", Code: "4"},
+			&govy.RuleError{Message: "top", Code: "4"},
 		)
-		assert.Equal(t, &PropertyError{
+		assert.Equal(t, &govy.PropertyError{
 			PropertyName:  "name",
 			PropertyValue: "value",
-			Errors: []*RuleError{
+			Errors: []*govy.RuleError{
 				{Message: "top", Code: "1"},
 				{Message: "rule1", Code: "2"},
 				{Message: "rule2", Code: "3"},
@@ -143,14 +146,14 @@ my-table WHERE value = "abc"
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			err := NewPropertyError(
+			err := govy.NewPropertyError(
 				"name",
 				test.InputValue,
-				&RuleError{Message: "msg"})
-			assert.Equal(t, &PropertyError{
+				&govy.RuleError{Message: "msg"})
+			assert.Equal(t, &govy.PropertyError{
 				PropertyName:  "name",
 				PropertyValue: test.ExpectedValue,
-				Errors:        []*RuleError{{Message: "msg"}},
+				Errors:        []*govy.RuleError{{Message: "msg"}},
 			}, err)
 		})
 	}
@@ -190,10 +193,10 @@ func TestPropertyError(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			err := &PropertyError{
+			err := &govy.PropertyError{
 				PropertyName:  "metadata.name",
-				PropertyValue: propertyValueString(value),
-				Errors: []*RuleError{
+				PropertyValue: internal.PropertyValueString(value),
+				Errors: []*govy.RuleError{
 					{Message: "what a shame this happened"},
 					{Message: "this is outrageous..."},
 					{Message: "here's another error"},
@@ -203,8 +206,8 @@ func TestPropertyError(t *testing.T) {
 		})
 	}
 	t.Run("no name provided", func(t *testing.T) {
-		err := &PropertyError{
-			Errors: []*RuleError{
+		err := &govy.PropertyError{
+			Errors: []*govy.RuleError{
 				{Message: "what a shame this happened"},
 				{Message: "this is outrageous..."},
 				{Message: "here's another error"},
@@ -216,24 +219,24 @@ func TestPropertyError(t *testing.T) {
 
 func TestPropertyError_PrependPropertyName(t *testing.T) {
 	for _, test := range []struct {
-		PropertyError *PropertyError
+		PropertyError *govy.PropertyError
 		InputName     string
 		ExpectedName  string
 	}{
 		{
-			PropertyError: &PropertyError{},
+			PropertyError: &govy.PropertyError{},
 		},
 		{
-			PropertyError: &PropertyError{PropertyName: "test"},
+			PropertyError: &govy.PropertyError{PropertyName: "test"},
 			ExpectedName:  "test",
 		},
 		{
-			PropertyError: &PropertyError{},
+			PropertyError: &govy.PropertyError{},
 			InputName:     "new",
 			ExpectedName:  "new",
 		},
 		{
-			PropertyError: &PropertyError{PropertyName: "original"},
+			PropertyError: &govy.PropertyError{PropertyName: "original"},
 			InputName:     "added",
 			ExpectedName:  "added.original",
 		},
@@ -244,33 +247,33 @@ func TestPropertyError_PrependPropertyName(t *testing.T) {
 
 func TestRuleError(t *testing.T) {
 	for _, test := range []struct {
-		RuleError    *RuleError
-		InputCode    ErrorCode
-		ExpectedCode ErrorCode
+		RuleError    *govy.RuleError
+		InputCode    govy.ErrorCode
+		ExpectedCode govy.ErrorCode
 	}{
 		{
-			RuleError: NewRuleError("test"),
+			RuleError: govy.NewRuleError("test"),
 		},
 		{
-			RuleError:    NewRuleError("test", "code"),
+			RuleError:    govy.NewRuleError("test", "code"),
 			ExpectedCode: "code",
 		},
 		{
-			RuleError:    NewRuleError("test"),
+			RuleError:    govy.NewRuleError("test"),
 			InputCode:    "code",
 			ExpectedCode: "code",
 		},
 		{
-			RuleError:    NewRuleError("test", "original"),
+			RuleError:    govy.NewRuleError("test", "original"),
 			InputCode:    "added",
 			ExpectedCode: "added:original",
 		},
 		{
-			RuleError:    NewRuleError("test", "code-1", "code-2"),
+			RuleError:    govy.NewRuleError("test", "code-1", "code-2"),
 			ExpectedCode: "code-2:code-1",
 		},
 		{
-			RuleError:    NewRuleError("test", "original-1", "original-2"),
+			RuleError:    govy.NewRuleError("test", "original-1", "original-2"),
 			InputCode:    "added",
 			ExpectedCode: "added:original-2:original-1",
 		},
@@ -282,7 +285,7 @@ func TestRuleError(t *testing.T) {
 }
 
 func TestMultiRuleError(t *testing.T) {
-	err := ruleSetError{
+	err := internal.RuleSetError{
 		errors.New("this is just a test!"),
 		errors.New("another error..."),
 		errors.New("that is just fatal."),
@@ -293,7 +296,7 @@ func TestMultiRuleError(t *testing.T) {
 func TestHasErrorCode(t *testing.T) {
 	for _, test := range []struct {
 		Error        error
-		Code         ErrorCode
+		Code         govy.ErrorCode
 		HasErrorCode bool
 	}{
 		{
@@ -307,32 +310,34 @@ func TestHasErrorCode(t *testing.T) {
 			HasErrorCode: false,
 		},
 		{
-			Error:        &RuleError{Code: "another"},
+			Error:        &govy.RuleError{Code: "another"},
 			Code:         "code",
 			HasErrorCode: false,
 		},
 		{
-			Error:        &RuleError{Code: "another:this"},
+			Error:        &govy.RuleError{Code: "another:this"},
 			Code:         "code",
 			HasErrorCode: false,
 		},
 		{
-			Error:        &RuleError{Code: "another:code:this"},
+			Error:        &govy.RuleError{Code: "another:code:this"},
 			Code:         "code",
 			HasErrorCode: true,
 		},
 		{
-			Error:        &PropertyError{Errors: []*RuleError{{Code: "another"}}},
+			Error:        &govy.PropertyError{Errors: []*govy.RuleError{{Code: "another"}}},
 			Code:         "code",
 			HasErrorCode: false,
 		},
 		{
-			Error:        &PropertyError{Errors: []*RuleError{{Code: "this:another"}, {}, {Code: "another:code:this"}}},
+			Error: &govy.PropertyError{
+				Errors: []*govy.RuleError{{Code: "this:another"}, {}, {Code: "another:code:this"}},
+			},
 			Code:         "code",
 			HasErrorCode: true,
 		},
 	} {
-		assert.Equal(t, test.HasErrorCode, HasErrorCode(test.Error, test.Code))
+		assert.Equal(t, test.HasErrorCode, govy.HasErrorCode(test.Error, test.Code))
 	}
 }
 

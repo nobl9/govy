@@ -1,4 +1,4 @@
-package validation
+package govy
 
 type validatorI[S any] interface {
 	Validate(s S) *ValidatorError

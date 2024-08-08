@@ -1,4 +1,4 @@
-package validation
+package rules
 
 import (
 	"encoding/json"
@@ -8,11 +8,13 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+
+	"github.com/nobl9/govy/pkg/govy"
 )
 
-func StringNotEmpty() SingleRule[string] {
+func StringNotEmpty() govy.SingleRule[string] {
 	msg := "string cannot be empty"
-	return NewSingleRule(func(s string) error {
+	return govy.NewSingleRule(func(s string) error {
 		if len(strings.TrimSpace(s)) == 0 {
 			return errors.New(msg)
 		}
@@ -22,12 +24,12 @@ func StringNotEmpty() SingleRule[string] {
 		WithDescription(msg)
 }
 
-func StringMatchRegexp(re *regexp.Regexp, examples ...string) SingleRule[string] {
+func StringMatchRegexp(re *regexp.Regexp, examples ...string) govy.SingleRule[string] {
 	msg := fmt.Sprintf("string must match regular expression: '%s'", re.String())
 	if len(examples) > 0 {
 		msg += " " + prettyExamples(examples)
 	}
-	return NewSingleRule(func(s string) error {
+	return govy.NewSingleRule(func(s string) error {
 		if !re.MatchString(s) {
 			return errors.New(msg)
 		}
@@ -37,12 +39,12 @@ func StringMatchRegexp(re *regexp.Regexp, examples ...string) SingleRule[string]
 		WithDescription(msg)
 }
 
-func StringDenyRegexp(re *regexp.Regexp, examples ...string) SingleRule[string] {
+func StringDenyRegexp(re *regexp.Regexp, examples ...string) govy.SingleRule[string] {
 	msg := fmt.Sprintf("string must not match regular expression: '%s'", re.String())
 	if len(examples) > 0 {
 		msg += " " + prettyExamples(examples)
 	}
-	return NewSingleRule(func(s string) error {
+	return govy.NewSingleRule(func(s string) error {
 		if re.MatchString(s) {
 			return errors.New(msg)
 		}
@@ -54,8 +56,8 @@ func StringDenyRegexp(re *regexp.Regexp, examples ...string) SingleRule[string] 
 
 var dns1123SubdomainRegexp = regexp.MustCompile("^[a-z0-9]([-a-z0-9]*[a-z0-9])?$")
 
-func StringIsDNSSubdomain() RuleSet[string] {
-	return NewRuleSet(
+func StringIsDNSSubdomain() govy.RuleSet[string] {
+	return govy.NewRuleSet(
 		StringLength(1, 63),
 		StringMatchRegexp(dns1123SubdomainRegexp, "my-name", "123-abc").
 			WithDetails("a DNS-1123 compliant name must consist of lower case alphanumeric characters or '-',"+
@@ -66,7 +68,7 @@ func StringIsDNSSubdomain() RuleSet[string] {
 var validUUIDRegex = regexp.
 	MustCompile("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
 
-func StringUUID() SingleRule[string] {
+func StringUUID() govy.SingleRule[string] {
 	return StringMatchRegexp(validUUIDRegex,
 		"00000000-0000-0000-0000-000000000000",
 		"e190c630-8873-11ee-b9d1-0242ac120002",
@@ -77,16 +79,16 @@ func StringUUID() SingleRule[string] {
 
 var asciiRegexp = regexp.MustCompile("^[\x00-\x7F]*$")
 
-func StringASCII() SingleRule[string] {
+func StringASCII() govy.SingleRule[string] {
 	return StringMatchRegexp(asciiRegexp).WithErrorCode(ErrorCodeStringASCII)
 }
 
-func StringDescription() SingleRule[string] {
+func StringDescription() govy.SingleRule[string] {
 	return StringLength(0, 1050).WithErrorCode(ErrorCodeStringDescription)
 }
 
-func StringURL() SingleRule[string] {
-	return NewSingleRule(func(v string) error {
+func StringURL() govy.SingleRule[string] {
+	return govy.NewSingleRule(func(v string) error {
 		u, err := url.Parse(v)
 		if err != nil {
 			return errors.Wrap(err, "failed to parse URL")
@@ -97,9 +99,9 @@ func StringURL() SingleRule[string] {
 		WithDescription(urlDescription)
 }
 
-func StringJSON() SingleRule[string] {
+func StringJSON() govy.SingleRule[string] {
 	msg := "string must be a valid JSON"
-	return NewSingleRule(func(s string) error {
+	return govy.NewSingleRule(func(s string) error {
 		if !json.Valid([]byte(s)) {
 			return errors.New(msg)
 		}
@@ -109,9 +111,9 @@ func StringJSON() SingleRule[string] {
 		WithDescription(msg)
 }
 
-func StringContains(substrings ...string) SingleRule[string] {
+func StringContains(substrings ...string) govy.SingleRule[string] {
 	msg := "string must contain the following substrings: " + prettyStringList(substrings)
-	return NewSingleRule(func(s string) error {
+	return govy.NewSingleRule(func(s string) error {
 		matched := true
 		for _, substr := range substrings {
 			if !strings.Contains(s, substr) {
@@ -128,14 +130,14 @@ func StringContains(substrings ...string) SingleRule[string] {
 		WithDescription(msg)
 }
 
-func StringStartsWith(prefixes ...string) SingleRule[string] {
+func StringStartsWith(prefixes ...string) govy.SingleRule[string] {
 	var msg string
 	if len(prefixes) == 1 {
 		msg = fmt.Sprintf("string must start with '%s' prefix", prefixes[0])
 	} else {
 		msg = "string must start with one of the following prefixes: " + prettyStringList(prefixes)
 	}
-	return NewSingleRule(func(s string) error {
+	return govy.NewSingleRule(func(s string) error {
 		matched := false
 		for _, prefix := range prefixes {
 			if strings.HasPrefix(s, prefix) {

@@ -1,15 +1,17 @@
-package validation
+package rules
 
 import (
 	"fmt"
 	"unicode/utf8"
 
 	"github.com/pkg/errors"
+
+	"github.com/nobl9/govy/pkg/govy"
 )
 
-func StringLength(lower, upper int) SingleRule[string] {
+func StringLength(lower, upper int) govy.SingleRule[string] {
 	msg := fmt.Sprintf("length must be between %d and %d", lower, upper)
-	return NewSingleRule(func(v string) error {
+	return govy.NewSingleRule(func(v string) error {
 		length := utf8.RuneCountInString(v)
 		if length < lower || length > upper {
 			return errors.New(msg)
@@ -20,9 +22,9 @@ func StringLength(lower, upper int) SingleRule[string] {
 		WithDescription(msg)
 }
 
-func StringMinLength(limit int) SingleRule[string] {
+func StringMinLength(limit int) govy.SingleRule[string] {
 	msg := fmt.Sprintf("length must be %s %d", cmpGreaterThanOrEqual, limit)
-	return NewSingleRule(func(v string) error {
+	return govy.NewSingleRule(func(v string) error {
 		length := utf8.RuneCountInString(v)
 		if length < limit {
 			return errors.New(msg)
@@ -33,9 +35,9 @@ func StringMinLength(limit int) SingleRule[string] {
 		WithDescription(msg)
 }
 
-func StringMaxLength(limit int) SingleRule[string] {
+func StringMaxLength(limit int) govy.SingleRule[string] {
 	msg := fmt.Sprintf("length must be %s %d", cmpLessThanOrEqual, limit)
-	return NewSingleRule(func(v string) error {
+	return govy.NewSingleRule(func(v string) error {
 		length := utf8.RuneCountInString(v)
 		if length > limit {
 			return errors.New(msg)
@@ -46,9 +48,9 @@ func StringMaxLength(limit int) SingleRule[string] {
 		WithDescription(msg)
 }
 
-func SliceLength[S ~[]E, E any](lower, upper int) SingleRule[S] {
+func SliceLength[S ~[]E, E any](lower, upper int) govy.SingleRule[S] {
 	msg := fmt.Sprintf("length must be between %d and %d", lower, upper)
-	return NewSingleRule(func(v S) error {
+	return govy.NewSingleRule(func(v S) error {
 		length := len(v)
 		if length < lower || length > upper {
 			return errors.New(msg)
@@ -59,9 +61,9 @@ func SliceLength[S ~[]E, E any](lower, upper int) SingleRule[S] {
 		WithDescription(msg)
 }
 
-func SliceMinLength[S ~[]E, E any](limit int) SingleRule[S] {
+func SliceMinLength[S ~[]E, E any](limit int) govy.SingleRule[S] {
 	msg := fmt.Sprintf("length must be %s %d", cmpGreaterThanOrEqual, limit)
-	return NewSingleRule(func(v S) error {
+	return govy.NewSingleRule(func(v S) error {
 		length := len(v)
 		if length < limit {
 			return errors.New(msg)
@@ -72,9 +74,9 @@ func SliceMinLength[S ~[]E, E any](limit int) SingleRule[S] {
 		WithDescription(msg)
 }
 
-func SliceMaxLength[S ~[]E, E any](limit int) SingleRule[S] {
+func SliceMaxLength[S ~[]E, E any](limit int) govy.SingleRule[S] {
 	msg := fmt.Sprintf("length must be %s %d", cmpLessThanOrEqual, limit)
-	return NewSingleRule(func(v S) error {
+	return govy.NewSingleRule(func(v S) error {
 		length := len(v)
 		if length > limit {
 			return errors.New(msg)
@@ -85,9 +87,9 @@ func SliceMaxLength[S ~[]E, E any](limit int) SingleRule[S] {
 		WithDescription(msg)
 }
 
-func MapLength[M ~map[K]V, K comparable, V any](lower, upper int) SingleRule[M] {
+func MapLength[M ~map[K]V, K comparable, V any](lower, upper int) govy.SingleRule[M] {
 	msg := fmt.Sprintf("length must be between %d and %d", lower, upper)
-	return NewSingleRule(func(v M) error {
+	return govy.NewSingleRule(func(v M) error {
 		length := len(v)
 		if length < lower || length > upper {
 			return errors.New(msg)
@@ -98,9 +100,9 @@ func MapLength[M ~map[K]V, K comparable, V any](lower, upper int) SingleRule[M] 
 		WithDescription(msg)
 }
 
-func MapMinLength[M ~map[K]V, K comparable, V any](limit int) SingleRule[M] {
+func MapMinLength[M ~map[K]V, K comparable, V any](limit int) govy.SingleRule[M] {
 	msg := fmt.Sprintf("length must be %s %d", cmpGreaterThanOrEqual, limit)
-	return NewSingleRule(func(v M) error {
+	return govy.NewSingleRule(func(v M) error {
 		length := len(v)
 		if length < limit {
 			return errors.New(msg)
@@ -111,9 +113,9 @@ func MapMinLength[M ~map[K]V, K comparable, V any](limit int) SingleRule[M] {
 		WithDescription(msg)
 }
 
-func MapMaxLength[M ~map[K]V, K comparable, V any](limit int) SingleRule[M] {
+func MapMaxLength[M ~map[K]V, K comparable, V any](limit int) govy.SingleRule[M] {
 	msg := fmt.Sprintf("length must be %s %d", cmpLessThanOrEqual, limit)
-	return NewSingleRule(func(v M) error {
+	return govy.NewSingleRule(func(v M) error {
 		length := len(v)
 		if length > limit {
 			return errors.New(msg)

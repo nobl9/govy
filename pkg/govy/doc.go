@@ -1,2 +1,2 @@
-// Package validation implements a functional API for consistent struct level validation.
-package validation
+// package govy implements a functional API for consistent struct level validation.
+package govy

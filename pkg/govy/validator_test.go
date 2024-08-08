@@ -1,4 +1,4 @@
-package validation
+package govy_test
 
 import (
 	"testing"
@@ -6,14 +6,16 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/nobl9/govy/pkg/govy"
 )
 
 func TestValidator(t *testing.T) {
 	t.Run("no errors", func(t *testing.T) {
-		r := New(
-			For(func(m mockValidatorStruct) string { return "test" }).
+		r := govy.New(
+			govy.For(func(m mockValidatorStruct) string { return "test" }).
 				WithName("test").
-				Rules(NewSingleRule(func(v string) error { return nil })),
+				Rules(govy.NewSingleRule(func(v string) error { return nil })),
 		)
 		errs := r.Validate(mockValidatorStruct{})
 		assert.Nil(t, errs)
@@ -22,29 +24,29 @@ func TestValidator(t *testing.T) {
 	t.Run("errors", func(t *testing.T) {
 		err1 := errors.New("1")
 		err2 := errors.New("2")
-		r := New(
-			For(func(m mockValidatorStruct) string { return "test" }).
+		r := govy.New(
+			govy.For(func(m mockValidatorStruct) string { return "test" }).
 				WithName("test").
-				Rules(NewSingleRule(func(v string) error { return nil })),
-			For(func(m mockValidatorStruct) string { return "name" }).
+				Rules(govy.NewSingleRule(func(v string) error { return nil })),
+			govy.For(func(m mockValidatorStruct) string { return "name" }).
 				WithName("test.name").
-				Rules(NewSingleRule(func(v string) error { return err1 })),
-			For(func(m mockValidatorStruct) string { return "display" }).
+				Rules(govy.NewSingleRule(func(v string) error { return err1 })),
+			govy.For(func(m mockValidatorStruct) string { return "display" }).
 				WithName("test.display").
-				Rules(NewSingleRule(func(v string) error { return err2 })),
+				Rules(govy.NewSingleRule(func(v string) error { return err2 })),
 		)
 		err := r.Validate(mockValidatorStruct{})
 		require.Len(t, err.Errors, 2)
-		assert.Equal(t, &ValidatorError{Errors: PropertyErrors{
-			&PropertyError{
+		assert.Equal(t, &govy.ValidatorError{Errors: govy.PropertyErrors{
+			&govy.PropertyError{
 				PropertyName:  "test.name",
 				PropertyValue: "name",
-				Errors:        []*RuleError{{Message: err1.Error()}},
+				Errors:        []*govy.RuleError{{Message: err1.Error()}},
 			},
-			&PropertyError{
+			&govy.PropertyError{
 				PropertyName:  "test.display",
 				PropertyValue: "display",
-				Errors:        []*RuleError{{Message: err2.Error()}},
+				Errors:        []*govy.RuleError{{Message: err2.Error()}},
 			},
 		}}, err)
 	})
@@ -52,10 +54,10 @@ func TestValidator(t *testing.T) {
 
 func TestValidatorWhen(t *testing.T) {
 	t.Run("when condition is not met, don't validate", func(t *testing.T) {
-		r := New(
-			For(func(m mockValidatorStruct) string { return "test" }).
+		r := govy.New(
+			govy.For(func(m mockValidatorStruct) string { return "test" }).
 				WithName("test").
-				Rules(NewSingleRule(func(v string) error { return errors.New("test") })),
+				Rules(govy.NewSingleRule(func(v string) error { return errors.New("test") })),
 		).
 			When(func(validatorStruct mockValidatorStruct) bool { return false })
 
@@ -63,30 +65,30 @@ func TestValidatorWhen(t *testing.T) {
 		assert.Nil(t, errs)
 	})
 	t.Run("when condition is met, validate", func(t *testing.T) {
-		r := New(
-			For(func(m mockValidatorStruct) string { return "test" }).
+		r := govy.New(
+			govy.For(func(m mockValidatorStruct) string { return "test" }).
 				WithName("test").
-				Rules(NewSingleRule(func(v string) error { return errors.New("test") })),
+				Rules(govy.NewSingleRule(func(v string) error { return errors.New("test") })),
 		).
 			When(func(validatorStruct mockValidatorStruct) bool { return true })
 
 		errs := r.Validate(mockValidatorStruct{})
 		require.Len(t, errs.Errors, 1)
-		assert.Equal(t, &ValidatorError{Errors: PropertyErrors{
-			&PropertyError{
+		assert.Equal(t, &govy.ValidatorError{Errors: govy.PropertyErrors{
+			&govy.PropertyError{
 				PropertyName:  "test",
 				PropertyValue: "test",
-				Errors:        []*RuleError{{Message: "test"}},
+				Errors:        []*govy.RuleError{{Message: "test"}},
 			},
 		}}, errs)
 	})
 }
 
 func TestValidatorWithName(t *testing.T) {
-	r := New(
-		For(func(m mockValidatorStruct) string { return "test" }).
+	r := govy.New(
+		govy.For(func(m mockValidatorStruct) string { return "test" }).
 			WithName("test").
-			Rules(NewSingleRule(func(v string) error { return errors.New("test") })),
+			Rules(govy.NewSingleRule(func(v string) error { return errors.New("test") })),
 	).WithName("validator")
 
 	err := r.Validate(mockValidatorStruct{})

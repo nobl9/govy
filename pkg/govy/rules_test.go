@@ -1,4 +1,4 @@
-package validation
+package govy_test
 
 import (
 	"strconv"
@@ -7,6 +7,10 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/nobl9/govy/internal"
+	"github.com/nobl9/govy/pkg/govy"
+	"github.com/nobl9/govy/pkg/rules"
 )
 
 func TestPropertyRules(t *testing.T) {
@@ -16,65 +20,65 @@ func TestPropertyRules(t *testing.T) {
 	}
 
 	t.Run("no predicates, no error", func(t *testing.T) {
-		r := For(func(m mockStruct) string { return "path" }).
+		r := govy.For(func(m mockStruct) string { return "path" }).
 			WithName("test.path").
-			Rules(NewSingleRule(func(v string) error { return nil }))
+			Rules(govy.NewSingleRule(func(v string) error { return nil }))
 		err := r.Validate(mockStruct{})
 		assert.Nil(t, err)
 	})
 
 	t.Run("no predicates, validate", func(t *testing.T) {
 		expectedErr := errors.New("ops!")
-		r := For(func(m mockStruct) string { return "path" }).
+		r := govy.For(func(m mockStruct) string { return "path" }).
 			WithName("test.path").
-			Rules(NewSingleRule(func(v string) error { return expectedErr }))
+			Rules(govy.NewSingleRule(func(v string) error { return expectedErr }))
 		errs := r.Validate(mockStruct{})
 		require.Len(t, errs, 1)
-		assert.Equal(t, &PropertyError{
+		assert.Equal(t, &govy.PropertyError{
 			PropertyName:  "test.path",
 			PropertyValue: "path",
-			Errors:        []*RuleError{{Message: expectedErr.Error()}},
+			Errors:        []*govy.RuleError{{Message: expectedErr.Error()}},
 		}, errs[0])
 	})
 
 	t.Run("predicate matches, don't validate", func(t *testing.T) {
-		r := For(func(m mockStruct) string { return "value" }).
+		r := govy.For(func(m mockStruct) string { return "value" }).
 			WithName("test.path").
 			When(func(mockStruct) bool { return true }).
 			When(func(mockStruct) bool { return true }).
 			When(func(st mockStruct) bool { return st.Field == "" }).
-			Rules(NewSingleRule(func(v string) error { return errors.New("ops!") }))
+			Rules(govy.NewSingleRule(func(v string) error { return errors.New("ops!") }))
 		err := r.Validate(mockStruct{Field: "something"})
 		assert.Nil(t, err)
 	})
 
 	t.Run("multiple rules", func(t *testing.T) {
 		err1 := errors.New("oh no!")
-		r := For(func(m mockStruct) string { return "value" }).
+		r := govy.For(func(m mockStruct) string { return "value" }).
 			WithName("test.path").
-			Rules(NewSingleRule(func(v string) error { return nil })).
-			Rules(NewSingleRule(func(v string) error { return err1 })).
-			Rules(NewSingleRule(func(v string) error { return nil })).
-			Rules(NewSingleRule(func(v string) error {
-				return NewPropertyError("nested", "nestedValue", &RuleError{
+			Rules(govy.NewSingleRule(func(v string) error { return nil })).
+			Rules(govy.NewSingleRule(func(v string) error { return err1 })).
+			Rules(govy.NewSingleRule(func(v string) error { return nil })).
+			Rules(govy.NewSingleRule(func(v string) error {
+				return govy.NewPropertyError("nested", "nestedValue", &govy.RuleError{
 					Message: "property is required",
-					Code:    ErrorCodeRequired,
+					Code:    rules.ErrorCodeRequired,
 				})
 			}))
 		errs := r.Validate(mockStruct{})
 		require.Len(t, errs, 2)
-		assert.ElementsMatch(t, PropertyErrors{
-			&PropertyError{
+		assert.ElementsMatch(t, govy.PropertyErrors{
+			&govy.PropertyError{
 				PropertyName:  "test.path",
 				PropertyValue: "value",
-				Errors:        []*RuleError{{Message: err1.Error()}},
+				Errors:        []*govy.RuleError{{Message: err1.Error()}},
 			},
-			&PropertyError{
+			&govy.PropertyError{
 				PropertyName:  "test.path.nested",
 				PropertyValue: "nestedValue",
-				Errors: []*RuleError{{
+				Errors: []*govy.RuleError{{
 					Message: "property is required",
-					Code:    ErrorCodeRequired,
+					Code:    rules.ErrorCodeRequired,
 				}},
 			},
 		}, errs)
@@ -82,17 +86,17 @@ func TestPropertyRules(t *testing.T) {
 
 	t.Run("cascade mode stop", func(t *testing.T) {
 		expectedErr := errors.New("oh no!")
-		r := For(func(m mockStruct) string { return "value" }).
+		r := govy.For(func(m mockStruct) string { return "value" }).
 			WithName("test.path").
-			Cascade(CascadeModeStop).
-			Rules(NewSingleRule(func(v string) error { return expectedErr })).
-			Rules(NewSingleRule(func(v string) error { return errors.New("no") }))
+			Cascade(govy.CascadeModeStop).
+			Rules(govy.NewSingleRule(func(v string) error { return expectedErr })).
+			Rules(govy.NewSingleRule(func(v string) error { return errors.New("no") }))
 		errs := r.Validate(mockStruct{})
 		require.Len(t, errs, 1)
-		assert.Equal(t, &PropertyError{
+		assert.Equal(t, &govy.PropertyError{
 			PropertyName:  "test.path",
 			PropertyValue: "value",
-			Errors:        []*RuleError{{Message: expectedErr.Error()}},
+			Errors:        []*govy.RuleError{{Message: expectedErr.Error()}},
 		}, errs[0])
 	})
 
@@ -100,122 +104,122 @@ func TestPropertyRules(t *testing.T) {
 		err1 := errors.New("oh no!")
 		err2 := errors.New("included")
 		err3 := errors.New("included again")
-		r := For(func(m mockStruct) mockStruct { return m }).
+		r := govy.For(func(m mockStruct) mockStruct { return m }).
 			WithName("test.path").
-			Rules(NewSingleRule(func(v mockStruct) error { return err1 })).
-			Include(New(
-				For(func(s mockStruct) string { return "value" }).
+			Rules(govy.NewSingleRule(func(v mockStruct) error { return err1 })).
+			Include(govy.New(
+				govy.For(func(s mockStruct) string { return "value" }).
 					WithName("included").
-					Rules(NewSingleRule(func(v string) error { return err2 })).
-					Rules(NewSingleRule(func(v string) error {
-						return NewPropertyError("nested", "nestedValue", err3)
+					Rules(govy.NewSingleRule(func(v string) error { return err2 })).
+					Rules(govy.NewSingleRule(func(v string) error {
+						return govy.NewPropertyError("nested", "nestedValue", err3)
 					})),
 			))
 		errs := r.Validate(mockStruct{})
 		require.Len(t, errs, 3)
-		assert.ElementsMatch(t, PropertyErrors{
+		assert.ElementsMatch(t, govy.PropertyErrors{
 			{
 				PropertyName: "test.path",
-				Errors:       []*RuleError{{Message: err1.Error()}},
+				Errors:       []*govy.RuleError{{Message: err1.Error()}},
 			},
 			{
 				PropertyName:  "test.path.included",
 				PropertyValue: "value",
-				Errors:        []*RuleError{{Message: err2.Error()}},
+				Errors:        []*govy.RuleError{{Message: err2.Error()}},
 			},
 			{
 				PropertyName:  "test.path.included.nested",
 				PropertyValue: "nestedValue",
-				Errors:        []*RuleError{{Message: err3.Error()}},
+				Errors:        []*govy.RuleError{{Message: err3.Error()}},
 			},
 		}, errs)
 	})
 
 	t.Run("get self", func(t *testing.T) {
 		expectedErrs := errors.New("self error")
-		r := For(GetSelf[mockStruct]()).
+		r := govy.For(govy.GetSelf[mockStruct]()).
 			WithName("test.path").
-			Rules(NewSingleRule(func(v mockStruct) error { return expectedErrs }))
+			Rules(govy.NewSingleRule(func(v mockStruct) error { return expectedErrs }))
 		object := mockStruct{Field: "this"}
 		errs := r.Validate(object)
 		require.Len(t, errs, 1)
-		assert.Equal(t, &PropertyError{
+		assert.Equal(t, &govy.PropertyError{
 			PropertyName:  "test.path",
-			PropertyValue: propertyValueString(object),
-			Errors:        []*RuleError{{Message: expectedErrs.Error()}},
+			PropertyValue: internal.PropertyValueString(object),
+			Errors:        []*govy.RuleError{{Message: expectedErrs.Error()}},
 		}, errs[0])
 	})
 
 	t.Run("hide value", func(t *testing.T) {
 		expectedErr := errors.New("oh no! here's the value: 'secret'")
-		r := For(func(m mockStruct) string { return "secret" }).
+		r := govy.For(func(m mockStruct) string { return "secret" }).
 			WithName("test.path").
 			HideValue().
-			Rules(NewSingleRule(func(v string) error { return expectedErr }))
+			Rules(govy.NewSingleRule(func(v string) error { return expectedErr }))
 		errs := r.Validate(mockStruct{})
 		require.Len(t, errs, 1)
-		assert.Equal(t, &PropertyError{
+		assert.Equal(t, &govy.PropertyError{
 			PropertyName:  "test.path",
 			PropertyValue: "",
-			Errors:        []*RuleError{{Message: "oh no! here's the value: '[hidden]'"}},
+			Errors:        []*govy.RuleError{{Message: "oh no! here's the value: '[hidden]'"}},
 		}, errs[0])
 	})
 }
 
 func TestForPointer(t *testing.T) {
 	t.Run("nil pointer", func(t *testing.T) {
-		r := ForPointer(func(s *string) *string { return s })
-		v, err := r.getter(nil)
-		assert.Equal(t, "", v)
-		assert.ErrorIs(t, err, emptyErr{})
+		r := govy.ForPointer(func(s *string) *string { return s }).
+			Required()
+		errs := r.Validate(nil)
+		assert.NotNil(t, errs)
 	})
 	t.Run("non nil pointer", func(t *testing.T) {
-		r := ForPointer(func(s *string) *string { return s })
+		r := govy.ForPointer(func(s *string) *string { return s }).
+			Required()
 		s := "this string"
-		v, err := r.getter(&s)
-		assert.Equal(t, s, v)
-		assert.NoError(t, err)
+		errs := r.Validate(&s)
+		assert.Nil(t, errs)
 	})
 }
 
 func TestRequiredAndOmitEmpty(t *testing.T) {
 	t.Run("nil pointer", func(t *testing.T) {
-		rules := ForPointer(func(s *string) *string { return s }).
-			Rules(StringMinLength(10))
+		r := govy.ForPointer(func(s *string) *string { return s }).
+			Rules(rules.StringMinLength(10))
 
 		t.Run("implicit omitEmpty", func(t *testing.T) {
-			err := rules.Validate(nil)
+			err := r.Validate(nil)
 			assert.Nil(t, err)
 		})
 		t.Run("explicit omitEmpty", func(t *testing.T) {
-			err := rules.OmitEmpty().Validate(nil)
+			err := r.OmitEmpty().Validate(nil)
 			assert.Nil(t, err)
 		})
 		t.Run("required", func(t *testing.T) {
-			errs := rules.Required().Validate(nil)
+			errs := r.Required().Validate(nil)
 			assert.Len(t, errs, 1)
-			assert.True(t, HasErrorCode(errs, ErrorCodeRequired))
+			assert.True(t, govy.HasErrorCode(errs, rules.ErrorCodeRequired))
 		})
 	})
 
 	t.Run("non empty pointer", func(t *testing.T) {
-		rules := ForPointer(func(s *string) *string { return s }).
-			Rules(StringMinLength(10))
+		r := govy.ForPointer(func(s *string) *string { return s }).
+			Rules(rules.StringMinLength(10))
 
 		t.Run("validate", func(t *testing.T) {
-			errs := rules.Validate(ptr(""))
+			errs := r.Validate(ptr(""))
 			assert.Len(t, errs, 1)
-			assert.True(t, HasErrorCode(errs, ErrorCodeStringMinLength))
+			assert.True(t, govy.HasErrorCode(errs, rules.ErrorCodeStringMinLength))
 		})
 		t.Run("omitEmpty", func(t *testing.T) {
-			errs := rules.OmitEmpty().Validate(ptr(""))
+			errs := r.OmitEmpty().Validate(ptr(""))
 			assert.Len(t, errs, 1)
-			assert.True(t, HasErrorCode(errs, ErrorCodeStringMinLength))
+			assert.True(t, govy.HasErrorCode(errs, rules.ErrorCodeStringMinLength))
 		})
 		t.Run("required", func(t *testing.T) {
-			errs := rules.Required().Validate(ptr(""))
+			errs := r.Required().Validate(ptr(""))
 			assert.Len(t, errs, 1)
-			assert.True(t, HasErrorCode(errs, ErrorCodeStringMinLength))
+			assert.True(t, govy.HasErrorCode(errs, rules.ErrorCodeStringMinLength))
 		})
 	})
 }
@@ -223,68 +227,68 @@ func TestRequiredAndOmitEmpty(t *testing.T) {
 func TestTransform(t *testing.T) {
 	t.Run("passes", func(t *testing.T) {
 		getter := func(s string) string { return s }
-		transformed := Transform(getter, strconv.Atoi).
-			Rules(GreaterThan(122))
+		transformed := govy.Transform(getter, strconv.Atoi).
+			Rules(rules.GreaterThan(122))
 		errs := transformed.Validate("123")
 		assert.Empty(t, errs)
 	})
 	t.Run("fails validation", func(t *testing.T) {
 		getter := func(s string) string { return s }
-		transformed := Transform(getter, strconv.Atoi).
+		transformed := govy.Transform(getter, strconv.Atoi).
 			WithName("prop").
-			Rules(GreaterThan(123))
+			Rules(rules.GreaterThan(123))
 		errs := transformed.Validate("123")
 		assert.Len(t, errs, 1)
-		assert.True(t, HasErrorCode(errs, ErrorCodeGreaterThan))
+		assert.True(t, govy.HasErrorCode(errs, rules.ErrorCodeGreaterThan))
 	})
 	t.Run("zero value with omitEmpty", func(t *testing.T) {
 		getter := func(s string) string { return s }
-		transformed := Transform(getter, strconv.Atoi).
+		transformed := govy.Transform(getter, strconv.Atoi).
 			WithName("prop").
 			OmitEmpty().
-			Rules(GreaterThan(123))
+			Rules(rules.GreaterThan(123))
 		errs := transformed.Validate("")
 		assert.Empty(t, errs)
 	})
 	t.Run("zero value with required", func(t *testing.T) {
 		getter := func(s string) string { return s }
-		transformed := Transform(getter, strconv.Atoi).
+		transformed := govy.Transform(getter, strconv.Atoi).
 			WithName("prop").
 			Required().
-			Rules(GreaterThan(123))
+			Rules(rules.GreaterThan(123))
 		errs := transformed.Validate("")
 		assert.Len(t, errs, 1)
-		assert.True(t, HasErrorCode(errs, ErrorCodeRequired))
+		assert.True(t, govy.HasErrorCode(errs, rules.ErrorCodeRequired))
 	})
 	t.Run("skip zero value", func(t *testing.T) {
 		getter := func(s string) string { return s }
-		transformed := Transform(getter, strconv.Atoi).
+		transformed := govy.Transform(getter, strconv.Atoi).
 			WithName("prop").
-			Rules(GreaterThan(123))
+			Rules(rules.GreaterThan(123))
 		errs := transformed.Validate("")
 		assert.Len(t, errs, 1)
-		assert.True(t, HasErrorCode(errs, ErrorCodeGreaterThan))
+		assert.True(t, govy.HasErrorCode(errs, rules.ErrorCodeGreaterThan))
 	})
 	t.Run("fails transformation", func(t *testing.T) {
 		getter := func(s string) string { return s }
-		transformed := Transform(getter, strconv.Atoi).
+		transformed := govy.Transform(getter, strconv.Atoi).
 			WithName("prop").
-			Rules(GreaterThan(123))
+			Rules(rules.GreaterThan(123))
 		errs := transformed.Validate("123z")
 		assert.Len(t, errs, 1)
 		assert.EqualError(t, errs, expectedErrorOutput(t, "property_error_transform.txt"))
-		assert.True(t, HasErrorCode(errs, ErrorCodeTransform))
+		assert.True(t, govy.HasErrorCode(errs, govy.ErrorCodeTransform))
 	})
 	t.Run("fail transformation with hidden value", func(t *testing.T) {
 		getter := func(s string) string { return s }
-		transformed := Transform(getter, strconv.Atoi).
+		transformed := govy.Transform(getter, strconv.Atoi).
 			WithName("prop").
 			HideValue().
-			Rules(GreaterThan(123))
+			Rules(rules.GreaterThan(123))
 		errs := transformed.Validate("secret!")
 		assert.Len(t, errs, 1)
 		assert.EqualError(t, errs, expectedErrorOutput(t, "property_error_transform_with_hidden_value.txt"))
-		assert.True(t, HasErrorCode(errs, ErrorCodeTransform))
+		assert.True(t, govy.HasErrorCode(errs, govy.ErrorCodeTransform))
 	})
 }
 

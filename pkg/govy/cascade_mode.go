@@ -1,4 +1,4 @@
-package validation
+package govy
 
 // CascadeMode defines how validation should behave when an error is encountered.
 type CascadeMode uint

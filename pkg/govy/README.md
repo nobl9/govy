@@ -1,6 +1,6 @@
 # Validation
 
-Package validation implements a functional API for consistent,
+package govy implements a functional API for consistent,
 type safe validation.
 It puts heavy focus on end user errors readability,
 providing means of crafting clear and information-rich error messages.

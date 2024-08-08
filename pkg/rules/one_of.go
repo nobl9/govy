@@ -1,4 +1,4 @@
-package validation
+package rules
 
 import (
 	"fmt"
@@ -7,10 +7,13 @@ import (
 	"github.com/pkg/errors"
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
+
+	"github.com/nobl9/govy/internal"
+	"github.com/nobl9/govy/pkg/govy"
 )
 
-func OneOf[T comparable](values ...T) SingleRule[T] {
-	return NewSingleRule(func(v T) error {
+func OneOf[T comparable](values ...T) govy.SingleRule[T] {
+	return govy.NewSingleRule(func(v T) error {
 		for i := range values {
 			if v == values[i] {
 				return nil
@@ -29,12 +32,12 @@ func OneOf[T comparable](values ...T) SingleRule[T] {
 // MutuallyExclusive checks if properties are mutually exclusive.
 // This means, exactly one of the properties can be provided.
 // If required is true, then a single non-empty property is required.
-func MutuallyExclusive[S any](required bool, getters map[string]func(s S) any) SingleRule[S] {
-	return NewSingleRule(func(s S) error {
+func MutuallyExclusive[S any](required bool, getters map[string]func(s S) any) govy.SingleRule[S] {
+	return govy.NewSingleRule(func(s S) error {
 		var nonEmpty []string
 		for name, getter := range getters {
 			v := getter(s)
-			if isEmptyFunc(v) {
+			if internal.IsEmptyFunc(v) {
 				continue
 			}
 			nonEmpty = append(nonEmpty, name)

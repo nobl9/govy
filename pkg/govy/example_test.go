@@ -1,15 +1,15 @@
 // nolint: lll
-package validation_test
+package govy_test
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"regexp"
 	"time"
 
-	"github.com/nobl9/go-yaml"
-
-	validation "github.com/nobl9/govy/pkg/govy"
+	"github.com/nobl9/govy/pkg/govy"
+	"github.com/nobl9/govy/pkg/rules"
 )
 
 type Teacher struct {
@@ -39,9 +39,9 @@ const year = 24 * 365 * time.Hour
 // Let's define simple [PropertyRules] for [Teacher.Name].
 // For now, it will be always failing.
 func ExampleNew() {
-	v := validation.New[Teacher](
-		validation.For(func(t Teacher) string { return t.Name }).
-			Rules(validation.NewSingleRule(func(name string) error { return fmt.Errorf("always fails") })),
+	v := govy.New(
+		govy.For(func(t Teacher) string { return t.Name }).
+			Rules(govy.NewSingleRule(func(name string) error { return fmt.Errorf("always fails") })),
 	)
 
 	err := v.Validate(Teacher{})
@@ -57,9 +57,9 @@ func ExampleNew() {
 // To associate [Validator] with an entity name use [Validator.WithName] function.
 // When any of the rules fails, the error will contain the entity name you've provided.
 func ExampleValidator_WithName() {
-	v := validation.New[Teacher](
-		validation.For(func(t Teacher) string { return t.Name }).
-			Rules(validation.NewSingleRule(func(name string) error { return fmt.Errorf("always fails") })),
+	v := govy.New(
+		govy.For(func(t Teacher) string { return t.Name }).
+			Rules(govy.NewSingleRule(func(name string) error { return fmt.Errorf("always fails") })),
 	).WithName("Teacher")
 
 	err := v.Validate(Teacher{})
@@ -86,9 +86,9 @@ func ExampleValidator_WithName() {
 // tries to follow immutability principle. Calling any function on [Validator]
 // will not change its previous declaration (unless you assign it back to 'v').
 func ExampleValidatorError_WithName() {
-	v := validation.New[Teacher](
-		validation.For(func(t Teacher) string { return t.Name }).
-			Rules(validation.NewSingleRule(func(name string) error { return fmt.Errorf("always fails") })),
+	v := govy.New(
+		govy.For(func(t Teacher) string { return t.Name }).
+			Rules(govy.NewSingleRule(func(name string) error { return fmt.Errorf("always fails") })),
 	).WithName("Teacher")
 
 	err := v.Validate(Teacher{})
@@ -106,9 +106,9 @@ func ExampleValidatorError_WithName() {
 // In this example, validation for [Teacher] instance will only be evaluated
 // if the [Age] property is less than 50 years.
 func ExampleValidator_When() {
-	v := validation.New[Teacher](
-		validation.For(func(t Teacher) string { return t.Name }).
-			Rules(validation.NewSingleRule(func(name string) error { return fmt.Errorf("always fails") })),
+	v := govy.New(
+		govy.For(func(t Teacher) string { return t.Name }).
+			Rules(govy.NewSingleRule(func(name string) error { return fmt.Errorf("always fails") })),
 	).
 		When(func(t Teacher) bool { return t.Age < (50 * year) })
 
@@ -150,10 +150,10 @@ func ExampleValidator_When() {
 // Validation package comes with a number of predefined [Rule], we'll use
 // [EqualTo] which accepts a single argument, value to compare with.
 func ExamplePropertyRules_WithName() {
-	v := validation.New[Teacher](
-		validation.For(func(t Teacher) string { return t.Name }).
+	v := govy.New(
+		govy.For(func(t Teacher) string { return t.Name }).
 			WithName("name").
-			Rules(validation.EqualTo("Tom")),
+			Rules(rules.EqualTo("Tom")),
 	).WithName("Teacher")
 
 	teacher := Teacher{
@@ -193,10 +193,10 @@ func ExamplePropertyRules_WithName() {
 // Not everyone has to have a middle name, that's why we've defined this field
 // as a pointer to string, rather than a string itself.
 func ExampleForPointer() {
-	v := validation.New[Teacher](
-		validation.ForPointer(func(t Teacher) *string { return t.MiddleName }).
+	v := govy.New(
+		govy.ForPointer(func(t Teacher) *string { return t.MiddleName }).
 			WithName("middleName").
-			Rules(validation.StringMaxLength(5)),
+			Rules(rules.StringMaxLength(5)),
 	).WithName("Teacher")
 
 	middleName := "Thaddeus"
@@ -221,20 +221,20 @@ func ExampleForPointer() {
 // it will skip validation of the property if the pointer is nil.
 // To enforce a value is set for pointer use [PropertyRules.Required].
 //
-// You may ask yourself why not just use [validation.Required] rule instead?
+// You may ask yourself why not just use [govy.Required] rule instead?
 // If we were to do that, we'd be forced to operate on pointer in all of our rules.
 // Other than checking if the pointer is nil, there aren't any rules which would
 // benefit from working on the pointer instead of the underlying value.
 //
 // If you want to also make sure the underlying value is filled,
-// i.e. it's not a zero value, you can also use [validation.Required] rule
+// i.e. it's not a zero value, you can also use [govy.Required] rule
 // on top of [PropertyRules.Required].
 //
 // [PropertyRules.Required] when used with [For] constructor, will ensure
 // the property does not contain a zero value.
 //
 // NOTE: [PropertyRules.Required] is introducing a short circuit.
-// If the assertion fails, validation will stop and return [validation.ErrorCodeRequired].
+// If the assertion fails, validation will stop and return [govy.ErrorCodeRequired].
 // None of the rules you've defined would be evaluated.
 //
 // NOTE: Placement of [PropertyRules.Required] does not matter,
@@ -242,16 +242,16 @@ func ExampleForPointer() {
 // However, we recommend you always place it below [PropertyRules.WithName]
 // to make your rules more readable.
 func ExamplePropertyRules_Required() {
-	alwaysFailingRule := validation.NewSingleRule(func(string) error {
+	alwaysFailingRule := govy.NewSingleRule(func(string) error {
 		return fmt.Errorf("always fails")
 	})
 
-	v := validation.New[Teacher](
-		validation.ForPointer(func(t Teacher) *string { return t.MiddleName }).
+	v := govy.New(
+		govy.ForPointer(func(t Teacher) *string { return t.MiddleName }).
 			WithName("middleName").
 			Required().
 			Rules(alwaysFailingRule),
-		validation.For(func(t Teacher) string { return t.Name }).
+		govy.For(func(t Teacher) string { return t.Name }).
 			WithName("name").
 			Required().
 			Rules(alwaysFailingRule),
@@ -284,16 +284,16 @@ func ExamplePropertyRules_Required() {
 // NOTE: [PropertyRules.OmitEmpty] will have no effect on pointers handled
 // by [ForPointer], as they already behave in the same way.
 func ExamplePropertyRules_OmitEmpty() {
-	alwaysFailingRule := validation.NewSingleRule(func(string) error {
+	alwaysFailingRule := govy.NewSingleRule(func(string) error {
 		return fmt.Errorf("always fails")
 	})
 
-	v := validation.New[Teacher](
-		validation.For(func(t Teacher) string { return t.Name }).
+	v := govy.New(
+		govy.For(func(t Teacher) string { return t.Name }).
 			WithName("name").
 			OmitEmpty().
 			Rules(alwaysFailingRule),
-		validation.ForPointer(func(t Teacher) *string { return t.MiddleName }).
+		govy.ForPointer(func(t Teacher) *string { return t.MiddleName }).
 			WithName("middleName").
 			Rules(alwaysFailingRule),
 	).WithName("Teacher")
@@ -321,12 +321,12 @@ func ExamplePropertyRules_OmitEmpty() {
 // You can provide your own rules using [NewSingleRule] constructor.
 // It returns new [SingleRule] instance which wraps your validation function.
 func ExampleGetSelf() {
-	customRule := validation.NewSingleRule(func(v Teacher) error {
+	customRule := govy.NewSingleRule(func(v Teacher) error {
 		return fmt.Errorf("now I have access to the whole teacher")
 	})
 
-	v := validation.New[Teacher](
-		validation.For(validation.GetSelf[Teacher]()).
+	v := govy.New(
+		govy.For(govy.GetSelf[Teacher]()).
 			Rules(customRule),
 	).WithName("Teacher")
 
@@ -349,10 +349,10 @@ func ExampleGetSelf() {
 // This allows you to extend existing rules by adding your use case context.
 // Let's give a regex validation some more clarity.
 func ExampleSingleRule_WithDetails() {
-	v := validation.New[Teacher](
-		validation.For(func(t Teacher) string { return t.Name }).
+	v := govy.New(
+		govy.For(func(t Teacher) string { return t.Name }).
 			WithName("name").
-			Rules(validation.StringMatchRegexp(regexp.MustCompile("^(Tom|Jerry)$")).
+			Rules(rules.StringMatchRegexp(regexp.MustCompile("^(Tom|Jerry)$")).
 				WithDetails("Teacher can be either Tom or Jerry :)")),
 	).WithName("Teacher")
 
@@ -380,10 +380,10 @@ func ExampleSingleRule_WithDetails() {
 // Predefined rules have [ErrorCode] already associated with them.
 // To view the list of predefined [ErrorCode] checkout error_codes.go file.
 func ExampleSingleRule_WithErrorCode() {
-	v := validation.New[Teacher](
-		validation.For(func(t Teacher) string { return t.Name }).
+	v := govy.New(
+		govy.For(func(t Teacher) string { return t.Name }).
 			WithName("name").
-			Rules(validation.StringMatchRegexp(regexp.MustCompile("^(Tom|Jerry)$")).
+			Rules(rules.StringMatchRegexp(regexp.MustCompile("^(Tom|Jerry)$")).
 				WithDetails("Teacher can be either Tom or Jerry :)").
 				WithErrorCode("custom_code")),
 	).WithName("Teacher")
@@ -413,16 +413,16 @@ func ExampleSingleRule_WithErrorCode() {
 // Note that validation package uses similar syntax to wrapped errors in Go;
 // a ':' delimiter is used to chain error codes together.
 func ExampleRuleSet() {
-	teacherNameRule := validation.NewRuleSet[string](
-		validation.StringLength(1, 5),
-		validation.StringMatchRegexp(regexp.MustCompile("^(Tom|Jerry)$")).
+	teacherNameRule := govy.NewRuleSet(
+		rules.StringLength(1, 5),
+		rules.StringMatchRegexp(regexp.MustCompile("^(Tom|Jerry)$")).
 			WithDetails("Teacher can be either Tom or Jerry :)"),
 	).
 		WithErrorCode("teacher_name").
 		WithDetails("I will add that to both rules!")
 
-	v := validation.New[Teacher](
-		validation.For(func(t Teacher) string { return t.Name }).
+	v := govy.New(
+		govy.For(func(t Teacher) string { return t.Name }).
 			WithName("name").
 			Rules(teacherNameRule),
 	).WithName("Teacher")
@@ -450,21 +450,21 @@ func ExampleRuleSet() {
 	//     - string does not match regular expression: '^(Tom|Jerry)$'; Teacher can be either Tom or Jerry :); I will add that to both rules!
 }
 
-// To inspect if an error contains a given [validation.ErrorCode], use [HasErrorCode] function.
+// To inspect if an error contains a given [govy.ErrorCode], use [HasErrorCode] function.
 // This function will also return true if the expected [ErrorCode]
 // is part of a chain of wrapped error codes.
 // In this example we're dealing with two error code chains:
 // - 'teacher_name:string_length'
 // - 'teacher_name:string_match_regexp'
 func ExampleHasErrorCode() {
-	teacherNameRule := validation.NewRuleSet[string](
-		validation.StringLength(1, 5),
-		validation.StringMatchRegexp(regexp.MustCompile("^(Tom|Jerry)$")),
+	teacherNameRule := govy.NewRuleSet(
+		rules.StringLength(1, 5),
+		rules.StringMatchRegexp(regexp.MustCompile("^(Tom|Jerry)$")),
 	).
 		WithErrorCode("teacher_name")
 
-	v := validation.New[Teacher](
-		validation.For(func(t Teacher) string { return t.Name }).
+	v := govy.New(
+		govy.For(func(t Teacher) string { return t.Name }).
 			WithName("name").
 			Rules(teacherNameRule),
 	).WithName("Teacher")
@@ -476,12 +476,12 @@ func ExampleHasErrorCode() {
 
 	err := v.Validate(teacher)
 	if err != nil {
-		for _, code := range []validation.ErrorCode{
+		for _, code := range []govy.ErrorCode{
 			"teacher_name",
 			"string_length",
 			"string_match_regexp",
 		} {
-			if validation.HasErrorCode(err, code) {
+			if govy.HasErrorCode(err, code) {
 				fmt.Println("Has error code:", code)
 			}
 		}
@@ -500,15 +500,15 @@ func ExampleHasErrorCode() {
 // Note that you can still use [ErrorCode] and pass [RuleError] to the constructor.
 // You can pass any number of [RuleError].
 func ExampleNewPropertyError() {
-	v := validation.New[Teacher](
-		validation.For(validation.GetSelf[Teacher]()).
-			Rules(validation.NewSingleRule(func(t Teacher) error {
+	v := govy.New(
+		govy.For(govy.GetSelf[Teacher]()).
+			Rules(govy.NewSingleRule(func(t Teacher) error {
 				if t.Name == "Jake" {
-					return validation.NewPropertyError(
+					return govy.NewPropertyError(
 						"name",
 						t.Name,
-						validation.NewRuleError("name cannot be Jake", "error_code_jake"),
-						validation.NewRuleError("you can pass me too!"))
+						govy.NewRuleError("name cannot be Jake", "error_code_jake"),
+						govy.NewRuleError("you can pass me too!"))
 				}
 				return nil
 			})),
@@ -546,16 +546,16 @@ func ExampleNewPropertyError() {
 // Notice how the nested property path is automatically built for you,
 // each segment separated by a dot.
 func ExamplePropertyRules_Include() {
-	universityValidation := validation.New[University](
-		validation.For(func(u University) string { return u.Address }).
+	universityValidation := govy.New(
+		govy.For(func(u University) string { return u.Address }).
 			WithName("address").
 			Required(),
 	)
-	teacherValidation := validation.New[Teacher](
-		validation.For(func(t Teacher) string { return t.Name }).
+	teacherValidation := govy.New(
+		govy.For(func(t Teacher) string { return t.Name }).
 			WithName("name").
-			Rules(validation.EqualTo("Tom")),
-		validation.For(func(t Teacher) University { return t.University }).
+			Rules(rules.EqualTo("Tom")),
+		govy.For(func(t Teacher) University { return t.University }).
 			WithName("university").
 			Include(universityValidation),
 	).WithName("Teacher")
@@ -604,17 +604,17 @@ func ExamplePropertyRules_Include() {
 // Notice that property path for slices has the following format:
 // <slice_name>[<index>].<slice_property_name>
 func ExampleForSlice() {
-	studentValidator := validation.New[Student](
-		validation.For(func(s Student) string { return s.Index }).
+	studentValidator := govy.New(
+		govy.For(func(s Student) string { return s.Index }).
 			WithName("index").
-			Rules(validation.StringLength(9, 9)),
+			Rules(rules.StringLength(9, 9)),
 	)
-	teacherValidator := validation.New[Teacher](
-		validation.ForSlice(func(t Teacher) []Student { return t.Students }).
+	teacherValidator := govy.New(
+		govy.ForSlice(func(t Teacher) []Student { return t.Students }).
 			WithName("students").
 			Rules(
-				validation.SliceMaxLength[[]Student](2),
-				validation.SliceUnique(func(v Student) string { return v.Index })).
+				rules.SliceMaxLength[[]Student](2),
+				rules.SliceUnique(func(v Student) string { return v.Index })).
 			IncludeForEach(studentValidator),
 	).When(func(t Teacher) bool { return t.Age < 50 })
 
@@ -673,24 +673,24 @@ func ExampleForSlice() {
 // Notice that property path for maps has the following format:
 // <map_name>.<key>.<map_property_name>
 func ExampleForMap() {
-	teacherValidator := validation.New[Teacher](
-		validation.For(func(t Teacher) string { return t.Name }).
+	teacherValidator := govy.New(
+		govy.For(func(t Teacher) string { return t.Name }).
 			WithName("name").
-			Rules(validation.NotEqualTo("Eve")),
+			Rules(rules.NotEqualTo("Eve")),
 	)
-	tutoringValidator := validation.New[Tutoring](
-		validation.ForMap(func(t Tutoring) map[string]Teacher { return t.StudentIndexToTeacher }).
+	tutoringValidator := govy.New(
+		govy.ForMap(func(t Tutoring) map[string]Teacher { return t.StudentIndexToTeacher }).
 			WithName("students").
 			Rules(
-				validation.MapMaxLength[map[string]Teacher](2),
+				rules.MapMaxLength[map[string]Teacher](2),
 			).
 			RulesForKeys(
-				validation.StringLength(9, 9),
+				rules.StringLength(9, 9),
 			).
 			IncludeForValues(teacherValidator).
-			RulesForItems(validation.NewSingleRule(func(v validation.MapItem[string, Teacher]) error {
+			RulesForItems(govy.NewSingleRule(func(v govy.MapItem[string, Teacher]) error {
 				if v.Key == "918230013" && v.Value.Name == "Joan" {
-					return validation.NewRuleError(
+					return govy.NewRuleError(
 						"Joan cannot be a teacher for student with index 918230013",
 						"joan_teacher",
 					)
@@ -730,11 +730,11 @@ func ExampleForMap() {
 //
 // It's recommended to define [PropertyRules.When] before [PropertyRules.Rules] declaration.
 func ExamplePropertyRules_When() {
-	v := validation.New[Teacher](
-		validation.For(func(t Teacher) string { return t.Name }).
+	v := govy.New(
+		govy.For(func(t Teacher) string { return t.Name }).
 			WithName("name").
 			When(func(t Teacher) bool { return t.Name == "Jerry" }).
-			Rules(validation.NotEqualTo("Jerry")),
+			Rules(rules.NotEqualTo("Jerry")),
 	).WithName("Teacher")
 
 	for _, name := range []string{"Tom", "Jerry", "Mickey"} {
@@ -755,15 +755,15 @@ func ExamplePropertyRules_When() {
 // Use [CascadeModeStop] to stop validation after the first error.
 // If you wish to revert to the default behavior, use [CascadeModeContinue].
 func ExamplePropertyRules_Cascade() {
-	alwaysFailingRule := validation.NewSingleRule(func(string) error {
+	alwaysFailingRule := govy.NewSingleRule(func(string) error {
 		return fmt.Errorf("always fails")
 	})
 
-	v := validation.New[Teacher](
-		validation.For(func(t Teacher) string { return t.Name }).
+	v := govy.New(
+		govy.For(func(t Teacher) string { return t.Name }).
 			WithName("name").
-			Cascade(validation.CascadeModeStop).
-			Rules(validation.NotEqualTo("Jerry")).
+			Cascade(govy.CascadeModeStop).
+			Rules(rules.NotEqualTo("Jerry")).
 			Rules(alwaysFailingRule),
 	).WithName("Teacher")
 
@@ -786,30 +786,30 @@ func ExamplePropertyRules_Cascade() {
 
 // Bringing it all (mostly) together, let's create a fully fledged [Validator] for [Teacher].
 func ExampleValidator() {
-	universityValidation := validation.New[University](
-		validation.For(func(u University) string { return u.Address }).
+	universityValidation := govy.New(
+		govy.For(func(u University) string { return u.Address }).
 			WithName("address").
 			Required(),
 	)
-	studentValidator := validation.New[Student](
-		validation.For(func(s Student) string { return s.Index }).
+	studentValidator := govy.New(
+		govy.For(func(s Student) string { return s.Index }).
 			WithName("index").
-			Rules(validation.StringLength(9, 9)),
+			Rules(rules.StringLength(9, 9)),
 	)
-	teacherValidator := validation.New[Teacher](
-		validation.For(func(t Teacher) string { return t.Name }).
+	teacherValidator := govy.New(
+		govy.For(func(t Teacher) string { return t.Name }).
 			WithName("name").
 			Required().
 			Rules(
-				validation.StringNotEmpty(),
-				validation.OneOf("Jake", "George")),
-		validation.ForSlice(func(t Teacher) []Student { return t.Students }).
+				rules.StringNotEmpty(),
+				rules.OneOf("Jake", "George")),
+		govy.ForSlice(func(t Teacher) []Student { return t.Students }).
 			WithName("students").
 			Rules(
-				validation.SliceMaxLength[[]Student](2),
-				validation.SliceUnique(func(v Student) string { return v.Index })).
+				rules.SliceMaxLength[[]Student](2),
+				rules.SliceUnique(func(v Student) string { return v.Index })).
 			IncludeForEach(studentValidator),
-		validation.For(func(t Teacher) University { return t.University }).
+		govy.For(func(t Teacher) University { return t.University }).
 			WithName("university").
 			Include(universityValidation),
 	).When(func(t Teacher) bool { return t.Age < 50 })
@@ -870,31 +870,31 @@ func ExampleValidator_branchingPattern() {
 		}
 	)
 
-	csvValidation := validation.New[CSV](
-		validation.For(func(c CSV) string { return c.Separator }).
+	csvValidation := govy.New(
+		govy.For(func(c CSV) string { return c.Separator }).
 			WithName("separator").
 			Required().
-			Rules(validation.OneOf(",", ";")),
+			Rules(rules.OneOf(",", ";")),
 	)
 
-	jsonValidation := validation.New[JSON](
-		validation.For(func(j JSON) string { return j.Indent }).
+	jsonValidation := govy.New(
+		govy.For(func(j JSON) string { return j.Indent }).
 			WithName("indent").
 			Required().
-			Rules(validation.StringMatchRegexp(regexp.MustCompile(`^\s*$`))),
+			Rules(rules.StringMatchRegexp(regexp.MustCompile(`^\s*$`))),
 	)
 
-	fileValidation := validation.New[File](
-		validation.ForPointer(func(f File) *CSV { return f.CSV }).
+	fileValidation := govy.New(
+		govy.ForPointer(func(f File) *CSV { return f.CSV }).
 			When(func(f File) bool { return f.Format == "csv" }).
 			Include(csvValidation),
-		validation.ForPointer(func(f File) *JSON { return f.JSON }).
+		govy.ForPointer(func(f File) *JSON { return f.JSON }).
 			When(func(f File) bool { return f.Format == "json" }).
 			Include(jsonValidation),
-		validation.For(func(f File) string { return f.Format }).
+		govy.For(func(f File) string { return f.Format }).
 			WithName("format").
 			Required().
-			Rules(validation.OneOf("csv", "json")),
+			Rules(rules.OneOf("csv", "json")),
 	).WithName("File")
 
 	file := File{
@@ -928,33 +928,43 @@ func ExampleValidator_branchingPattern() {
 //     For builtin rules, the description is already provided.
 //   - Use [WhenDescription] to provide a plan-only description for your when conditions.
 func ExamplePlan() {
-	v := validation.New[Teacher](
-		validation.For(func(t Teacher) string { return t.Name }).
+	v := govy.New(
+		govy.For(func(t Teacher) string { return t.Name }).
 			WithName("name").
 			WithExamples("Jake", "John").
 			When(
 				func(t Teacher) bool { return t.Name == "Jerry" },
-				validation.WhenDescription("name is Jerry"),
+				govy.WhenDescription("name is Jerry"),
 			).
 			Rules(
-				validation.NotEqualTo("Jerry").
+				rules.NotEqualTo("Jerry").
 					WithDetails("Jerry is just a name!"),
 			),
 	)
 
-	properties := validation.Plan(v)
-	_ = yaml.NewEncoder(os.Stdout, yaml.Indent(2)).Encode(properties)
+	properties := govy.Plan(v)
+	enc := json.NewEncoder(os.Stdout)
+	enc.SetIndent("", "  ")
+	_ = enc.Encode(properties)
 
-	// Output:
-	// - path: $.name
-	//   type: string
-	//   examples:
-	//   - Jake
-	//   - John
-	//   rules:
-	//   - description: should be not equal to 'Jerry'
-	//     details: Jerry is just a name!
-	//     errorCode: not_equal_to
-	//     conditions:
-	//     - name is Jerry
+	//[
+	//  {
+	//    "path": "$.name",
+	//    "type": "string",
+	//    "examples": [
+	//      "Jake",
+	//      "John"
+	//    ],
+	//    "rules": [
+	//      {
+	//        "description": "should be not equal to 'Jerry'",
+	//        "details": "Jerry is just a name!",
+	//        "errorCode": "not_equal_to",
+	//        "conditions": [
+	//          "name is Jerry"
+	//        ]
+	//      }
+	//    ]
+	//  }
+	//]
 }

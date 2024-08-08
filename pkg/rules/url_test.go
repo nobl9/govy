@@ -1,4 +1,4 @@
-package validation
+package rules
 
 import (
 	"net/url"
@@ -6,6 +6,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/nobl9/govy/pkg/govy"
 )
 
 var validURLs = []string{
@@ -65,7 +67,7 @@ func TestURL(t *testing.T) {
 			require.NoError(t, err)
 			err = URL().Validate(u)
 			require.Error(t, err)
-			assert.True(t, HasErrorCode(err, ErrorCodeURL))
+			assert.True(t, govy.HasErrorCode(err, ErrorCodeURL))
 		}
 	})
 }

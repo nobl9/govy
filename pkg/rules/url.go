@@ -1,13 +1,15 @@
-package validation
+package rules
 
 import (
 	"net/url"
 
 	"github.com/pkg/errors"
+
+	"github.com/nobl9/govy/pkg/govy"
 )
 
-func URL() SingleRule[*url.URL] {
-	return NewSingleRule(validateURL).
+func URL() govy.SingleRule[*url.URL] {
+	return govy.NewSingleRule(validateURL).
 		WithErrorCode(ErrorCodeURL).
 		WithDescription(urlDescription)
 }

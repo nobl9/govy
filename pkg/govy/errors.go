@@ -1,11 +1,17 @@
-package validation
+package govy
 
 import (
-	"encoding/json"
 	"fmt"
-	"reflect"
 	"sort"
 	"strings"
+
+	"github.com/nobl9/govy/internal"
+)
+
+const (
+	ErrorCodeSeparator    = ":"
+	propertyNameSeparator = "."
+	hiddenValue           = "[hidden]"
 )
 
 func NewValidatorError(errs PropertyErrors) *ValidatorError {
@@ -30,7 +36,7 @@ func (e *ValidatorError) Error() string {
 		b.WriteString(e.Name)
 	}
 	b.WriteString(" has failed for the following properties:\n")
-	JoinErrors(&b, e.Errors, strings.Repeat(" ", 2))
+	internal.JoinErrors(&b, e.Errors, strings.Repeat(" ", 2))
 	return b.String()
 }
 
@@ -38,7 +44,7 @@ type PropertyErrors []*PropertyError
 
 func (e PropertyErrors) Error() string {
 	b := strings.Builder{}
-	JoinErrors(&b, e, "")
+	internal.JoinErrors(&b, e, "")
 	return b.String()
 }
 
@@ -91,7 +97,7 @@ outer:
 func NewPropertyError(propertyName string, propertyValue interface{}, errs ...error) *PropertyError {
 	return &PropertyError{
 		PropertyName:  propertyName,
-		PropertyValue: propertyValueString(propertyValue),
+		PropertyValue: internal.PropertyValueString(propertyValue),
 		Errors:        unpackRuleErrors(errs, make([]*RuleError, 0, len(errs))),
 	}
 }
@@ -122,7 +128,7 @@ func (e *PropertyError) Error() string {
 		b.WriteString(":\n")
 		indent = strings.Repeat(" ", 2)
 	}
-	JoinErrors(b, e.Errors, indent)
+	internal.JoinErrors(b, e.Errors, indent)
 	return b.String()
 }
 
@@ -132,11 +138,6 @@ func (e *PropertyError) Equal(cmp *PropertyError) bool {
 		e.IsKeyError == cmp.IsKeyError &&
 		e.IsSliceElementError == cmp.IsSliceElementError
 }
-
-const (
-	propertyNameSeparator = "."
-	hiddenValue           = "[hidden]"
-)
 
 func (e *PropertyError) PrependPropertyName(name string) *PropertyError {
 	sep := propertyNameSeparator
@@ -149,7 +150,7 @@ func (e *PropertyError) PrependPropertyName(name string) *PropertyError {
 
 // HideValue hides the property value from [PropertyError.Error] and also hides it from.
 func (e *PropertyError) HideValue() *PropertyError {
-	sv := propertyValueString(e.PropertyValue)
+	sv := internal.PropertyValueString(e.PropertyValue)
 	e.PropertyValue = ""
 	for _, err := range e.Errors {
 		_ = err.HideValue(sv)
@@ -175,8 +176,6 @@ type RuleError struct {
 func (r *RuleError) Error() string {
 	return r.Message
 }
-
-const ErrorCodeSeparator = ":"
 
 // AddCode extends the [RuleError] with the given error code.
 // Codes are prepended, the last code in chain is always the first one set.
@@ -241,109 +240,11 @@ func HasErrorCode(err error, code ErrorCode) bool {
 	return false
 }
 
-var newLineReplacer = strings.NewReplacer("\n", "\\n", "\r", "\\r")
-
-// propertyValueString returns the string representation of the given value.
-// Structs, interfaces, maps and slices are converted to compacted JSON strings.
-// It tries to improve readability by:
-// - limiting the string to 100 characters
-// - removing leading and trailing whitespaces
-// - escaping newlines
-// If value is a struct implementing [fmt.Stringer] String method will be used
-// only if the struct does not contain any JSON tags.
-func propertyValueString(v interface{}) string {
-	if v == nil {
-		return ""
-	}
-	rv := reflect.ValueOf(v)
-	ft := reflect.Indirect(rv)
-	var s string
-	switch ft.Kind() {
-	case reflect.Interface, reflect.Map, reflect.Slice:
-		if reflect.ValueOf(v).IsZero() {
-			break
-		}
-		raw, _ := json.Marshal(v)
-		s = string(raw)
-	case reflect.Struct:
-		if reflect.ValueOf(v).IsZero() {
-			break
-		}
-		if stringer, ok := v.(fmt.Stringer); ok && !hasJSONTags(v, rv.Kind() == reflect.Pointer) {
-			s = stringer.String()
-			break
-		}
-		raw, _ := json.Marshal(v)
-		s = string(raw)
-	case reflect.Invalid:
-		return ""
-	default:
-		s = fmt.Sprint(ft.Interface())
-	}
-	s = limitString(s, 100)
-	s = strings.TrimSpace(s)
-	s = newLineReplacer.Replace(s)
-	return s
-}
-
-func hasJSONTags(v interface{}, isPointer bool) bool {
-	t := reflect.TypeOf(v)
-	if isPointer {
-		t = t.Elem()
-	}
-	for i := 0; i < t.NumField(); i++ {
-		field := t.Field(i)
-		if _, hasTag := field.Tag.Lookup("json"); hasTag {
-			return true
-		}
-	}
-	return false
-}
-
-// ruleSetError is a container for transferring multiple errors reported by [RuleSet].
-// It is intentionally not exported as it is only an intermediate stage before the
-// aggregated errors are flattened.
-type ruleSetError []error
-
-func (r ruleSetError) Error() string {
-	b := new(strings.Builder)
-	JoinErrors(b, r, "")
-	return b.String()
-}
-
-func JoinErrors[T error](b *strings.Builder, errs []T, indent string) {
-	for i, err := range errs {
-		buildErrorMessage(b, err.Error(), indent)
-		if i < len(errs)-1 {
-			b.WriteString("\n")
-		}
-	}
-}
-
-const listPoint = "- "
-
-func buildErrorMessage(b *strings.Builder, errMsg, indent string) {
-	b.WriteString(indent)
-	if !strings.HasPrefix(errMsg, listPoint) {
-		b.WriteString(listPoint)
-	}
-	// Indent the whole error message.
-	errMsg = strings.ReplaceAll(errMsg, "\n", "\n"+indent)
-	b.WriteString(errMsg)
-}
-
-func limitString(s string, limit int) string {
-	if len(s) > limit {
-		return s[:limit] + "..."
-	}
-	return s
-}
-
 // unpackRuleErrors unpacks error messages recursively scanning [ruleSetError] if it is detected.
 func unpackRuleErrors(errs []error, ruleErrors []*RuleError) []*RuleError {
 	for _, err := range errs {
 		switch v := err.(type) {
-		case ruleSetError:
+		case internal.RuleSetError:
 			ruleErrors = unpackRuleErrors(v, ruleErrors)
 		case *RuleError:
 			ruleErrors = append(ruleErrors, v)
@@ -352,11 +253,4 @@ func unpackRuleErrors(errs []error, ruleErrors []*RuleError) []*RuleError {
 		}
 	}
 	return ruleErrors
-}
-
-func NewRequiredError() *RuleError {
-	return NewRuleError(
-		"property is required but was empty",
-		ErrorCodeRequired,
-	)
 }

@@ -1,10 +1,12 @@
-package validation
+package rules
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/nobl9/govy/pkg/govy"
 )
 
 func TestForbidden(t *testing.T) {
@@ -16,6 +18,6 @@ func TestForbidden(t *testing.T) {
 		err := Forbidden[string]().Validate("test")
 		require.Error(t, err)
 		assert.EqualError(t, err, "property is forbidden")
-		assert.True(t, HasErrorCode(err, ErrorCodeForbidden))
+		assert.True(t, govy.HasErrorCode(err, ErrorCodeForbidden))
 	})
 }

@@ -1,15 +1,17 @@
-package validation
+package rules
 
 import (
 	"fmt"
 
 	"github.com/pkg/errors"
 	"golang.org/x/exp/constraints"
+
+	"github.com/nobl9/govy/pkg/govy"
 )
 
-func EqualTo[T comparable](compared T) SingleRule[T] {
+func EqualTo[T comparable](compared T) govy.SingleRule[T] {
 	msg := fmt.Sprintf(comparisonFmt, cmpEqualTo, compared)
-	return NewSingleRule(func(v T) error {
+	return govy.NewSingleRule(func(v T) error {
 		if v != compared {
 			return errors.New(msg)
 		}
@@ -19,9 +21,9 @@ func EqualTo[T comparable](compared T) SingleRule[T] {
 		WithDescription(msg)
 }
 
-func NotEqualTo[T comparable](compared T) SingleRule[T] {
+func NotEqualTo[T comparable](compared T) govy.SingleRule[T] {
 	msg := fmt.Sprintf(comparisonFmt, cmpNotEqualTo, compared)
-	return NewSingleRule(func(v T) error {
+	return govy.NewSingleRule(func(v T) error {
 		if v == compared {
 			return errors.New(msg)
 		}
@@ -31,31 +33,31 @@ func NotEqualTo[T comparable](compared T) SingleRule[T] {
 		WithDescription(msg)
 }
 
-func GreaterThan[T constraints.Ordered](n T) SingleRule[T] {
+func GreaterThan[T constraints.Ordered](n T) govy.SingleRule[T] {
 	return orderedComparisonRule(cmpGreaterThan, n).
 		WithErrorCode(ErrorCodeGreaterThan)
 }
 
-func GreaterThanOrEqualTo[T constraints.Ordered](n T) SingleRule[T] {
+func GreaterThanOrEqualTo[T constraints.Ordered](n T) govy.SingleRule[T] {
 	return orderedComparisonRule(cmpGreaterThanOrEqual, n).
 		WithErrorCode(ErrorCodeGreaterThanOrEqualTo)
 }
 
-func LessThan[T constraints.Ordered](n T) SingleRule[T] {
+func LessThan[T constraints.Ordered](n T) govy.SingleRule[T] {
 	return orderedComparisonRule(cmpLessThan, n).
 		WithErrorCode(ErrorCodeLessThan)
 }
 
-func LessThanOrEqualTo[T constraints.Ordered](n T) SingleRule[T] {
+func LessThanOrEqualTo[T constraints.Ordered](n T) govy.SingleRule[T] {
 	return orderedComparisonRule(cmpLessThanOrEqual, n).
 		WithErrorCode(ErrorCodeLessThanOrEqualTo)
 }
 
 var comparisonFmt = "should be %s '%v'"
 
-func orderedComparisonRule[T constraints.Ordered](op comparisonOperator, compared T) SingleRule[T] {
+func orderedComparisonRule[T constraints.Ordered](op comparisonOperator, compared T) govy.SingleRule[T] {
 	msg := fmt.Sprintf(comparisonFmt, op, compared)
-	return NewSingleRule(func(v T) error {
+	return govy.NewSingleRule(func(v T) error {
 		var passed bool
 		switch op {
 		case cmpGreaterThan:

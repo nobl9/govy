@@ -1,14 +1,16 @@
-package validation
+package govy_test
 
 import (
 	"testing"
 
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/nobl9/govy/pkg/govy"
 )
 
 func TestSingleRule(t *testing.T) {
-	r := NewSingleRule(func(v int) error {
+	r := govy.NewSingleRule(func(v int) error {
 		if v < 0 {
 			return errors.Errorf("must be positive")
 		}
@@ -22,7 +24,7 @@ func TestSingleRule(t *testing.T) {
 }
 
 func TestSingleRule_WithErrorCode(t *testing.T) {
-	r := NewSingleRule(func(v int) error {
+	r := govy.NewSingleRule(func(v int) error {
 		if v < 0 {
 			return errors.Errorf("must be positive")
 		}
@@ -33,7 +35,7 @@ func TestSingleRule_WithErrorCode(t *testing.T) {
 	assert.Nil(t, err)
 	err = r.Validate(-1)
 	assert.EqualError(t, err, "must be positive")
-	assert.Equal(t, "test", err.(*RuleError).Code)
+	assert.Equal(t, "test", err.(*govy.RuleError).Code)
 }
 
 func TestSingleRule_WithMessage(t *testing.T) {
@@ -62,7 +64,7 @@ func TestSingleRule_WithMessage(t *testing.T) {
 			ExpectedError: "message; details",
 		},
 	} {
-		r := NewSingleRule(func(v int) error {
+		r := govy.NewSingleRule(func(v int) error {
 			if v < 0 {
 				return errors.Errorf(test.Error)
 			}
@@ -76,7 +78,7 @@ func TestSingleRule_WithMessage(t *testing.T) {
 		assert.Nil(t, err)
 		err = r.Validate(-1)
 		assert.EqualError(t, err, test.ExpectedError)
-		assert.Equal(t, "test", err.(*RuleError).Code)
+		assert.Equal(t, "test", err.(*govy.RuleError).Code)
 	}
 }
 
@@ -102,7 +104,7 @@ func TestSingleRule_WithDetails(t *testing.T) {
 			ExpectedError: "details",
 		},
 	} {
-		r := NewSingleRule(func(v int) error {
+		r := govy.NewSingleRule(func(v int) error {
 			if v < 0 {
 				return errors.Errorf(test.Error)
 			}
@@ -115,6 +117,6 @@ func TestSingleRule_WithDetails(t *testing.T) {
 		assert.Nil(t, err)
 		err = r.Validate(-1)
 		assert.EqualError(t, err, test.ExpectedError)
-		assert.Equal(t, "test", err.(*RuleError).Code)
+		assert.Equal(t, "test", err.(*govy.RuleError).Code)
 	}
 }

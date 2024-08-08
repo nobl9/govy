@@ -1,10 +1,12 @@
-package validation
+package rules
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/nobl9/govy/pkg/govy"
 )
 
 func TestRequired(t *testing.T) {
@@ -31,7 +33,7 @@ func TestRequired(t *testing.T) {
 		} {
 			err := Required[any]().Validate(v)
 			require.Error(t, err)
-			assert.True(t, HasErrorCode(err, ErrorCodeRequired))
+			assert.True(t, govy.HasErrorCode(err, ErrorCodeRequired))
 		}
 	})
 }

@@ -1,4 +1,4 @@
-package validation
+package govy_test
 
 import (
 	"bytes"
@@ -9,6 +9,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/nobl9/govy/pkg/govy"
+	"github.com/nobl9/govy/pkg/rules"
 )
 
 //go:embed test_data/expected_pod_plan.json
@@ -54,25 +57,25 @@ type PodStatus struct {
 }
 
 func TestPlan(t *testing.T) {
-	metadataValidator := New[PodMetadata](
-		For(func(p PodMetadata) string { return p.Name }).
+	metadataValidator := govy.New[PodMetadata](
+		govy.For(func(p PodMetadata) string { return p.Name }).
 			WithName("name").
 			Required().
-			Rules(StringNotEmpty()),
-		For(func(p PodMetadata) string { return p.Namespace }).
+			Rules(rules.StringNotEmpty()),
+		govy.For(func(p PodMetadata) string { return p.Namespace }).
 			WithName("namespace").
 			Required().
-			Rules(StringNotEmpty()),
-		ForMap(func(p PodMetadata) Labels { return p.Labels }).
+			Rules(rules.StringNotEmpty()),
+		govy.ForMap(func(p PodMetadata) Labels { return p.Labels }).
 			WithName("labels").
-			Rules(MapMaxLength[Labels](10)).
-			RulesForKeys(StringIsDNSSubdomain()).
-			RulesForValues(StringMaxLength(120)),
-		ForMap(func(p PodMetadata) Annotations { return p.Annotations }).
+			Rules(rules.MapMaxLength[Labels](10)).
+			RulesForKeys(rules.StringIsDNSSubdomain()).
+			RulesForValues(rules.StringMaxLength(120)),
+		govy.ForMap(func(p PodMetadata) Annotations { return p.Annotations }).
 			WithName("annotations").
-			Rules(MapMaxLength[Annotations](10)).
+			Rules(rules.MapMaxLength[Annotations](10)).
 			RulesForItems(
-				NewSingleRule(func(a MapItem[string, string]) error {
+				govy.NewSingleRule(func(a govy.MapItem[string, string]) error {
 					if a.Key == a.Value {
 						return errors.New("key and value must not be equal")
 					}
@@ -81,56 +84,56 @@ func TestPlan(t *testing.T) {
 			),
 	)
 
-	specValidator := New[PodSpec](
-		For(func(p PodSpec) string { return p.DNSPolicy }).
+	specValidator := govy.New[PodSpec](
+		govy.For(func(p PodSpec) string { return p.DNSPolicy }).
 			WithName("dnsPolicy").
 			Required().
-			Rules(OneOf("ClusterFirst", "Default")),
-		ForSlice(func(p PodSpec) []Container { return p.Containers }).
+			Rules(rules.OneOf("ClusterFirst", "Default")),
+		govy.ForSlice(func(p PodSpec) []Container { return p.Containers }).
 			WithName("containers").
 			Rules(
-				SliceMaxLength[[]Container](10),
-				SliceUnique(func(c Container) string { return c.Name }),
+				rules.SliceMaxLength[[]Container](10),
+				rules.SliceUnique(func(c Container) string { return c.Name }),
 			).
-			IncludeForEach(New[Container](
-				For(func(c Container) string { return c.Name }).
+			IncludeForEach(govy.New[Container](
+				govy.For(func(c Container) string { return c.Name }).
 					WithName("name").
 					Required().
-					Rules(StringIsDNSSubdomain()),
-				For(func(c Container) string { return c.Image }).
+					Rules(rules.StringIsDNSSubdomain()),
+				govy.For(func(c Container) string { return c.Image }).
 					WithName("image").
 					Required().
-					Rules(StringNotEmpty()),
-				ForSlice(func(c Container) []EnvVar { return c.Env }).
+					Rules(rules.StringNotEmpty()),
+				govy.ForSlice(func(c Container) []EnvVar { return c.Env }).
 					WithName("env").
 					RulesForEach(
-						NewSingleRule(func(e EnvVar) error {
+						govy.NewSingleRule(func(e EnvVar) error {
 							return nil
 						}).WithDescription("custom error!"),
 					),
 			)),
 	)
 
-	validator := New[Pod](
-		For(func(p Pod) string { return p.APIVersion }).
+	validator := govy.New[Pod](
+		govy.For(func(p Pod) string { return p.APIVersion }).
 			WithName("apiVersion").
 			Required().
-			Rules(OneOf("v1", "v2")),
-		For(func(p Pod) string { return p.Kind }).
+			Rules(rules.OneOf("v1", "v2")),
+		govy.For(func(p Pod) string { return p.Kind }).
 			WithName("kind").
 			Required().
-			Rules(EqualTo("Pod")),
-		For(func(p Pod) PodMetadata { return p.Metadata }).
+			Rules(rules.EqualTo("Pod")),
+		govy.For(func(p Pod) PodMetadata { return p.Metadata }).
 			WithName("metadata").
 			Required().
 			Include(metadataValidator),
-		For(func(p Pod) PodSpec { return p.Spec }).
+		govy.For(func(p Pod) PodSpec { return p.Spec }).
 			WithName("spec").
 			Required().
 			Include(specValidator),
 	)
 
-	properties := Plan(validator)
+	properties := govy.Plan(validator)
 
 	buf := bytes.Buffer{}
 	enc := json.NewEncoder(&buf)

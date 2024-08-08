@@ -1,7 +1,9 @@
-package validation
+package govy
 
 import (
 	"github.com/pkg/errors"
+
+	"github.com/nobl9/govy/internal"
 )
 
 // For creates a new [PropertyRules] instance for the property
@@ -34,7 +36,7 @@ func Transform[T, N, S any](getter PropertyGetter[T, S], transform Transformer[T
 	return PropertyRules[N, S]{
 		transformGetter: func(s S) (transformed N, original any, err error) {
 			v := getter(s)
-			if isEmptyFunc(v) {
+			if internal.IsEmptyFunc(v) {
 				return transformed, nil, emptyErr{}
 			}
 			transformed, err = transform(v)
@@ -243,18 +245,25 @@ func (r PropertyRules[T, S]) getValue(st S) (v T, skip bool, propErr *PropertyEr
 		}
 		return v, false, NewPropertyError(r.name, propValue, err)
 	}
-	isEmpty := isEmptyError || (!r.isPointer && isEmptyFunc(v))
+	isEmpty := isEmptyError || (!r.isPointer && internal.IsEmptyFunc(v))
 	// If the value is not empty we simply return it.
 	if !isEmpty {
 		return v, false, nil
 	}
 	// If the value is empty and the property is required, we return [ErrorCodeRequired].
 	if r.required {
-		return v, false, NewPropertyError(r.name, nil, NewRequiredError())
+		return v, false, NewPropertyError(r.name, nil, newRequiredError())
 	}
 	// If the value is empty and we're skipping empty values or the value is a pointer, we skip the validation.
 	if r.omitEmpty || r.isPointer {
 		return v, true, nil
 	}
 	return v, false, nil
+}
+
+func newRequiredError() *RuleError {
+	return NewRuleError(
+		internal.RequiredErrorMessage,
+		internal.RequiredErrorCodeString,
+	)
 }

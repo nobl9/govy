@@ -1,10 +1,12 @@
-package validation
+package rules
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/nobl9/govy/pkg/govy"
 )
 
 func TestOneOf(t *testing.T) {
@@ -16,7 +18,7 @@ func TestOneOf(t *testing.T) {
 		err := OneOf("this", "that").Validate("those")
 		require.Error(t, err)
 		assert.EqualError(t, err, "must be one of [this, that]")
-		assert.True(t, HasErrorCode(err, ErrorCodeOneOf))
+		assert.True(t, govy.HasErrorCode(err, ErrorCodeOneOf))
 	})
 }
 
@@ -56,7 +58,7 @@ func TestMutuallyExclusive(t *testing.T) {
 				Transfer: ptr("2$"),
 			})
 			assert.EqualError(t, err, "[Card, Transfer] properties are mutually exclusive, provide only one of them")
-			assert.True(t, HasErrorCode(err, ErrorCodeMutuallyExclusive))
+			assert.True(t, govy.HasErrorCode(err, ErrorCodeMutuallyExclusive))
 		}
 	})
 	t.Run("fails, multiple conflicts", func(t *testing.T) {
@@ -67,7 +69,7 @@ func TestMutuallyExclusive(t *testing.T) {
 				Transfer: ptr("2$"),
 			})
 			assert.EqualError(t, err, "[Card, Cash, Transfer] properties are mutually exclusive, provide only one of them")
-			assert.True(t, HasErrorCode(err, ErrorCodeMutuallyExclusive))
+			assert.True(t, govy.HasErrorCode(err, ErrorCodeMutuallyExclusive))
 		}
 	})
 	t.Run("required fails", func(t *testing.T) {
@@ -77,6 +79,8 @@ func TestMutuallyExclusive(t *testing.T) {
 			Transfer: nil,
 		})
 		assert.EqualError(t, err, "one of [Card, Cash, Transfer] properties must be set, none was provided")
-		assert.True(t, HasErrorCode(err, ErrorCodeMutuallyExclusive))
+		assert.True(t, govy.HasErrorCode(err, ErrorCodeMutuallyExclusive))
 	})
 }
+
+func ptr[T any](v T) *T { return &v }

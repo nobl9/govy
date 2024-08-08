@@ -1,10 +1,12 @@
-package validation
+package rules
 
 import (
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/nobl9/govy/pkg/govy"
 )
 
 func TestDurationPrecision(t *testing.T) {
@@ -30,19 +32,19 @@ func TestDurationPrecision(t *testing.T) {
 			name:      "invalid precision 1m1s",
 			duration:  time.Minute + time.Second,
 			precision: time.Minute,
-			expected:  NewRuleError("duration must be defined with 1m0s precision", ErrorCodeDurationPrecision),
+			expected:  govy.NewRuleError("duration must be defined with 1m0s precision", ErrorCodeDurationPrecision),
 		},
 		{
 			name:      "invalid precision",
 			duration:  time.Duration(123456),
 			precision: 10 * time.Nanosecond,
-			expected:  NewRuleError("duration must be defined with 10ns precision", ErrorCodeDurationPrecision),
+			expected:  govy.NewRuleError("duration must be defined with 10ns precision", ErrorCodeDurationPrecision),
 		},
 		{
 			name:      "minute precision",
 			duration:  time.Duration(123456),
 			precision: time.Minute,
-			expected:  NewRuleError("duration must be defined with 1m0s precision", ErrorCodeDurationPrecision),
+			expected:  govy.NewRuleError("duration must be defined with 1m0s precision", ErrorCodeDurationPrecision),
 		},
 	}
 

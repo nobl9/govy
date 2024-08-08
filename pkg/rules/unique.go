@@ -1,8 +1,10 @@
-package validation
+package rules
 
 import (
 	"fmt"
 	"strings"
+
+	"github.com/nobl9/govy/pkg/govy"
 )
 
 // HashFunction accepts a value and returns a comparable hash.
@@ -17,8 +19,8 @@ func SelfHashFunc[H comparable]() HashFunction[H, H] {
 // SliceUnique validates that a slice contains unique elements based on a provided HashFunction.
 // You can optionally specify constraints which will be included in the error message to further
 // clarify the reason for breaking uniqueness.
-func SliceUnique[S []V, V any, H comparable](hashFunc HashFunction[V, H], constraints ...string) SingleRule[S] {
-	return NewSingleRule(func(slice S) error {
+func SliceUnique[S []V, V any, H comparable](hashFunc HashFunction[V, H], constraints ...string) govy.SingleRule[S] {
+	return govy.NewSingleRule(func(slice S) error {
 		unique := make(map[H]int)
 		for i := range slice {
 			hash := hashFunc(slice[i])

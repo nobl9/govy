@@ -1,7 +1,9 @@
-package validation
+package govy
 
 import (
 	"fmt"
+
+	"github.com/nobl9/govy/internal"
 )
 
 // ForMap creates a new [PropertyRulesForMap] instance for a map property
@@ -57,7 +59,7 @@ func (r PropertyRulesForMap[M, K, V, S]) Validate(st S) PropertyErrors {
 		for _, e := range forItemErr {
 			// TODO: Figure out how to handle custom PropertyErrors.
 			// Custom errors' value for nested item will be overridden by the actual value.
-			e.PropertyValue = propertyValueString(v)
+			e.PropertyValue = internal.PropertyValueString(v)
 			err = append(err, e.PrependPropertyName(MapElementName(r.mapRules.name, k)))
 		}
 	}
