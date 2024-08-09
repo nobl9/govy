@@ -57,7 +57,7 @@ type PodStatus struct {
 }
 
 func TestPlan(t *testing.T) {
-	metadataValidator := govy.New[PodMetadata](
+	metadataValidator := govy.New(
 		govy.For(func(p PodMetadata) string { return p.Name }).
 			WithName("name").
 			Required().
@@ -84,7 +84,7 @@ func TestPlan(t *testing.T) {
 			),
 	)
 
-	specValidator := govy.New[PodSpec](
+	specValidator := govy.New(
 		govy.For(func(p PodSpec) string { return p.DNSPolicy }).
 			WithName("dnsPolicy").
 			Required().
@@ -95,7 +95,7 @@ func TestPlan(t *testing.T) {
 				rules.SliceMaxLength[[]Container](10),
 				rules.SliceUnique(func(c Container) string { return c.Name }),
 			).
-			IncludeForEach(govy.New[Container](
+			IncludeForEach(govy.New(
 				govy.For(func(c Container) string { return c.Name }).
 					WithName("name").
 					Required().
@@ -114,7 +114,7 @@ func TestPlan(t *testing.T) {
 			)),
 	)
 
-	validator := govy.New[Pod](
+	validator := govy.New(
 		govy.For(func(p Pod) string { return p.APIVersion }).
 			WithName("apiVersion").
 			Required().

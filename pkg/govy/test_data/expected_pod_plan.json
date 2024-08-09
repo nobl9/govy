@@ -22,7 +22,7 @@
   {
     "path": "$.metadata.annotations",
     "type": "Annotations",
-    "package": "github.com/nobl9/nobl9-go/internal/validation",
+    "package": "github.com/nobl9/govy/pkg/govy_test",
     "rules": [
       {
         "description": "length must be less than or equal to 10",
@@ -33,7 +33,7 @@
   {
     "path": "$.metadata.annotations.*",
     "type": "MapItem[string,string]",
-    "package": "github.com/nobl9/nobl9-go/internal/validation",
+    "package": "github.com/nobl9/govy/pkg/govy",
     "rules": [
       {
         "description": "key and value must not be equal"
@@ -43,7 +43,7 @@
   {
     "path": "$.metadata.labels",
     "type": "Labels",
-    "package": "github.com/nobl9/nobl9-go/internal/validation",
+    "package": "github.com/nobl9/govy/pkg/govy_test",
     "rules": [
       {
         "description": "length must be less than or equal to 10",
@@ -99,7 +99,7 @@
   {
     "path": "$.spec.containers",
     "type": "[]Container",
-    "package": "github.com/nobl9/nobl9-go/internal/validation",
+    "package": "github.com/nobl9/govy/pkg/govy_test",
     "rules": [
       {
         "description": "length must be less than or equal to 10",
@@ -114,12 +114,12 @@
   {
     "path": "$.spec.containers[*].env",
     "type": "[]EnvVar",
-    "package": "github.com/nobl9/nobl9-go/internal/validation"
+    "package": "github.com/nobl9/govy/pkg/govy_test"
   },
   {
     "path": "$.spec.containers[*].env[*]",
     "type": "EnvVar",
-    "package": "github.com/nobl9/nobl9-go/internal/validation",
+    "package": "github.com/nobl9/govy/pkg/govy_test",
     "rules": [
       {
         "description": "custom error!"
