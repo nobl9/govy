@@ -228,7 +228,7 @@ func TestTransform(t *testing.T) {
 	t.Run("passes", func(t *testing.T) {
 		getter := func(s string) string { return s }
 		transformed := govy.Transform(getter, strconv.Atoi).
-			Rules(rules.GreaterThan(122))
+			Rules(rules.GT(122))
 		errs := transformed.Validate("123")
 		assert.Empty(t, errs)
 	})
@@ -236,7 +236,7 @@ func TestTransform(t *testing.T) {
 		getter := func(s string) string { return s }
 		transformed := govy.Transform(getter, strconv.Atoi).
 			WithName("prop").
-			Rules(rules.GreaterThan(123))
+			Rules(rules.GT(123))
 		errs := transformed.Validate("123")
 		assert.Len(t, errs, 1)
 		assert.True(t, govy.HasErrorCode(errs, rules.ErrorCodeGreaterThan))
@@ -246,7 +246,7 @@ func TestTransform(t *testing.T) {
 		transformed := govy.Transform(getter, strconv.Atoi).
 			WithName("prop").
 			OmitEmpty().
-			Rules(rules.GreaterThan(123))
+			Rules(rules.GT(123))
 		errs := transformed.Validate("")
 		assert.Empty(t, errs)
 	})
@@ -255,7 +255,7 @@ func TestTransform(t *testing.T) {
 		transformed := govy.Transform(getter, strconv.Atoi).
 			WithName("prop").
 			Required().
-			Rules(rules.GreaterThan(123))
+			Rules(rules.GT(123))
 		errs := transformed.Validate("")
 		assert.Len(t, errs, 1)
 		assert.True(t, govy.HasErrorCode(errs, rules.ErrorCodeRequired))
@@ -264,7 +264,7 @@ func TestTransform(t *testing.T) {
 		getter := func(s string) string { return s }
 		transformed := govy.Transform(getter, strconv.Atoi).
 			WithName("prop").
-			Rules(rules.GreaterThan(123))
+			Rules(rules.GT(123))
 		errs := transformed.Validate("")
 		assert.Len(t, errs, 1)
 		assert.True(t, govy.HasErrorCode(errs, rules.ErrorCodeGreaterThan))
@@ -273,7 +273,7 @@ func TestTransform(t *testing.T) {
 		getter := func(s string) string { return s }
 		transformed := govy.Transform(getter, strconv.Atoi).
 			WithName("prop").
-			Rules(rules.GreaterThan(123))
+			Rules(rules.GT(123))
 		errs := transformed.Validate("123z")
 		assert.Len(t, errs, 1)
 		assert.EqualError(t, errs, expectedErrorOutput(t, "property_error_transform.txt"))
@@ -284,7 +284,7 @@ func TestTransform(t *testing.T) {
 		transformed := govy.Transform(getter, strconv.Atoi).
 			WithName("prop").
 			HideValue().
-			Rules(rules.GreaterThan(123))
+			Rules(rules.GT(123))
 		errs := transformed.Validate("secret!")
 		assert.Len(t, errs, 1)
 		assert.EqualError(t, errs, expectedErrorOutput(t, "property_error_transform_with_hidden_value.txt"))

@@ -1,9 +1,5 @@
 package govy
 
-type validatorI[S any] interface {
-	Validate(s S) *ValidatorError
-}
-
 type propertyRulesI[S any] interface {
 	Validate(s S) PropertyErrors
 }
@@ -28,7 +24,7 @@ func (v Validator[S]) WithName(name string) Validator[S] {
 	return v
 }
 
-// When defines accepts predicates which will be evaluated BEFORE [Validator] validates ANY rules.
+// When accepts predicates which will be evaluated BEFORE [Validator] validates ANY rules.
 func (v Validator[S]) When(predicate Predicate[S], opts ...WhenOptions) Validator[S] {
 	v.predicateMatcher = v.when(predicate, opts...)
 	return v

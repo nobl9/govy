@@ -9,7 +9,7 @@ import (
 	"github.com/nobl9/govy/pkg/govy"
 )
 
-func EqualTo[T comparable](compared T) govy.SingleRule[T] {
+func EQ[T comparable](compared T) govy.SingleRule[T] {
 	msg := fmt.Sprintf(comparisonFmt, cmpEqualTo, compared)
 	return govy.NewSingleRule(func(v T) error {
 		if v != compared {
@@ -21,7 +21,7 @@ func EqualTo[T comparable](compared T) govy.SingleRule[T] {
 		WithDescription(msg)
 }
 
-func NotEqualTo[T comparable](compared T) govy.SingleRule[T] {
+func NEQ[T comparable](compared T) govy.SingleRule[T] {
 	msg := fmt.Sprintf(comparisonFmt, cmpNotEqualTo, compared)
 	return govy.NewSingleRule(func(v T) error {
 		if v == compared {
@@ -33,23 +33,23 @@ func NotEqualTo[T comparable](compared T) govy.SingleRule[T] {
 		WithDescription(msg)
 }
 
-func GreaterThan[T constraints.Ordered](n T) govy.SingleRule[T] {
-	return orderedComparisonRule(cmpGreaterThan, n).
+func GT[T constraints.Ordered](compared T) govy.SingleRule[T] {
+	return orderedComparisonRule(cmpGreaterThan, compared).
 		WithErrorCode(ErrorCodeGreaterThan)
 }
 
-func GreaterThanOrEqualTo[T constraints.Ordered](n T) govy.SingleRule[T] {
-	return orderedComparisonRule(cmpGreaterThanOrEqual, n).
+func GTE[T constraints.Ordered](compared T) govy.SingleRule[T] {
+	return orderedComparisonRule(cmpGreaterThanOrEqual, compared).
 		WithErrorCode(ErrorCodeGreaterThanOrEqualTo)
 }
 
-func LessThan[T constraints.Ordered](n T) govy.SingleRule[T] {
-	return orderedComparisonRule(cmpLessThan, n).
+func LT[T constraints.Ordered](compared T) govy.SingleRule[T] {
+	return orderedComparisonRule(cmpLessThan, compared).
 		WithErrorCode(ErrorCodeLessThan)
 }
 
-func LessThanOrEqualTo[T constraints.Ordered](n T) govy.SingleRule[T] {
-	return orderedComparisonRule(cmpLessThanOrEqual, n).
+func LTE[T constraints.Ordered](compared T) govy.SingleRule[T] {
+	return orderedComparisonRule(cmpLessThanOrEqual, compared).
 		WithErrorCode(ErrorCodeLessThanOrEqualTo)
 }
 

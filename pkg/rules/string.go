@@ -54,22 +54,23 @@ func StringDenyRegexp(re *regexp.Regexp, examples ...string) govy.SingleRule[str
 		WithDescription(msg)
 }
 
-var dns1123SubdomainRegexp = regexp.MustCompile("^[a-z0-9]([-a-z0-9]*[a-z0-9])?$")
+// Ref: https://www.rfc-editor.org/rfc/rfc1123
+var rfc1123DnsLabelRegexp = regexp.MustCompile("^[a-z0-9]([-a-z0-9]*[a-z0-9])?$")
 
-func StringIsDNSSubdomain() govy.RuleSet[string] {
+func StringDNSLabel() govy.RuleSet[string] {
 	return govy.NewRuleSet(
 		StringLength(1, 63),
-		StringMatchRegexp(dns1123SubdomainRegexp, "my-name", "123-abc").
-			WithDetails("a DNS-1123 compliant name must consist of lower case alphanumeric characters or '-',"+
+		StringMatchRegexp(rfc1123DnsLabelRegexp, "my-name", "123-abc").
+			WithDetails("an RFC-1123 compliant label name must consist of lower case alphanumeric characters or '-',"+
 				" and must start and end with an alphanumeric character"),
-	).WithErrorCode(ErrorCodeStringIsDNSSubdomain)
+	).WithErrorCode(ErrorCodeStringIsDNSLabel)
 }
 
-var validUUIDRegex = regexp.
+var validUUIDRegexp = regexp.
 	MustCompile("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
 
 func StringUUID() govy.SingleRule[string] {
-	return StringMatchRegexp(validUUIDRegex,
+	return StringMatchRegexp(validUUIDRegexp,
 		"00000000-0000-0000-0000-000000000000",
 		"e190c630-8873-11ee-b9d1-0242ac120002",
 		"79258D24-01A7-47E5-ACBB-7E762DE52298").
@@ -81,10 +82,6 @@ var asciiRegexp = regexp.MustCompile("^[\x00-\x7F]*$")
 
 func StringASCII() govy.SingleRule[string] {
 	return StringMatchRegexp(asciiRegexp).WithErrorCode(ErrorCodeStringASCII)
-}
-
-func StringDescription() govy.SingleRule[string] {
-	return StringLength(0, 1050).WithErrorCode(ErrorCodeStringDescription)
 }
 
 func StringURL() govy.SingleRule[string] {

@@ -81,6 +81,10 @@ type PropertyRules[T, S any] struct {
 	predicateMatcher[S]
 }
 
+type validatorI[S any] interface {
+	Validate(s S) *ValidatorError
+}
+
 // Validate validates the property value using provided rules.
 // nolint: gocognit
 func (r PropertyRules[T, S]) Validate(st S) PropertyErrors {

@@ -18,7 +18,7 @@ const (
 	ErrorCodeStringMatchRegexp    govy.ErrorCode = "string_match_regexp"
 	ErrorCodeStringDenyRegexp     govy.ErrorCode = "string_deny_regexp"
 	ErrorCodeStringDescription    govy.ErrorCode = "string_description"
-	ErrorCodeStringIsDNSSubdomain govy.ErrorCode = "string_is_dns_subdomain"
+	ErrorCodeStringIsDNSLabel     govy.ErrorCode = "string_is_dns_label"
 	ErrorCodeStringASCII          govy.ErrorCode = "string_ascii"
 	ErrorCodeStringURL            govy.ErrorCode = "string_url"
 	ErrorCodeStringUUID           govy.ErrorCode = "string_uuid"

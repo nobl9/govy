@@ -59,7 +59,7 @@ func TestStringDenyRegexp(t *testing.T) {
 	})
 }
 
-func TestStringIsDNSSubdomain(t *testing.T) {
+func TestStringDNSLabel(t *testing.T) {
 	t.Run("passes", func(t *testing.T) {
 		for _, input := range []string{
 			"test",
@@ -70,7 +70,7 @@ func TestStringIsDNSSubdomain(t *testing.T) {
 			"123",
 			strings.Repeat("l", 63),
 		} {
-			err := StringIsDNSSubdomain().Validate(input)
+			err := StringDNSLabel().Validate(input)
 			assert.NoError(t, err)
 		}
 	})
@@ -84,10 +84,10 @@ func TestStringIsDNSSubdomain(t *testing.T) {
 			"1_2",
 			"LOL",
 		} {
-			err := StringIsDNSSubdomain().Validate(input)
+			err := StringDNSLabel().Validate(input)
 			assert.Error(t, err)
 			for _, e := range err.(internal.RuleSetError) {
-				assert.True(t, govy.HasErrorCode(e, ErrorCodeStringIsDNSSubdomain))
+				assert.True(t, govy.HasErrorCode(e, ErrorCodeStringIsDNSLabel))
 			}
 		}
 	})
@@ -146,18 +146,6 @@ func TestStringUUID(t *testing.T) {
 			assert.Error(t, err)
 			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringUUID))
 		}
-	})
-}
-
-func TestStringDescription(t *testing.T) {
-	t.Run("passes", func(t *testing.T) {
-		err := StringDescription().Validate(strings.Repeat("l", 1050))
-		assert.NoError(t, err)
-	})
-	t.Run("fails", func(t *testing.T) {
-		err := StringDescription().Validate(strings.Repeat("l", 1051))
-		assert.Error(t, err)
-		assert.True(t, govy.HasErrorCode(err, ErrorCodeStringDescription))
 	})
 }
 

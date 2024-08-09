@@ -69,7 +69,7 @@ func TestPlan(t *testing.T) {
 		govy.ForMap(func(p PodMetadata) Labels { return p.Labels }).
 			WithName("labels").
 			Rules(rules.MapMaxLength[Labels](10)).
-			RulesForKeys(rules.StringIsDNSSubdomain()).
+			RulesForKeys(rules.StringDNSLabel()).
 			RulesForValues(rules.StringMaxLength(120)),
 		govy.ForMap(func(p PodMetadata) Annotations { return p.Annotations }).
 			WithName("annotations").
@@ -99,7 +99,7 @@ func TestPlan(t *testing.T) {
 				govy.For(func(c Container) string { return c.Name }).
 					WithName("name").
 					Required().
-					Rules(rules.StringIsDNSSubdomain()),
+					Rules(rules.StringDNSLabel()),
 				govy.For(func(c Container) string { return c.Image }).
 					WithName("image").
 					Required().
@@ -122,7 +122,7 @@ func TestPlan(t *testing.T) {
 		govy.For(func(p Pod) string { return p.Kind }).
 			WithName("kind").
 			Required().
-			Rules(rules.EqualTo("Pod")),
+			Rules(rules.EQ("Pod")),
 		govy.For(func(p Pod) PodMetadata { return p.Metadata }).
 			WithName("metadata").
 			Required().

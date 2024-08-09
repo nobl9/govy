@@ -35,8 +35,8 @@ type Tutoring struct {
 
 const year = 24 * 365 * time.Hour
 
-// In order to create a new [Validator] use [New] constructor.
-// Let's define simple [PropertyRules] for [Teacher.Name].
+// In order to create a new [govy.Validator] use [govy.New] constructor.
+// Let's define simple [govy.PropertyRules] for [Teacher.Name].
 // For now, it will be always failing.
 func ExampleNew() {
 	v := govy.New(
@@ -54,7 +54,7 @@ func ExampleNew() {
 	//   - always fails
 }
 
-// To associate [Validator] with an entity name use [Validator.WithName] function.
+// To associate [govy.Validator] with an entity name use [govy.Validator.WithName] function.
 // When any of the rules fails, the error will contain the entity name you've provided.
 func ExampleValidator_WithName() {
 	v := govy.New(
@@ -72,18 +72,18 @@ func ExampleValidator_WithName() {
 	//   - always fails
 }
 
-// You can also add [Validator] name during runtime,
-// by calling [ValidatorError.WithName] function on the returned error.
+// You can also add [govy.Validator] name during runtime,
+// by calling [govy.ValidatorError.WithName] function on the returned error.
 //
 // NOTE: We left the previous "Teacher" name assignment, to demonstrate that
-// the [ValidatorError.WithName] function call will shadow it.
+// the [govy.ValidatorError.WithName] function call will shadow it.
 //
 // NOTE: This would also work:
 //
 //	err := v.WithName("Jake").Validate(Teacher{})
 //
 // Validation package, aside from errors handling,
-// tries to follow immutability principle. Calling any function on [Validator]
+// tries to follow immutability principle. Calling any function on [govy.Validator]
 // will not change its previous declaration (unless you assign it back to 'v').
 func ExampleValidatorError_WithName() {
 	v := govy.New(
@@ -101,10 +101,10 @@ func ExampleValidatorError_WithName() {
 	//   - always fails
 }
 
-// [Validator] rules can be evaluated on condition, to specify the predicate use [Validator.When] function.
+// [govy.Validator] rules can be evaluated on condition, to specify the predicate use [govy.Validator.When] function.
 //
 // In this example, validation for [Teacher] instance will only be evaluated
-// if the [Age] property is less than 50 years.
+// if the [Teacher.Age] property is less than 50 years.
 func ExampleValidator_When() {
 	v := govy.New(
 		govy.For(func(t Teacher) string { return t.Name }).
@@ -137,23 +137,23 @@ func ExampleValidator_When() {
 	//   - always fails
 }
 
-// So far we've been using a very simple [PropertyRules] instance:
+// So far we've been using a very simple [govy.PropertyRules] instance:
 //
 //	validation.For(func(t Teacher) string { return t.Name }).
 //		Rules(validation.NewSingleRule(func(name string) error { return fmt.Errorf("always fails") }))
 //
 // The error message returned by this property rule does not tell us
 // which property is failing.
-// Let's change that by adding property name using [PropertyRules.WithName].
+// Let's change that by adding property name using [govy.PropertyRules.WithName].
 //
-// We can also change the [Rule] to be something more real.
-// Validation package comes with a number of predefined [Rule], we'll use
-// [EqualTo] which accepts a single argument, value to compare with.
+// We can also change the [govy.Rule] to be something more real.
+// Validation package comes with a number of predefined [govy.Rule], we'll use
+// [rules.EQ] which accepts a single argument, value to compare with.
 func ExamplePropertyRules_WithName() {
 	v := govy.New(
 		govy.For(func(t Teacher) string { return t.Name }).
 			WithName("name").
-			Rules(rules.EqualTo("Tom")),
+			Rules(rules.EQ("Tom")),
 	).WithName("Teacher")
 
 	teacher := Teacher{
@@ -172,17 +172,17 @@ func ExamplePropertyRules_WithName() {
 	//     - should be equal to 'Tom'
 }
 
-// [For] constructor creates new [PropertyRules] instance.
-// It's only argument, [PropertyGetter] is used to extract the property value.
+// [govy.For] constructor creates new [govy.PropertyRules] instance.
+// It's only argument, [govy.PropertyGetter] is used to extract the property value.
 // It works fine for direct values, but falls short when working with pointers.
 // Often times we use pointers to indicate that a property is optional,
 // or we want to discern between nil and zero values.
 // In either case we want our validation rules to work on direct values,
 // not the pointer, otherwise we'd have to always check if pointer != nil.
 //
-// [ForPointer] constructor can be used to solve this problem and allow
+// [govy.ForPointer] constructor can be used to solve this problem and allow
 // us to work with the underlying value in our rules.
-// Under the hood it wraps [PropertyGetter] and safely extracts the underlying value.
+// Under the hood it wraps [govy.PropertyGetter] and safely extracts the underlying value.
 // If the value was nil, it will not attempt to evaluate any rules for this property.
 // The rationale for that is it doesn't make sense to evaluate any rules for properties
 // which are essentially empty. The only rule that makes sense in this context is to
@@ -217,29 +217,29 @@ func ExampleForPointer() {
 	//     - length must be less than or equal to 5
 }
 
-// By default, when [PropertyRules] is constructed using [ForPointer]
+// By default, when [govy.PropertyRules] is constructed using [govy.ForPointer]
 // it will skip validation of the property if the pointer is nil.
-// To enforce a value is set for pointer use [PropertyRules.Required].
+// To enforce a value is set for pointer use [govy.PropertyRules.Required].
 //
-// You may ask yourself why not just use [govy.Required] rule instead?
+// You may ask yourself why not just use [rules.Required] rule instead?
 // If we were to do that, we'd be forced to operate on pointer in all of our rules.
 // Other than checking if the pointer is nil, there aren't any rules which would
 // benefit from working on the pointer instead of the underlying value.
 //
 // If you want to also make sure the underlying value is filled,
-// i.e. it's not a zero value, you can also use [govy.Required] rule
-// on top of [PropertyRules.Required].
+// i.e. it's not a zero value, you can also use [rules.Required] rule
+// on top of [govy.PropertyRules.Required].
 //
-// [PropertyRules.Required] when used with [For] constructor, will ensure
+// [govy.PropertyRules.Required] when used with [govy.For] constructor, will ensure
 // the property does not contain a zero value.
 //
-// NOTE: [PropertyRules.Required] is introducing a short circuit.
-// If the assertion fails, validation will stop and return [govy.ErrorCodeRequired].
+// NOTE: [govy.PropertyRules.Required] is introducing a short circuit.
+// If the assertion fails, validation will stop and return [govy.govy.ErrorCodeRequired].
 // None of the rules you've defined would be evaluated.
 //
-// NOTE: Placement of [PropertyRules.Required] does not matter,
-// it's not evaluated in a sequential loop, unlike standard [Rule].
-// However, we recommend you always place it below [PropertyRules.WithName]
+// NOTE: Placement of [govy.PropertyRules.Required] does not matter,
+// it's not evaluated in a sequential loop, unlike standard [govy.Rule].
+// However, we recommend you always place it below [govy.PropertyRules.WithName]
 // to make your rules more readable.
 func ExamplePropertyRules_Required() {
 	alwaysFailingRule := govy.NewSingleRule(func(string) error {
@@ -276,13 +276,13 @@ func ExamplePropertyRules_Required() {
 	//     - property is required but was empty
 }
 
-// While [ForPointer] will by default omit validation for nil pointers,
+// While [govy.ForPointer] will by default omit validation for nil pointers,
 // it might be useful to have a similar behavior for optional properties
 // which are direct values.
-// [PropertyRules.OmitEmpty] will do the trick.
+// [govy.PropertyRules.OmitEmpty] will do the trick.
 //
-// NOTE: [PropertyRules.OmitEmpty] will have no effect on pointers handled
-// by [ForPointer], as they already behave in the same way.
+// NOTE: [govy.PropertyRules.OmitEmpty] will have no effect on pointers handled
+// by [govy.ForPointer], as they already behave in the same way.
 func ExamplePropertyRules_OmitEmpty() {
 	alwaysFailingRule := govy.NewSingleRule(func(string) error {
 		return fmt.Errorf("always fails")
@@ -313,13 +313,13 @@ func ExamplePropertyRules_OmitEmpty() {
 	// no error! we skipped 'name' validation and 'middleName' is implicitly skipped
 }
 
-// If you want to access the value of the entity you're writing the [Validator] for,
-// you can use [GetSelf] function which is a convenience [PropertyGetter] that returns self.
-// Note that we don't call [PropertyRules.WithName] here,
+// If you want to access the value of the entity you're writing the [govy.Validator] for,
+// you can use [govy.GetSelf] function which is a convenience [govy.PropertyGetter] that returns self.
+// Note that we don't call [govy.PropertyRules.WithName] here,
 // as we're comparing two properties in our top level, [Teacher] scope.
 //
-// You can provide your own rules using [NewSingleRule] constructor.
-// It returns new [SingleRule] instance which wraps your validation function.
+// You can provide your own rules using [govy.NewSingleRule] constructor.
+// It returns new [govy.SingleRule] instance which wraps your validation function.
 func ExampleGetSelf() {
 	customRule := govy.NewSingleRule(func(v Teacher) error {
 		return fmt.Errorf("now I have access to the whole teacher")
@@ -345,7 +345,7 @@ func ExampleGetSelf() {
 	//   - now I have access to the whole teacher
 }
 
-// You can use [SingleRule.WithDetails] to add additional details to the error message.
+// You can use [govy.SingleRule.WithDetails] to add additional details to the error message.
 // This allows you to extend existing rules by adding your use case context.
 // Let's give a regex validation some more clarity.
 func ExampleSingleRule_WithDetails() {
@@ -373,12 +373,12 @@ func ExampleSingleRule_WithDetails() {
 }
 
 // When testing, it can be tedious to always rely on error messages as these can change over time.
-// Enter [ErrorCode], which is a simple string type alias used to ease testing,
+// Enter [govy.ErrorCode], which is a simple string type alias used to ease testing,
 // but also potentially allow third parties to integrate with your validation results.
-// Use [SingleRule.WithErrorCode] to associate [ErrorCode] with a [SingleRule].
-// Notice that our modified version of [StringMatchRegexp] will now return a new [ErrorCode].
-// Predefined rules have [ErrorCode] already associated with them.
-// To view the list of predefined [ErrorCode] checkout error_codes.go file.
+// Use [govy.SingleRule.WithErrorCode] to associate [govy.ErrorCode] with a [govy.SingleRule].
+// Notice that our modified version of [rules.StringMatchRegexp] will now return a new [govy.ErrorCode].
+// Predefined rules have [govy.ErrorCode] already associated with them.
+// To view the list of predefined [govy.ErrorCode] checkout error_codes.go file.
 func ExampleSingleRule_WithErrorCode() {
 	v := govy.New(
 		govy.For(func(t Teacher) string { return t.Name }).
@@ -404,12 +404,12 @@ func ExampleSingleRule_WithErrorCode() {
 	// custom_code
 }
 
-// Sometimes it's useful to build a [Rule] using other rules.
-// To do that we'll use [RuleSet] and [NewRuleSet] constructor.
-// RuleSet is a simple container for multiple [Rule].
-// It is later on unpacked and each [RuleError] is reported separately.
-// When [RuleSet.WithErrorCode] or [RuleSet.WithDetails] are used,
-// error code and details are added to each [RuleError].
+// Sometimes it's useful to build a [govy.Rule] using other rules.
+// To do that we'll use [govy.RuleSet] and [govy.NewRuleSet] constructor.
+// RuleSet is a simple container for multiple [govy.Rule].
+// It is later on unpacked and each [govy.RuleError] is reported separately.
+// When [govy.RuleSet.WithErrorCode] or [govy.RuleSet.WithDetails] are used,
+// error code and details are added to each [govy.RuleError].
 // Note that validation package uses similar syntax to wrapped errors in Go;
 // a ':' delimiter is used to chain error codes together.
 func ExampleRuleSet() {
@@ -450,8 +450,8 @@ func ExampleRuleSet() {
 	//     - string does not match regular expression: '^(Tom|Jerry)$'; Teacher can be either Tom or Jerry :); I will add that to both rules!
 }
 
-// To inspect if an error contains a given [govy.ErrorCode], use [HasErrorCode] function.
-// This function will also return true if the expected [ErrorCode]
+// To inspect if an error contains a given [govy.ErrorCode], use [govy.HasErrorCode] function.
+// This function will also return true if the expected [govy.ErrorCode]
 // is part of a chain of wrapped error codes.
 // In this example we're dealing with two error code chains:
 // - 'teacher_name:string_length'
@@ -495,10 +495,10 @@ func ExampleHasErrorCode() {
 
 // Sometimes you need top level context,
 // but you want to scope the error to a specific, nested property.
-// One of the ways to do that is to use [NewPropertyError]
-// and return [PropertyError] from your validation rule.
-// Note that you can still use [ErrorCode] and pass [RuleError] to the constructor.
-// You can pass any number of [RuleError].
+// One of the ways to do that is to use [govy.NewPropertyError]
+// and return [govy.PropertyError] from your validation rule.
+// Note that you can still use [govy.ErrorCode] and pass [govy.RuleError] to the constructor.
+// You can pass any number of [govy.RuleError].
 func ExampleNewPropertyError() {
 	v := govy.New(
 		govy.For(govy.GetSelf[Teacher]()).
@@ -538,7 +538,7 @@ func ExampleNewPropertyError() {
 
 // So far we've defined validation rules for simple, top-level properties.
 // What If we want to define validation rules for nested properties?
-// We can use [PropertyRules.Include] to include another [Validator] in our [PropertyRules].
+// We can use [govy.PropertyRules.Include] to include another [govy.Validator] in our [govy.PropertyRules].
 //
 // Let's extend our [Teacher] struct to include a nested [University] property.
 // [University] in of itself is another struct with its own validation rules.
@@ -554,7 +554,7 @@ func ExamplePropertyRules_Include() {
 	teacherValidation := govy.New(
 		govy.For(func(t Teacher) string { return t.Name }).
 			WithName("name").
-			Rules(rules.EqualTo("Tom")),
+			Rules(rules.EQ("Tom")),
 		govy.For(func(t Teacher) University { return t.University }).
 			WithName("university").
 			Include(universityValidation),
@@ -584,23 +584,23 @@ func ExamplePropertyRules_Include() {
 
 // When dealing with slices we often want to both validate the whole slice
 // and each of its elements.
-// You can use [ForSlice] function to do just that.
-// It returns a new struct [PropertyRulesForSlice] which behaves exactly
-// the same as [PropertyRules], but extends its API slightly.
+// You can use [govy.ForSlice] function to do just that.
+// It returns a new struct [govy.PropertyRulesForSlice] which behaves exactly
+// the same as [govy.PropertyRules], but extends its API slightly.
 //
 // To define rules for each element use:
-// - [PropertyRulesForSlice.RulesForEach]
-// - [PropertyRulesForSlice.IncludeForEach]
-// These work exactly the same way as [PropertyRules.Rules] and [PropertyRules.Include]
+// - [govy.PropertyRulesForSlice.RulesForEach]
+// - [govy.PropertyRulesForSlice.IncludeForEach]
+// These work exactly the same way as [govy.PropertyRules.Rules] and [govy.PropertyRules.Include]
 // verifying each slice element.
 //
-// [PropertyRulesForSlice.Rules] is in turn used to define rules for the whole slice.
+// [govy.PropertyRulesForSlice.Rules] is in turn used to define rules for the whole slice.
 //
-// NOTE: [PropertyRulesForSlice] does not implement Include function for the whole slice.
+// NOTE: [govy.PropertyRulesForSlice] does not implement Include function for the whole slice.
 //
 // In the below example, we're defining that students slice must have at most 2 elements
 // and that each element's index must be unique.
-// For each element we're also including [Student] [Validator].
+// For each element we're also including [Student] [govy.Validator].
 // Notice that property path for slices has the following format:
 // <slice_name>[<index>].<slice_property_name>
 func ExampleForSlice() {
@@ -646,23 +646,23 @@ func ExampleForSlice() {
 // - values
 // - key-value pairs (items)
 //
-// You can use [ForMap] function to define rules for all the aforementioned iterators.
-// It returns a new struct [PropertyRulesForMap] which behaves similar to
-// [PropertyRulesForSlice]..
+// You can use [govy.ForMap] function to define rules for all the aforementioned iterators.
+// It returns a new struct [govy.PropertyRulesForMap] which behaves similar to
+// [govy.PropertyRulesForSlice]..
 //
 // To define rules for keys use:
-// - [PropertyRulesForMap.RulesForKeys]
-// - [PropertyRulesForMap.IncludeForKeys]
-// - [PropertyRulesForMap.RulesForValues]
-// - [PropertyRulesForMap.IncludeForValues]
-// - [PropertyRulesForMap.RulesForItems]
-// - [PropertyRulesForMap.IncludeForItems]
-// These work exactly the same way as [PropertyRules.Rules] and [PropertyRules.Include]
-// verifying each map's key, value or [MapItem].
+// - [govy.PropertyRulesForMap.RulesForKeys]
+// - [govy.PropertyRulesForMap.IncludeForKeys]
+// - [govy.PropertyRulesForMap.RulesForValues]
+// - [govy.PropertyRulesForMap.IncludeForValues]
+// - [govy.PropertyRulesForMap.RulesForItems]
+// - [govy.PropertyRulesForMap.IncludeForItems]
+// These work exactly the same way as [govy.PropertyRules.Rules] and [govy.PropertyRules.Include]
+// verifying each map's key, value or [govy.MapItem].
 //
-// [PropertyRulesForMap.Rules] is in turn used to define rules for the whole map.
+// [govy.PropertyRulesForMap.Rules] is in turn used to define rules for the whole map.
 //
-// NOTE: [PropertyRulesForMap] does not implement Include function for the whole map.
+// NOTE: [govy.PropertyRulesForMap] does not implement Include function for the whole map.
 //
 // In the below example, we're defining that student index to [Teacher] map:
 // - Must have at most 2 elements (map).
@@ -676,7 +676,7 @@ func ExampleForMap() {
 	teacherValidator := govy.New(
 		govy.For(func(t Teacher) string { return t.Name }).
 			WithName("name").
-			Rules(rules.NotEqualTo("Eve")),
+			Rules(rules.NEQ("Eve")),
 	)
 	tutoringValidator := govy.New(
 		govy.ForMap(func(t Tutoring) map[string]Teacher { return t.StudentIndexToTeacher }).
@@ -724,17 +724,17 @@ func ExampleForMap() {
 	//     - Joan cannot be a teacher for student with index 918230013
 }
 
-// To only run property validation on condition, use [PropertyRules.When].
-// Predicates set through [PropertyRules.When] are evaluated in the order they are provided.
-// If any predicate is not met, validation rules are not evaluated for the whole [PropertyRules].
+// To only run property validation on condition, use [govy.PropertyRules.When].
+// Predicates set through [govy.PropertyRules.When] are evaluated in the order they are provided.
+// If any predicate is not met, validation rules are not evaluated for the whole [govy.PropertyRules].
 //
-// It's recommended to define [PropertyRules.When] before [PropertyRules.Rules] declaration.
+// It's recommended to define [govy.PropertyRules.When] before [govy.PropertyRules.Rules] declaration.
 func ExamplePropertyRules_When() {
 	v := govy.New(
 		govy.For(func(t Teacher) string { return t.Name }).
 			WithName("name").
 			When(func(t Teacher) bool { return t.Name == "Jerry" }).
-			Rules(rules.NotEqualTo("Jerry")),
+			Rules(rules.NEQ("Jerry")),
 	).WithName("Teacher")
 
 	for _, name := range []string{"Tom", "Jerry", "Mickey"} {
@@ -751,9 +751,9 @@ func ExamplePropertyRules_When() {
 	//     - should be not equal to 'Jerry'
 }
 
-// To customize how [Rule] are evaluated use [PropertyRules.Cascade].
-// Use [CascadeModeStop] to stop validation after the first error.
-// If you wish to revert to the default behavior, use [CascadeModeContinue].
+// To customize how [govy.Rule] are evaluated use [govy.PropertyRules.Cascade].
+// Use [govy.CascadeModeStop] to stop validation after the first error.
+// If you wish to revert to the default behavior, use [govy.CascadeModeContinue].
 func ExamplePropertyRules_Cascade() {
 	alwaysFailingRule := govy.NewSingleRule(func(string) error {
 		return fmt.Errorf("always fails")
@@ -763,7 +763,7 @@ func ExamplePropertyRules_Cascade() {
 		govy.For(func(t Teacher) string { return t.Name }).
 			WithName("name").
 			Cascade(govy.CascadeModeStop).
-			Rules(rules.NotEqualTo("Jerry")).
+			Rules(rules.NEQ("Jerry")).
 			Rules(alwaysFailingRule),
 	).WithName("Teacher")
 
@@ -784,7 +784,7 @@ func ExamplePropertyRules_Cascade() {
 	//     - should be not equal to 'Jerry'
 }
 
-// Bringing it all (mostly) together, let's create a fully fledged [Validator] for [Teacher].
+// Bringing it all (mostly) together, let's create a fully fledged [govy.Validator] for [Teacher].
 func ExampleValidator() {
 	universityValidation := govy.New(
 		govy.For(func(u University) string { return u.Address }).
@@ -848,28 +848,28 @@ func ExampleValidator() {
 // What follows below is a collection of more complex examples and useful patterns.
 
 // When dealing with properties that should only be validated if a certain other
-// property has specific value, it's recommended to use [PropertyRules.When] and [PropertyRules.Include]
+// property has specific value, it's recommended to use [govy.PropertyRules.When] and [govy.PropertyRules.Include]
 // to separate validation paths into non-overlapping branches.
 //
 // Notice how in the below example [File.Format] is the common,
 // shared property between [CSV] and [JSON] files.
-// We define separate [Validator] for [CSV] and [JSON] and use [PropertyRules.When] to only validate
-// their included [Validator] if the correct [File.Format] is provided.
-func ExampleValidator_branchingPattern() {
-	type (
-		CSV struct {
-			Separator string `json:"separator"`
-		}
-		JSON struct {
-			Indent string `json:"indent"`
-		}
-		File struct {
-			Format string `json:"format"`
-			CSV    *CSV   `json:"csv,omitempty"`
-			JSON   *JSON  `json:"json,omitempty"`
-		}
-	)
+// We define separate [govy.Validator] for [CSV] and [JSON] and use [govy.PropertyRules.When] to only validate
+// their included [govy.Validator] if the correct [File.Format] is provided.
+type (
+	CSV struct {
+		Separator string `json:"separator"`
+	}
+	JSON struct {
+		Indent string `json:"indent"`
+	}
+	File struct {
+		Format string `json:"format"`
+		CSV    *CSV   `json:"csv,omitempty"`
+		JSON   *JSON  `json:"json,omitempty"`
+	}
+)
 
+func ExampleValidator_branchingPattern() {
 	csvValidation := govy.New(
 		govy.For(func(c CSV) string { return c.Separator }).
 			WithName("separator").
@@ -920,13 +920,13 @@ func ExampleValidator_branchingPattern() {
 // between the code and documentation we write for it.
 // What If your code could be self-descriptive?
 // Specifically, what If we could generate documentation out of our validation rules?
-// We can achieve that by using [Plan] function!
+// We can achieve that by using [govy.Plan] function!
 //
 // There are multiple ways to improve the generated documentation:
-//   - Use [PropertyRules.WithExamples] to provide a list of example values for the property.
-//   - Use [SingleRule.WithDescription] to provide a plan-only description for your rule.
+//   - Use [govy.PropertyRules.WithExamples] to provide a list of example values for the property.
+//   - Use [govy.SingleRule.WithDescription] to provide a plan-only description for your rule.
 //     For builtin rules, the description is already provided.
-//   - Use [WhenDescription] to provide a plan-only description for your when conditions.
+//   - Use [govy.WhenDescription] to provide a plan-only description for your when conditions.
 func ExamplePlan() {
 	v := govy.New(
 		govy.For(func(t Teacher) string { return t.Name }).
@@ -937,7 +937,7 @@ func ExamplePlan() {
 				govy.WhenDescription("name is Jerry"),
 			).
 			Rules(
-				rules.NotEqualTo("Jerry").
+				rules.NEQ("Jerry").
 					WithDetails("Jerry is just a name!"),
 			),
 	)

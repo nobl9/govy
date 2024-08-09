@@ -10,9 +10,9 @@ import (
 // HashFunction accepts a value and returns a comparable hash.
 type HashFunction[V any, H comparable] func(v V) H
 
-// SelfHashFunc returns a HashFunction which returns it's input value as a hash itself.
+// HashFuncSelf returns a HashFunction which returns its input value as a hash itself.
 // The value must be comparable.
-func SelfHashFunc[H comparable]() HashFunction[H, H] {
+func HashFuncSelf[H comparable]() HashFunction[H, H] {
 	return func(v H) H { return v }
 }
 
