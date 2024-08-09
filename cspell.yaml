@@ -28,6 +28,7 @@ words:
   - atoi
   - endef
   - gobin
+  - godoc
   - goimports
   - golangci
   - gosec

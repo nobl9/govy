@@ -454,8 +454,8 @@ func ExampleRuleSet() {
 // This function will also return true if the expected [govy.ErrorCode]
 // is part of a chain of wrapped error codes.
 // In this example we're dealing with two error code chains:
-// - 'teacher_name:string_length'
-// - 'teacher_name:string_match_regexp'
+//   - 'teacher_name:string_length'
+//   - 'teacher_name:string_match_regexp'
 func ExampleHasErrorCode() {
 	teacherNameRule := govy.NewRuleSet(
 		rules.StringLength(1, 5),

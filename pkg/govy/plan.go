@@ -36,7 +36,7 @@ func (r RulePlan) isEmpty() bool {
 // If a property does not have any rules, it won't be included in the result.
 func Plan[S any](v Validator[S]) []PropertyPlan {
 	all := make([]planBuilder, 0)
-	v.plan(planBuilder{path: "$", all: &all})
+	v.plan(planBuilder{path: "$", children: &all})
 	propertiesMap := make(map[string]PropertyPlan)
 	for _, p := range all {
 		entry, ok := propertiesMap[p.path]
@@ -73,14 +73,14 @@ type planBuilder struct {
 	path         string
 	rulePlan     RulePlan
 	propertyPlan PropertyPlan
-	// all stores every rule for the current property.
+	// children stores every rule for the current property.
 	// It's not safe for concurrent usage.
-	all *[]planBuilder
+	children *[]planBuilder
 }
 
 func (p planBuilder) appendPath(path string) planBuilder {
 	builder := planBuilder{
-		all:          p.all,
+		children:     p.children,
 		rulePlan:     p.rulePlan,
 		propertyPlan: p.propertyPlan,
 	}

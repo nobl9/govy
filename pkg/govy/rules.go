@@ -213,7 +213,7 @@ func (r PropertyRules[T, S]) plan(builder planBuilder) {
 	// If we don't have any rules defined for this property, append it nonetheless.
 	// It can be useful when we have things like [WithExamples] or [Required] set.
 	if len(r.steps) == 0 {
-		*builder.all = append(*builder.all, builder)
+		*builder.children = append(*builder.children, builder)
 	}
 }
 

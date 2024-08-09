@@ -99,7 +99,7 @@ func (r SingleRule[T]) plan(builder planBuilder) {
 		Description: r.description,
 		Conditions:  builder.rulePlan.Conditions,
 	}
-	*builder.all = append(*builder.all, builder)
+	*builder.children = append(*builder.children, builder)
 }
 
 // NewRuleSet creates a new [RuleSet] instance.
