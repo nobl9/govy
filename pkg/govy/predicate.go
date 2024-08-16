@@ -12,19 +12,20 @@ func WhenDescription(format string, a ...interface{}) WhenOptions {
 	return WhenOptions{description: fmt.Sprintf(format, a...)}
 }
 
-type Predicate[S any] func(S) bool
+// Predicate defines a function that returns a boolean value.
+type Predicate[T any] func(T) bool
 
-type predicateContainer[S any] struct {
-	predicate   Predicate[S]
+type predicateContainer[T any] struct {
+	predicate   Predicate[T]
 	description string
 }
 
-type predicateMatcher[S any] struct {
-	predicates []predicateContainer[S]
+type predicateMatcher[T any] struct {
+	predicates []predicateContainer[T]
 }
 
-func (p predicateMatcher[S]) when(predicate Predicate[S], opts ...WhenOptions) predicateMatcher[S] {
-	container := predicateContainer[S]{predicate: predicate}
+func (p predicateMatcher[T]) when(predicate Predicate[T], opts ...WhenOptions) predicateMatcher[T] {
+	container := predicateContainer[T]{predicate: predicate}
 	for _, opt := range opts {
 		if opt.description != "" {
 			container.description = opt.description
@@ -34,7 +35,7 @@ func (p predicateMatcher[S]) when(predicate Predicate[S], opts ...WhenOptions) p
 	return p
 }
 
-func (p predicateMatcher[S]) matchPredicates(st S) bool {
+func (p predicateMatcher[T]) matchPredicates(st T) bool {
 	for _, predicate := range p.predicates {
 		if !predicate.predicate(st) {
 			return false

@@ -25,6 +25,7 @@ ignorePaths:
   - CODEOWNERS
   - bin/**
 words:
+  - Fset
   - atoi
   - endef
   - gobin
@@ -34,12 +35,15 @@ words:
   - gosec
   - govulncheck
   - govy
+  - govyconfig
   - ldflags
   - nobl
+  - pkgs
   - plantuml
   - rtmp
   - sloctl
   - strconv
+  - tmpl
   - tpng
   - vuln
   - vulns

@@ -1,6 +1,8 @@
 package govy
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // ForSlice creates a new [PropertyRulesForSlice] instance for a slice property
 // which value is extracted through [PropertyGetter] function.
@@ -45,36 +47,43 @@ func (r PropertyRulesForSlice[T, S]) Validate(st S) PropertyErrors {
 	return err.Aggregate()
 }
 
+// WithName => refer to [PropertyRules.WithName] documentation.
 func (r PropertyRulesForSlice[T, S]) WithName(name string) PropertyRulesForSlice[T, S] {
 	r.sliceRules = r.sliceRules.WithName(name)
 	return r
 }
 
+// WithExamples => refer to [PropertyRules.WithExamples] documentation.
 func (r PropertyRulesForSlice[T, S]) WithExamples(examples ...string) PropertyRulesForSlice[T, S] {
 	r.sliceRules = r.sliceRules.WithExamples(examples...)
 	return r
 }
 
+// RulesForEach adds [Rule] for each element of the slice.
 func (r PropertyRulesForSlice[T, S]) RulesForEach(rules ...Rule[T]) PropertyRulesForSlice[T, S] {
 	r.forEachRules = r.forEachRules.Rules(rules...)
 	return r
 }
 
+// Rules adds [Rule] for the whole slice.
 func (r PropertyRulesForSlice[T, S]) Rules(rules ...Rule[[]T]) PropertyRulesForSlice[T, S] {
 	r.sliceRules = r.sliceRules.Rules(rules...)
 	return r
 }
 
+// When => refer to [PropertyRules.When] documentation.
 func (r PropertyRulesForSlice[T, S]) When(predicate Predicate[S], opts ...WhenOptions) PropertyRulesForSlice[T, S] {
 	r.predicateMatcher = r.when(predicate, opts...)
 	return r
 }
 
+// IncludeForEach associates specified [Validator] and its [PropertyRules] with each element of the slice.
 func (r PropertyRulesForSlice[T, S]) IncludeForEach(rules ...Validator[T]) PropertyRulesForSlice[T, S] {
 	r.forEachRules = r.forEachRules.Include(rules...)
 	return r
 }
 
+// Cascade => refer to [PropertyRules.Cascade] documentation.
 func (r PropertyRulesForSlice[T, S]) Cascade(mode CascadeMode) PropertyRulesForSlice[T, S] {
 	r.mode = mode
 	r.sliceRules = r.sliceRules.Cascade(mode)
@@ -82,6 +91,7 @@ func (r PropertyRulesForSlice[T, S]) Cascade(mode CascadeMode) PropertyRulesForS
 	return r
 }
 
+// plan generates a validation plan for the property rules.
 func (r PropertyRulesForSlice[T, S]) plan(builder planBuilder) {
 	for _, predicate := range r.predicates {
 		builder.rulePlan.Conditions = append(builder.rulePlan.Conditions, predicate.description)
@@ -93,6 +103,7 @@ func (r PropertyRulesForSlice[T, S]) plan(builder planBuilder) {
 	}
 }
 
+// SliceElementName generates a name for a slice element.
 func SliceElementName(sliceName string, index int) string {
 	if sliceName == "" {
 		return fmt.Sprintf("[%d]", index)

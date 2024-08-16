@@ -66,36 +66,44 @@ func (r PropertyRulesForMap[M, K, V, S]) Validate(st S) PropertyErrors {
 	return err.Aggregate().Sort()
 }
 
+// WithName => refer to [PropertyRules.When] documentation.
 func (r PropertyRulesForMap[M, K, V, S]) WithName(name string) PropertyRulesForMap[M, K, V, S] {
 	r.mapRules = r.mapRules.WithName(name)
 	return r
 }
 
+// WithExamples => refer to [PropertyRules.WithExamples] documentation.
 func (r PropertyRulesForMap[M, K, V, S]) WithExamples(examples ...string) PropertyRulesForMap[M, K, V, S] {
 	r.mapRules = r.mapRules.WithExamples(examples...)
 	return r
 }
 
+// RulesForKeys adds [Rule] for map's keys.
 func (r PropertyRulesForMap[M, K, V, S]) RulesForKeys(rules ...Rule[K]) PropertyRulesForMap[M, K, V, S] {
 	r.forKeyRules = r.forKeyRules.Rules(rules...)
 	return r
 }
 
+// RulesForValues adds [Rule] for map's values.
 func (r PropertyRulesForMap[M, K, V, S]) RulesForValues(rules ...Rule[V]) PropertyRulesForMap[M, K, V, S] {
 	r.forValueRules = r.forValueRules.Rules(rules...)
 	return r
 }
 
+// RulesForItems adds [Rule] for [MapItem].
+// It allows validating both key and value in conjunction.
 func (r PropertyRulesForMap[M, K, V, S]) RulesForItems(rules ...Rule[MapItem[K, V]]) PropertyRulesForMap[M, K, V, S] {
 	r.forItemRules = r.forItemRules.Rules(rules...)
 	return r
 }
 
+// Rules adds [Rule] for the whole map.
 func (r PropertyRulesForMap[M, K, V, S]) Rules(rules ...Rule[M]) PropertyRulesForMap[M, K, V, S] {
 	r.mapRules = r.mapRules.Rules(rules...)
 	return r
 }
 
+// When => refer to [PropertyRules.When] documentation.
 func (r PropertyRulesForMap[M, K, V, S]) When(
 	predicate Predicate[S],
 	opts ...WhenOptions,
@@ -104,16 +112,20 @@ func (r PropertyRulesForMap[M, K, V, S]) When(
 	return r
 }
 
+// IncludeForKeys associates specified [Validator] and its [PropertyRules] with map's keys.
 func (r PropertyRulesForMap[M, K, V, S]) IncludeForKeys(validators ...Validator[K]) PropertyRulesForMap[M, K, V, S] {
 	r.forKeyRules = r.forKeyRules.Include(validators...)
 	return r
 }
 
+// IncludeForValues associates specified [Validator] and its [PropertyRules] with map's values.
 func (r PropertyRulesForMap[M, K, V, S]) IncludeForValues(rules ...Validator[V]) PropertyRulesForMap[M, K, V, S] {
 	r.forValueRules = r.forValueRules.Include(rules...)
 	return r
 }
 
+// IncludeForItems associates specified [Validator] and its [PropertyRules] with [MapItem].
+// It allows validating both key and value in conjunction.
 func (r PropertyRulesForMap[M, K, V, S]) IncludeForItems(
 	rules ...Validator[MapItem[K, V]],
 ) PropertyRulesForMap[M, K, V, S] {
@@ -121,6 +133,7 @@ func (r PropertyRulesForMap[M, K, V, S]) IncludeForItems(
 	return r
 }
 
+// Cascade => refer to [PropertyRules.Cascade] documentation.
 func (r PropertyRulesForMap[M, K, V, S]) Cascade(mode CascadeMode) PropertyRulesForMap[M, K, V, S] {
 	r.mode = mode
 	r.mapRules = r.mapRules.Cascade(mode)
@@ -130,6 +143,7 @@ func (r PropertyRulesForMap[M, K, V, S]) Cascade(mode CascadeMode) PropertyRules
 	return r
 }
 
+// plan constructs a validation plan for the property rules.
 func (r PropertyRulesForMap[M, K, V, S]) plan(builder planBuilder) {
 	for _, predicate := range r.predicates {
 		builder.rulePlan.Conditions = append(builder.rulePlan.Conditions, predicate.description)
@@ -148,6 +162,7 @@ func (r PropertyRulesForMap[M, K, V, S]) plan(builder planBuilder) {
 	}
 }
 
+// MapElementName generates a name for a map element denoted by its key.
 func MapElementName(mapName, key any) string {
 	if mapName == "" {
 		return fmt.Sprintf("%v", key)

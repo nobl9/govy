@@ -1,22 +1,22 @@
 package govy_test
 
 import (
+	"errors"
 	"strconv"
 	"testing"
 
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/nobl9/govy/internal"
 	"github.com/nobl9/govy/pkg/govy"
+	"github.com/nobl9/govy/pkg/govyconfig"
 	"github.com/nobl9/govy/pkg/rules"
 )
 
 func TestPropertyRules(t *testing.T) {
 	type mockStruct struct {
-		Field  string
-		Fields []string
+		Field string
 	}
 
 	t.Run("no predicates, no error", func(t *testing.T) {
@@ -289,6 +289,128 @@ func TestTransform(t *testing.T) {
 		assert.Len(t, errs, 1)
 		assert.EqualError(t, errs, expectedErrorOutput(t, "property_error_transform_with_hidden_value.txt"))
 		assert.True(t, govy.HasErrorCode(errs, govy.ErrorCodeTransform))
+	})
+}
+
+func TestInferName(t *testing.T) {
+	govyconfig.SetNameInferIncludeTestFiles(true)
+	govyconfig.SetNameInferMode(govyconfig.NameInferModeRuntime)
+	defer func() {
+		govyconfig.SetNameInferIncludeTestFiles(false)
+		govyconfig.SetNameInferMode(govyconfig.NameInferModeDisable)
+	}()
+
+	type Age struct {
+		Years int `json:"years"`
+	}
+	type Details struct {
+		Age Age `json:"age"`
+	}
+	type Teacher struct {
+		Name    string `json:"name,omitempty"`
+		Surname string
+		Details Details `json:"details"`
+		Remarks *string `json:"remarks"`
+	}
+
+	t.Run("inline getter", func(t *testing.T) {
+		r := govy.For(func(t Teacher) string { return t.Name }).
+			Rules(rules.EQ("John"))
+		errs := r.Validate(Teacher{Name: "Luke"})
+		assert.Len(t, errs, 1)
+		assert.EqualError(t, errs, "- 'name' with value 'Luke':\n  - should be equal to 'John'")
+	})
+	t.Run("selector expression getter", func(t *testing.T) {
+		r := govy.
+			For(func(t Teacher) string { return t.Name }).
+			Rules(rules.EQ("John"))
+		errs := r.Validate(Teacher{Name: "Luke"})
+		assert.Len(t, errs, 1)
+		assert.EqualError(t, errs, "- 'name' with value 'Luke':\n  - should be equal to 'John'")
+	})
+	t.Run("nested selector expression getter", func(t *testing.T) {
+		r := govy.
+			For(func(t Teacher) int { return t.Details.Age.Years }).
+			Rules(rules.EQ(29))
+		errs := r.Validate(Teacher{Name: "Luke", Details: Details{Age: Age{Years: 30}}})
+		assert.Len(t, errs, 1)
+		assert.EqualError(t, errs, "- 'details.age.years' with value '30':\n  - should be equal to '29'")
+	})
+	t.Run("variable assignment", func(t *testing.T) {
+		r := govy.
+			For(func(t Teacher) string {
+				teacherName := t.Name
+				return teacherName
+			}).
+			Rules(rules.EQ("John"))
+		errs := r.Validate(Teacher{Name: "Luke"})
+		assert.Len(t, errs, 1)
+		assert.EqualError(t, errs, "- 'name' with value 'Luke':\n  - should be equal to 'John'")
+	})
+	t.Run("nested selector variable assignment", func(t *testing.T) {
+		r := govy.
+			For(func(t Teacher) int {
+				teacherAge := t.Details.Age.Years
+				return teacherAge
+			}).
+			Rules(rules.EQ(29))
+		errs := r.Validate(Teacher{Name: "Luke", Details: Details{Age: Age{Years: 30}}})
+		assert.Len(t, errs, 1)
+		assert.EqualError(t, errs, "- 'details.age.years' with value '30':\n  - should be equal to '29'")
+	})
+	t.Run("external function", func(t *testing.T) {
+		getter := func(t Teacher) int {
+			teacherAge := t.Details.Age.Years
+			return teacherAge
+		}
+		r := govy.
+			For(getter).
+			Rules(rules.EQ(29))
+		errs := r.Validate(Teacher{Name: "Luke", Details: Details{Age: Age{Years: 30}}})
+		assert.Len(t, errs, 1)
+		assert.EqualError(t, errs, "- 'details.age.years' with value '30':\n  - should be equal to '29'")
+	})
+	t.Run("pointer", func(t *testing.T) {
+		r := govy.
+			For(func(t Teacher) *string { return t.Remarks }).
+			Rules(rules.EQ(ptr("No remarks")))
+		errs := r.Validate(Teacher{Name: "Luke", Remarks: ptr("Some remarks")})
+		assert.Len(t, errs, 1)
+		assert.ErrorContains(t, errs, "- 'remarks' with value 'Some remarks':\n  - should be equal to '")
+	})
+	t.Run("multiple return statements, infer from top level", func(t *testing.T) {
+		r := govy.
+			For(func(t Teacher) *string {
+				if t.Remarks == nil {
+					return nil
+				}
+				return t.Remarks
+			}).
+			Rules(rules.EQ(ptr("No remarks")))
+		errs := r.Validate(Teacher{Name: "Luke", Remarks: ptr("Some remarks")})
+		assert.Len(t, errs, 1)
+		assert.ErrorContains(t, errs, "- 'remarks' with value 'Some remarks':\n  - should be equal to '")
+	})
+	t.Run("multiple return statements, infer from nested if", func(t *testing.T) {
+		r := govy.
+			For(func(t Teacher) *string {
+				if t.Remarks != nil {
+					return t.Remarks
+				}
+				return nil
+			}).
+			Rules(rules.EQ(ptr("No remarks")))
+		errs := r.Validate(Teacher{Name: "Luke", Remarks: ptr("Some remarks")})
+		assert.Len(t, errs, 1)
+		assert.ErrorContains(t, errs, "- 'remarks' with value 'Some remarks':\n  - should be equal to '")
+	})
+	t.Run("no json tag", func(t *testing.T) {
+		r := govy.
+			For(func(t Teacher) string { return t.Surname }).
+			Rules(rules.EQ("Cormack"))
+		errs := r.Validate(Teacher{Surname: "Ellis"})
+		assert.Len(t, errs, 1)
+		assert.EqualError(t, errs, "- 'Surname' with value 'Ellis':\n  - should be equal to 'Cormack'")
 	})
 }
 

@@ -10,13 +10,18 @@ import (
 
 // PropertyPlan is a validation plan for a single property.
 type PropertyPlan struct {
-	Path       string     `json:"path"`
-	Type       string     `json:"type"`
-	Package    string     `json:"package,omitempty"`
-	IsOptional bool       `json:"isOptional,omitempty"`
-	IsHidden   bool       `json:"isHidden,omitempty"`
-	Examples   []string   `json:"examples,omitempty"`
-	Rules      []RulePlan `json:"rules,omitempty"`
+	// Path is a JSON path to the property.
+	Path string `json:"path"`
+	// Type is a Go type name of the property.
+	Type string `json:"type"`
+	// Package is the full package path of the Type.
+	Package string `json:"package,omitempty"`
+	// IsOptional indicates if the property was marked with [PropertyRules.OmitEmpty].
+	IsOptional bool `json:"isOptional,omitempty"`
+	// IsHidden indicates if the property was marked with [PropertyRules.HideValue].
+	IsHidden bool       `json:"isHidden,omitempty"`
+	Examples []string   `json:"examples,omitempty"`
+	Rules    []RulePlan `json:"rules,omitempty"`
 }
 
 // RulePlan is a validation plan for a single rule.
@@ -24,7 +29,9 @@ type RulePlan struct {
 	Description string    `json:"description"`
 	Details     string    `json:"details,omitempty"`
 	ErrorCode   ErrorCode `json:"errorCode,omitempty"`
-	Conditions  []string  `json:"conditions,omitempty"`
+	// Conditions are all the predicates set through [PropertyRules.When] and [Validator.When]
+	// which had [WhenDescription] added to the [WhenOptions].
+	Conditions []string `json:"conditions,omitempty"`
 }
 
 func (r RulePlan) isEmpty() bool {

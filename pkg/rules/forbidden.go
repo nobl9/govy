@@ -1,7 +1,7 @@
 package rules
 
 import (
-	"github.com/pkg/errors"
+	"errors"
 
 	"github.com/nobl9/govy/internal"
 	"github.com/nobl9/govy/pkg/govy"

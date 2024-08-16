@@ -87,6 +87,8 @@ func (r SingleRule[T]) WithDetails(format string, a ...any) SingleRule[T] {
 	return r
 }
 
+// WithDescription adds a custom description to the rule.
+// It can be used to enhance the [RulePlan].
 func (r SingleRule[T]) WithDescription(description string) SingleRule[T] {
 	r.description = description
 	return r
@@ -107,7 +109,7 @@ func NewRuleSet[T any](rules ...Rule[T]) RuleSet[T] {
 	return RuleSet[T]{rules: rules}
 }
 
-// RuleSet allows defining [Rule] which aggregates multiple sub-rules.
+// RuleSet allows defining a [Rule] which aggregates multiple sub-rules.
 type RuleSet[T any] struct {
 	rules     []Rule[T]
 	errorCode ErrorCode

@@ -2,12 +2,11 @@ package rules
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/url"
 	"regexp"
 	"strings"
-
-	"github.com/pkg/errors"
 
 	"github.com/nobl9/govy/pkg/govy"
 )
@@ -88,7 +87,7 @@ func StringURL() govy.SingleRule[string] {
 	return govy.NewSingleRule(func(v string) error {
 		u, err := url.Parse(v)
 		if err != nil {
-			return errors.Wrap(err, "failed to parse URL")
+			return fmt.Errorf("failed to parse URL: %w", err)
 		}
 		return validateURL(u)
 	}).

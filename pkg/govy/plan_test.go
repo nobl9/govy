@@ -4,9 +4,9 @@ import (
 	"bytes"
 	_ "embed"
 	"encoding/json"
+	"errors"
 	"testing"
 
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 

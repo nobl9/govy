@@ -1,10 +1,10 @@
 package rules
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
-	"github.com/pkg/errors"
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
 
@@ -49,14 +49,14 @@ func MutuallyExclusive[S any](required bool, getters map[string]func(s S) any) g
 			}
 			keys := maps.Keys(getters)
 			slices.Sort(keys)
-			return errors.Errorf(
+			return fmt.Errorf(
 				"one of %s properties must be set, none was provided",
 				prettyOneOfList(keys))
 		case 1:
 			return nil
 		default:
 			slices.Sort(nonEmpty)
-			return errors.Errorf(
+			return fmt.Errorf(
 				"%s properties are mutually exclusive, provide only one of them",
 				prettyOneOfList(nonEmpty))
 		}

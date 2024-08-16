@@ -1,9 +1,8 @@
 package rules
 
 import (
+	"errors"
 	"net/url"
-
-	"github.com/pkg/errors"
 
 	"github.com/nobl9/govy/pkg/govy"
 )

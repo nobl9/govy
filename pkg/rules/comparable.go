@@ -1,9 +1,9 @@
 package rules
 
 import (
+	"errors"
 	"fmt"
 
-	"github.com/pkg/errors"
 	"golang.org/x/exp/constraints"
 
 	"github.com/nobl9/govy/pkg/govy"

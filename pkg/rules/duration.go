@@ -1,10 +1,9 @@
 package rules
 
 import (
+	"errors"
 	"fmt"
 	"time"
-
-	"github.com/pkg/errors"
 
 	"github.com/nobl9/govy/pkg/govy"
 )

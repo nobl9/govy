@@ -1,15 +1,19 @@
 package govy
 
 import (
-	"github.com/pkg/errors"
+	"errors"
 
 	"github.com/nobl9/govy/internal"
+	_ "github.com/nobl9/govy/internal/logging"
 )
 
 // For creates a new [PropertyRules] instance for the property
 // which value is extracted through [PropertyGetter] function.
 func For[T, S any](getter PropertyGetter[T, S]) PropertyRules[T, S] {
-	return PropertyRules[T, S]{getter: func(s S) (v T, err error) { return getter(s), nil }}
+	return PropertyRules[T, S]{
+		name:   inferName(),
+		getter: func(s S) (v T, err error) { return getter(s), nil },
+	}
 }
 
 // ForPointer accepts a getter function returning a pointer and wraps its call in order to
@@ -17,14 +21,18 @@ func For[T, S any](getter PropertyGetter[T, S]) PropertyRules[T, S] {
 // If required is set to true, the nil pointer value will result in an error and the
 // validation will not proceed.
 func ForPointer[T, S any](getter PropertyGetter[*T, S]) PropertyRules[T, S] {
-	return PropertyRules[T, S]{getter: func(s S) (indirect T, err error) {
-		ptr := getter(s)
-		if ptr != nil {
-			return *ptr, nil
-		}
-		zv := *new(T)
-		return zv, emptyErr{}
-	}, isPointer: true}
+	return PropertyRules[T, S]{
+		name: inferName(),
+		getter: func(s S) (indirect T, err error) {
+			ptr := getter(s)
+			if ptr != nil {
+				return *ptr, nil
+			}
+			zv := *new(T)
+			return zv, emptyErr{}
+		},
+		isPointer: true,
+	}
 }
 
 // Transform transforms value from one type to another.
@@ -34,6 +42,7 @@ func ForPointer[T, S any](getter PropertyGetter[*T, S]) PropertyRules[T, S] {
 func Transform[T, N, S any](getter PropertyGetter[T, S], transform Transformer[T, N]) PropertyRules[N, S] {
 	typInfo := getTypeInfo[T]()
 	return PropertyRules[N, S]{
+		name: inferName(),
 		transformGetter: func(s S) (transformed N, original any, err error) {
 			v := getter(s)
 			if internal.IsEmptyFunc(v) {
@@ -54,8 +63,11 @@ func GetSelf[S any]() PropertyGetter[S, S] {
 	return func(s S) S { return s }
 }
 
+// Transformer is a function that transforms a value of type T to a value of type N.
+// If the transformation fails, the function should return an error.
 type Transformer[T, N any] func(T) (N, error)
 
+// PropertyGetter is a function that extracts a property value of type T from a given parent value of type S.
 type PropertyGetter[T, S any] func(S) T
 
 type internalPropertyGetter[T, S any] func(S) (v T, err error)
@@ -86,7 +98,6 @@ type validatorI[S any] interface {
 }
 
 // Validate validates the property value using provided rules.
-// nolint: gocognit
 func (r PropertyRules[T, S]) Validate(st S) PropertyErrors {
 	var (
 		ruleErrors []error
@@ -110,8 +121,7 @@ func (r PropertyRules[T, S]) Validate(st S) PropertyErrors {
 		switch v := step.(type) {
 		// Same as Rule[S] as for GetSelf we'd get the same type on T and S.
 		case Rule[T]:
-			err := v.Validate(propValue)
-			if err != nil {
+			if err := v.Validate(propValue); err != nil {
 				stepFailed = true
 				switch ev := err.(type) {
 				case *PropertyError:
@@ -121,8 +131,7 @@ func (r PropertyRules[T, S]) Validate(st S) PropertyErrors {
 				}
 			}
 		case validatorI[T]:
-			err := v.Validate(propValue)
-			if err != nil {
+			if err := v.Validate(propValue); err != nil {
 				stepFailed = true
 				for _, e := range err.Errors {
 					allErrors = append(allErrors, e.PrependPropertyName(r.name))
@@ -145,51 +154,67 @@ func (r PropertyRules[T, S]) Validate(st S) PropertyErrors {
 	return nil
 }
 
+// WithName sets the name of the property.
+// If the name was inferred, it will be overridden.
 func (r PropertyRules[T, S]) WithName(name string) PropertyRules[T, S] {
 	r.name = name
 	return r
 }
 
+// WithExamples sets the examples for the property.
 func (r PropertyRules[T, S]) WithExamples(examples ...string) PropertyRules[T, S] {
 	r.examples = append(r.examples, examples...)
 	return r
 }
 
+// Rules associates provided [Rule] with the property.
 func (r PropertyRules[T, S]) Rules(rules ...Rule[T]) PropertyRules[T, S] {
 	r.steps = appendSteps(r.steps, rules)
 	return r
 }
 
+// Include embeds specified [Validator] and its [PropertyRules] into the property.
 func (r PropertyRules[T, S]) Include(rules ...Validator[T]) PropertyRules[T, S] {
 	r.steps = appendSteps(r.steps, rules)
 	return r
 }
 
+// When defines a [Predicate] which determines when the rules for this property should be evaluated.
+// It can be called multiple times to set multiple predicates.
+// Additionally, it accepts [WhenOptions] which customizes the behavior of the predicate.
 func (r PropertyRules[T, S]) When(predicate Predicate[S], opts ...WhenOptions) PropertyRules[T, S] {
 	r.predicateMatcher = r.when(predicate, opts...)
 	return r
 }
 
+// Required sets the property as required.
+// If the property is its type's zero value a [rules.ErrorCodeRequired] will be returned.
 func (r PropertyRules[T, S]) Required() PropertyRules[T, S] {
 	r.required = true
 	return r
 }
 
+// OmitEmpty sets the property rules to be omitted if its value is its type's zero value.
 func (r PropertyRules[T, S]) OmitEmpty() PropertyRules[T, S] {
 	r.omitEmpty = true
 	return r
 }
 
+// HideValue hides the property value in the error message.
+// It's useful when the value is sensitive and should not be exposed.
 func (r PropertyRules[T, S]) HideValue() PropertyRules[T, S] {
 	r.hideValue = true
 	return r
 }
 
+// Cascade sets the [CascadeMode] for the property,
+// which controls the flow of evaluating the validation rules.
 func (r PropertyRules[T, S]) Cascade(mode CascadeMode) PropertyRules[T, S] {
 	r.mode = mode
 	return r
 }
 
+// plan constructs a validation plan for the property.
 func (r PropertyRules[T, S]) plan(builder planBuilder) {
 	builder.propertyPlan.IsOptional = (r.omitEmpty || r.isPointer) && !r.required
 	builder.propertyPlan.IsHidden = r.hideValue

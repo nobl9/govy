@@ -1,5 +1,7 @@
 package govy
 
+import "fmt"
+
 type propertyRulesI[S any] interface {
 	Validate(s S) PropertyErrors
 }
@@ -11,6 +13,7 @@ func New[S any](props ...propertyRulesI[S]) Validator[S] {
 
 // Validator is the top level validation entity.
 // It serves as an aggregator for [PropertyRules].
+// Typically, it represents a struct.
 type Validator[S any] struct {
 	props []propertyRulesI[S]
 	name  string
@@ -27,6 +30,18 @@ func (v Validator[S]) WithName(name string) Validator[S] {
 // When accepts predicates which will be evaluated BEFORE [Validator] validates ANY rules.
 func (v Validator[S]) When(predicate Predicate[S], opts ...WhenOptions) Validator[S] {
 	v.predicateMatcher = v.when(predicate, opts...)
+	return v
+}
+
+// InferName will set the name of the [Validator] to its type S.
+// If the name was already set through [Validator.WithName], it will not be overridden.
+// It does not use the same inference mechanisms as [PropertyRules.InferName],
+// it simply checks the [Validator] type parameter using reflection.
+func (v Validator[S]) InferName() Validator[S] {
+	if v.name != "" {
+		return v
+	}
+	v.name = fmt.Sprintf("%T", *new(S))
 	return v
 }
 
@@ -49,6 +64,7 @@ func (v Validator[S]) Validate(st S) *ValidatorError {
 	return nil
 }
 
+// plan constructs a validation plan for all the properties of the [Validator].
 func (v Validator[S]) plan(path planBuilder) {
 	for _, predicate := range v.predicates {
 		path.rulePlan.Conditions = append(path.rulePlan.Conditions, predicate.description)
