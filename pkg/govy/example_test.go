@@ -82,9 +82,9 @@ func ExampleValidator_WithName() {
 //
 //	err := v.WithName("Jake").Validate(Teacher{})
 //
-// Validation package, aside from errors handling,
-// tries to follow immutability principle. Calling any function on [govy.Validator]
-// will not change its previous declaration (unless you assign it back to 'v').
+// [govy], aside from errors handling, tries to follow immutability principle.
+// Calling any method on [govy.Validator] will not change its declared instance,
+// but rather create a copy of it.
 func ExampleValidatorError_WithName() {
 	v := govy.New(
 		govy.For(func(t Teacher) string { return t.Name }).
@@ -147,7 +147,7 @@ func ExampleValidator_When() {
 // Let's change that by adding property name using [govy.PropertyRules.WithName].
 //
 // We can also change the [govy.Rule] to be something more real.
-// Validation package comes with a number of predefined [govy.Rule], we'll use
+// [govy] comes with a number of predefined [govy.Rule], we'll use
 // [rules.EQ] which accepts a single argument, value to compare with.
 func ExamplePropertyRules_WithName() {
 	v := govy.New(
@@ -410,7 +410,7 @@ func ExampleSingleRule_WithErrorCode() {
 // It is later on unpacked and each [govy.RuleError] is reported separately.
 // When [govy.RuleSet.WithErrorCode] or [govy.RuleSet.WithDetails] are used,
 // error code and details are added to each [govy.RuleError].
-// Note that validation package uses similar syntax to wrapped errors in Go;
+// Note that [govy] uses similar syntax to wrapped errors in Go;
 // a ':' delimiter is used to chain error codes together.
 func ExampleRuleSet() {
 	teacherNameRule := govy.NewRuleSet(

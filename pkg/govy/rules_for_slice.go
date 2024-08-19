@@ -7,9 +7,10 @@ import (
 // ForSlice creates a new [PropertyRulesForSlice] instance for a slice property
 // which value is extracted through [PropertyGetter] function.
 func ForSlice[T, S any](getter PropertyGetter[[]T, S]) PropertyRulesForSlice[T, S] {
+	name := inferName()
 	return PropertyRulesForSlice[T, S]{
-		sliceRules:   For(GetSelf[[]T]()),
-		forEachRules: For(GetSelf[T]()),
+		sliceRules:   forConstructor(GetSelf[[]T](), name),
+		forEachRules: forConstructor(GetSelf[T](), ""),
 		getter:       getter,
 	}
 }
@@ -41,10 +42,10 @@ func (r PropertyRulesForSlice[T, S]) Validate(st S) PropertyErrors {
 		}
 		for _, e := range forEachErr {
 			e.IsSliceElementError = true
-			err = append(err, e.PrependPropertyName(SliceElementName(r.sliceRules.name, i)))
+			err = append(err, e.PrependParentPropertyName(SliceElementName(r.sliceRules.name, i)))
 		}
 	}
-	return err.Aggregate()
+	return err.aggregate()
 }
 
 // WithName => refer to [PropertyRules.WithName] documentation.

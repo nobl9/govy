@@ -9,11 +9,12 @@ import (
 // ForMap creates a new [PropertyRulesForMap] instance for a map property
 // which value is extracted through [PropertyGetter] function.
 func ForMap[M ~map[K]V, K comparable, V, S any](getter PropertyGetter[M, S]) PropertyRulesForMap[M, K, V, S] {
+	name := inferName()
 	return PropertyRulesForMap[M, K, V, S]{
-		mapRules:      For(getter),
-		forKeyRules:   For(GetSelf[K]()),
-		forValueRules: For(GetSelf[V]()),
-		forItemRules:  For(GetSelf[MapItem[K, V]]()),
+		mapRules:      forConstructor(getter, name),
+		forKeyRules:   forConstructor(GetSelf[K](), ""),
+		forValueRules: forConstructor(GetSelf[V](), ""),
+		forItemRules:  forConstructor(GetSelf[MapItem[K, V]](), ""),
 		getter:        getter,
 	}
 }
@@ -49,21 +50,21 @@ func (r PropertyRulesForMap[M, K, V, S]) Validate(st S) PropertyErrors {
 		forKeyErr := r.forKeyRules.Validate(k)
 		for _, e := range forKeyErr {
 			e.IsKeyError = true
-			err = append(err, e.PrependPropertyName(MapElementName(r.mapRules.name, k)))
+			err = append(err, e.PrependParentPropertyName(MapElementName(r.mapRules.name, k)))
 		}
 		forValueErr := r.forValueRules.Validate(v)
 		for _, e := range forValueErr {
-			err = append(err, e.PrependPropertyName(MapElementName(r.mapRules.name, k)))
+			err = append(err, e.PrependParentPropertyName(MapElementName(r.mapRules.name, k)))
 		}
 		forItemErr := r.forItemRules.Validate(MapItem[K, V]{Key: k, Value: v})
 		for _, e := range forItemErr {
 			// TODO: Figure out how to handle custom PropertyErrors.
 			// Custom errors' value for nested item will be overridden by the actual value.
 			e.PropertyValue = internal.PropertyValueString(v)
-			err = append(err, e.PrependPropertyName(MapElementName(r.mapRules.name, k)))
+			err = append(err, e.PrependParentPropertyName(MapElementName(r.mapRules.name, k)))
 		}
 	}
-	return err.Aggregate().Sort()
+	return err.aggregate().sort()
 }
 
 // WithName => refer to [PropertyRules.When] documentation.

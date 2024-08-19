@@ -8,6 +8,8 @@ import (
 	"runtime"
 )
 
+const defaultLogLevel = slog.LevelError
+
 var logLevel *slog.LevelVar
 
 func SetLogLevel(level slog.Level) {
@@ -22,6 +24,9 @@ func init() {
 			fmt.Fprintf(os.Stderr, "invalid log level %q: %v, defaulting to %s\n", logLevelStr, err, logLevel)
 		}
 		logLevel.Set(*level)
+	}
+	if logLevel.Level() == 0 {
+		logLevel.Set(defaultLogLevel)
 	}
 	jsonHandler := slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{
 		// We're using our own source handler.

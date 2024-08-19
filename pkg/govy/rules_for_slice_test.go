@@ -8,6 +8,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/nobl9/govy/pkg/govy"
+	"github.com/nobl9/govy/pkg/govyconfig"
+	"github.com/nobl9/govy/pkg/rules"
 )
 
 func TestPropertyRulesForEach(t *testing.T) {
@@ -193,4 +195,23 @@ func TestPropertyRulesForEach(t *testing.T) {
 			},
 		}, errs)
 	})
+}
+
+func TestPropertyRulesForSlice_InferName(t *testing.T) {
+	govyconfig.SetNameInferIncludeTestFiles(true)
+	govyconfig.SetNameInferMode(govyconfig.NameInferModeRuntime)
+	defer func() {
+		govyconfig.SetNameInferIncludeTestFiles(false)
+		govyconfig.SetNameInferMode(govyconfig.NameInferModeDisable)
+	}()
+
+	type Teacher struct {
+		Students []string `json:"students"`
+	}
+
+	r := govy.ForSlice(func(t Teacher) []string { return t.Students }).
+		RulesForEach(rules.EQ("John"))
+	errs := r.Validate(Teacher{Students: []string{"Luke"}})
+	assert.Len(t, errs, 1)
+	assert.EqualError(t, errs, "- 'students[0]' with value 'Luke':\n  - should be equal to 'John'")
 }

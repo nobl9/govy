@@ -99,14 +99,19 @@ check/format:
 	$(call _print_check_step,Checking if files are formatted)
 	./scripts/check-formatting.sh
 
-.PHONY: generate generate/code
+.PHONY: generate generate/code generate/readme
 ## Auto generate files.
-generate: generate/code
+generate: generate/code generate/readme
 
 ## Generate Golang code.
 generate/code:
 	echo "Generating Go code..."
 	go generate ./...
+
+## Generate README.md file embedded examples.
+generate/readme:
+	echo "Generating README.md embedded examples..."
+	./scripts/embed-example-in-readme.bash README.md
 
 .PHONY: format format/go format/cspell
 ## Format files.

@@ -8,6 +8,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/nobl9/govy/pkg/govy"
+	"github.com/nobl9/govy/pkg/govyconfig"
+	"github.com/nobl9/govy/pkg/rules"
 )
 
 func TestPropertyRulesForMap(t *testing.T) {
@@ -394,4 +396,23 @@ func TestPropertyRulesForMap(t *testing.T) {
 			Errors:        []*govy.RuleError{{Message: expectedErr.Error()}},
 		}, errs[0])
 	})
+}
+
+func TestPropertyRulesForMap_InferName(t *testing.T) {
+	govyconfig.SetNameInferIncludeTestFiles(true)
+	govyconfig.SetNameInferMode(govyconfig.NameInferModeRuntime)
+	defer func() {
+		govyconfig.SetNameInferIncludeTestFiles(false)
+		govyconfig.SetNameInferMode(govyconfig.NameInferModeDisable)
+	}()
+
+	type Teacher struct {
+		Students map[string]int `json:"students"`
+	}
+
+	r := govy.ForMap(func(t Teacher) map[string]int { return t.Students }).
+		RulesForKeys(rules.EQ("John"))
+	errs := r.Validate(Teacher{Students: map[string]int{"Luke": 35}})
+	assert.Len(t, errs, 1)
+	assert.EqualError(t, errs, "- 'students.Luke' with key 'Luke':\n  - should be equal to 'John'")
 }

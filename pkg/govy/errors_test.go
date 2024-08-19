@@ -241,7 +241,7 @@ func TestPropertyError_PrependPropertyName(t *testing.T) {
 			ExpectedName:  "added.original",
 		},
 	} {
-		assert.Equal(t, test.ExpectedName, test.PropertyError.PrependPropertyName(test.InputName).PropertyName)
+		assert.Equal(t, test.ExpectedName, test.PropertyError.PrependParentPropertyName(test.InputName).PropertyName)
 	}
 }
 

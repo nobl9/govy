@@ -10,8 +10,12 @@ import (
 // For creates a new [PropertyRules] instance for the property
 // which value is extracted through [PropertyGetter] function.
 func For[T, S any](getter PropertyGetter[T, S]) PropertyRules[T, S] {
+	return forConstructor(getter, inferName())
+}
+
+func forConstructor[T, S any](getter PropertyGetter[T, S], name string) PropertyRules[T, S] {
 	return PropertyRules[T, S]{
-		name:   inferName(),
+		name:   name,
 		getter: func(s S) (v T, err error) { return getter(s), nil },
 	}
 }
@@ -76,6 +80,10 @@ type emptyErr struct{}
 
 func (emptyErr) Error() string { return "" }
 
+type validatorI[S any] interface {
+	Validate(s S) *ValidatorError
+}
+
 // PropertyRules is responsible for validating a single property.
 type PropertyRules[T, S any] struct {
 	name            string
@@ -91,10 +99,6 @@ type PropertyRules[T, S any] struct {
 	originalType    *typeInfo
 
 	predicateMatcher[S]
-}
-
-type validatorI[S any] interface {
-	Validate(s S) *ValidatorError
 }
 
 // Validate validates the property value using provided rules.
@@ -125,7 +129,7 @@ func (r PropertyRules[T, S]) Validate(st S) PropertyErrors {
 				stepFailed = true
 				switch ev := err.(type) {
 				case *PropertyError:
-					allErrors = append(allErrors, ev.PrependPropertyName(r.name))
+					allErrors = append(allErrors, ev.PrependParentPropertyName(r.name))
 				default:
 					ruleErrors = append(ruleErrors, err)
 				}
@@ -134,7 +138,7 @@ func (r PropertyRules[T, S]) Validate(st S) PropertyErrors {
 			if err := v.Validate(propValue); err != nil {
 				stepFailed = true
 				for _, e := range err.Errors {
-					allErrors = append(allErrors, e.PrependPropertyName(r.name))
+					allErrors = append(allErrors, e.PrependParentPropertyName(r.name))
 				}
 			}
 		}
@@ -149,7 +153,7 @@ func (r PropertyRules[T, S]) Validate(st S) PropertyErrors {
 		if r.hideValue {
 			allErrors = allErrors.HideValue()
 		}
-		return allErrors.Aggregate()
+		return allErrors.aggregate()
 	}
 	return nil
 }

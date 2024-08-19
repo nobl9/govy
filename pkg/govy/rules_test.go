@@ -292,7 +292,7 @@ func TestTransform(t *testing.T) {
 	})
 }
 
-func TestInferName(t *testing.T) {
+func TestPropertyRules_InferName(t *testing.T) {
 	govyconfig.SetNameInferIncludeTestFiles(true)
 	govyconfig.SetNameInferMode(govyconfig.NameInferModeRuntime)
 	defer func() {

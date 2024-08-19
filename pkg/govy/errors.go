@@ -18,11 +18,14 @@ func NewValidatorError(errs PropertyErrors) *ValidatorError {
 	return &ValidatorError{Errors: errs}
 }
 
+// ValidatorError is the top-level error type for validation errors.
+// It aggregates the property errors of [Validator].
 type ValidatorError struct {
 	Errors PropertyErrors `json:"errors"`
 	Name   string         `json:"name"`
 }
 
+// WithName sets the [ValidatorError.Name] field.
 func (e *ValidatorError) WithName(name string) *ValidatorError {
 	e.Name = name
 	return e
@@ -40,6 +43,7 @@ func (e *ValidatorError) Error() string {
 	return b.String()
 }
 
+// PropertyErrors is a slice of [PropertyError].
 type PropertyErrors []*PropertyError
 
 func (e PropertyErrors) Error() string {
@@ -55,8 +59,8 @@ func (e PropertyErrors) HideValue() PropertyErrors {
 	return e
 }
 
-// Sort should be always called after Aggregate.
-func (e PropertyErrors) Sort() PropertyErrors {
+// sort should be always called after aggregate.
+func (e PropertyErrors) sort() PropertyErrors {
 	if len(e) == 0 {
 		return e
 	}
@@ -76,7 +80,8 @@ func (e PropertyErrors) Sort() PropertyErrors {
 	return e
 }
 
-func (e PropertyErrors) Aggregate() PropertyErrors {
+// aggregate merges [PropertyError] with according to the [PropertyError.Equal] comparison.
+func (e PropertyErrors) aggregate() PropertyErrors {
 	if len(e) == 0 {
 		return nil
 	}
@@ -132,6 +137,7 @@ func (e *PropertyError) Error() string {
 	return b.String()
 }
 
+// Equal checks if two [PropertyError] are equal.
 func (e *PropertyError) Equal(cmp *PropertyError) bool {
 	return e.PropertyName == cmp.PropertyName &&
 		e.PropertyValue == cmp.PropertyValue &&
@@ -139,7 +145,8 @@ func (e *PropertyError) Equal(cmp *PropertyError) bool {
 		e.IsSliceElementError == cmp.IsSliceElementError
 }
 
-func (e *PropertyError) PrependPropertyName(name string) *PropertyError {
+// PrependParentPropertyName prepends a given name to the [PropertyError.PropertyName].
+func (e *PropertyError) PrependParentPropertyName(name string) *PropertyError {
 	sep := propertyNameSeparator
 	if e.IsSliceElementError && strings.HasPrefix(e.PropertyName, "[") {
 		sep = ""
@@ -148,7 +155,7 @@ func (e *PropertyError) PrependPropertyName(name string) *PropertyError {
 	return e
 }
 
-// HideValue hides the property value from [PropertyError.Error] and also hides it from.
+// HideValue hides the property value from each of the [PropertyError.Errors].
 func (e *PropertyError) HideValue() *PropertyError {
 	sv := internal.PropertyValueString(e.PropertyValue)
 	e.PropertyValue = ""
@@ -168,6 +175,7 @@ func NewRuleError(message string, codes ...ErrorCode) *RuleError {
 	return ruleError
 }
 
+// RuleError is the fundamental error container associated with a single [Rule] or [RuleSet].
 type RuleError struct {
 	Message string    `json:"error"`
 	Code    ErrorCode `json:"code,omitempty"`
@@ -189,24 +197,14 @@ func (r *RuleError) AddCode(code ErrorCode) *RuleError {
 	return r
 }
 
-// HideValue replaces all occurrences of stringValue in the [RuleError.Message] with an '*' characters.
+// HideValue replaces all occurrences of a string in the [RuleError.Message] with a '*' characters.
 func (r *RuleError) HideValue(stringValue string) *RuleError {
 	r.Message = strings.ReplaceAll(r.Message, stringValue, hiddenValue)
 	return r
 }
 
-func concatStrings(pre, post, sep string) string {
-	if pre == "" {
-		return post
-	}
-	if post == "" {
-		return pre
-	}
-	return pre + sep + post
-}
-
 // HasErrorCode checks if an error contains given [ErrorCode].
-// It supports all [validation] errors.
+// It supports all [govy] errors.
 func HasErrorCode(err error, code ErrorCode) bool {
 	switch v := err.(type) {
 	case PropertyErrors:
@@ -253,4 +251,14 @@ func unpackRuleErrors(errs []error, ruleErrors []*RuleError) []*RuleError {
 		}
 	}
 	return ruleErrors
+}
+
+func concatStrings(pre, post, sep string) string {
+	if pre == "" {
+		return post
+	}
+	if post == "" {
+		return pre
+	}
+	return pre + sep + post
 }

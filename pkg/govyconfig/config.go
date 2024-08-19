@@ -50,7 +50,7 @@ func SetInferredName(loc InferredName) {
 
 // GetInferredName returns the inferred property name for the given file and line.
 // The name has to be first set using [SetInferredName].
-// It is primarily exported for [govy] package to utilize when NameInferModeGenerate mode is set.
+// It is primarily exported for [govy] to utilize when NameInferModeGenerate mode is set.
 func GetInferredName(file string, line int) string {
 	mu.RLock()
 	defer mu.RUnlock()
@@ -116,6 +116,9 @@ func GetNameInferFunc() NameInferFunc {
 	return nameInferFunc
 }
 
+// NameInferFunc is a function blueprint for inferring property names.
+// It is only called for struct fields.
+// Tag value is the raw value of the struct tag, it needs to be parsed with [reflect.StructTag].
 type NameInferFunc func(fieldName, tagValue string) string
 
 // NameInferDefaultRule is the default rule for inferring field names from struct tags,
