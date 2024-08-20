@@ -13,6 +13,8 @@ GOLANGCI_LINT_VERSION := v1.59.1
 GOVULNCHECK_VERSION := v1.1.3
 # renovate datasource=go depName=golang.org/x/tools/cmd/goimports
 GOIMPORTS_VERSION := v0.24.0
+# renovate datasource=github-releases depName=princjef/gomarkdoc
+GOMARKDOC_VERSION := v1.1.0
 
 # Check if the program is present in $PATH and install otherwise.
 # ${1} - oneOf{binary,yarn}
@@ -80,7 +82,7 @@ check/trailing:
 check/markdown:
 	$(call _print_check_step,Verifying Markdown files)
 	$(call _ensure_installed,yarn,markdownlint)
-	yarn --silent markdownlint '**/*.md' --ignore node_modules
+	yarn --silent markdownlint '**/*.md' -i node_modules -i docs/DOCUMENTATION.md
 
 ## Check for potential vulnerabilities across all Go dependencies.
 check/vulns:
@@ -99,9 +101,9 @@ check/format:
 	$(call _print_check_step,Checking if files are formatted)
 	./scripts/check-formatting.sh
 
-.PHONY: generate generate/code generate/readme
+.PHONY: generate generate/code generate/readme generate/gomarkdoc
 ## Auto generate files.
-generate: generate/code generate/readme
+generate: generate/code generate/readme generate/gomarkdoc
 
 ## Generate Golang code.
 generate/code:
@@ -112,6 +114,11 @@ generate/code:
 generate/readme:
 	echo "Generating README.md embedded examples..."
 	./scripts/embed-example-in-readme.bash README.md
+
+## Generate Markdown docs from Go docs.
+generate/gomarkdoc:
+	echo "Generating Markdown docs from Go docs..."
+	gomarkdoc --output docs/DOCUMENTATION.md ./pkg/...
 
 .PHONY: format format/go format/cspell
 ## Format files.
@@ -130,9 +137,9 @@ format/cspell:
 	$(call _ensure_installed,yarn,yaml)
 	yarn --silent format-cspell-config
 
-.PHONY: install install/yarn install/golangci-lint install/gosec install/govulncheck install/goimports
+.PHONY: install install/yarn install/golangci-lint install/gosec install/govulncheck install/goimports install/gomarkdoc
 ## Install all dev dependencies.
-install: install/yarn install/golangci-lint install/gosec install/govulncheck install/goimports
+install: install/yarn install/golangci-lint install/gosec install/govulncheck install/goimports install/gomarkdoc
 
 ## Install JS dependencies with yarn.
 install/yarn:
@@ -160,6 +167,11 @@ install/govulncheck:
 install/goimports:
 	echo "Installing goimports..."
 	$(call _install_go_binary,golang.org/x/tools/cmd/goimports@$(GOIMPORTS_VERSION))
+
+## Install gomarkdoc (https://github.com/princjef/gomarkdoc).
+install/gomarkdoc:
+	echo "Installing gomarkdoc..."
+	$(call _install_go_binary,github.com/princjef/gomarkdoc/cmd/gomarkdoc@$(GOIMPORTS_VERSION))
 
 .PHONY: help
 ## Print this help message.

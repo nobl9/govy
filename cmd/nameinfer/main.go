@@ -36,8 +36,8 @@ func main() {
 	govyconfig.SetLogLevel(slog.LevelDebug)
 
 	dirFlag := flag.String("dir", "", "directory path to save the generated file")
-	pkgFlag := flag.String("pkg", "", "package name")
-	fileNameFlag := flag.String("filename", "govy_inferred_names.go", "file name")
+	pkgFlag := flag.String("pkg", "", "package name of the generated file")
+	fileNameFlag := flag.String("filename", "govy_inferred_names.go", "generated file name")
 	flag.Parse()
 
 	outputDir := *dirFlag
@@ -46,7 +46,7 @@ func main() {
 	}
 	outputPkg := *pkgFlag
 	if outputPkg == "" {
-		errFatal("'-outputPkg' flag is required")
+		errFatal("'-pkg' flag is required")
 	}
 	fileName := *fileNameFlag
 

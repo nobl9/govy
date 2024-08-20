@@ -8,9 +8,9 @@ import (
 	"github.com/nobl9/govy/pkg/govy"
 )
 
-func DurationPrecision(precision time.Duration) govy.SingleRule[time.Duration] {
+func DurationPrecision(precision time.Duration) govy.Rule[time.Duration] {
 	msg := fmt.Sprintf("duration must be defined with %s precision", precision)
-	return govy.NewSingleRule(func(v time.Duration) error {
+	return govy.NewRule(func(v time.Duration) error {
 		if v.Nanoseconds()%int64(precision) != 0 {
 			return errors.New(msg)
 		}

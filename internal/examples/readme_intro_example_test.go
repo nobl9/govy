@@ -2,40 +2,44 @@ package examples
 
 import (
 	"fmt"
+	"regexp"
 	"time"
 
 	"github.com/nobl9/govy/pkg/govy"
-	"github.com/nobl9/govy/pkg/govyconfig"
 	"github.com/nobl9/govy/pkg/rules"
 )
 
-type Teacher struct {
-	Name       string        `json:"name"`
-	Age        time.Duration `json:"age"`
-	Students   []Student     `json:"students"`
-	MiddleName *string       `json:"middleName,omitempty"`
-	University University    `json:"university"`
-}
-
-type University struct {
-	Name    string `json:"name"`
-	Address string `json:"address"`
-}
-
-type Student struct {
-	Index string `json:"index"`
-}
-
-func Example() {
-	govyconfig.SetNameInferIncludeTestFiles(true)
-	govyconfig.SetNameInferMode(govyconfig.NameInferModeRuntime)
+func Example_basicUsage() {
+	type University struct {
+		Name    string `json:"name"`
+		Address string `json:"address"`
+	}
+	type Student struct {
+		Index string `json:"index"`
+	}
+	type Teacher struct {
+		Name       string        `json:"name"`
+		Age        time.Duration `json:"age"`
+		Students   []Student     `json:"students"`
+		MiddleName *string       `json:"middleName,omitempty"`
+		University University    `json:"university"`
+	}
 
 	universityValidation := govy.New(
-		govy.For(func(u University) string { return u.Address }).
+		govy.For(func(u University) string { return u.Name }).
+			WithName("name").
 			Required(),
+		govy.For(func(u University) string { return u.Address }).
+			WithName("address").
+			Required().
+			Rules(rules.StringMatchRegexp(
+				regexp.MustCompile(`[\w\s.]+, [0-9]{2}-[0-9]{3} \w+`),
+				"5 M. Skłodowska-Curie Square, 60-965 Poznan").
+				WithDetails("Polish address format must consist of the main address and zip code")),
 	)
 	studentValidator := govy.New(
 		govy.For(func(s Student) string { return s.Index }).
+			WithName("index").
 			Rules(rules.StringLength(9, 9)),
 	)
 	teacherValidator := govy.New(
@@ -45,32 +49,43 @@ func Example() {
 			Rules(
 				rules.StringNotEmpty(),
 				rules.OneOf("Jake", "George")),
+		govy.ForPointer(func(t Teacher) *string { return t.MiddleName }).
+			WithName("middleName").
+			Rules(rules.StringIsTitle()),
 		govy.ForSlice(func(t Teacher) []Student { return t.Students }).
+			WithName("students").
 			Rules(
 				rules.SliceMaxLength[[]Student](2),
 				rules.SliceUnique(func(v Student) string { return v.Index })).
 			IncludeForEach(studentValidator),
 		govy.For(func(t Teacher) University { return t.University }).
+			WithName("university").
 			Include(universityValidation),
 	).
-		When(
-			func(t Teacher) bool { return t.Age < 50 },
-			govy.WhenDescription("Teacher is too young ¯\\_(ツ)_/¯"))
+		When(func(t Teacher) bool { return t.Age < 50 })
 
 	teacher := Teacher{
-		Name: "John",
+		Name:       "John",
+		MiddleName: nil, // Validation for nil pointers by default is skipped.
+		Age:        48,
 		Students: []Student{
 			{Index: "918230014"},
 			{Index: "9182300123"},
 			{Index: "918230014"},
 		},
 		University: University{
-			Name: "Poznan University of Technology",
+			Name:    "",
+			Address: "10th University St.",
 		},
 	}
 
-	err := teacherValidator.WithName("John").Validate(teacher)
-	if err != nil {
+	if err := teacherValidator.WithName("John").Validate(teacher); err != nil {
+		fmt.Println(err)
+	}
+	// When condition is not met, no validation errors.
+	johnFromTheFuture := teacher
+	johnFromTheFuture.Age = 51
+	if err := teacherValidator.WithName("John From The Future").Validate(johnFromTheFuture); err != nil {
 		fmt.Println(err)
 	}
 
@@ -83,6 +98,8 @@ func Example() {
 	//     - elements are not unique, index 0 collides with index 2
 	//   - 'students[1].index' with value '9182300123':
 	//     - length must be between 9 and 9
-	//   - 'university.address':
+	//   - 'university.name':
 	//     - property is required but was empty
+	//   - 'university.address' with value '10th University St.':
+	//     - string must match regular expression: '[\w\s.]+, [0-9]{2}-[0-9]{3} \w+' (e.g. '5 M. Skłodowska-Curie Square, 60-965 Poznan'); Polish address format must consist of the main address and zip code
 }

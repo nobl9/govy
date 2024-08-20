@@ -24,14 +24,18 @@ ignorePaths:
   - cspell.json
   - CODEOWNERS
   - bin/**
+  - docs/assets/**
 words:
   - Fset
+  - Skłodowska
   - atoi
   - endef
+  - errorf
   - gobin
   - godoc
   - goimports
   - golangci
+  - gomarkdoc
   - gosec
   - govulncheck
   - govy
@@ -40,9 +44,11 @@ words:
   - nobl
   - pkgs
   - plantuml
+  - println
   - rtmp
   - sloctl
   - strconv
+  - structs
   - tmpl
   - tpng
   - vuln

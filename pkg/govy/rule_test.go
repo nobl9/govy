@@ -9,8 +9,8 @@ import (
 	"github.com/nobl9/govy/pkg/govy"
 )
 
-func TestSingleRule(t *testing.T) {
-	r := govy.NewSingleRule(func(v int) error {
+func TestRule(t *testing.T) {
+	r := govy.NewRule(func(v int) error {
 		if v < 0 {
 			return errors.New("must be positive")
 		}
@@ -23,8 +23,8 @@ func TestSingleRule(t *testing.T) {
 	assert.EqualError(t, err, "must be positive")
 }
 
-func TestSingleRule_WithErrorCode(t *testing.T) {
-	r := govy.NewSingleRule(func(v int) error {
+func TestRule_WithErrorCode(t *testing.T) {
+	r := govy.NewRule(func(v int) error {
 		if v < 0 {
 			return errors.New("must be positive")
 		}
@@ -38,7 +38,7 @@ func TestSingleRule_WithErrorCode(t *testing.T) {
 	assert.Equal(t, "test", err.(*govy.RuleError).Code)
 }
 
-func TestSingleRule_WithMessage(t *testing.T) {
+func TestRule_WithMessage(t *testing.T) {
 	for _, test := range []struct {
 		Error         string
 		Message       string
@@ -64,7 +64,7 @@ func TestSingleRule_WithMessage(t *testing.T) {
 			ExpectedError: "message; details",
 		},
 	} {
-		r := govy.NewSingleRule(func(v int) error {
+		r := govy.NewRule(func(v int) error {
 			if v < 0 {
 				return errors.New(test.Error)
 			}
@@ -82,7 +82,7 @@ func TestSingleRule_WithMessage(t *testing.T) {
 	}
 }
 
-func TestSingleRule_WithDetails(t *testing.T) {
+func TestRule_WithDetails(t *testing.T) {
 	for _, test := range []struct {
 		Error         string
 		Details       string
@@ -104,7 +104,7 @@ func TestSingleRule_WithDetails(t *testing.T) {
 			ExpectedError: "details",
 		},
 	} {
-		r := govy.NewSingleRule(func(v int) error {
+		r := govy.NewRule(func(v int) error {
 			if v < 0 {
 				return errors.New(test.Error)
 			}

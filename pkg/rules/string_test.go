@@ -213,3 +213,35 @@ func TestStringStartsWith(t *testing.T) {
 		assert.True(t, govy.HasErrorCode(err, ErrorCodeStringStartsWith))
 	})
 }
+
+func TestStringIsTitle(t *testing.T) {
+	tests := []struct {
+		in         string
+		shouldFail bool
+	}{
+		{"", true},
+		{"a", true},
+		{"A", false},
+		{" aaa aaa aaa ", true},
+		{" Aaa Aaa Aaa ", false},
+		{"123a456", true},
+		{"double-blind", true},
+		{"Double-Blind", false},
+		{"ÿøû", true},
+		{"Ÿøû", false},
+		{"with_underscore", true},
+		{"With_underscore", false},
+		{"unicode \xe2\x80\xa8 line separator", true},
+		{"Unicode \xe2\x80\xa8 Line Separator", false},
+	}
+	for _, tc := range tests {
+		err := StringIsTitle().Validate(tc.in)
+		if tc.shouldFail {
+			assert.Error(t, err, "input: %q", tc.in)
+			assert.EqualError(t, err, "each word in a string must start with a capital letter")
+			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringIsTitle))
+		} else {
+			assert.NoError(t, err, "input: %q", tc.in)
+		}
+	}
+}

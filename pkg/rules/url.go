@@ -7,8 +7,8 @@ import (
 	"github.com/nobl9/govy/pkg/govy"
 )
 
-func URL() govy.SingleRule[*url.URL] {
-	return govy.NewSingleRule(validateURL).
+func URL() govy.Rule[*url.URL] {
+	return govy.NewRule(validateURL).
 		WithErrorCode(ErrorCodeURL).
 		WithDescription(urlDescription)
 }

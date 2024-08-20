@@ -75,7 +75,7 @@ func TestPlan(t *testing.T) {
 			WithName("annotations").
 			Rules(rules.MapMaxLength[Annotations](10)).
 			RulesForItems(
-				govy.NewSingleRule(func(a govy.MapItem[string, string]) error {
+				govy.NewRule(func(a govy.MapItem[string, string]) error {
 					if a.Key == a.Value {
 						return errors.New("key and value must not be equal")
 					}
@@ -107,7 +107,7 @@ func TestPlan(t *testing.T) {
 				govy.ForSlice(func(c Container) []EnvVar { return c.Env }).
 					WithName("env").
 					RulesForEach(
-						govy.NewSingleRule(func(e EnvVar) error {
+						govy.NewRule(func(e EnvVar) error {
 							return nil
 						}).WithDescription("custom error!"),
 					),
@@ -131,14 +131,15 @@ func TestPlan(t *testing.T) {
 			WithName("spec").
 			Required().
 			Include(specValidator),
-	)
+	).
+		WithName("Pod")
 
-	properties := govy.Plan(validator)
+	plan := govy.Plan(validator)
 
 	buf := bytes.Buffer{}
 	enc := json.NewEncoder(&buf)
 	enc.SetIndent("", "  ")
-	err := enc.Encode(properties)
+	err := enc.Encode(plan)
 	require.NoError(t, err)
 
 	assert.Equal(t, expectedPlanJSON, buf.String())

@@ -7,13 +7,14 @@ import (
 	"net/url"
 	"regexp"
 	"strings"
+	"unicode"
 
 	"github.com/nobl9/govy/pkg/govy"
 )
 
-func StringNotEmpty() govy.SingleRule[string] {
+func StringNotEmpty() govy.Rule[string] {
 	msg := "string cannot be empty"
-	return govy.NewSingleRule(func(s string) error {
+	return govy.NewRule(func(s string) error {
 		if len(strings.TrimSpace(s)) == 0 {
 			return errors.New(msg)
 		}
@@ -23,12 +24,12 @@ func StringNotEmpty() govy.SingleRule[string] {
 		WithDescription(msg)
 }
 
-func StringMatchRegexp(re *regexp.Regexp, examples ...string) govy.SingleRule[string] {
+func StringMatchRegexp(re *regexp.Regexp, examples ...string) govy.Rule[string] {
 	msg := fmt.Sprintf("string must match regular expression: '%s'", re.String())
 	if len(examples) > 0 {
 		msg += " " + prettyExamples(examples)
 	}
-	return govy.NewSingleRule(func(s string) error {
+	return govy.NewRule(func(s string) error {
 		if !re.MatchString(s) {
 			return errors.New(msg)
 		}
@@ -38,12 +39,12 @@ func StringMatchRegexp(re *regexp.Regexp, examples ...string) govy.SingleRule[st
 		WithDescription(msg)
 }
 
-func StringDenyRegexp(re *regexp.Regexp, examples ...string) govy.SingleRule[string] {
+func StringDenyRegexp(re *regexp.Regexp, examples ...string) govy.Rule[string] {
 	msg := fmt.Sprintf("string must not match regular expression: '%s'", re.String())
 	if len(examples) > 0 {
 		msg += " " + prettyExamples(examples)
 	}
-	return govy.NewSingleRule(func(s string) error {
+	return govy.NewRule(func(s string) error {
 		if re.MatchString(s) {
 			return errors.New(msg)
 		}
@@ -68,7 +69,7 @@ func StringDNSLabel() govy.RuleSet[string] {
 var validUUIDRegexp = regexp.
 	MustCompile("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
 
-func StringUUID() govy.SingleRule[string] {
+func StringUUID() govy.Rule[string] {
 	return StringMatchRegexp(validUUIDRegexp,
 		"00000000-0000-0000-0000-000000000000",
 		"e190c630-8873-11ee-b9d1-0242ac120002",
@@ -79,12 +80,12 @@ func StringUUID() govy.SingleRule[string] {
 
 var asciiRegexp = regexp.MustCompile("^[\x00-\x7F]*$")
 
-func StringASCII() govy.SingleRule[string] {
+func StringASCII() govy.Rule[string] {
 	return StringMatchRegexp(asciiRegexp).WithErrorCode(ErrorCodeStringASCII)
 }
 
-func StringURL() govy.SingleRule[string] {
-	return govy.NewSingleRule(func(v string) error {
+func StringURL() govy.Rule[string] {
+	return govy.NewRule(func(v string) error {
 		u, err := url.Parse(v)
 		if err != nil {
 			return fmt.Errorf("failed to parse URL: %w", err)
@@ -95,9 +96,9 @@ func StringURL() govy.SingleRule[string] {
 		WithDescription(urlDescription)
 }
 
-func StringJSON() govy.SingleRule[string] {
+func StringJSON() govy.Rule[string] {
 	msg := "string must be a valid JSON"
-	return govy.NewSingleRule(func(s string) error {
+	return govy.NewRule(func(s string) error {
 		if !json.Valid([]byte(s)) {
 			return errors.New(msg)
 		}
@@ -107,9 +108,9 @@ func StringJSON() govy.SingleRule[string] {
 		WithDescription(msg)
 }
 
-func StringContains(substrings ...string) govy.SingleRule[string] {
+func StringContains(substrings ...string) govy.Rule[string] {
 	msg := "string must contain the following substrings: " + prettyStringList(substrings)
-	return govy.NewSingleRule(func(s string) error {
+	return govy.NewRule(func(s string) error {
 		matched := true
 		for _, substr := range substrings {
 			if !strings.Contains(s, substr) {
@@ -126,14 +127,14 @@ func StringContains(substrings ...string) govy.SingleRule[string] {
 		WithDescription(msg)
 }
 
-func StringStartsWith(prefixes ...string) govy.SingleRule[string] {
+func StringStartsWith(prefixes ...string) govy.Rule[string] {
 	var msg string
 	if len(prefixes) == 1 {
 		msg = fmt.Sprintf("string must start with '%s' prefix", prefixes[0])
 	} else {
 		msg = "string must start with one of the following prefixes: " + prettyStringList(prefixes)
 	}
-	return govy.NewSingleRule(func(s string) error {
+	return govy.NewRule(func(s string) error {
 		matched := false
 		for _, prefix := range prefixes {
 			if strings.HasPrefix(s, prefix) {
@@ -147,6 +148,27 @@ func StringStartsWith(prefixes ...string) govy.SingleRule[string] {
 		return nil
 	}).
 		WithErrorCode(ErrorCodeStringStartsWith).
+		WithDescription(msg)
+}
+
+func StringIsTitle() govy.Rule[string] {
+	msg := "each word in a string must start with a capital letter"
+	return govy.NewRule(func(s string) error {
+		if len(s) == 0 {
+			return errors.New(msg)
+		}
+		prev := ' '
+		for _, r := range s {
+			if isStringSeparator(prev) {
+				if !unicode.IsUpper(r) && !isStringSeparator(r) {
+					return errors.New(msg)
+				}
+			}
+			prev = r
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringIsTitle).
 		WithDescription(msg)
 }
 
@@ -181,4 +203,28 @@ func prettyStringListBuilder[T any](b *strings.Builder, values []T, surroundInSi
 			b.WriteString("'")
 		}
 	}
+}
+
+// isStringSeparator is directly copied from [strings] package.
+func isStringSeparator(r rune) bool {
+	// ASCII alphanumerics and underscore are not separators
+	if r <= 0x7F {
+		switch {
+		case '0' <= r && r <= '9':
+			return false
+		case 'a' <= r && r <= 'z':
+			return false
+		case 'A' <= r && r <= 'Z':
+			return false
+		case r == '_':
+			return false
+		}
+		return true
+	}
+	// Letters and digits are not separators
+	if unicode.IsLetter(r) || unicode.IsDigit(r) {
+		return false
+	}
+	// Otherwise, all we can do for now is treat spaces as separators.
+	return unicode.IsSpace(r)
 }

@@ -50,7 +50,7 @@ func SetInferredName(loc InferredName) {
 
 // GetInferredName returns the inferred property name for the given file and line.
 // The name has to be first set using [SetInferredName].
-// It is primarily exported for [govy] to utilize when NameInferModeGenerate mode is set.
+// It is primarily exported for govy to utilize when NameInferModeGenerate mode is set.
 func GetInferredName(file string, line int) string {
 	mu.RLock()
 	defer mu.RUnlock()
@@ -61,7 +61,7 @@ func GetInferredName(file string, line int) string {
 	return name.Name
 }
 
-// SetLogLevel sets the logging level for [slog.Logger] used by [govy].
+// SetLogLevel sets the logging level for [slog.Logger] used by govy.
 // It's safe to call this function concurrently.
 func SetLogLevel(level slog.Level) {
 	logging.SetLogLevel(level)

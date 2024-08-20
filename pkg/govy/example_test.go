@@ -41,7 +41,7 @@ const year = 24 * 365 * time.Hour
 func ExampleNew() {
 	v := govy.New(
 		govy.For(func(t Teacher) string { return t.Name }).
-			Rules(govy.NewSingleRule(func(name string) error { return fmt.Errorf("always fails") })),
+			Rules(govy.NewRule(func(name string) error { return fmt.Errorf("always fails") })),
 	)
 
 	err := v.Validate(Teacher{})
@@ -59,7 +59,7 @@ func ExampleNew() {
 func ExampleValidator_WithName() {
 	v := govy.New(
 		govy.For(func(t Teacher) string { return t.Name }).
-			Rules(govy.NewSingleRule(func(name string) error { return fmt.Errorf("always fails") })),
+			Rules(govy.NewRule(func(name string) error { return fmt.Errorf("always fails") })),
 	).WithName("Teacher")
 
 	err := v.Validate(Teacher{})
@@ -82,13 +82,13 @@ func ExampleValidator_WithName() {
 //
 //	err := v.WithName("Jake").Validate(Teacher{})
 //
-// [govy], aside from errors handling, tries to follow immutability principle.
+// govy, aside from errors handling, tries to follow immutability principle.
 // Calling any method on [govy.Validator] will not change its declared instance,
 // but rather create a copy of it.
 func ExampleValidatorError_WithName() {
 	v := govy.New(
 		govy.For(func(t Teacher) string { return t.Name }).
-			Rules(govy.NewSingleRule(func(name string) error { return fmt.Errorf("always fails") })),
+			Rules(govy.NewRule(func(name string) error { return fmt.Errorf("always fails") })),
 	).WithName("Teacher")
 
 	err := v.Validate(Teacher{})
@@ -108,7 +108,7 @@ func ExampleValidatorError_WithName() {
 func ExampleValidator_When() {
 	v := govy.New(
 		govy.For(func(t Teacher) string { return t.Name }).
-			Rules(govy.NewSingleRule(func(name string) error { return fmt.Errorf("always fails") })),
+			Rules(govy.NewRule(func(name string) error { return fmt.Errorf("always fails") })),
 	).
 		When(func(t Teacher) bool { return t.Age < (50 * year) })
 
@@ -140,14 +140,14 @@ func ExampleValidator_When() {
 // So far we've been using a very simple [govy.PropertyRules] instance:
 //
 //	validation.For(func(t Teacher) string { return t.Name }).
-//		Rules(validation.NewSingleRule(func(name string) error { return fmt.Errorf("always fails") }))
+//		Rules(validation.NewRule(func(name string) error { return fmt.Errorf("always fails") }))
 //
 // The error message returned by this property rule does not tell us
 // which property is failing.
 // Let's change that by adding property name using [govy.PropertyRules.WithName].
 //
 // We can also change the [govy.Rule] to be something more real.
-// [govy] comes with a number of predefined [govy.Rule], we'll use
+// govy comes with a number of predefined [govy.Rule], we'll use
 // [rules.EQ] which accepts a single argument, value to compare with.
 func ExamplePropertyRules_WithName() {
 	v := govy.New(
@@ -242,7 +242,7 @@ func ExampleForPointer() {
 // However, we recommend you always place it below [govy.PropertyRules.WithName]
 // to make your rules more readable.
 func ExamplePropertyRules_Required() {
-	alwaysFailingRule := govy.NewSingleRule(func(string) error {
+	alwaysFailingRule := govy.NewRule(func(string) error {
 		return fmt.Errorf("always fails")
 	})
 
@@ -284,7 +284,7 @@ func ExamplePropertyRules_Required() {
 // NOTE: [govy.PropertyRules.OmitEmpty] will have no effect on pointers handled
 // by [govy.ForPointer], as they already behave in the same way.
 func ExamplePropertyRules_OmitEmpty() {
-	alwaysFailingRule := govy.NewSingleRule(func(string) error {
+	alwaysFailingRule := govy.NewRule(func(string) error {
 		return fmt.Errorf("always fails")
 	})
 
@@ -318,10 +318,10 @@ func ExamplePropertyRules_OmitEmpty() {
 // Note that we don't call [govy.PropertyRules.WithName] here,
 // as we're comparing two properties in our top level, [Teacher] scope.
 //
-// You can provide your own rules using [govy.NewSingleRule] constructor.
-// It returns new [govy.SingleRule] instance which wraps your validation function.
+// You can provide your own rules using [govy.NewRule] constructor.
+// It returns new [govy.Rule] instance which wraps your validation function.
 func ExampleGetSelf() {
-	customRule := govy.NewSingleRule(func(v Teacher) error {
+	customRule := govy.NewRule(func(v Teacher) error {
 		return fmt.Errorf("now I have access to the whole teacher")
 	})
 
@@ -345,10 +345,10 @@ func ExampleGetSelf() {
 	//   - now I have access to the whole teacher
 }
 
-// You can use [govy.SingleRule.WithDetails] to add additional details to the error message.
+// You can use [govy.Rule.WithDetails] to add additional details to the error message.
 // This allows you to extend existing rules by adding your use case context.
 // Let's give a regex validation some more clarity.
-func ExampleSingleRule_WithDetails() {
+func ExampleRule_WithDetails() {
 	v := govy.New(
 		govy.For(func(t Teacher) string { return t.Name }).
 			WithName("name").
@@ -375,11 +375,11 @@ func ExampleSingleRule_WithDetails() {
 // When testing, it can be tedious to always rely on error messages as these can change over time.
 // Enter [govy.ErrorCode], which is a simple string type alias used to ease testing,
 // but also potentially allow third parties to integrate with your validation results.
-// Use [govy.SingleRule.WithErrorCode] to associate [govy.ErrorCode] with a [govy.SingleRule].
+// Use [govy.Rule.WithErrorCode] to associate [govy.ErrorCode] with a [govy.Rule].
 // Notice that our modified version of [rules.StringMatchRegexp] will now return a new [govy.ErrorCode].
 // Predefined rules have [govy.ErrorCode] already associated with them.
 // To view the list of predefined [govy.ErrorCode] checkout error_codes.go file.
-func ExampleSingleRule_WithErrorCode() {
+func ExampleRule_WithErrorCode() {
 	v := govy.New(
 		govy.For(func(t Teacher) string { return t.Name }).
 			WithName("name").
@@ -410,7 +410,7 @@ func ExampleSingleRule_WithErrorCode() {
 // It is later on unpacked and each [govy.RuleError] is reported separately.
 // When [govy.RuleSet.WithErrorCode] or [govy.RuleSet.WithDetails] are used,
 // error code and details are added to each [govy.RuleError].
-// Note that [govy] uses similar syntax to wrapped errors in Go;
+// Note that govy uses similar syntax to wrapped errors in Go;
 // a ':' delimiter is used to chain error codes together.
 func ExampleRuleSet() {
 	teacherNameRule := govy.NewRuleSet(
@@ -502,7 +502,7 @@ func ExampleHasErrorCode() {
 func ExampleNewPropertyError() {
 	v := govy.New(
 		govy.For(govy.GetSelf[Teacher]()).
-			Rules(govy.NewSingleRule(func(t Teacher) error {
+			Rules(govy.NewRule(func(t Teacher) error {
 				if t.Name == "Jake" {
 					return govy.NewPropertyError(
 						"name",
@@ -688,7 +688,7 @@ func ExampleForMap() {
 				rules.StringLength(9, 9),
 			).
 			IncludeForValues(teacherValidator).
-			RulesForItems(govy.NewSingleRule(func(v govy.MapItem[string, Teacher]) error {
+			RulesForItems(govy.NewRule(func(v govy.MapItem[string, Teacher]) error {
 				if v.Key == "918230013" && v.Value.Name == "Joan" {
 					return govy.NewRuleError(
 						"Joan cannot be a teacher for student with index 918230013",
@@ -755,7 +755,7 @@ func ExamplePropertyRules_When() {
 // Use [govy.CascadeModeStop] to stop validation after the first error.
 // If you wish to revert to the default behavior, use [govy.CascadeModeContinue].
 func ExamplePropertyRules_Cascade() {
-	alwaysFailingRule := govy.NewSingleRule(func(string) error {
+	alwaysFailingRule := govy.NewRule(func(string) error {
 		return fmt.Errorf("always fails")
 	})
 
@@ -855,21 +855,21 @@ func ExampleValidator() {
 // shared property between [CSV] and [JSON] files.
 // We define separate [govy.Validator] for [CSV] and [JSON] and use [govy.PropertyRules.When] to only validate
 // their included [govy.Validator] if the correct [File.Format] is provided.
-type (
-	CSV struct {
-		Separator string `json:"separator"`
-	}
-	JSON struct {
-		Indent string `json:"indent"`
-	}
-	File struct {
-		Format string `json:"format"`
-		CSV    *CSV   `json:"csv,omitempty"`
-		JSON   *JSON  `json:"json,omitempty"`
-	}
-)
-
 func ExampleValidator_branchingPattern() {
+	type (
+		CSV struct {
+			Separator string `json:"separator"`
+		}
+		JSON struct {
+			Indent string `json:"indent"`
+		}
+		File struct {
+			Format string `json:"format"`
+			CSV    *CSV   `json:"csv,omitempty"`
+			JSON   *JSON  `json:"json,omitempty"`
+		}
+	)
+
 	csvValidation := govy.New(
 		govy.For(func(c CSV) string { return c.Separator }).
 			WithName("separator").
@@ -924,7 +924,7 @@ func ExampleValidator_branchingPattern() {
 //
 // There are multiple ways to improve the generated documentation:
 //   - Use [govy.PropertyRules.WithExamples] to provide a list of example values for the property.
-//   - Use [govy.SingleRule.WithDescription] to provide a plan-only description for your rule.
+//   - Use [govy.Rule.WithDescription] to provide a plan-only description for your rule.
 //     For builtin rules, the description is already provided.
 //   - Use [govy.WhenDescription] to provide a plan-only description for your when conditions.
 func ExamplePlan() {
@@ -940,31 +940,35 @@ func ExamplePlan() {
 				rules.NEQ("Jerry").
 					WithDetails("Jerry is just a name!"),
 			),
-	)
+	).WithName("Teacher")
 
 	properties := govy.Plan(v)
 	enc := json.NewEncoder(os.Stdout)
 	enc.SetIndent("", "  ")
 	_ = enc.Encode(properties)
 
-	//[
-	//  {
-	//    "path": "$.name",
-	//    "type": "string",
-	//    "examples": [
-	//      "Jake",
-	//      "John"
-	//    ],
-	//    "rules": [
-	//      {
-	//        "description": "should be not equal to 'Jerry'",
-	//        "details": "Jerry is just a name!",
-	//        "errorCode": "not_equal_to",
-	//        "conditions": [
-	//          "name is Jerry"
-	//        ]
-	//      }
-	//    ]
-	//  }
-	//]
+	// Output:
+	// {
+	//   "name": "Teacher",
+	//   "properties": [
+	//     {
+	//       "path": "$.name",
+	//       "type": "string",
+	//       "examples": [
+	//         "Jake",
+	//         "John"
+	//       ],
+	//       "rules": [
+	//         {
+	//           "description": "should be not equal to 'Jerry'",
+	//           "details": "Jerry is just a name!",
+	//           "errorCode": "not_equal_to",
+	//           "conditions": [
+	//             "name is Jerry"
+	//           ]
+	//         }
+	//       ]
+	//     }
+	//   ]
+	// }
 }

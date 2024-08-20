@@ -7,9 +7,9 @@ import (
 	"github.com/nobl9/govy/pkg/govy"
 )
 
-func Forbidden[T any]() govy.SingleRule[T] {
+func Forbidden[T any]() govy.Rule[T] {
 	msg := "property is forbidden"
-	return govy.NewSingleRule(func(v T) error {
+	return govy.NewRule(func(v T) error {
 		if internal.IsEmptyFunc(v) {
 			return nil
 		}

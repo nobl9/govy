@@ -6,20 +6,20 @@ import (
 	"github.com/nobl9/govy/internal"
 )
 
-// Rule is the interface for all validation rules.
-type Rule[T any] interface {
+// ruleInterface is the interface for all validation rules.
+type ruleInterface[T any] interface {
 	Validate(v T) error
 }
 
-// NewSingleRule creates a new [SingleRule] instance.
-func NewSingleRule[T any](validate func(v T) error) SingleRule[T] {
-	return SingleRule[T]{validate: validate}
+// NewRule creates a new [Rule] instance.
+func NewRule[T any](validate func(v T) error) Rule[T] {
+	return Rule[T]{validate: validate}
 }
 
-// SingleRule is the basic validation building block.
+// Rule is the basic validation building block.
 // It evaluates the provided validation function and enhances it
 // with optional [ErrorCode] and arbitrary details.
-type SingleRule[T any] struct {
+type Rule[T any] struct {
 	validate    func(v T) error
 	errorCode   ErrorCode
 	details     string
@@ -29,11 +29,11 @@ type SingleRule[T any] struct {
 
 // Validate runs validation function on the provided value.
 // It can handle different types of errors returned by the function:
-//   - *[RuleError], which details and [ErrorCode] are optionally extended with the ones defined by [SingleRule].
-//   - *[PropertyError], for each of its errors their [ErrorCode] is extended with the one defined by [SingleRule].
+//   - *[RuleError], which details and [ErrorCode] are optionally extended with the ones defined by [Rule].
+//   - *[PropertyError], for each of its errors their [ErrorCode] is extended with the one defined by [Rule].
 //
 // By default, it will construct a new RuleError.
-func (r SingleRule[T]) Validate(v T) error {
+func (r Rule[T]) Validate(v T) error {
 	if err := r.validate(v); err != nil {
 		switch ev := err.(type) {
 		case *RuleError:
@@ -62,13 +62,13 @@ func (r SingleRule[T]) Validate(v T) error {
 }
 
 // WithErrorCode sets the error code for the returned [RuleError].
-func (r SingleRule[T]) WithErrorCode(code ErrorCode) SingleRule[T] {
+func (r Rule[T]) WithErrorCode(code ErrorCode) Rule[T] {
 	r.errorCode = code
 	return r
 }
 
 // WithMessage overrides the returned [RuleError] error message with message.
-func (r SingleRule[T]) WithMessage(format string, a ...any) SingleRule[T] {
+func (r Rule[T]) WithMessage(format string, a ...any) Rule[T] {
 	if len(a) == 0 {
 		r.message = format
 	} else {
@@ -78,7 +78,7 @@ func (r SingleRule[T]) WithMessage(format string, a ...any) SingleRule[T] {
 }
 
 // WithDetails adds details to the returned [RuleError] error message.
-func (r SingleRule[T]) WithDetails(format string, a ...any) SingleRule[T] {
+func (r Rule[T]) WithDetails(format string, a ...any) Rule[T] {
 	if len(a) == 0 {
 		r.details = format
 	} else {
@@ -88,13 +88,13 @@ func (r SingleRule[T]) WithDetails(format string, a ...any) SingleRule[T] {
 }
 
 // WithDescription adds a custom description to the rule.
-// It can be used to enhance the [RulePlan].
-func (r SingleRule[T]) WithDescription(description string) SingleRule[T] {
+// It is used to enhance the [RulePlan], but otherwise does not appear in standard [RuleError.Error] output.
+func (r Rule[T]) WithDescription(description string) Rule[T] {
 	r.description = description
 	return r
 }
 
-func (r SingleRule[T]) plan(builder planBuilder) {
+func (r Rule[T]) plan(builder planBuilder) {
 	builder.rulePlan = RulePlan{
 		ErrorCode:   r.errorCode,
 		Details:     r.details,
@@ -105,18 +105,18 @@ func (r SingleRule[T]) plan(builder planBuilder) {
 }
 
 // NewRuleSet creates a new [RuleSet] instance.
-func NewRuleSet[T any](rules ...Rule[T]) RuleSet[T] {
+func NewRuleSet[T any](rules ...ruleInterface[T]) RuleSet[T] {
 	return RuleSet[T]{rules: rules}
 }
 
 // RuleSet allows defining a [Rule] which aggregates multiple sub-rules.
 type RuleSet[T any] struct {
-	rules     []Rule[T]
+	rules     []ruleInterface[T]
 	errorCode ErrorCode
 	details   string
 }
 
-// Validate works the same way as [SingleRule.Validate],
+// Validate works the same way as [Rule.Validate],
 // except each aggregated rule is validated individually.
 // The errors are aggregated and returned as a single error which serves as a container for them.
 func (r RuleSet[T]) Validate(v T) error {

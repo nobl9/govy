@@ -80,26 +80,28 @@ func (r PropertyRulesForMap[M, K, V, S]) WithExamples(examples ...string) Proper
 }
 
 // RulesForKeys adds [Rule] for map's keys.
-func (r PropertyRulesForMap[M, K, V, S]) RulesForKeys(rules ...Rule[K]) PropertyRulesForMap[M, K, V, S] {
+func (r PropertyRulesForMap[M, K, V, S]) RulesForKeys(rules ...ruleInterface[K]) PropertyRulesForMap[M, K, V, S] {
 	r.forKeyRules = r.forKeyRules.Rules(rules...)
 	return r
 }
 
 // RulesForValues adds [Rule] for map's values.
-func (r PropertyRulesForMap[M, K, V, S]) RulesForValues(rules ...Rule[V]) PropertyRulesForMap[M, K, V, S] {
+func (r PropertyRulesForMap[M, K, V, S]) RulesForValues(rules ...ruleInterface[V]) PropertyRulesForMap[M, K, V, S] {
 	r.forValueRules = r.forValueRules.Rules(rules...)
 	return r
 }
 
 // RulesForItems adds [Rule] for [MapItem].
 // It allows validating both key and value in conjunction.
-func (r PropertyRulesForMap[M, K, V, S]) RulesForItems(rules ...Rule[MapItem[K, V]]) PropertyRulesForMap[M, K, V, S] {
+func (r PropertyRulesForMap[M, K, V, S]) RulesForItems(
+	rules ...ruleInterface[MapItem[K, V]],
+) PropertyRulesForMap[M, K, V, S] {
 	r.forItemRules = r.forItemRules.Rules(rules...)
 	return r
 }
 
 // Rules adds [Rule] for the whole map.
-func (r PropertyRulesForMap[M, K, V, S]) Rules(rules ...Rule[M]) PropertyRulesForMap[M, K, V, S] {
+func (r PropertyRulesForMap[M, K, V, S]) Rules(rules ...ruleInterface[M]) PropertyRulesForMap[M, K, V, S] {
 	r.mapRules = r.mapRules.Rules(rules...)
 	return r
 }

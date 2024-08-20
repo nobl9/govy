@@ -80,11 +80,14 @@ type emptyErr struct{}
 
 func (emptyErr) Error() string { return "" }
 
-type validatorI[S any] interface {
+type validatorInterface[S any] interface {
 	Validate(s S) *ValidatorError
 }
 
 // PropertyRules is responsible for validating a single property.
+// It is a collection of rules, predicates, and other properties that define how the property should be validated.
+// IT is the middle-level building block of the validation process,
+// aggregated by [Validator] and aggregating [Rule].
 type PropertyRules[T, S any] struct {
 	name            string
 	getter          internalPropertyGetter[T, S]
@@ -124,7 +127,7 @@ func (r PropertyRules[T, S]) Validate(st S) PropertyErrors {
 		stepFailed := false
 		switch v := step.(type) {
 		// Same as Rule[S] as for GetSelf we'd get the same type on T and S.
-		case Rule[T]:
+		case ruleInterface[T]:
 			if err := v.Validate(propValue); err != nil {
 				stepFailed = true
 				switch ev := err.(type) {
@@ -134,7 +137,7 @@ func (r PropertyRules[T, S]) Validate(st S) PropertyErrors {
 					ruleErrors = append(ruleErrors, err)
 				}
 			}
-		case validatorI[T]:
+		case validatorInterface[T]:
 			if err := v.Validate(propValue); err != nil {
 				stepFailed = true
 				for _, e := range err.Errors {
@@ -172,7 +175,7 @@ func (r PropertyRules[T, S]) WithExamples(examples ...string) PropertyRules[T, S
 }
 
 // Rules associates provided [Rule] with the property.
-func (r PropertyRules[T, S]) Rules(rules ...Rule[T]) PropertyRules[T, S] {
+func (r PropertyRules[T, S]) Rules(rules ...ruleInterface[T]) PropertyRules[T, S] {
 	r.steps = appendSteps(r.steps, rules)
 	return r
 }

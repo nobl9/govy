@@ -12,7 +12,7 @@ type Teacher struct {
 	Name string `json:"name"`
 }
 
-// In the interactive tutorial for [govy], we've been using
+// In the interactive tutorial for govy, we've been using
 // [govy.PropertyRules.WithName] to provide the name for our properties.
 //
 // Ideally, we'd want to make sure the names govy assigns to each property,

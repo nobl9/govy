@@ -8,7 +8,13 @@ import (
 	"golang.org/x/exp/maps"
 )
 
-// PropertyPlan is a validation plan for a single property.
+// ValidatorPlan is a validation plan for a single [Validator].
+type ValidatorPlan struct {
+	Name       string         `json:"name,omitempty"`
+	Properties []PropertyPlan `json:"properties"`
+}
+
+// PropertyPlan is a validation plan for a single [PropertyRules].
 type PropertyPlan struct {
 	// Path is a JSON path to the property.
 	Path string `json:"path"`
@@ -24,7 +30,7 @@ type PropertyPlan struct {
 	Rules    []RulePlan `json:"rules,omitempty"`
 }
 
-// RulePlan is a validation plan for a single rule.
+// RulePlan is a validation plan for a single [Rule].
 type RulePlan struct {
 	Description string    `json:"description"`
 	Details     string    `json:"details,omitempty"`
@@ -41,7 +47,7 @@ func (r RulePlan) isEmpty() bool {
 // Plan creates a validation plan for the provided [Validator].
 // Each property is represented by a [PropertyPlan] which aggregates its every [RulePlan].
 // If a property does not have any rules, it won't be included in the result.
-func Plan[S any](v Validator[S]) []PropertyPlan {
+func Plan[S any](v Validator[S]) *ValidatorPlan {
 	all := make([]planBuilder, 0)
 	v.plan(planBuilder{path: "$", children: &all})
 	propertiesMap := make(map[string]PropertyPlan)
@@ -67,7 +73,10 @@ func Plan[S any](v Validator[S]) []PropertyPlan {
 	}
 	properties := maps.Values(propertiesMap)
 	sort.Slice(properties, func(i, j int) bool { return properties[i].Path < properties[j].Path })
-	return properties
+	return &ValidatorPlan{
+		Name:       v.name,
+		Properties: properties,
+	}
 }
 
 // planner is an interface for types that can create a [PropertyPlan] or [RulePlan].

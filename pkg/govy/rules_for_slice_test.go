@@ -20,7 +20,7 @@ func TestPropertyRulesForEach(t *testing.T) {
 	t.Run("no predicates, no error", func(t *testing.T) {
 		r := govy.ForSlice(func(m mockStruct) []string { return []string{"path"} }).
 			WithName("test.path").
-			RulesForEach(govy.NewSingleRule(func(v string) error { return nil }))
+			RulesForEach(govy.NewRule(func(v string) error { return nil }))
 		errs := r.Validate(mockStruct{})
 		assert.Nil(t, errs)
 	})
@@ -29,7 +29,7 @@ func TestPropertyRulesForEach(t *testing.T) {
 		expectedErr := errors.New("ops!")
 		r := govy.ForSlice(func(m mockStruct) []string { return []string{"path"} }).
 			WithName("test.path").
-			RulesForEach(govy.NewSingleRule(func(v string) error { return expectedErr }))
+			RulesForEach(govy.NewRule(func(v string) error { return expectedErr }))
 		errs := r.Validate(mockStruct{})
 		require.Len(t, errs, 1)
 		assert.Equal(t, &govy.PropertyError{
@@ -46,7 +46,7 @@ func TestPropertyRulesForEach(t *testing.T) {
 			When(func(mockStruct) bool { return true }).
 			When(func(mockStruct) bool { return true }).
 			When(func(st mockStruct) bool { return len(st.Fields) == 0 }).
-			RulesForEach(govy.NewSingleRule(func(v string) error { return errors.New("ops!") }))
+			RulesForEach(govy.NewRule(func(v string) error { return errors.New("ops!") }))
 		errs := r.Validate(mockStruct{Fields: []string{"something"}})
 		assert.Nil(t, errs)
 	})
@@ -58,14 +58,14 @@ func TestPropertyRulesForEach(t *testing.T) {
 		err4 := errors.New("rule error again")
 		r := govy.ForSlice(func(m mockStruct) []string { return m.Fields }).
 			WithName("test.path").
-			Rules(govy.NewSingleRule(func(v []string) error { return err3 })).
+			Rules(govy.NewRule(func(v []string) error { return err3 })).
 			RulesForEach(
-				govy.NewSingleRule(func(v string) error { return err1 }),
-				govy.NewSingleRule(func(v string) error {
+				govy.NewRule(func(v string) error { return err1 }),
+				govy.NewRule(func(v string) error {
 					return govy.NewPropertyError("nested", "made-up", err2)
 				}),
 			).
-			Rules(govy.NewSingleRule(func(v []string) error {
+			Rules(govy.NewRule(func(v []string) error {
 				return govy.NewPropertyError("nested", "nestedValue", err4)
 			}))
 
@@ -114,8 +114,8 @@ func TestPropertyRulesForEach(t *testing.T) {
 		r := govy.ForSlice(func(m mockStruct) []string { return []string{"value"} }).
 			WithName("test.path").
 			Cascade(govy.CascadeModeStop).
-			RulesForEach(govy.NewSingleRule(func(v string) error { return expectedErr })).
-			RulesForEach(govy.NewSingleRule(func(v string) error { return errors.New("no") }))
+			RulesForEach(govy.NewRule(func(v string) error { return expectedErr })).
+			RulesForEach(govy.NewRule(func(v string) error { return errors.New("no") }))
 		errs := r.Validate(mockStruct{})
 		require.Len(t, errs, 1)
 		assert.Equal(t, &govy.PropertyError{
@@ -132,13 +132,13 @@ func TestPropertyRulesForEach(t *testing.T) {
 		err3 := errors.New("included again")
 		r := govy.ForSlice(func(m mockStruct) []string { return m.Fields }).
 			WithName("test.path").
-			RulesForEach(govy.NewSingleRule(func(v string) error { return err1 })).
+			RulesForEach(govy.NewRule(func(v string) error { return err1 })).
 			IncludeForEach(govy.New(
 				govy.For(func(s string) string { return "nested" }).
 					WithName("included").
 					Rules(
-						govy.NewSingleRule(func(v string) error { return err2 }),
-						govy.NewSingleRule(func(v string) error { return err3 }),
+						govy.NewRule(func(v string) error { return err2 }),
+						govy.NewRule(func(v string) error { return err3 }),
 					),
 			))
 		errs := r.Validate(mockStruct{Fields: []string{"value"}})
@@ -167,7 +167,7 @@ func TestPropertyRulesForEach(t *testing.T) {
 		includedErr := errors.New("oh no!")
 		inc := govy.New(
 			govy.ForSlice(govy.GetSelf[[]string]()).
-				RulesForEach(govy.NewSingleRule(func(v string) error {
+				RulesForEach(govy.NewRule(func(v string) error {
 					if v == "value1" {
 						return forEachErr
 					}

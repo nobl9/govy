@@ -9,9 +9,9 @@ import (
 	"github.com/nobl9/govy/pkg/govy"
 )
 
-func EQ[T comparable](compared T) govy.SingleRule[T] {
+func EQ[T comparable](compared T) govy.Rule[T] {
 	msg := fmt.Sprintf(comparisonFmt, cmpEqualTo, compared)
-	return govy.NewSingleRule(func(v T) error {
+	return govy.NewRule(func(v T) error {
 		if v != compared {
 			return errors.New(msg)
 		}
@@ -21,9 +21,9 @@ func EQ[T comparable](compared T) govy.SingleRule[T] {
 		WithDescription(msg)
 }
 
-func NEQ[T comparable](compared T) govy.SingleRule[T] {
+func NEQ[T comparable](compared T) govy.Rule[T] {
 	msg := fmt.Sprintf(comparisonFmt, cmpNotEqualTo, compared)
-	return govy.NewSingleRule(func(v T) error {
+	return govy.NewRule(func(v T) error {
 		if v == compared {
 			return errors.New(msg)
 		}
@@ -33,31 +33,31 @@ func NEQ[T comparable](compared T) govy.SingleRule[T] {
 		WithDescription(msg)
 }
 
-func GT[T constraints.Ordered](compared T) govy.SingleRule[T] {
+func GT[T constraints.Ordered](compared T) govy.Rule[T] {
 	return orderedComparisonRule(cmpGreaterThan, compared).
 		WithErrorCode(ErrorCodeGreaterThan)
 }
 
-func GTE[T constraints.Ordered](compared T) govy.SingleRule[T] {
+func GTE[T constraints.Ordered](compared T) govy.Rule[T] {
 	return orderedComparisonRule(cmpGreaterThanOrEqual, compared).
 		WithErrorCode(ErrorCodeGreaterThanOrEqualTo)
 }
 
-func LT[T constraints.Ordered](compared T) govy.SingleRule[T] {
+func LT[T constraints.Ordered](compared T) govy.Rule[T] {
 	return orderedComparisonRule(cmpLessThan, compared).
 		WithErrorCode(ErrorCodeLessThan)
 }
 
-func LTE[T constraints.Ordered](compared T) govy.SingleRule[T] {
+func LTE[T constraints.Ordered](compared T) govy.Rule[T] {
 	return orderedComparisonRule(cmpLessThanOrEqual, compared).
 		WithErrorCode(ErrorCodeLessThanOrEqualTo)
 }
 
 var comparisonFmt = "should be %s '%v'"
 
-func orderedComparisonRule[T constraints.Ordered](op comparisonOperator, compared T) govy.SingleRule[T] {
+func orderedComparisonRule[T constraints.Ordered](op comparisonOperator, compared T) govy.Rule[T] {
 	msg := fmt.Sprintf(comparisonFmt, op, compared)
-	return govy.NewSingleRule(func(v T) error {
+	return govy.NewRule(func(v T) error {
 		var passed bool
 		switch op {
 		case cmpGreaterThan:

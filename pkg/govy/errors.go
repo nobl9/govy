@@ -175,7 +175,7 @@ func NewRuleError(message string, codes ...ErrorCode) *RuleError {
 	return ruleError
 }
 
-// RuleError is the fundamental error container associated with a single [Rule] or [RuleSet].
+// RuleError is the fundamental error container associated with a [Rule].
 type RuleError struct {
 	Message string    `json:"error"`
 	Code    ErrorCode `json:"code,omitempty"`
@@ -204,7 +204,7 @@ func (r *RuleError) HideValue(stringValue string) *RuleError {
 }
 
 // HasErrorCode checks if an error contains given [ErrorCode].
-// It supports all [govy] errors.
+// It supports all govy errors.
 func HasErrorCode(err error, code ErrorCode) bool {
 	switch v := err.(type) {
 	case PropertyErrors:

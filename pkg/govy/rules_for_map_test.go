@@ -22,9 +22,9 @@ func TestPropertyRulesForMap(t *testing.T) {
 		baseRules := govy.ForMap(func(m mockStruct) map[string]string { return map[string]string{"key": "value"} }).
 			WithName("test.path")
 		for _, r := range []govy.PropertyRulesForMap[map[string]string, string, string, mockStruct]{
-			baseRules.RulesForKeys(govy.NewSingleRule(func(v string) error { return nil })),
-			baseRules.RulesForValues(govy.NewSingleRule(func(v string) error { return nil })),
-			baseRules.RulesForItems(govy.NewSingleRule(func(v govy.MapItem[string, string]) error { return nil })),
+			baseRules.RulesForKeys(govy.NewRule(func(v string) error { return nil })),
+			baseRules.RulesForValues(govy.NewRule(func(v string) error { return nil })),
+			baseRules.RulesForItems(govy.NewRule(func(v govy.MapItem[string, string]) error { return nil })),
 		} {
 			errs := r.Validate(mockStruct{})
 			assert.Nil(t, errs)
@@ -40,7 +40,7 @@ func TestPropertyRulesForMap(t *testing.T) {
 			Expected *govy.PropertyError
 		}{
 			"keys": {
-				Rules: baseRules.RulesForKeys(govy.NewSingleRule(func(v string) error { return expectedErr })),
+				Rules: baseRules.RulesForKeys(govy.NewRule(func(v string) error { return expectedErr })),
 				Expected: &govy.PropertyError{
 					PropertyName:  "test.path.key",
 					PropertyValue: "key",
@@ -49,7 +49,7 @@ func TestPropertyRulesForMap(t *testing.T) {
 				},
 			},
 			"values": {
-				Rules: baseRules.RulesForValues(govy.NewSingleRule(func(v string) error { return expectedErr })),
+				Rules: baseRules.RulesForValues(govy.NewRule(func(v string) error { return expectedErr })),
 				Expected: &govy.PropertyError{
 					PropertyName:  "test.path.key",
 					PropertyValue: "value",
@@ -58,7 +58,7 @@ func TestPropertyRulesForMap(t *testing.T) {
 			},
 			"items": {
 				Rules: baseRules.RulesForItems(
-					govy.NewSingleRule(func(v govy.MapItem[string, string]) error { return expectedErr }),
+					govy.NewRule(func(v govy.MapItem[string, string]) error { return expectedErr }),
 				),
 				Expected: &govy.PropertyError{
 					PropertyName:  "test.path.key",
@@ -82,10 +82,10 @@ func TestPropertyRulesForMap(t *testing.T) {
 			When(func(mockStruct) bool { return true }).
 			When(func(st mockStruct) bool { return len(st.StringMap) == 0 })
 		for _, r := range []govy.PropertyRulesForMap[map[string]string, string, string, mockStruct]{
-			baseRules.RulesForKeys(govy.NewSingleRule(func(v string) error { return errors.New("ops!") })),
-			baseRules.RulesForValues(govy.NewSingleRule(func(v string) error { return errors.New("ops!") })),
+			baseRules.RulesForKeys(govy.NewRule(func(v string) error { return errors.New("ops!") })),
+			baseRules.RulesForValues(govy.NewRule(func(v string) error { return errors.New("ops!") })),
 			baseRules.RulesForItems(
-				govy.NewSingleRule(func(v govy.MapItem[string, string]) error { return errors.New("ops!") }),
+				govy.NewRule(func(v govy.MapItem[string, string]) error { return errors.New("ops!") }),
 			),
 		} {
 			errs := r.Validate(mockStruct{StringMap: map[string]string{"different": "map"}})
@@ -105,26 +105,26 @@ func TestPropertyRulesForMap(t *testing.T) {
 
 		r := govy.ForMap(func(m mockStruct) map[string]string { return m.StringMap }).
 			WithName("test.path").
-			Rules(govy.NewSingleRule(func(v map[string]string) error { return errRule })).
+			Rules(govy.NewRule(func(v map[string]string) error { return errRule })).
 			RulesForKeys(
-				govy.NewSingleRule(func(v string) error { return errKey }),
-				govy.NewSingleRule(func(v string) error {
+				govy.NewRule(func(v string) error { return errKey }),
+				govy.NewRule(func(v string) error {
 					return govy.NewPropertyError("nested", "nestedKey", errNestedKey)
 				}),
 			).
 			RulesForValues(
-				govy.NewSingleRule(func(v string) error { return errValue }),
-				govy.NewSingleRule(func(v string) error {
+				govy.NewRule(func(v string) error { return errValue }),
+				govy.NewRule(func(v string) error {
 					return govy.NewPropertyError("nested", "nestedValue", errNestedValue)
 				}),
 			).
 			RulesForItems(
-				govy.NewSingleRule(func(v govy.MapItem[string, string]) error { return errItem }),
-				govy.NewSingleRule(func(v govy.MapItem[string, string]) error {
+				govy.NewRule(func(v govy.MapItem[string, string]) error { return errItem }),
+				govy.NewRule(func(v govy.MapItem[string, string]) error {
 					return govy.NewPropertyError("nested", "nestedItem", errNestedItem)
 				}),
 			).
-			Rules(govy.NewSingleRule(func(v map[string]string) error {
+			Rules(govy.NewRule(func(v map[string]string) error {
 				return govy.NewPropertyError("nested", "nestedRule", errNestedRule)
 			}))
 
@@ -213,8 +213,8 @@ func TestPropertyRulesForMap(t *testing.T) {
 		r := govy.ForMap(func(m mockStruct) map[string]string { return map[string]string{"key": "value"} }).
 			WithName("test.path").
 			Cascade(govy.CascadeModeStop).
-			RulesForValues(govy.NewSingleRule(func(v string) error { return valueErr })).
-			RulesForKeys(govy.NewSingleRule(func(v string) error { return keyErr }))
+			RulesForValues(govy.NewRule(func(v string) error { return valueErr })).
+			RulesForKeys(govy.NewRule(func(v string) error { return keyErr }))
 		errs := r.Validate(mockStruct{})
 		require.Len(t, errs, 2)
 		assert.ElementsMatch(t, []*govy.PropertyError{
@@ -243,29 +243,29 @@ func TestPropertyRulesForMap(t *testing.T) {
 
 		r := govy.ForMap(func(m mockStruct) map[string]int { return m.IntMap }).
 			WithName("test.path").
-			Rules(govy.NewSingleRule(func(v map[string]int) error { return errRule })).
+			Rules(govy.NewRule(func(v map[string]int) error { return errRule })).
 			IncludeForKeys(govy.New(
 				govy.For(func(s string) string { return s }).
 					WithName("included_key").
 					Rules(
-						govy.NewSingleRule(func(v string) error { return errIncludedKey1 }),
-						govy.NewSingleRule(func(v string) error { return errIncludedKey2 }),
+						govy.NewRule(func(v string) error { return errIncludedKey1 }),
+						govy.NewRule(func(v string) error { return errIncludedKey2 }),
 					),
 			)).
 			IncludeForValues(govy.New(
 				govy.For(func(i int) int { return i }).
 					WithName("included_value").
 					Rules(
-						govy.NewSingleRule(func(v int) error { return errIncludedValue1 }),
-						govy.NewSingleRule(func(v int) error { return errIncludedValue2 }),
+						govy.NewRule(func(v int) error { return errIncludedValue1 }),
+						govy.NewRule(func(v int) error { return errIncludedValue2 }),
 					),
 			)).
 			IncludeForItems(govy.New(
 				govy.For(func(i govy.MapItem[string, int]) govy.MapItem[string, int] { return i }).
 					WithName("included_item").
 					Rules(
-						govy.NewSingleRule(func(v govy.MapItem[string, int]) error { return errIncludedItem1 }),
-						govy.NewSingleRule(func(v govy.MapItem[string, int]) error { return errIncludedItem2 }),
+						govy.NewRule(func(v govy.MapItem[string, int]) error { return errIncludedItem1 }),
+						govy.NewRule(func(v govy.MapItem[string, int]) error { return errIncludedItem2 }),
 					),
 			))
 
@@ -316,29 +316,29 @@ func TestPropertyRulesForMap(t *testing.T) {
 
 		r := govy.ForMap(func(m mockStruct) map[string]string { return m.StringMap }).
 			WithName("test.path").
-			Rules(govy.NewSingleRule(func(v map[string]string) error { return errRule })).
+			Rules(govy.NewRule(func(v map[string]string) error { return errRule })).
 			IncludeForKeys(govy.New(
 				govy.For(func(s string) string { return s }).
 					WithName("included_key").
 					Rules(
-						govy.NewSingleRule(func(v string) error { return errIncludedKey1 }),
-						govy.NewSingleRule(func(v string) error { return errIncludedKey2 }),
+						govy.NewRule(func(v string) error { return errIncludedKey1 }),
+						govy.NewRule(func(v string) error { return errIncludedKey2 }),
 					),
 			)).
 			IncludeForValues(govy.New(
 				govy.For(func(i string) string { return i }).
 					WithName("included_value").
 					Rules(
-						govy.NewSingleRule(func(v string) error { return errIncludedValue1 }),
-						govy.NewSingleRule(func(v string) error { return errIncludedValue2 }),
+						govy.NewRule(func(v string) error { return errIncludedValue1 }),
+						govy.NewRule(func(v string) error { return errIncludedValue2 }),
 					),
 			)).
 			IncludeForItems(govy.New(
 				govy.For(func(i govy.MapItem[string, string]) govy.MapItem[string, string] { return i }).
 					WithName("included_item").
 					Rules(
-						govy.NewSingleRule(func(v govy.MapItem[string, string]) error { return errIncludedItem1 }),
-						govy.NewSingleRule(func(v govy.MapItem[string, string]) error { return errIncludedItem2 }),
+						govy.NewRule(func(v govy.MapItem[string, string]) error { return errIncludedItem1 }),
+						govy.NewRule(func(v govy.MapItem[string, string]) error { return errIncludedItem2 }),
 					),
 			))
 
@@ -382,7 +382,7 @@ func TestPropertyRulesForMap(t *testing.T) {
 		expectedErr := errors.New("oh no!")
 		inc := govy.New(
 			govy.ForMap(govy.GetSelf[map[string]string]()).
-				RulesForValues(govy.NewSingleRule(func(v string) error { return expectedErr })),
+				RulesForValues(govy.NewRule(func(v string) error { return expectedErr })),
 		)
 		r := govy.For(func(m mockStruct) map[string]string { return m.StringMap }).
 			WithName("test.path").

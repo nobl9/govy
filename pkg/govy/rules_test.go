@@ -22,7 +22,7 @@ func TestPropertyRules(t *testing.T) {
 	t.Run("no predicates, no error", func(t *testing.T) {
 		r := govy.For(func(m mockStruct) string { return "path" }).
 			WithName("test.path").
-			Rules(govy.NewSingleRule(func(v string) error { return nil }))
+			Rules(govy.NewRule(func(v string) error { return nil }))
 		err := r.Validate(mockStruct{})
 		assert.Nil(t, err)
 	})
@@ -31,7 +31,7 @@ func TestPropertyRules(t *testing.T) {
 		expectedErr := errors.New("ops!")
 		r := govy.For(func(m mockStruct) string { return "path" }).
 			WithName("test.path").
-			Rules(govy.NewSingleRule(func(v string) error { return expectedErr }))
+			Rules(govy.NewRule(func(v string) error { return expectedErr }))
 		errs := r.Validate(mockStruct{})
 		require.Len(t, errs, 1)
 		assert.Equal(t, &govy.PropertyError{
@@ -47,7 +47,7 @@ func TestPropertyRules(t *testing.T) {
 			When(func(mockStruct) bool { return true }).
 			When(func(mockStruct) bool { return true }).
 			When(func(st mockStruct) bool { return st.Field == "" }).
-			Rules(govy.NewSingleRule(func(v string) error { return errors.New("ops!") }))
+			Rules(govy.NewRule(func(v string) error { return errors.New("ops!") }))
 		err := r.Validate(mockStruct{Field: "something"})
 		assert.Nil(t, err)
 	})
@@ -56,10 +56,10 @@ func TestPropertyRules(t *testing.T) {
 		err1 := errors.New("oh no!")
 		r := govy.For(func(m mockStruct) string { return "value" }).
 			WithName("test.path").
-			Rules(govy.NewSingleRule(func(v string) error { return nil })).
-			Rules(govy.NewSingleRule(func(v string) error { return err1 })).
-			Rules(govy.NewSingleRule(func(v string) error { return nil })).
-			Rules(govy.NewSingleRule(func(v string) error {
+			Rules(govy.NewRule(func(v string) error { return nil })).
+			Rules(govy.NewRule(func(v string) error { return err1 })).
+			Rules(govy.NewRule(func(v string) error { return nil })).
+			Rules(govy.NewRule(func(v string) error {
 				return govy.NewPropertyError("nested", "nestedValue", &govy.RuleError{
 					Message: "property is required",
 					Code:    rules.ErrorCodeRequired,
@@ -89,8 +89,8 @@ func TestPropertyRules(t *testing.T) {
 		r := govy.For(func(m mockStruct) string { return "value" }).
 			WithName("test.path").
 			Cascade(govy.CascadeModeStop).
-			Rules(govy.NewSingleRule(func(v string) error { return expectedErr })).
-			Rules(govy.NewSingleRule(func(v string) error { return errors.New("no") }))
+			Rules(govy.NewRule(func(v string) error { return expectedErr })).
+			Rules(govy.NewRule(func(v string) error { return errors.New("no") }))
 		errs := r.Validate(mockStruct{})
 		require.Len(t, errs, 1)
 		assert.Equal(t, &govy.PropertyError{
@@ -106,12 +106,12 @@ func TestPropertyRules(t *testing.T) {
 		err3 := errors.New("included again")
 		r := govy.For(func(m mockStruct) mockStruct { return m }).
 			WithName("test.path").
-			Rules(govy.NewSingleRule(func(v mockStruct) error { return err1 })).
+			Rules(govy.NewRule(func(v mockStruct) error { return err1 })).
 			Include(govy.New(
 				govy.For(func(s mockStruct) string { return "value" }).
 					WithName("included").
-					Rules(govy.NewSingleRule(func(v string) error { return err2 })).
-					Rules(govy.NewSingleRule(func(v string) error {
+					Rules(govy.NewRule(func(v string) error { return err2 })).
+					Rules(govy.NewRule(func(v string) error {
 						return govy.NewPropertyError("nested", "nestedValue", err3)
 					})),
 			))
@@ -139,7 +139,7 @@ func TestPropertyRules(t *testing.T) {
 		expectedErrs := errors.New("self error")
 		r := govy.For(govy.GetSelf[mockStruct]()).
 			WithName("test.path").
-			Rules(govy.NewSingleRule(func(v mockStruct) error { return expectedErrs }))
+			Rules(govy.NewRule(func(v mockStruct) error { return expectedErrs }))
 		object := mockStruct{Field: "this"}
 		errs := r.Validate(object)
 		require.Len(t, errs, 1)
@@ -155,7 +155,7 @@ func TestPropertyRules(t *testing.T) {
 		r := govy.For(func(m mockStruct) string { return "secret" }).
 			WithName("test.path").
 			HideValue().
-			Rules(govy.NewSingleRule(func(v string) error { return expectedErr }))
+			Rules(govy.NewRule(func(v string) error { return expectedErr }))
 		errs := r.Validate(mockStruct{})
 		require.Len(t, errs, 1)
 		assert.Equal(t, &govy.PropertyError{

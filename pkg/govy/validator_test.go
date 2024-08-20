@@ -15,7 +15,7 @@ func TestValidator(t *testing.T) {
 		r := govy.New(
 			govy.For(func(m mockValidatorStruct) string { return "test" }).
 				WithName("test").
-				Rules(govy.NewSingleRule(func(v string) error { return nil })),
+				Rules(govy.NewRule(func(v string) error { return nil })),
 		)
 		errs := r.Validate(mockValidatorStruct{})
 		assert.Nil(t, errs)
@@ -27,13 +27,13 @@ func TestValidator(t *testing.T) {
 		r := govy.New(
 			govy.For(func(m mockValidatorStruct) string { return "test" }).
 				WithName("test").
-				Rules(govy.NewSingleRule(func(v string) error { return nil })),
+				Rules(govy.NewRule(func(v string) error { return nil })),
 			govy.For(func(m mockValidatorStruct) string { return "name" }).
 				WithName("test.name").
-				Rules(govy.NewSingleRule(func(v string) error { return err1 })),
+				Rules(govy.NewRule(func(v string) error { return err1 })),
 			govy.For(func(m mockValidatorStruct) string { return "display" }).
 				WithName("test.display").
-				Rules(govy.NewSingleRule(func(v string) error { return err2 })),
+				Rules(govy.NewRule(func(v string) error { return err2 })),
 		)
 		err := r.Validate(mockValidatorStruct{})
 		require.Len(t, err.Errors, 2)
@@ -57,7 +57,7 @@ func TestValidatorWhen(t *testing.T) {
 		r := govy.New(
 			govy.For(func(m mockValidatorStruct) string { return "test" }).
 				WithName("test").
-				Rules(govy.NewSingleRule(func(v string) error { return errors.New("test") })),
+				Rules(govy.NewRule(func(v string) error { return errors.New("test") })),
 		).
 			When(func(validatorStruct mockValidatorStruct) bool { return false })
 
@@ -68,7 +68,7 @@ func TestValidatorWhen(t *testing.T) {
 		r := govy.New(
 			govy.For(func(m mockValidatorStruct) string { return "test" }).
 				WithName("test").
-				Rules(govy.NewSingleRule(func(v string) error { return errors.New("test") })),
+				Rules(govy.NewRule(func(v string) error { return errors.New("test") })),
 		).
 			When(func(validatorStruct mockValidatorStruct) bool { return true })
 
@@ -88,11 +88,24 @@ func TestValidatorWithName(t *testing.T) {
 	r := govy.New(
 		govy.For(func(m mockValidatorStruct) string { return "test" }).
 			WithName("test").
-			Rules(govy.NewSingleRule(func(v string) error { return errors.New("test") })),
+			Rules(govy.NewRule(func(v string) error { return errors.New("test") })),
 	).WithName("validator")
 
 	err := r.Validate(mockValidatorStruct{})
 	assert.EqualError(t, err, `Validation for validator has failed for the following properties:
+  - 'test' with value 'test':
+    - test`)
+}
+
+func TestValidatorInferName(t *testing.T) {
+	r := govy.New(
+		govy.For(func(m mockValidatorStruct) string { return "test" }).
+			WithName("test").
+			Rules(govy.NewRule(func(v string) error { return errors.New("test") })),
+	).InferName()
+
+	err := r.Validate(mockValidatorStruct{})
+	assert.EqualError(t, err, `Validation for mockValidatorStruct has failed for the following properties:
   - 'test' with value 'test':
     - test`)
 }

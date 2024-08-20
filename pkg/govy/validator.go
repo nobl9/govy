@@ -1,13 +1,16 @@
 package govy
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
-type propertyRulesI[S any] interface {
+type propertyRulesInterface[S any] interface {
 	Validate(s S) PropertyErrors
 }
 
 // New creates a new [Validator] aggregating the provided property rules.
-func New[S any](props ...propertyRulesI[S]) Validator[S] {
+func New[S any](props ...propertyRulesInterface[S]) Validator[S] {
 	return Validator[S]{props: props}
 }
 
@@ -15,7 +18,7 @@ func New[S any](props ...propertyRulesI[S]) Validator[S] {
 // It serves as an aggregator for [PropertyRules].
 // Typically, it represents a struct.
 type Validator[S any] struct {
-	props []propertyRulesI[S]
+	props []propertyRulesInterface[S]
 	name  string
 
 	predicateMatcher[S]
@@ -41,7 +44,11 @@ func (v Validator[S]) InferName() Validator[S] {
 	if v.name != "" {
 		return v
 	}
-	v.name = fmt.Sprintf("%T", *new(S))
+	split := strings.Split(fmt.Sprintf("%T", *new(S)), ".")
+	if len(split) == 0 {
+		return v
+	}
+	v.name = split[len(split)-1]
 	return v
 }
 

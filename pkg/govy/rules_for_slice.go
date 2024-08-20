@@ -61,13 +61,13 @@ func (r PropertyRulesForSlice[T, S]) WithExamples(examples ...string) PropertyRu
 }
 
 // RulesForEach adds [Rule] for each element of the slice.
-func (r PropertyRulesForSlice[T, S]) RulesForEach(rules ...Rule[T]) PropertyRulesForSlice[T, S] {
+func (r PropertyRulesForSlice[T, S]) RulesForEach(rules ...ruleInterface[T]) PropertyRulesForSlice[T, S] {
 	r.forEachRules = r.forEachRules.Rules(rules...)
 	return r
 }
 
 // Rules adds [Rule] for the whole slice.
-func (r PropertyRulesForSlice[T, S]) Rules(rules ...Rule[[]T]) PropertyRulesForSlice[T, S] {
+func (r PropertyRulesForSlice[T, S]) Rules(rules ...ruleInterface[[]T]) PropertyRulesForSlice[T, S] {
 	r.sliceRules = r.sliceRules.Rules(rules...)
 	return r
 }
