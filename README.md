@@ -537,6 +537,6 @@ The API along with the accompanying nomenclature was heavily inspired by the
 awesome [Fluent Validation](https://github.com/FluentValidation/FluentValidation)
 library for C#.
 
-Special thanks to [go-playground/validation](https://github.com/go-playground/validator)
+Special thanks to [go-playground/validator](https://github.com/go-playground/validator)
 for laying out foundations of Go validation libraries,
 many predefined rules have been ported from it.
