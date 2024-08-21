@@ -88,7 +88,7 @@ func Example_basicUsage() {
 				rules.OneOf("Jake", "George")),
 		govy.ForPointer(func(t Teacher) *string { return t.MiddleName }).
 			WithName("middleName").
-			Rules(rules.StringIsTitle()),
+			Rules(rules.StringTitle()),
 		govy.ForSlice(func(t Teacher) []Student { return t.Students }).
 			WithName("students").
 			Rules(
@@ -344,7 +344,7 @@ func Example_validationPlan() {
 				rules.OneOf("Jake", "George")),
 		govy.ForPointer(func(t Teacher) *string { return t.MiddleName }).
 			WithName("middleName").
-			Rules(rules.StringIsTitle()),
+			Rules(rules.StringTitle()),
 		govy.ForSlice(func(t Teacher) []Student { return t.Students }).
 			WithName("students").
 			Rules(
@@ -538,5 +538,5 @@ awesome [Fluent Validation](https://github.com/FluentValidation/FluentValidation
 library for C#.
 
 Special thanks to [go-playground/validator](https://github.com/go-playground/validator)
-for laying out foundations of Go validation libraries,
+for paving the way for Go validation libraries,
 many predefined rules have been ported from it.

@@ -51,7 +51,7 @@ func Example_basicUsage() {
 				rules.OneOf("Jake", "George")),
 		govy.ForPointer(func(t Teacher) *string { return t.MiddleName }).
 			WithName("middleName").
-			Rules(rules.StringIsTitle()),
+			Rules(rules.StringTitle()),
 		govy.ForSlice(func(t Teacher) []Student { return t.Students }).
 			WithName("students").
 			Rules(

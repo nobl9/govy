@@ -3036,7 +3036,6 @@ Package rules provides predefined rules for common validation scenarios.
 - [func StringDNSLabel\(\) govy.RuleSet\[string\]](<#StringDNSLabel>)
 - [func StringDenyRegexp\(re \*regexp.Regexp, examples ...string\) govy.Rule\[string\]](<#StringDenyRegexp>)
 - [func StringEndsWith\(suffixes ...string\) govy.Rule\[string\]](<#StringEndsWith>)
-- [func StringIsTitle\(\) govy.Rule\[string\]](<#StringIsTitle>)
 - [func StringJSON\(\) govy.Rule\[string\]](<#StringJSON>)
 - [func StringLength\(lower, upper int\) govy.Rule\[string\]](<#StringLength>)
 - [func StringMatchRegexp\(re \*regexp.Regexp, examples ...string\) govy.Rule\[string\]](<#StringMatchRegexp>)
@@ -3044,6 +3043,7 @@ Package rules provides predefined rules for common validation scenarios.
 - [func StringMinLength\(limit int\) govy.Rule\[string\]](<#StringMinLength>)
 - [func StringNotEmpty\(\) govy.Rule\[string\]](<#StringNotEmpty>)
 - [func StringStartsWith\(prefixes ...string\) govy.Rule\[string\]](<#StringStartsWith>)
+- [func StringTitle\(\) govy.Rule\[string\]](<#StringTitle>)
 - [func StringURL\(\) govy.Rule\[string\]](<#StringURL>)
 - [func StringUUID\(\) govy.Rule\[string\]](<#StringUUID>)
 - [func URL\(\) govy.Rule\[\*url.URL\]](<#URL>)
@@ -3068,7 +3068,7 @@ const (
     ErrorCodeStringNotEmpty       govy.ErrorCode = "string_not_empty"
     ErrorCodeStringMatchRegexp    govy.ErrorCode = "string_match_regexp"
     ErrorCodeStringDenyRegexp     govy.ErrorCode = "string_deny_regexp"
-    ErrorCodeStringIsDNSLabel     govy.ErrorCode = "string_is_dns_label"
+    ErrorCodeStringDNSLabel       govy.ErrorCode = "string_dns_label"
     ErrorCodeStringASCII          govy.ErrorCode = "string_ascii"
     ErrorCodeStringURL            govy.ErrorCode = "string_url"
     ErrorCodeStringUUID           govy.ErrorCode = "string_uuid"
@@ -3079,7 +3079,7 @@ const (
     ErrorCodeStringLength         govy.ErrorCode = "string_length"
     ErrorCodeStringMinLength      govy.ErrorCode = "string_min_length"
     ErrorCodeStringMaxLength      govy.ErrorCode = "string_max_length"
-    ErrorCodeStringIsTitle        govy.ErrorCode = "string_is_title"
+    ErrorCodeStringTitle          govy.ErrorCode = "string_title"
     ErrorCodeSliceLength          govy.ErrorCode = "slice_length"
     ErrorCodeSliceMinLength       govy.ErrorCode = "slice_min_length"
     ErrorCodeSliceMaxLength       govy.ErrorCode = "slice_max_length"
@@ -3301,15 +3301,6 @@ func StringEndsWith(suffixes ...string) govy.Rule[string]
 
 StringEndsWith ensures the property's value ends with one of the provided suffixes.
 
-<a name="StringIsTitle"></a>
-## func [StringIsTitle](<https://github.com/nobl9/govy/blob/main/pkg/rules/string.go#L192>)
-
-```go
-func StringIsTitle() govy.Rule[string]
-```
-
-StringIsTitle ensures each word in a string starts with a capital letter.
-
 <a name="StringJSON"></a>
 ## func [StringJSON](<https://github.com/nobl9/govy/blob/main/pkg/rules/string.go#L109>)
 
@@ -3372,6 +3363,15 @@ func StringStartsWith(prefixes ...string) govy.Rule[string]
 ```
 
 StringStartsWith ensures the property's value starts with one of the provided prefixes.
+
+<a name="StringTitle"></a>
+## func [StringTitle](<https://github.com/nobl9/govy/blob/main/pkg/rules/string.go#L192>)
+
+```go
+func StringTitle() govy.Rule[string]
+```
+
+StringTitle ensures each word in a string starts with a capital letter.
 
 <a name="StringURL"></a>
 ## func [StringURL](<https://github.com/nobl9/govy/blob/main/pkg/rules/string.go#L96>)

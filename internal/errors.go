@@ -18,7 +18,7 @@ func (r RuleSetError) Error() string {
 	return b.String()
 }
 
-// JoinErrors joins multiple errors into a single pretty-formmated string.
+// JoinErrors joins multiple errors into a single pretty-formatted string.
 func JoinErrors[T error](b *strings.Builder, errs []T, indent string) {
 	for i, err := range errs {
 		buildErrorMessage(b, err.Error(), indent)

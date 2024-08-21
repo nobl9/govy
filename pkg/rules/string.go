@@ -70,7 +70,7 @@ func StringDNSLabel() govy.RuleSet[string] {
 		StringMatchRegexp(rfc1123DnsLabelRegexp, "my-name", "123-abc").
 			WithDetails("an RFC-1123 compliant label name must consist of lower case alphanumeric characters or '-',"+
 				" and must start and end with an alphanumeric character"),
-	).WithErrorCode(ErrorCodeStringIsDNSLabel)
+	).WithErrorCode(ErrorCodeStringDNSLabel)
 }
 
 var validUUIDRegexp = regexp.
@@ -188,8 +188,8 @@ func StringEndsWith(suffixes ...string) govy.Rule[string] {
 		WithDescription(msg)
 }
 
-// StringIsTitle ensures each word in a string starts with a capital letter.
-func StringIsTitle() govy.Rule[string] {
+// StringTitle ensures each word in a string starts with a capital letter.
+func StringTitle() govy.Rule[string] {
 	msg := "each word in a string must start with a capital letter"
 	return govy.NewRule(func(s string) error {
 		if len(s) == 0 {
@@ -206,7 +206,7 @@ func StringIsTitle() govy.Rule[string] {
 		}
 		return nil
 	}).
-		WithErrorCode(ErrorCodeStringIsTitle).
+		WithErrorCode(ErrorCodeStringTitle).
 		WithDescription(msg)
 }
 

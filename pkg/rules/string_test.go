@@ -87,7 +87,7 @@ func TestStringDNSLabel(t *testing.T) {
 			err := StringDNSLabel().Validate(input)
 			assert.Error(t, err)
 			for _, e := range err.(internal.RuleSetError) {
-				assert.True(t, govy.HasErrorCode(e, ErrorCodeStringIsDNSLabel))
+				assert.True(t, govy.HasErrorCode(e, ErrorCodeStringDNSLabel))
 			}
 		}
 	})
@@ -149,7 +149,7 @@ func TestStringUUID(t *testing.T) {
 	})
 }
 
-func TestStringIsURL(t *testing.T) {
+func TestStringURL(t *testing.T) {
 	t.Run("passes", func(t *testing.T) {
 		for _, input := range validURLs {
 			err := StringURL().Validate(input)
@@ -238,7 +238,7 @@ func TestStringEndsWith(t *testing.T) {
 	})
 }
 
-func TestStringIsTitle(t *testing.T) {
+func TestStringTitle(t *testing.T) {
 	tests := []struct {
 		in         string
 		shouldFail bool
@@ -259,11 +259,11 @@ func TestStringIsTitle(t *testing.T) {
 		{"Unicode \xe2\x80\xa8 Line Separator", false},
 	}
 	for _, tc := range tests {
-		err := StringIsTitle().Validate(tc.in)
+		err := StringTitle().Validate(tc.in)
 		if tc.shouldFail {
 			assert.Error(t, err, "input: %q", tc.in)
 			assert.EqualError(t, err, "each word in a string must start with a capital letter")
-			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringIsTitle))
+			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringTitle))
 		} else {
 			assert.NoError(t, err, "input: %q", tc.in)
 		}
