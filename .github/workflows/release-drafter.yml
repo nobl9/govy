@@ -1,0 +1,37 @@
+name: Release Drafter
+
+on:
+  push:
+    branches:
+      - main
+  # pull_request event is required only for autolabeler
+  # 'edited' event is required to account for initial invalid PR names
+  pull_request:
+    types: [opened, reopened, synchronize, edited]
+
+permissions:
+  contents: read
+
+jobs:
+  update_release_draft:
+    permissions:
+      # write permission is required to create a github release
+      contents: write
+      # write permission is required for autolabeler
+      # otherwise, read permission is required at least
+      pull-requests: write
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.RELEASE_LABELER_TOKEN }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      # Drafts your next Release notes as Pull Requests are merged into "main"
+      - id: drafter
+        uses: release-drafter/release-drafter@v6
+      - name: Add release notes to the draft
+        if: github.event_name == 'push'
+        run: .github/scripts/release-notes.sh ${{ steps.drafter.outputs.tag_name }}

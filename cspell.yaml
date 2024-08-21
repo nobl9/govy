@@ -1,0 +1,55 @@
+allowCompoundWords: true
+language: en_US
+dictionaries:
+  - companies
+  - misc
+  - softwareTerms
+  - go
+  - bash
+  - typescript
+  - node
+  - npm
+ignoreRegExpList:
+  - /\|\s+[T|G]{2,}\s+\|/g
+  - /https?:\/\/.*/g
+  - /github.*/g
+  - /nolint.*/g
+  - /nosec.*/g
+ignorePaths:
+  - .golangci.yml
+  - "**/*.lock"
+  - "**/go.mod"
+  - "**/go.sum"
+  - "**/node_modules/**"
+  - cspell.json
+  - CODEOWNERS
+  - bin/**
+  - docs/assets/**
+words:
+  - Fset
+  - Skłodowska
+  - atoi
+  - endef
+  - errorf
+  - gobin
+  - godoc
+  - goimports
+  - golangci
+  - gomarkdoc
+  - gosec
+  - govulncheck
+  - govy
+  - govyconfig
+  - ldflags
+  - nobl
+  - pkgs
+  - plantuml
+  - println
+  - rtmp
+  - sloctl
+  - strconv
+  - structs
+  - tmpl
+  - tpng
+  - vuln
+  - vulns

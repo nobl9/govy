@@ -1,0 +1,62 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "schedule:nonOfficeHours", // https://docs.renovatebot.com/presets-schedule/#schedulenonofficehours
+    ":enableVulnerabilityAlertsWithLabel(security)", // https://docs.renovatebot.com/presets-default/#enablevulnerabilityalertswithlabelarg0
+    "group:recommended", // https://docs.renovatebot.com/presets-group/#grouprecommended
+    "workarounds:all", // https://docs.renovatebot.com/presets-workarounds/#workaroundsall
+    // Automerge configuration.
+    ":automergeMinor",
+    ":automergePr",
+    ":automergeRequireAllStatusChecks",
+  ],
+  "reviewersFromCodeOwners": true,
+  "dependencyDashboard": true,
+  "semanticCommits": "disabled",
+  "labels": ["dependencies", "renovate"],
+  "prHourlyLimit": 1,
+  "prConcurrentLimit": 5,
+  "rebaseWhen": "conflicted",
+  "rangeStrategy": "pin",
+  "branchPrefix": "renovate_",
+  "commitMessagePrefix": "chore:",
+  // This will run go mod tidy after each go.mod update.
+  "postUpdateOptions": ["gomodTidy"],
+  // Groups:
+  "packageRules": [
+    {
+      "matchManagers": ["gomod"],
+      "matchUpdateTypes": [
+        "minor",
+        "patch",
+      ],
+      "groupName": "minor and patch Golang dependencies",
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "addLabels": ["github-actions"],
+    },
+    {
+      "matchManagers": ["gomod"],
+      "addLabels": ["golang"],
+    },
+    {
+      "matchManagers": ["npm"],
+      "addLabels": ["javascript"],
+    },
+  ],
+  // Custom version extraction from Makefile.
+  "regexManagers": [
+    {
+      "fileMatch": ["^Makefile$"],
+      "matchStrings": [
+        ".*renovate datasource=(?<datasource>.*?) depName=(?<depName>.*?)\\n.*?_VERSION\\s?:=\\s?(?<currentValue>.*)\\s"
+      ]
+    }
+  ],
+  "ignorePaths": [
+    "**/vendor/**",
+    "**/node_modules/**",
+    "**/test_data/**",
+  ]
+}

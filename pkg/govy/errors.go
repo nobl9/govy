@@ -1,0 +1,264 @@
+package govy
+
+import (
+	"fmt"
+	"sort"
+	"strings"
+
+	"github.com/nobl9/govy/internal"
+)
+
+const (
+	ErrorCodeSeparator    = ":"
+	propertyNameSeparator = "."
+	hiddenValue           = "[hidden]"
+)
+
+func NewValidatorError(errs PropertyErrors) *ValidatorError {
+	return &ValidatorError{Errors: errs}
+}
+
+// ValidatorError is the top-level error type for validation errors.
+// It aggregates the property errors of [Validator].
+type ValidatorError struct {
+	Errors PropertyErrors `json:"errors"`
+	Name   string         `json:"name"`
+}
+
+// WithName sets the [ValidatorError.Name] field.
+func (e *ValidatorError) WithName(name string) *ValidatorError {
+	e.Name = name
+	return e
+}
+
+func (e *ValidatorError) Error() string {
+	b := strings.Builder{}
+	b.WriteString("Validation")
+	if e.Name != "" {
+		b.WriteString(" for ")
+		b.WriteString(e.Name)
+	}
+	b.WriteString(" has failed for the following properties:\n")
+	internal.JoinErrors(&b, e.Errors, strings.Repeat(" ", 2))
+	return b.String()
+}
+
+// PropertyErrors is a slice of [PropertyError].
+type PropertyErrors []*PropertyError
+
+func (e PropertyErrors) Error() string {
+	b := strings.Builder{}
+	internal.JoinErrors(&b, e, "")
+	return b.String()
+}
+
+func (e PropertyErrors) HideValue() PropertyErrors {
+	for _, err := range e {
+		_ = err.HideValue()
+	}
+	return e
+}
+
+// sort should be always called after aggregate.
+func (e PropertyErrors) sort() PropertyErrors {
+	if len(e) == 0 {
+		return e
+	}
+	sort.Slice(e, func(i, j int) bool {
+		e1, e2 := e[i], e[j]
+		if e1.PropertyName != e2.PropertyName {
+			return e1.PropertyName < e2.PropertyName
+		}
+		if e1.PropertyValue != e2.PropertyValue {
+			return e1.PropertyValue < e2.PropertyValue
+		}
+		if e1.IsKeyError != e2.IsKeyError {
+			return e1.IsKeyError
+		}
+		return e1.IsSliceElementError
+	})
+	return e
+}
+
+// aggregate merges [PropertyError] with according to the [PropertyError.Equal] comparison.
+func (e PropertyErrors) aggregate() PropertyErrors {
+	if len(e) == 0 {
+		return nil
+	}
+	agg := make(PropertyErrors, 0, len(e))
+outer:
+	for _, e1 := range e {
+		for _, e2 := range agg {
+			if e1.Equal(e2) {
+				e2.Errors = append(e2.Errors, e1.Errors...)
+				continue outer
+			}
+		}
+		agg = append(agg, e1)
+	}
+	return agg
+}
+
+func NewPropertyError(propertyName string, propertyValue interface{}, errs ...error) *PropertyError {
+	return &PropertyError{
+		PropertyName:  propertyName,
+		PropertyValue: internal.PropertyValueString(propertyValue),
+		Errors:        unpackRuleErrors(errs, make([]*RuleError, 0, len(errs))),
+	}
+}
+
+type PropertyError struct {
+	PropertyName  string `json:"propertyName"`
+	PropertyValue string `json:"propertyValue"`
+	// IsKeyError is set to true if the error was created through map key validation.
+	// PropertyValue in this scenario will be the key value, equal to the last element of PropertyName path.
+	IsKeyError bool `json:"isKeyError,omitempty"`
+	// IsSliceElementError is set to true if the error was created through slice element validation.
+	IsSliceElementError bool         `json:"isSliceElementError,omitempty"`
+	Errors              []*RuleError `json:"errors"`
+}
+
+func (e *PropertyError) Error() string {
+	b := new(strings.Builder)
+	indent := ""
+	if e.PropertyName != "" {
+		fmt.Fprintf(b, "'%s'", e.PropertyName)
+		if e.PropertyValue != "" {
+			if e.IsKeyError {
+				fmt.Fprintf(b, " with key '%s'", e.PropertyValue)
+			} else {
+				fmt.Fprintf(b, " with value '%s'", e.PropertyValue)
+			}
+		}
+		b.WriteString(":\n")
+		indent = strings.Repeat(" ", 2)
+	}
+	internal.JoinErrors(b, e.Errors, indent)
+	return b.String()
+}
+
+// Equal checks if two [PropertyError] are equal.
+func (e *PropertyError) Equal(cmp *PropertyError) bool {
+	return e.PropertyName == cmp.PropertyName &&
+		e.PropertyValue == cmp.PropertyValue &&
+		e.IsKeyError == cmp.IsKeyError &&
+		e.IsSliceElementError == cmp.IsSliceElementError
+}
+
+// PrependParentPropertyName prepends a given name to the [PropertyError.PropertyName].
+func (e *PropertyError) PrependParentPropertyName(name string) *PropertyError {
+	sep := propertyNameSeparator
+	if e.IsSliceElementError && strings.HasPrefix(e.PropertyName, "[") {
+		sep = ""
+	}
+	e.PropertyName = concatStrings(name, e.PropertyName, sep)
+	return e
+}
+
+// HideValue hides the property value from each of the [PropertyError.Errors].
+func (e *PropertyError) HideValue() *PropertyError {
+	sv := internal.PropertyValueString(e.PropertyValue)
+	e.PropertyValue = ""
+	for _, err := range e.Errors {
+		_ = err.HideValue(sv)
+	}
+	return e
+}
+
+// NewRuleError creates a new [RuleError] with the given message and optional error codes.
+// Error codes are added according to the rules defined by [RuleError.AddCode].
+func NewRuleError(message string, codes ...ErrorCode) *RuleError {
+	ruleError := &RuleError{Message: message}
+	for _, code := range codes {
+		ruleError = ruleError.AddCode(code)
+	}
+	return ruleError
+}
+
+// RuleError is the fundamental error container associated with a [Rule].
+type RuleError struct {
+	Message string    `json:"error"`
+	Code    ErrorCode `json:"code,omitempty"`
+}
+
+func (r *RuleError) Error() string {
+	return r.Message
+}
+
+// AddCode extends the [RuleError] with the given error code.
+// Codes are prepended, the last code in chain is always the first one set.
+// Example:
+//
+//	ruleError.AddCode("code").AddCode("another").AddCode("last")
+//
+// This will result in 'last:another:code' [ErrorCode].
+func (r *RuleError) AddCode(code ErrorCode) *RuleError {
+	r.Code = concatStrings(code, r.Code, ErrorCodeSeparator)
+	return r
+}
+
+// HideValue replaces all occurrences of a string in the [RuleError.Message] with a '*' characters.
+func (r *RuleError) HideValue(stringValue string) *RuleError {
+	r.Message = strings.ReplaceAll(r.Message, stringValue, hiddenValue)
+	return r
+}
+
+// HasErrorCode checks if an error contains given [ErrorCode].
+// It supports all govy errors.
+func HasErrorCode(err error, code ErrorCode) bool {
+	switch v := err.(type) {
+	case PropertyErrors:
+		for _, e := range v {
+			if HasErrorCode(e, code) {
+				return true
+			}
+		}
+		return false
+	case *ValidatorError:
+		for _, e := range v.Errors {
+			if HasErrorCode(e, code) {
+				return true
+			}
+		}
+		return false
+	case *RuleError:
+		codes := strings.Split(v.Code, ErrorCodeSeparator)
+		for i := range codes {
+			if code == codes[i] {
+				return true
+			}
+		}
+	case *PropertyError:
+		for _, e := range v.Errors {
+			if HasErrorCode(e, code) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// unpackRuleErrors unpacks error messages recursively scanning [ruleSetError] if it is detected.
+func unpackRuleErrors(errs []error, ruleErrors []*RuleError) []*RuleError {
+	for _, err := range errs {
+		switch v := err.(type) {
+		case internal.RuleSetError:
+			ruleErrors = unpackRuleErrors(v, ruleErrors)
+		case *RuleError:
+			ruleErrors = append(ruleErrors, v)
+		default:
+			ruleErrors = append(ruleErrors, &RuleError{Message: v.Error()})
+		}
+	}
+	return ruleErrors
+}
+
+func concatStrings(pre, post, sep string) string {
+	if pre == "" {
+		return post
+	}
+	if post == "" {
+		return pre
+	}
+	return pre + sep + post
+}
