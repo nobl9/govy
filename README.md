@@ -27,8 +27,6 @@ There's an interactive tutorial available,
 powered by Go's [testable examples](https://go.dev/blog/examples),
 to access it visit [pkg.go.dev](https://pkg.go.dev/github.com/nobl9/govy)
 or locally at [example_test.go](./pkg/govy/example_test.go).
-Note that `godoc` does not render testable examples' code comments well,
-it's advised to go through the interactive tutorial inside an IDE of choice.
 
 Govy's code documentation is available at [pkg.go.dev](https://pkg.go.dev/github.com/nobl9/govy)
 as well as in generated [Markdown format](./docs/DOCUMENTATION.md).
