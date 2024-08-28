@@ -37,6 +37,13 @@ test:
 	$(call _print_step,Running unit tests)
 	go test -race -cover ./...
 
+.PHONY: test/coverage
+## Produce test coverage report and inspect it in browser.
+test/coverage:
+	$(call _print_step,Running test coverage report)
+	go test -coverprofile=coverage.out ./...
+	go tool cover -html=coverage.out
+
 .PHONY: check check/vet check/lint check/gosec check/spell check/trailing check/markdown check/format check/generate check/vulns
 ## Run all checks.
 check: check/vet check/lint check/gosec check/spell check/trailing check/markdown check/format check/generate check/vulns

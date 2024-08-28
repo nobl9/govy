@@ -15,6 +15,26 @@ to change, breaking changes may be introduced with new versions until v1
 is released. Checkout [roadmap](./docs/ROADMAP.md) for upcoming,
 planned features.
 
+## Legend
+
+1. [Getting started](#getting-started)
+    1. [Use cases](#use-cases)
+2. [Building blocks](#building-blocks)
+    1. [Errors](#errors)
+3. [Features](#features)
+    1. [Type safety](#type-safety)
+    2. [Immutability](#immutability)
+    3. [Verbose error messages](#verbose-error-messages)
+    4. [Predefined rules](#predefined-rules)
+    5. [Custom rules](#custom-rules)
+    6. [Validation plan](#validation-plan)
+    7. [Properties name inference](#properties-name-inference)
+4. [Rationale](#rationale)
+    1. [Reflection](#reflection)
+    2. [Trivia](#trivia)
+5. [Development](#development)
+6. [Acknowledgments](#acknowledgments)
+
 ## Getting started
 
 In order to add the library to your project, run:
@@ -564,6 +584,11 @@ Furthermore, our validation rules were quiet complex and figuring out which rule
 were associated with given property was tedious to say the least.
 Around the same time, Go 1.18 was released with generics support, we started playing
 with them, and the idea for `govy` was born.
+
+## Development
+
+Checkout both [contributing guidelines](./docs/CONTRIBUTING.md) and
+[development instructions](./docs/DEVELOPMENT.md).
 
 ## Acknowledgments
 
