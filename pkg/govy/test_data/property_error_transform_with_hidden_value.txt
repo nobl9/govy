@@ -1,0 +1,2 @@
+- 'prop':
+  - strconv.Atoi: parsing "[hidden]": invalid syntax

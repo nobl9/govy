@@ -1,0 +1,33 @@
+name: Checks
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+jobs:
+  check:
+    name: Run all checks for static analysis
+    runs-on: ubuntu-latest
+    env:
+      GO111MODULE: on
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+      - name: Install devbox
+        uses: jetpack-io/devbox-install-action@v0.11.0
+        with:
+          enable-cache: true
+      - name: Run spell and markdown checkers
+        run: devbox run -- make check/spell check/trailing check/markdown
+      - name: Check generated code
+        run: devbox run -- make check/generate
+      - name: Check formatting
+        run: devbox run -- make check/format
+      - name: Run go vet
+        run: devbox run -- make check/vet
+      - name: Run golangci-lint
+        run: devbox run -- make check/lint
+      - name: Run Gosec Security Scanner
+        run: devbox run -- make check/gosec

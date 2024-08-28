@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+project_name: govy
+version: 2
+
+release:
+  make_latest: false
+  github:
+    owner: nobl9
+    name: "{{ .ProjectName }}"
+
+builds:
+  - main: "./cmd/{{ .ProjectName }}"
+    binary: "{{ .ProjectName }}"
+    goos:
+      - darwin
+      - linux
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags: -s -w
+    env:
+      - CGO_ENABLED=0
+
+checksum:
+  name_template: "{{ .ProjectName }}-{{ .Version }}-SHA256SUMS"
+  algorithm: sha256
