@@ -189,53 +189,6 @@
         }
       }
     },
-    "gomarkdoc@1.1": {
-      "last_modified": "2024-08-14T11:41:26Z",
-      "resolved": "github:NixOS/nixpkgs/0cb2fd7c59fed0cd82ef858cbcbdb552b9a33465#gomarkdoc",
-      "source": "devbox-search",
-      "version": "1.1.0",
-      "systems": {
-        "aarch64-darwin": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/yyfwkknqpmighcdhd7mpgs7j0wacyn9m-gomarkdoc-1.1.0",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/yyfwkknqpmighcdhd7mpgs7j0wacyn9m-gomarkdoc-1.1.0"
-        },
-        "aarch64-linux": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/0c1717ixhs89vpc8qc3dlraj89w09p27-gomarkdoc-1.1.0",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/0c1717ixhs89vpc8qc3dlraj89w09p27-gomarkdoc-1.1.0"
-        },
-        "x86_64-darwin": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/w8ywczb794fvh2fwrb9906fdnwkax1si-gomarkdoc-1.1.0",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/w8ywczb794fvh2fwrb9906fdnwkax1si-gomarkdoc-1.1.0"
-        },
-        "x86_64-linux": {
-          "outputs": [
-            {
-              "path": "/nix/store/ggpkp2n14pk7f4m3niwks5dpyxpxj9dx-gomarkdoc-1.1.0",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/ggpkp2n14pk7f4m3niwks5dpyxpxj9dx-gomarkdoc-1.1.0"
-        }
-      }
-    },
     "gosec@latest": {
       "last_modified": "2024-08-14T11:41:26Z",
       "resolved": "github:NixOS/nixpkgs/0cb2fd7c59fed0cd82ef858cbcbdb552b9a33465#gosec",

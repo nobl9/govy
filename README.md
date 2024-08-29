@@ -48,8 +48,8 @@ powered by Go's [testable examples](https://go.dev/blog/examples),
 to access it visit [pkg.go.dev](https://pkg.go.dev/github.com/nobl9/govy)
 or locally at [example_test.go](./pkg/govy/example_test.go).
 
-Govy's code documentation is available at [pkg.go.dev](https://pkg.go.dev/github.com/nobl9/govy)
-as well as in generated [Markdown format](./docs/DOCUMENTATION.md).
+Govy's code documentation is available at
+[pkg.go.dev](https://pkg.go.dev/github.com/nobl9/govy).
 
 Here's a quick example of `govy` in action:
 
@@ -153,7 +153,7 @@ func Example_basicUsage() {
 	//     - must be one of [Jake, George]
 	//   - 'students' with value '[{"index":"918230014"},{"index":"9182300123"},{"index":"918230014"}]':
 	//     - length must be less than or equal to 2
-	//     - elements are not unique, index 0 collides with index 2
+	//     - elements are not unique, 1st and 3rd elements collide
 	//   - 'students[1].index' with value '9182300123':
 	//     - length must be between 9 and 9
 	//   - 'university.name':

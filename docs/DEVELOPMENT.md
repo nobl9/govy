@@ -61,8 +61,6 @@ shortcomings.
 Some parts of the codebase are automatically generated.
 We use the following tools to do that:
 
-- [gomarkdoc](https://github.com/princjef/gomarkdoc)
-  for generating Markdown docs from Go code docs.
 - [embed-example-in-readme.bash](../scripts/embed-example-in-readme.bash)
   for embedding tested examples in [README.md](../README.md).
 

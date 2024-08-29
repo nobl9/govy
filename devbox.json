@@ -8,8 +8,7 @@
     "golangci-lint@1.60",
     "gosec@latest",
     "go@1.22",
-    "gotools@0.22",
-    "gomarkdoc@1.1"
+    "gotools@0.22"
   ],
   "shell": {
     "init_hook": [

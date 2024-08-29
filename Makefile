@@ -94,9 +94,9 @@ check/format:
 	$(call _print_check_step,Checking if files are formatted)
 	./scripts/check-formatting.sh
 
-.PHONY: generate generate/code generate/readme generate/gomarkdoc
+.PHONY: generate generate/code generate/readme
 ## Auto generate files.
-generate: generate/code generate/readme generate/gomarkdoc
+generate: generate/code generate/readme
 
 ## Generate Golang code.
 generate/code:
@@ -107,16 +107,6 @@ generate/code:
 generate/readme:
 	echo "Generating README.md embedded examples..."
 	./scripts/embed-example-in-readme.bash README.md
-
-## Generate Markdown docs from Go docs.
-generate/gomarkdoc:
-	echo "Generating Markdown docs from Go docs..."
-	gomarkdoc \
-		--output docs/DOCUMENTATION.md \
-		--format github \
-		--repository.default-branch main \
-		--repository.url https://github.com/nobl9/govy \
-		./pkg/...
 
 .PHONY: format format/go format/cspell
 ## Format files.

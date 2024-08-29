@@ -26,7 +26,8 @@ func SliceUnique[S []V, V any, H comparable](hashFunc HashFunction[V, H], constr
 		for i := range slice {
 			hash := hashFunc(slice[i])
 			if j, ok := unique[hash]; ok {
-				errMsg := fmt.Sprintf("elements are not unique, index %d collides with index %d", j, i)
+				errMsg := fmt.Sprintf("elements are not unique, %s and %s elements collide",
+					ordinalString(j+1), ordinalString(i+1))
 				if len(constraints) > 0 {
 					errMsg += " based on constraints: " + strings.Join(constraints, ", ")
 				}

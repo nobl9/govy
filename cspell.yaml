@@ -38,7 +38,6 @@ words:
   - goimports
   - golangci
   - golines
-  - gomarkdoc
   - goroot
   - gosec
   - govulncheck
@@ -47,7 +46,6 @@ words:
   - ldflags
   - nobl
   - pkgs
-  - plantuml
   - println
   - rtmp
   - sloctl

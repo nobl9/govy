@@ -93,6 +93,8 @@ func StringASCII() govy.Rule[string] {
 	return StringMatchRegexp(asciiRegexp).WithErrorCode(ErrorCodeStringASCII)
 }
 
+// StringURL ensures property's value is a valid URL as defined by [url.Parse] function.
+// Unlike [URL] it does not impose any additional rules upon parsed [url.URL].
 func StringURL() govy.Rule[string] {
 	return govy.NewRule(func(v string) error {
 		u, err := url.Parse(v)
