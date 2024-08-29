@@ -95,7 +95,7 @@ func Example_basicUsage() {
 	//     - must be one of [Jake, George]
 	//   - 'students' with value '[{"index":"918230014"},{"index":"9182300123"},{"index":"918230014"}]':
 	//     - length must be less than or equal to 2
-	//     - elements are not unique, index 0 collides with index 2
+	//     - elements are not unique, 1st and 3rd elements collide
 	//   - 'students[1].index' with value '9182300123':
 	//     - length must be between 9 and 9
 	//   - 'university.name':

@@ -721,8 +721,9 @@ func ExamplePropertyRules_Include() {
 // the same as [govy.PropertyRules], but extends its API slightly.
 //
 // To define rules for each element use:
-// - [govy.PropertyRulesForSlice.RulesForEach]
-// - [govy.PropertyRulesForSlice.IncludeForEach]
+//   - [govy.PropertyRulesForSlice.RulesForEach]
+//   - [govy.PropertyRulesForSlice.IncludeForEach]
+//
 // These work exactly the same way as [govy.PropertyRules.Rules] and [govy.PropertyRules.Include]
 // verifying each slice element.
 //
@@ -768,27 +769,28 @@ func ExampleForSlice() {
 	// Validation has failed for the following properties:
 	//   - 'students' with value '[{"index":"918230014"},{"index":"9182300123"},{"index":"918230014"}]':
 	//     - length must be less than or equal to 2
-	//     - elements are not unique, index 0 collides with index 2
+	//     - elements are not unique, 1st and 3rd elements collide
 	//   - 'students[1].index' with value '9182300123':
 	//     - length must be between 9 and 9
 }
 
 // When dealing with maps there are three forms of iteration:
-// - keys
-// - values
-// - key-value pairs (items)
+//   - keys
+//   - values
+//   - key-value pairs (items)
 //
 // You can use [govy.ForMap] function to define rules for all the aforementioned iterators.
 // It returns a new struct [govy.PropertyRulesForMap] which behaves similar to
 // [govy.PropertyRulesForSlice]..
 //
 // To define rules for keys use:
-// - [govy.PropertyRulesForMap.RulesForKeys]
-// - [govy.PropertyRulesForMap.IncludeForKeys]
-// - [govy.PropertyRulesForMap.RulesForValues]
-// - [govy.PropertyRulesForMap.IncludeForValues]
-// - [govy.PropertyRulesForMap.RulesForItems]
-// - [govy.PropertyRulesForMap.IncludeForItems]
+//   - [govy.PropertyRulesForMap.RulesForKeys]
+//   - [govy.PropertyRulesForMap.IncludeForKeys]
+//   - [govy.PropertyRulesForMap.RulesForValues]
+//   - [govy.PropertyRulesForMap.IncludeForValues]
+//   - [govy.PropertyRulesForMap.RulesForItems]
+//   - [govy.PropertyRulesForMap.IncludeForItems]
+//
 // These work exactly the same way as [govy.PropertyRules.Rules] and [govy.PropertyRules.Include]
 // verifying each map's key, value or [govy.MapItem].
 //
@@ -797,10 +799,10 @@ func ExampleForSlice() {
 // Note: [govy.PropertyRulesForMap] does not implement Include function for the whole map.
 //
 // In the below example, we're defining that student index to [Teacher] map:
-// - Must have at most 2 elements (map).
-// - Keys must have a length of 9 (keys).
-// - Eve cannot be a teacher for any student (values).
-// - Joan cannot be a teacher for student with index 918230013 (items).
+//   - Must have at most 2 elements (map).
+//   - Keys must have a length of 9 (keys).
+//   - Eve cannot be a teacher for any student (values).
+//   - Joan cannot be a teacher for student with index 918230013 (items).
 //
 // Notice that property path for maps has the following format:
 // <map_name>.<key>.<map_property_name>
@@ -970,7 +972,7 @@ func ExampleValidator() {
 	//     - must be one of [Jake, George]
 	//   - 'students' with value '[{"index":"918230014"},{"index":"9182300123"},{"index":"918230014"}]':
 	//     - length must be less than or equal to 2
-	//     - elements are not unique, index 0 collides with index 2
+	//     - elements are not unique, 1st and 3rd elements collide
 	//   - 'students[1].index' with value '9182300123':
 	//     - length must be between 9 and 9
 	//   - 'university.address':

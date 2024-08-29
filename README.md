@@ -15,6 +15,26 @@ to change, breaking changes may be introduced with new versions until v1
 is released. Checkout [roadmap](./docs/ROADMAP.md) for upcoming,
 planned features.
 
+## Legend
+
+1. [Getting started](#getting-started)
+    1. [Use cases](#use-cases)
+2. [Building blocks](#building-blocks)
+    1. [Errors](#errors)
+3. [Features](#features)
+    1. [Type safety](#type-safety)
+    2. [Immutability](#immutability)
+    3. [Verbose error messages](#verbose-error-messages)
+    4. [Predefined rules](#predefined-rules)
+    5. [Custom rules](#custom-rules)
+    6. [Validation plan](#validation-plan)
+    7. [Properties name inference](#properties-name-inference)
+4. [Rationale](#rationale)
+    1. [Reflection](#reflection)
+    2. [Trivia](#trivia)
+5. [Development](#development)
+6. [Acknowledgments](#acknowledgments)
+
 ## Getting started
 
 In order to add the library to your project, run:
@@ -28,8 +48,8 @@ powered by Go's [testable examples](https://go.dev/blog/examples),
 to access it visit [pkg.go.dev](https://pkg.go.dev/github.com/nobl9/govy)
 or locally at [example_test.go](./pkg/govy/example_test.go).
 
-Govy's code documentation is available at [pkg.go.dev](https://pkg.go.dev/github.com/nobl9/govy)
-as well as in generated [Markdown format](./docs/DOCUMENTATION.md).
+Govy's code documentation is available at
+[pkg.go.dev](https://pkg.go.dev/github.com/nobl9/govy).
 
 Here's a quick example of `govy` in action:
 
@@ -133,7 +153,7 @@ func Example_basicUsage() {
 	//     - must be one of [Jake, George]
 	//   - 'students' with value '[{"index":"918230014"},{"index":"9182300123"},{"index":"918230014"}]':
 	//     - length must be less than or equal to 2
-	//     - elements are not unique, index 0 collides with index 2
+	//     - elements are not unique, 1st and 3rd elements collide
 	//   - 'students[1].index' with value '9182300123':
 	//     - length must be between 9 and 9
 	//   - 'university.name':
@@ -564,6 +584,11 @@ Furthermore, our validation rules were quiet complex and figuring out which rule
 were associated with given property was tedious to say the least.
 Around the same time, Go 1.18 was released with generics support, we started playing
 with them, and the idea for `govy` was born.
+
+## Development
+
+Checkout both [contributing guidelines](./docs/CONTRIBUTING.md) and
+[development instructions](./docs/DEVELOPMENT.md).
 
 ## Acknowledgments
 
