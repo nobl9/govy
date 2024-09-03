@@ -19,6 +19,7 @@ planned features.
 
 1. [Getting started](#getting-started)
     1. [Use cases](#use-cases)
+    2. [Comparison with other libraries](#comparison-with-other-libraries)
 2. [Building blocks](#building-blocks)
     1. [Errors](#errors)
 3. [Features](#features)
@@ -170,6 +171,16 @@ func Example_basicUsage() {
    it's used for validating complex k8s-like schema, it contains both simple
    and very advanced validation rules and is a great place to draw some
    inspiration from.
+
+### Comparison with other libraries
+
+1. [go-playground/validator](https://github.com/go-playground/validator). \
+   Visit [runnable example](./docs/validator-comparison/example_test.go) for a
+   comprehensive, live code comparison between `govy` and
+   `go-playground/validator`.
+   `validator` was the predecessor which `govy` dethroned at Nobl9.
+   For more trivia and details on the differences between the two,
+   check out the [rationale](#rationale) section.
 
 ## Building blocks
 

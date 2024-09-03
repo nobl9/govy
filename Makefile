@@ -35,7 +35,7 @@ release:
 ## Run all unit tests.
 test:
 	$(call _print_step,Running unit tests)
-	go test -race -cover ./...
+	go test -race -cover ./... ./docs/validator-comparison/...
 
 .PHONY: test/coverage
 ## Produce test coverage report and inspect it in browser.

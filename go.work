@@ -2,5 +2,6 @@ go 1.22
 
 use (
 	.
+	./docs/validator-comparison
 	./tests/examplemodule
 )
