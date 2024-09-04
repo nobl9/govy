@@ -2,7 +2,7 @@ module validator-comparison
 
 go 1.22
 
-replace github.com/nobl9/nobl9-go => ../../.
+replace github.com/nobl9/govy => ../../.
 
 require (
 	github.com/go-playground/validator/v10 v10.22.0
