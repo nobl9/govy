@@ -9,8 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/nobl9/govy/internal/assert"
 
 	"github.com/nobl9/govy/internal"
 )
@@ -81,7 +80,7 @@ func TestCmd_NameInfer(t *testing.T) {
 	assert.ElementsMatch(t, expectedCommandOutputLines, strings.Split(strings.TrimSpace(out.String()), "\n"))
 	generatedFilePath := filepath.Join(tmpDir, fileName)
 	data, err := os.ReadFile(generatedFilePath)
-	require.NoError(t, err)
+	assert.Require(t, assert.NoError(t, err))
 	assert.Equal(t, fmt.Sprintf(expectedGeneratedFile, tmpDir), string(data))
 }
 

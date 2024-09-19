@@ -3,8 +3,7 @@ package rules
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/nobl9/govy/internal/assert"
 
 	"github.com/nobl9/govy/pkg/govy"
 )
@@ -16,7 +15,7 @@ func TestOneOf(t *testing.T) {
 	})
 	t.Run("fails", func(t *testing.T) {
 		err := OneOf("this", "that").Validate("those")
-		require.Error(t, err)
+		assert.Require(t, assert.Error(t, err))
 		assert.EqualError(t, err, "must be one of [this, that]")
 		assert.True(t, govy.HasErrorCode(err, ErrorCodeOneOf))
 	})

@@ -4,8 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/nobl9/govy/internal/assert"
 
 	"github.com/nobl9/govy/pkg/govy"
 )
@@ -134,7 +133,7 @@ func TestRule_WithDescription(t *testing.T) {
 		WithDescription("the integer must be positive")
 
 	err := r.Validate(-1)
-	require.Error(t, err)
+	assert.Require(t, assert.Error(t, err))
 	assert.Equal(t, &govy.RuleError{
 		Message:     "must be positive",
 		Code:        "test",

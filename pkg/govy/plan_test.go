@@ -7,8 +7,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/nobl9/govy/internal/assert"
 
 	"github.com/nobl9/govy/pkg/govy"
 	"github.com/nobl9/govy/pkg/rules"
@@ -140,7 +139,7 @@ func TestPlan(t *testing.T) {
 	enc := json.NewEncoder(&buf)
 	enc.SetIndent("", "  ")
 	err := enc.Encode(plan)
-	require.NoError(t, err)
+	assert.Require(t, assert.NoError(t, err))
 
 	assert.Equal(t, expectedPlanJSON, buf.String())
 }

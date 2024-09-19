@@ -4,8 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/nobl9/govy/internal/assert"
 
 	"github.com/nobl9/govy/pkg/govy"
 	"github.com/nobl9/govy/pkg/govyconfig"
@@ -31,7 +30,7 @@ func TestPropertyRulesForEach(t *testing.T) {
 			WithName("test.path").
 			RulesForEach(govy.NewRule(func(v string) error { return expectedErr }))
 		errs := mustPropertyErrors(t, r.Validate(mockStruct{}))
-		require.Len(t, errs, 1)
+		assert.Require(t, assert.Len(t, errs, 1))
 		assert.Equal(t, &govy.PropertyError{
 			PropertyName:        "test.path[0]",
 			PropertyValue:       "path",
@@ -70,7 +69,7 @@ func TestPropertyRulesForEach(t *testing.T) {
 			}))
 
 		errs := mustPropertyErrors(t, r.Validate(mockStruct{Fields: []string{"1", "2"}}))
-		require.Len(t, errs, 6)
+		assert.Require(t, assert.Len(t, errs, 6))
 		assert.ElementsMatch(t, []*govy.PropertyError{
 			{
 				PropertyName:  "test.path",
@@ -117,7 +116,7 @@ func TestPropertyRulesForEach(t *testing.T) {
 			RulesForEach(govy.NewRule(func(v string) error { return expectedErr })).
 			RulesForEach(govy.NewRule(func(v string) error { return errors.New("no") }))
 		errs := mustPropertyErrors(t, r.Validate(mockStruct{}))
-		require.Len(t, errs, 1)
+		assert.Require(t, assert.Len(t, errs, 1))
 		assert.Equal(t, &govy.PropertyError{
 			PropertyName:        "test.path[0]",
 			PropertyValue:       "value",
@@ -142,7 +141,7 @@ func TestPropertyRulesForEach(t *testing.T) {
 					),
 			))
 		errs := mustPropertyErrors(t, r.Validate(mockStruct{Fields: []string{"value"}}))
-		require.Len(t, errs, 2)
+		assert.Require(t, assert.Len(t, errs, 2))
 		assert.ElementsMatch(t, []*govy.PropertyError{
 			{
 				PropertyName:        "test.path[0]",
@@ -179,7 +178,7 @@ func TestPropertyRulesForEach(t *testing.T) {
 			Include(inc)
 
 		errs := mustPropertyErrors(t, r.Validate(mockStruct{Fields: []string{"value1", "value2"}}))
-		require.Len(t, errs, 2)
+		assert.Require(t, assert.Len(t, errs, 2))
 		assert.ElementsMatch(t, []*govy.PropertyError{
 			{
 				PropertyName:        "test.path[0]",

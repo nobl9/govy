@@ -4,8 +4,7 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/nobl9/govy/internal/assert"
 
 	"github.com/nobl9/govy/pkg/govy"
 )
@@ -56,7 +55,7 @@ func TestURL(t *testing.T) {
 	t.Run("passes", func(t *testing.T) {
 		for _, input := range validURLs {
 			u, err := url.Parse(input)
-			require.NoError(t, err)
+			assert.Require(t, assert.NoError(t, err))
 			err = URL().Validate(u)
 			assert.NoError(t, err)
 		}
@@ -64,9 +63,9 @@ func TestURL(t *testing.T) {
 	t.Run("fails", func(t *testing.T) {
 		for _, input := range invalidURLs {
 			u, err := url.Parse(input)
-			require.NoError(t, err)
+			assert.Require(t, assert.NoError(t, err))
 			err = URL().Validate(u)
-			require.Error(t, err)
+			assert.Require(t, assert.Error(t, err))
 			assert.True(t, govy.HasErrorCode(err, ErrorCodeURL))
 		}
 	})

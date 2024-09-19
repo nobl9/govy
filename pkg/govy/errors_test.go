@@ -7,8 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/nobl9/govy/internal/assert"
 
 	"github.com/nobl9/govy/internal"
 	"github.com/nobl9/govy/pkg/govy"
@@ -344,6 +343,6 @@ func TestHasErrorCode(t *testing.T) {
 func expectedErrorOutput(t *testing.T, name string) string {
 	t.Helper()
 	data, err := errorsTestData.ReadFile(filepath.Join("test_data", name))
-	require.NoError(t, err)
+	assert.Require(t, assert.NoError(t, err))
 	return string(data)
 }
