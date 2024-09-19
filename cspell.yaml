@@ -18,8 +18,8 @@ ignoreRegExpList:
 ignorePaths:
   - .golangci.yml
   - "**/*.lock"
-  - "**/go.mod"
-  - "**/go.sum"
+  - "**/go*.mod"
+  - "**/go*.sum"
   - "**/node_modules/**"
   - cspell.json
   - CODEOWNERS
