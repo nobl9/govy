@@ -73,12 +73,9 @@ func StringDNSLabel() govy.RuleSet[string] {
 	).WithErrorCode(ErrorCodeStringDNSLabel)
 }
 
-var validUUIDRegexp = regexp.
-	MustCompile("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
-
 // StringUUID ensures property's value is a valid UUID string.
 func StringUUID() govy.Rule[string] {
-	return StringMatchRegexp(validUUIDRegexp,
+	return StringMatchRegexp(validUUIDRegexp(),
 		"00000000-0000-0000-0000-000000000000",
 		"e190c630-8873-11ee-b9d1-0242ac120002",
 		"79258D24-01A7-47E5-ACBB-7E762DE52298").
@@ -86,11 +83,9 @@ func StringUUID() govy.Rule[string] {
 		WithErrorCode(ErrorCodeStringUUID)
 }
 
-var asciiRegexp = regexp.MustCompile("^[\x00-\x7F]*$")
-
 // StringASCII ensures property's value contains only ASCII characters.
 func StringASCII() govy.Rule[string] {
-	return StringMatchRegexp(asciiRegexp).WithErrorCode(ErrorCodeStringASCII)
+	return StringMatchRegexp(asciiRegexp()).WithErrorCode(ErrorCodeStringASCII)
 }
 
 // StringURL ensures property's value is a valid URL as defined by [url.Parse] function.
