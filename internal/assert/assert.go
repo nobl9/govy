@@ -18,6 +18,7 @@ func Require(t *testing.T, isPassing bool) {
 	}
 }
 
+// Equal fails the test if the expected and actual values are not equal.
 func Equal(t *testing.T, expected, actual interface{}) bool {
 	t.Helper()
 	if !areEqual(expected, actual) {
@@ -26,6 +27,7 @@ func Equal(t *testing.T, expected, actual interface{}) bool {
 	return true
 }
 
+// True fails the test if the actual value is not true.
 func True(t *testing.T, actual bool) bool {
 	t.Helper()
 	if !actual {
@@ -34,6 +36,7 @@ func True(t *testing.T, actual bool) bool {
 	return true
 }
 
+// Len fails the test if the object is not of the expected length.
 func Len(t *testing.T, object interface{}, length int) bool {
 	t.Helper()
 	if actual := getLen(object); actual != length {
@@ -42,6 +45,8 @@ func Len(t *testing.T, object interface{}, length int) bool {
 	return true
 }
 
+// IsType fails the test if the object is not of the expected type.
+// The expected type is specified using a type parameter.
 func IsType[T any](t *testing.T, object interface{}) bool {
 	t.Helper()
 	switch object.(type) {
@@ -52,6 +57,7 @@ func IsType[T any](t *testing.T, object interface{}) bool {
 	}
 }
 
+// Error fails the test if the error is nil.
 func Error(t *testing.T, err error) bool {
 	t.Helper()
 	if err == nil {
@@ -60,6 +66,7 @@ func Error(t *testing.T, err error) bool {
 	return true
 }
 
+// NoError fails the test if the error is not nil.
 func NoError(t *testing.T, err error) bool {
 	t.Helper()
 	if err != nil {
@@ -68,6 +75,7 @@ func NoError(t *testing.T, err error) bool {
 	return true
 }
 
+// EqualError fails the test if the expected error is not equal to the actual error message.
 func EqualError(t *testing.T, expected error, actual string) bool {
 	t.Helper()
 	if !Error(t, expected) {
@@ -79,6 +87,7 @@ func EqualError(t *testing.T, expected error, actual string) bool {
 	return true
 }
 
+// ErrorContains fails the test if the expected error does not contain the provided string.
 func ErrorContains(t *testing.T, expected error, contains string) bool {
 	t.Helper()
 	if !Error(t, expected) {
@@ -90,6 +99,7 @@ func ErrorContains(t *testing.T, expected error, contains string) bool {
 	return true
 }
 
+// ElementsMatch fails the test if the expected and actual slices do not have the same elements.
 func ElementsMatch[T comparable](t *testing.T, expected, actual []T) bool {
 	t.Helper()
 	if len(expected) != len(actual) {
