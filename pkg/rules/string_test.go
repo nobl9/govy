@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/nobl9/govy/internal/assert"
 
 	"github.com/nobl9/govy/pkg/govy"
 )
@@ -260,11 +260,11 @@ func TestStringTitle(t *testing.T) {
 	for _, tc := range tests {
 		err := StringTitle().Validate(tc.in)
 		if tc.shouldFail {
-			assert.Error(t, err, "input: %q", tc.in)
+			assert.Error(t, err)
 			assert.EqualError(t, err, "each word in a string must start with a capital letter")
 			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringTitle))
 		} else {
-			assert.NoError(t, err, "input: %q", tc.in)
+			assert.NoError(t, err)
 		}
 	}
 }

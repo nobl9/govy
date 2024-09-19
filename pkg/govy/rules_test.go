@@ -5,8 +5,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/nobl9/govy/internal/assert"
 
 	"github.com/nobl9/govy/internal"
 	"github.com/nobl9/govy/pkg/govy"
@@ -33,7 +32,7 @@ func TestPropertyRules(t *testing.T) {
 			WithName("test.path").
 			Rules(govy.NewRule(func(v string) error { return expectedErr }))
 		errs := mustPropertyErrors(t, r.Validate(mockStruct{}))
-		require.Len(t, errs, 1)
+		assert.Require(t, assert.Len(t, errs, 1))
 		assert.Equal(t, &govy.PropertyError{
 			PropertyName:  "test.path",
 			PropertyValue: "path",
@@ -66,7 +65,7 @@ func TestPropertyRules(t *testing.T) {
 				})
 			}))
 		errs := mustPropertyErrors(t, r.Validate(mockStruct{}))
-		require.Len(t, errs, 2)
+		assert.Require(t, assert.Len(t, errs, 2))
 		assert.ElementsMatch(t, govy.PropertyErrors{
 			&govy.PropertyError{
 				PropertyName:  "test.path",
@@ -92,7 +91,7 @@ func TestPropertyRules(t *testing.T) {
 			Rules(govy.NewRule(func(v string) error { return expectedErr })).
 			Rules(govy.NewRule(func(v string) error { return errors.New("no") }))
 		errs := mustPropertyErrors(t, r.Validate(mockStruct{}))
-		require.Len(t, errs, 1)
+		assert.Require(t, assert.Len(t, errs, 1))
 		assert.Equal(t, &govy.PropertyError{
 			PropertyName:  "test.path",
 			PropertyValue: "value",
@@ -116,7 +115,7 @@ func TestPropertyRules(t *testing.T) {
 					})),
 			))
 		errs := mustPropertyErrors(t, r.Validate(mockStruct{}))
-		require.Len(t, errs, 3)
+		assert.Require(t, assert.Len(t, errs, 3))
 		assert.ElementsMatch(t, govy.PropertyErrors{
 			{
 				PropertyName: "test.path",
@@ -142,7 +141,7 @@ func TestPropertyRules(t *testing.T) {
 			Rules(govy.NewRule(func(v mockStruct) error { return expectedErrs }))
 		object := mockStruct{Field: "this"}
 		errs := mustPropertyErrors(t, r.Validate(object))
-		require.Len(t, errs, 1)
+		assert.Require(t, assert.Len(t, errs, 1))
 		assert.Equal(t, &govy.PropertyError{
 			PropertyName:  "test.path",
 			PropertyValue: internal.PropertyValueString(object),
@@ -157,7 +156,7 @@ func TestPropertyRules(t *testing.T) {
 			HideValue().
 			Rules(govy.NewRule(func(v string) error { return expectedErr }))
 		errs := mustPropertyErrors(t, r.Validate(mockStruct{}))
-		require.Len(t, errs, 1)
+		assert.Require(t, assert.Len(t, errs, 1))
 		assert.Equal(t, &govy.PropertyError{
 			PropertyName:  "test.path",
 			PropertyValue: "",
@@ -421,8 +420,8 @@ func mustPropertyErrors(t *testing.T, err error) govy.PropertyErrors {
 
 func mustErrorType[T error](t *testing.T, err error) T {
 	t.Helper()
-	require.Error(t, err)
-	require.IsType(t, *new(T), err)
+	assert.Require(t, assert.Error(t, err))
+	assert.Require(t, assert.IsType[T](t, err))
 	return err.(T)
 }
 

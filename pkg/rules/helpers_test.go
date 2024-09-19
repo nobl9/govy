@@ -1,6 +1,10 @@
 package rules
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/nobl9/govy/internal/assert"
+)
 
 func TestOrdinalString(t *testing.T) {
 	tests := []struct {
@@ -26,12 +30,9 @@ func TestOrdinalString(t *testing.T) {
 		{212, "212th"},
 		{213, "213th"},
 	}
-	for _, tt := range tests {
-		t.Run(tt.out, func(t *testing.T) {
-			got := ordinalString(tt.in)
-			if got != tt.out {
-				t.Errorf("ordinalString(%d) = %q; want %q", tt.in, got, tt.out)
-			}
+	for _, tc := range tests {
+		t.Run(tc.out, func(t *testing.T) {
+			assert.Equal(t, tc.out, ordinalString(tc.in))
 		})
 	}
 }

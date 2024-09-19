@@ -4,8 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/nobl9/govy/internal/assert"
 
 	"github.com/nobl9/govy/pkg/govy"
 )
@@ -36,7 +35,7 @@ func TestValidator(t *testing.T) {
 				Rules(govy.NewRule(func(v string) error { return err2 })),
 		)
 		err := mustValidatorError(t, r.Validate(mockValidatorStruct{}))
-		require.Len(t, err.Errors, 2)
+		assert.Require(t, assert.Len(t, err.Errors, 2))
 		assert.Equal(t, &govy.ValidatorError{Errors: govy.PropertyErrors{
 			&govy.PropertyError{
 				PropertyName:  "test.name",
@@ -73,7 +72,7 @@ func TestValidatorWhen(t *testing.T) {
 			When(func(validatorStruct mockValidatorStruct) bool { return true })
 
 		err := mustValidatorError(t, r.Validate(mockValidatorStruct{}))
-		require.Len(t, err.Errors, 1)
+		assert.Require(t, assert.Len(t, err.Errors, 1))
 		assert.Equal(t, &govy.ValidatorError{Errors: govy.PropertyErrors{
 			&govy.PropertyError{
 				PropertyName:  "test",
@@ -92,7 +91,7 @@ func TestValidatorWithName(t *testing.T) {
 	).WithName("validator")
 
 	err := r.Validate(mockValidatorStruct{})
-	require.Error(t, err)
+	assert.Require(t, assert.Error(t, err))
 	assert.EqualError(t, err, `Validation for validator has failed for the following properties:
   - 'test' with value 'test':
     - test`)
@@ -106,7 +105,7 @@ func TestValidatorInferName(t *testing.T) {
 	).InferName()
 
 	err := r.Validate(mockValidatorStruct{})
-	require.Error(t, err)
+	assert.Require(t, assert.Error(t, err))
 	assert.EqualError(t, err, `Validation for mockValidatorStruct has failed for the following properties:
   - 'test' with value 'test':
     - test`)

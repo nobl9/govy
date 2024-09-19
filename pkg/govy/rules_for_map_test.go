@@ -4,8 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/nobl9/govy/internal/assert"
 
 	"github.com/nobl9/govy/pkg/govy"
 	"github.com/nobl9/govy/pkg/govyconfig"
@@ -69,7 +68,7 @@ func TestPropertyRulesForMap(t *testing.T) {
 		} {
 			t.Run(name, func(t *testing.T) {
 				errs := mustPropertyErrors(t, test.Rules.Validate(mockStruct{}))
-				require.Len(t, errs, 1)
+				assert.Require(t, assert.Len(t, errs, 1))
 				assert.Equal(t, test.Expected, errs[0])
 			})
 		}
@@ -132,7 +131,7 @@ func TestPropertyRulesForMap(t *testing.T) {
 			"key1": "value1",
 			"key2": "value2",
 		}}))
-		require.Len(t, errs, 12)
+		assert.Require(t, assert.Len(t, errs, 12))
 		assert.ElementsMatch(t, []*govy.PropertyError{
 			{
 				PropertyName:  "test.path",
@@ -216,7 +215,7 @@ func TestPropertyRulesForMap(t *testing.T) {
 			RulesForValues(govy.NewRule(func(v string) error { return valueErr })).
 			RulesForKeys(govy.NewRule(func(v string) error { return keyErr }))
 		errs := mustPropertyErrors(t, r.Validate(mockStruct{}))
-		require.Len(t, errs, 2)
+		assert.Require(t, assert.Len(t, errs, 2))
 		assert.ElementsMatch(t, []*govy.PropertyError{
 			{
 				PropertyName:  "test.path.key",
@@ -270,7 +269,7 @@ func TestPropertyRulesForMap(t *testing.T) {
 			))
 
 		errs := mustPropertyErrors(t, r.Validate(mockStruct{IntMap: map[string]int{"key": 1}}))
-		require.Len(t, errs, 4)
+		assert.Require(t, assert.Len(t, errs, 4))
 		assert.ElementsMatch(t, []*govy.PropertyError{
 			{
 				PropertyName:  "test.path",
@@ -343,7 +342,7 @@ func TestPropertyRulesForMap(t *testing.T) {
 			))
 
 		errs := mustPropertyErrors(t, r.Validate(mockStruct{StringMap: map[string]string{"key": "1"}}))
-		require.Len(t, errs, 4)
+		assert.Require(t, assert.Len(t, errs, 4))
 		assert.ElementsMatch(t, []*govy.PropertyError{
 			{
 				PropertyName:  "test.path",
@@ -389,7 +388,7 @@ func TestPropertyRulesForMap(t *testing.T) {
 			Include(inc)
 
 		errs := mustPropertyErrors(t, r.Validate(mockStruct{StringMap: map[string]string{"key": "value"}}))
-		require.Len(t, errs, 1)
+		assert.Require(t, assert.Len(t, errs, 1))
 		assert.Equal(t, &govy.PropertyError{
 			PropertyName:  "test.path.key",
 			PropertyValue: "value",

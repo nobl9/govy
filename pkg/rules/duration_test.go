@@ -4,8 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/nobl9/govy/internal/assert"
 
 	"github.com/nobl9/govy/pkg/govy"
 )
@@ -45,7 +44,7 @@ func TestDurationPrecision(t *testing.T) {
 			rule := DurationPrecision(tt.precision)
 			err := rule.Validate(tt.duration)
 			if tt.expectedError != "" {
-				require.Error(t, err)
+				assert.Require(t, assert.Error(t, err))
 				assert.EqualError(t, err, tt.expectedError)
 				assert.True(t, govy.HasErrorCode(err, ErrorCodeDurationPrecision))
 			} else {
