@@ -139,15 +139,15 @@ func ExampleSetNameInferMode_invalidUsage() {
 	//   - should be equal to 'Jerry'
 }
 
-// By default govy's name inferrence is first checking for either json or yaml tags.
+// By default govy's name inference is first checking for either json or yaml tags.
 // If either is set it will use the value of the tag as the property name, see [govyconfig.NameInferDefaultFunc].
 //
-// This behaviour can be customized by providing a custom [govyconfig.NameInferFunc]
+// This behavior can be customized by providing a custom [govyconfig.NameInferFunc]
 // via [govyconfig.SetNameInferFunc].
 // Note that the tag value is the raw value of the struct tag,
 // it needs to be further parsed with [reflect.StructTag].
 //
-// In the example below we're setting a custom name inferrence function which always returns the exact field name.
+// In the example below we're setting a custom name inference function which always returns the exact field name.
 func ExampleSetNameInferFunc() {
 	govyconfig.SetNameInferFunc(func(fieldName, tagValue string) string { return fieldName })
 	govyconfig.SetNameInferMode(govyconfig.NameInferModeRuntime)
