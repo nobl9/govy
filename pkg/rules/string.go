@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net"
+	"net/mail"
 	"net/url"
 	"regexp"
 	"strings"
@@ -60,22 +62,141 @@ func StringDenyRegexp(re *regexp.Regexp, examples ...string) govy.Rule[string] {
 		WithDescription(msg)
 }
 
-// Ref: https://www.rfc-editor.org/rfc/rfc1123
-var rfc1123DnsLabelRegexp = regexp.MustCompile("^[a-z0-9]([-a-z0-9]*[a-z0-9])?$")
-
-// StringDNSLabel ensures the property's value is a valid DNS label as defined by RFC-1123.
+// StringDNSLabel ensures the property's value is a valid DNS label as defined by RFC 1123.
 func StringDNSLabel() govy.RuleSet[string] {
 	return govy.NewRuleSet(
 		StringLength(1, 63),
-		StringMatchRegexp(rfc1123DnsLabelRegexp, "my-name", "123-abc").
+		StringMatchRegexp(rfc1123DnsLabelRegexp(), "my-name", "123-abc").
 			WithDetails("an RFC-1123 compliant label name must consist of lower case alphanumeric characters or '-',"+
 				" and must start and end with an alphanumeric character"),
 	).WithErrorCode(ErrorCodeStringDNSLabel)
 }
 
-// StringUUID ensures property's value is a valid UUID string.
+// StringEmail ensures the property's value is a valid email address.
+// It follows RFC 5322 specification which is more permissive in regards to domain names.
+// Ref: https://www.ietf.org/rfc/rfc5322.txt
+func StringEmail() govy.Rule[string] {
+	msg := "string must be a valid email address"
+	return govy.NewRule(func(s string) error {
+		if _, err := mail.ParseAddress(s); err != nil {
+			return fmt.Errorf("%s: %w", msg, err)
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringEmail).
+		WithDescription(msg)
+}
+
+// StringURL ensures property's value is a valid URL as defined by [url.Parse] function.
+// Unlike [URL] it does not impose any additional rules upon parsed [url.URL].
+func StringURL() govy.Rule[string] {
+	return govy.NewRule(func(s string) error {
+		u, err := url.Parse(s)
+		if err != nil {
+			return fmt.Errorf("failed to parse URL: %w", err)
+		}
+		return validateURL(u)
+	}).
+		WithErrorCode(ErrorCodeStringURL).
+		WithDescription(urlDescription)
+}
+
+// StringMAC ensures property's value is a valid MAC address.
+func StringMAC() govy.Rule[string] {
+	msg := "string must be a valid MAC address"
+	return govy.NewRule(func(s string) error {
+		if _, err := net.ParseMAC(s); err != nil {
+			return errors.New(msg)
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringMAC).
+		WithDescription(msg)
+}
+
+// StringIP ensures property's value is a valid IP address.
+func StringIP() govy.Rule[string] {
+	msg := "string must be a valid IP address"
+	return govy.NewRule(func(s string) error {
+		if ip := net.ParseIP(s); ip == nil {
+			return errors.New(msg)
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringIP).
+		WithDescription(msg)
+}
+
+// StringIPv4 ensures property's value is a valid IPv4 address.
+func StringIPv4() govy.Rule[string] {
+	msg := "string must be a valid IPv4 address"
+	return govy.NewRule(func(s string) error {
+		if ip := net.ParseIP(s); ip == nil || ip.To4() == nil {
+			return errors.New(msg)
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringIPv4).
+		WithDescription(msg)
+}
+
+// StringIPv6 ensures property's value is a valid IPv6 address.
+func StringIPv6() govy.Rule[string] {
+	msg := "string must be a valid IPv6 address"
+	return govy.NewRule(func(s string) error {
+		if ip := net.ParseIP(s); ip == nil || ip.To4() != nil || len(ip) != net.IPv6len {
+			return errors.New(msg)
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringIPv6).
+		WithDescription(msg)
+}
+
+// StringCIDR ensures property's value is a valid CIDR notation IP address.
+func StringCIDR() govy.Rule[string] {
+	msg := "string must be a valid CIDR notation IP address"
+	return govy.NewRule(func(s string) error {
+		if _, _, err := net.ParseCIDR(s); err != nil {
+			return errors.New(msg)
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringCIDR).
+		WithDescription(msg)
+}
+
+// StringCIDRv4 ensures property's value is a valid CIDR notation IPv4 address.
+func StringCIDRv4() govy.Rule[string] {
+	msg := "string must be a valid CIDR notation IPv4 address"
+	return govy.NewRule(func(s string) error {
+		if ip, ipNet, err := net.ParseCIDR(s); err != nil || ip.To4() == nil || !ipNet.IP.Equal(ip) {
+			return errors.New(msg)
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringCIDRv4).
+		WithDescription(msg)
+}
+
+// StringCIDRv4 ensures property's value is a valid CIDR notation IPv6 address.
+func StringCIDRv6() govy.Rule[string] {
+	msg := "string must be a valid CIDR notation IPv6 address"
+	return govy.NewRule(func(s string) error {
+		if ip, _, err := net.ParseCIDR(s); err != nil || ip.To4() != nil || len(ip) != net.IPv6len {
+			return errors.New(msg)
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringCIDRv6).
+		WithDescription(msg)
+}
+
+// StringUUID ensures property's value is a valid UUID string as defined by RFC 4122.
+// It does not enforce a specific UUID version.
+// Ref: https://www.ietf.org/rfc/rfc4122.txt
 func StringUUID() govy.Rule[string] {
-	return StringMatchRegexp(validUUIDRegexp(),
+	return StringMatchRegexp(uuidRegexp(),
 		"00000000-0000-0000-0000-000000000000",
 		"e190c630-8873-11ee-b9d1-0242ac120002",
 		"79258D24-01A7-47E5-ACBB-7E762DE52298").
@@ -86,20 +207,6 @@ func StringUUID() govy.Rule[string] {
 // StringASCII ensures property's value contains only ASCII characters.
 func StringASCII() govy.Rule[string] {
 	return StringMatchRegexp(asciiRegexp()).WithErrorCode(ErrorCodeStringASCII)
-}
-
-// StringURL ensures property's value is a valid URL as defined by [url.Parse] function.
-// Unlike [URL] it does not impose any additional rules upon parsed [url.URL].
-func StringURL() govy.Rule[string] {
-	return govy.NewRule(func(v string) error {
-		u, err := url.Parse(v)
-		if err != nil {
-			return fmt.Errorf("failed to parse URL: %w", err)
-		}
-		return validateURL(u)
-	}).
-		WithErrorCode(ErrorCodeStringURL).
-		WithDescription(urlDescription)
 }
 
 // StringJSON ensures property's value is a valid JSON literal.
@@ -132,6 +239,21 @@ func StringContains(substrings ...string) govy.Rule[string] {
 		return nil
 	}).
 		WithErrorCode(ErrorCodeStringContains).
+		WithDescription(msg)
+}
+
+// StringExcludes ensures the property's value does not contain any of the provided substrings.
+func StringExcludes(substrings ...string) govy.Rule[string] {
+	msg := "string must not contain any of the following substrings: " + prettyStringList(substrings)
+	return govy.NewRule(func(s string) error {
+		for _, substr := range substrings {
+			if strings.Contains(s, substr) {
+				return errors.New(msg)
+			}
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringExcludes).
 		WithDescription(msg)
 }
 
