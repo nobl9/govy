@@ -13,7 +13,7 @@ import (
 
 var (
 	inferredNames                  = make(map[string]InferredName)
-	nameInferFunc    NameInferFunc = NameInferDefaultRule
+	nameInferFunc    NameInferFunc = NameInferDefaultFunc
 	nameInferMode                  = NameInferModeDisable
 	includeTestFiles               = false
 
@@ -101,8 +101,8 @@ func GetNameInferMode() NameInferMode {
 	return nameInferMode
 }
 
-// SetNameInferFunc sets the rule for inferring field names from struct tags.
-// It overrides the default rule [NameInferDefaultRule].
+// SetNameInferFunc sets the function for inferring field names from struct tags.
+// It overrides the default function [NameInferDefaultFunc].
 // It's safe to call this function concurrently.
 func SetNameInferFunc(rule NameInferFunc) {
 	mu.Lock()
@@ -121,9 +121,9 @@ func GetNameInferFunc() NameInferFunc {
 // Tag value is the raw value of the struct tag, it needs to be parsed with [reflect.StructTag].
 type NameInferFunc func(fieldName, tagValue string) string
 
-// NameInferDefaultRule is the default rule for inferring field names from struct tags,
-// it looks for json and yaml tags, preferring json if both are set.
-func NameInferDefaultRule(fieldName, tagValue string) string {
+// NameInferDefaultFunc is the default function for inferring field names from struct tags.
+// It looks for json and yaml tags, preferring json if both are set.
+func NameInferDefaultFunc(fieldName, tagValue string) string {
 	for _, tagKey := range []string{"json", "yaml"} {
 		tagValues := strings.Split(
 			reflect.StructTag(strings.Trim(tagValue, "`")).Get(tagKey),

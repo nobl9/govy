@@ -19,3 +19,13 @@ jobs:
           enable-cache: true
       - name: Run unit tests
         run: devbox run -- make test
+      - name: Update coverage report
+        uses: ncruces/go-coverage-report@v0
+        with:
+          report: true
+          chart: true
+          amend: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GO_COVERAGE_TOKEN }}
+        if: github.event_name == 'push'
+        continue-on-error: true
