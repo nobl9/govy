@@ -138,3 +138,35 @@ func ExampleSetNameInferMode_invalidUsage() {
 	// Validation for Teacher has failed for the following properties:
 	//   - should be equal to 'Jerry'
 }
+
+// By default govy's name inferrence is first checking for either json or yaml tags.
+// If either is set it will use the value of the tag as the property name, see [govyconfig.NameInferDefaultFunc].
+//
+// This behaviour can be customized by providing a custom [govyconfig.NameInferFunc]
+// via [govyconfig.SetNameInferFunc].
+// Note that the tag value is the raw value of the struct tag,
+// it needs to be further parsed with [reflect.StructTag].
+//
+// In the example below we're setting a custom name inferrence function which always returns the exact field name.
+func ExampleSetNameInferFunc() {
+	govyconfig.SetNameInferFunc(func(fieldName, tagValue string) string { return fieldName })
+	govyconfig.SetNameInferMode(govyconfig.NameInferModeRuntime)
+	defer govyconfig.SetNameInferIncludeTestFiles(false)
+	defer govyconfig.SetNameInferFunc(govyconfig.NameInferDefaultFunc)
+
+	v := govy.New(
+		govy.For(func(t Teacher) string { return t.Name }).
+			Rules(rules.EQ("Jerry")),
+	).WithName("Teacher")
+
+	teacher := Teacher{Name: "Tom"}
+	err := v.Validate(teacher)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	// Output:
+	// Validation for Teacher has failed for the following properties:
+	//   - 'Name' with value 'Tom':
+	//     - should be equal to 'Jerry'
+}
