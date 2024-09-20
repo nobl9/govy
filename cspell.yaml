@@ -29,6 +29,7 @@ words:
   - Fset
   - Skłodowska
   - atoi
+  - cidrv
   - devbox
   - endef
   - errorf
