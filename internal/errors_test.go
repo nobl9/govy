@@ -61,6 +61,7 @@ func TestPropertyValueString(t *testing.T) {
 		{mockEmptyStringer{}, "mock"},
 		{mockStringerWithTags{}, ""},
 		{mockStringerWithTags{Mock: "mock"}, `{"mock":"mock"}`},
+		{ptr(mockEmptyStringer{}), "mock"},
 	}
 	for _, tc := range tests {
 		got := PropertyValueString(tc.in)
