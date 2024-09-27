@@ -31,15 +31,39 @@ func OneOf[T comparable](values ...T) govy.Rule[T] {
 		}())
 }
 
+// OneOfProperties checks if at least one of the properties is set.
+// Property is considered set if its value is not empty (non-zero).
+func OneOfProperties[S any](getters map[string]func(s S) any) govy.Rule[S] {
+	return govy.NewRule(func(s S) error {
+		for _, getter := range getters {
+			v := getter(s)
+			if !internal.IsEmpty(v) {
+				return nil
+			}
+		}
+		keys := maps.Keys(getters)
+		slices.Sort(keys)
+		return fmt.Errorf(
+			"one of %s properties must be set, none was provided",
+			prettyOneOfList(keys))
+	}).
+		WithErrorCode(ErrorCodeOneOfProperties).
+		WithDescription(func() string {
+			keys := maps.Keys(getters)
+			return fmt.Sprintf("at least one of the properties must be set: %s", strings.Join(keys, ", "))
+		}())
+}
+
 // MutuallyExclusive checks if properties are mutually exclusive.
-// This means, exactly one of the properties can be provided.
+// This means, exactly one of the properties can be set.
+// Property is considered set if its value is not empty (non-zero).
 // If required is true, then a single non-empty property is required.
 func MutuallyExclusive[S any](required bool, getters map[string]func(s S) any) govy.Rule[S] {
 	return govy.NewRule(func(s S) error {
 		var nonEmpty []string
 		for name, getter := range getters {
 			v := getter(s)
-			if internal.IsEmptyFunc(v) {
+			if internal.IsEmpty(v) {
 				continue
 			}
 			nonEmpty = append(nonEmpty, name)

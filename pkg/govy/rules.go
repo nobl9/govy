@@ -51,7 +51,7 @@ func Transform[T, N, S any](getter PropertyGetter[T, S], transform Transformer[T
 		name: inferName(),
 		transformGetter: func(s S) (transformed N, original any, err error) {
 			v := getter(s)
-			if internal.IsEmptyFunc(v) {
+			if internal.IsEmpty(v) {
 				return transformed, nil, emptyErr{}
 			}
 			transformed, err = transform(v)
@@ -280,7 +280,7 @@ func (r PropertyRules[T, S]) getValue(st S) (v T, skip bool, propErr *PropertyEr
 		}
 		return v, false, NewPropertyError(r.name, propValue, err)
 	}
-	isEmpty := isEmptyError || (!r.isPointer && internal.IsEmptyFunc(v))
+	isEmpty := isEmptyError || (!r.isPointer && internal.IsEmpty(v))
 	// If the value is not empty we simply return it.
 	if !isEmpty {
 		return v, false, nil

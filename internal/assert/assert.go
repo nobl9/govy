@@ -22,7 +22,7 @@ func Require(t *testing.T, isPassing bool) {
 func Equal(t *testing.T, expected, actual interface{}) bool {
 	t.Helper()
 	if !areEqual(expected, actual) {
-		return fail(t, "Expected %v, got %v", expected, actual)
+		return fail(t, "Expected: %v, actual: %v", expected, actual)
 	}
 	return true
 }
@@ -36,11 +36,20 @@ func True(t *testing.T, actual bool) bool {
 	return true
 }
 
+// True fails the test if the actual value is not false.
+func False(t *testing.T, actual bool) bool {
+	t.Helper()
+	if actual {
+		return fail(t, "Should be false")
+	}
+	return true
+}
+
 // Len fails the test if the object is not of the expected length.
 func Len(t *testing.T, object interface{}, length int) bool {
 	t.Helper()
 	if actual := getLen(object); actual != length {
-		return fail(t, "Expected length %d, got %d", length, actual)
+		return fail(t, "Expected length: %d, actual: %d", length, actual)
 	}
 	return true
 }
@@ -53,7 +62,7 @@ func IsType[T any](t *testing.T, object interface{}) bool {
 	case T:
 		return true
 	default:
-		return fail(t, "Expected type %T, got %T", *new(T), object)
+		return fail(t, "Expected type: %T, actual: %T", *new(T), object)
 	}
 }
 
@@ -61,7 +70,7 @@ func IsType[T any](t *testing.T, object interface{}) bool {
 func Error(t *testing.T, err error) bool {
 	t.Helper()
 	if err == nil {
-		return fail(t, "An error is expected but got nil.")
+		return fail(t, "An error is expected but actual nil.")
 	}
 	return true
 }
@@ -82,7 +91,7 @@ func EqualError(t *testing.T, expected error, actual string) bool {
 		return false
 	}
 	if expected.Error() != actual {
-		return fail(t, "Expected error message %q, got %q", expected.Error(), actual)
+		return fail(t, "Expected error message: %q, actual: %q", expected.Error(), actual)
 	}
 	return true
 }
@@ -94,7 +103,7 @@ func ErrorContains(t *testing.T, expected error, contains string) bool {
 		return false
 	}
 	if !strings.Contains(expected.Error(), contains) {
-		return fail(t, "Expected error message to contain %q, got %q", contains, expected.Error())
+		return fail(t, "Expected error message to contain %q, actual %q", contains, expected.Error())
 	}
 	return true
 }
@@ -103,7 +112,7 @@ func ErrorContains(t *testing.T, expected error, contains string) bool {
 func ElementsMatch[T comparable](t *testing.T, expected, actual []T) bool {
 	t.Helper()
 	if len(expected) != len(actual) {
-		return fail(t, "Slices are not equal in length, expected: %d, got: %d", len(expected), len(actual))
+		return fail(t, "Slices are not equal in length, expected: %d, actual: %d", len(expected), len(actual))
 	}
 
 	actualVisited := make([]bool, len(actual))

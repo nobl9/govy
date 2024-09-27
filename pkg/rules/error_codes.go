@@ -45,6 +45,7 @@ const (
 	ErrorCodeMapMinLength         govy.ErrorCode = "map_min_length"
 	ErrorCodeMapMaxLength         govy.ErrorCode = "map_max_length"
 	ErrorCodeOneOf                govy.ErrorCode = "one_of"
+	ErrorCodeOneOfProperties      govy.ErrorCode = "one_of_properties"
 	ErrorCodeMutuallyExclusive    govy.ErrorCode = "mutually_exclusive"
 	ErrorCodeSliceUnique          govy.ErrorCode = "slice_unique"
 	ErrorCodeURL                  govy.ErrorCode = "url"
