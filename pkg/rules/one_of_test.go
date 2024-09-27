@@ -86,4 +86,46 @@ func TestMutuallyExclusive(t *testing.T) {
 	})
 }
 
+func TestOneOfProperties(t *testing.T) {
+	type PaymentMethod struct {
+		Cash     *string
+		Card     *string
+		Transfer *string
+	}
+	getters := map[string]func(p PaymentMethod) any{
+		"Cash":     func(p PaymentMethod) any { return p.Cash },
+		"Card":     func(p PaymentMethod) any { return p.Card },
+		"Transfer": func(p PaymentMethod) any { return p.Transfer },
+	}
+	t.Run("passes", func(t *testing.T) {
+		err := OneOfProperties(getters).Validate(PaymentMethod{
+			Cash:     nil,
+			Card:     ptr("2$"),
+			Transfer: nil,
+		})
+		assert.NoError(t, err)
+		err = OneOfProperties(getters).Validate(PaymentMethod{
+			Cash:     ptr("1$"),
+			Card:     ptr("2$"),
+			Transfer: nil,
+		})
+		assert.NoError(t, err)
+		err = OneOfProperties(getters).Validate(PaymentMethod{
+			Cash:     ptr("1$"),
+			Card:     ptr("2$"),
+			Transfer: ptr("3$"),
+		})
+		assert.NoError(t, err)
+	})
+	t.Run("fails", func(t *testing.T) {
+		err := OneOfProperties(getters).Validate(PaymentMethod{
+			Cash:     nil,
+			Card:     nil,
+			Transfer: nil,
+		})
+		assert.EqualError(t, err, "one of [Card, Cash, Transfer] properties must be set, none was provided")
+		assert.True(t, govy.HasErrorCode(err, ErrorCodeOneOfProperties))
+	})
+}
+
 func ptr[T any](v T) *T { return &v }

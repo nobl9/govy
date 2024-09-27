@@ -110,7 +110,7 @@ func NewPropertyError(propertyName string, propertyValue interface{}, errs ...er
 
 type PropertyError struct {
 	PropertyName  string `json:"propertyName"`
-	PropertyValue string `json:"propertyValue"`
+	PropertyValue string `json:"propertyValue,omitempty"`
 	// IsKeyError is set to true if the error was created through map key validation.
 	// PropertyValue in this scenario will be the key value, equal to the last element of PropertyName path.
 	IsKeyError bool `json:"isKeyError,omitempty"`

@@ -12,7 +12,10 @@ const RequiredErrorMessage = "property is required but was empty"
 const RequiredErrorCodeString = "required"
 
 // IsEmptyFunc verifies if the value is zero value of its type.
-func IsEmptyFunc(v interface{}) bool {
+func IsEmpty(v interface{}) bool {
+	if v == nil {
+		return true
+	}
 	rv := reflect.ValueOf(v)
 	return rv.Kind() == 0 || rv.IsZero()
 }

@@ -11,7 +11,7 @@ import (
 func Forbidden[T any]() govy.Rule[T] {
 	msg := "property is forbidden"
 	return govy.NewRule(func(v T) error {
-		if internal.IsEmptyFunc(v) {
+		if internal.IsEmpty(v) {
 			return nil
 		}
 		return errors.New(msg)

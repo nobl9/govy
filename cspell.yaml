@@ -44,6 +44,7 @@ words:
   - govulncheck
   - govy
   - govyconfig
+  - govytest
   - ldflags
   - nobl
   - pkgs
