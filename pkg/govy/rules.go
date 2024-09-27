@@ -86,7 +86,7 @@ func (emptyErr) Error() string { return "" }
 
 // PropertyRules is responsible for validating a single property.
 // It is a collection of rules, predicates, and other properties that define how the property should be validated.
-// IT is the middle-level building block of the validation process,
+// It is the middle-level building block of the validation process,
 // aggregated by [Validator] and aggregating [Rule].
 type PropertyRules[T, S any] struct {
 	name            string
