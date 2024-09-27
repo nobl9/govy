@@ -149,7 +149,7 @@ func assertErrorsCount(
 		actualErrorsCount += len(actual.Errors)
 	}
 	if expectedErrorsCount != actualErrorsCount {
-		t.Errorf("%T contains a different number of errors than expected, should be: %d, got: %d.",
+		t.Errorf("%T contains different number of errors than expected, expected: %d, actual: %d.",
 			validatorErr, expectedErrorsCount, actualErrorsCount)
 		return false
 	}

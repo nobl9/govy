@@ -71,7 +71,7 @@ func TestAssertError(t *testing.T) {
 				{Errors: []*govy.RuleError{{}, {}}},
 			}},
 			expectedErrors: []govytest.ExpectedRuleError{{PropertyName: "this", Message: "test"}},
-			out:            "*govy.ValidatorError contains a different number of errors than expected, should be: 1, got: 2.",
+			out:            "*govy.ValidatorError contains different number of errors than expected, expected: 1, actual: 2.",
 		},
 		"no matches": {
 			ok: false,
