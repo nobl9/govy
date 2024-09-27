@@ -563,7 +563,7 @@ func Example_nameInference() {
 Package [govytest](./pkg/govytest/) provides utilities which aid the process of
 writing unit tests for validation rules defined with govy.
 Checkout [testable examples](https://pkg.go.dev/github.com/nobl9/govy/pkg/govytest#pkg-examples)
-for a concise overview of the package's capabilities. 
+for a concise overview of the package's capabilities.
 
 ## Rationale
 
