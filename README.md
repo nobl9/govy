@@ -34,6 +34,7 @@ planned features.
     5. [Custom rules](#custom-rules)
     6. [Validation plan](#validation-plan)
     7. [Properties name inference](#properties-name-inference)
+    8. [Testing helpers](#testing-helpers)
 4. [Rationale](#rationale)
     1. [Reflection](#reflection)
     2. [Trivia](#trivia)
@@ -558,7 +559,7 @@ func Example_nameInference() {
 }
 ```
 
-#### Testing helpers
+### Testing helpers
 
 Package [govytest](./pkg/govytest/) provides utilities which aid the process of
 writing unit tests for validation rules defined with govy.
