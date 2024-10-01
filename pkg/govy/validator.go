@@ -20,15 +20,25 @@ func New[S any](props ...validationInterface[S]) Validator[S] {
 // It serves as an aggregator for [PropertyRules].
 // Typically, it represents a struct.
 type Validator[S any] struct {
-	props []validationInterface[S]
-	name  string
+	props    []validationInterface[S]
+	name     string
+	nameFunc func(S) string
 
 	predicateMatcher[S]
 }
 
 // WithName when a rule fails will pass the provided name to [ValidatorError.WithName].
 func (v Validator[S]) WithName(name string) Validator[S] {
+	v.nameFunc = nil
 	v.name = name
+	return v
+}
+
+// WithNameFunc when a rule fails extracts name from provided function and passes it to [ValidatorError.WithName].
+// The function receives validated entity's instance as an argument.
+func (v Validator[S]) WithNameFunc(f func(s S) string) Validator[S] {
+	v.name = ""
+	v.nameFunc = f
 	return v
 }
 
@@ -75,7 +85,11 @@ func (v Validator[S]) Validate(st S) error {
 		allErrors = append(allErrors, pErrs...)
 	}
 	if len(allErrors) != 0 {
-		return NewValidatorError(allErrors).WithName(v.name)
+		name := v.name
+		if v.nameFunc != nil {
+			name = v.nameFunc(st)
+		}
+		return NewValidatorError(allErrors).WithName(name)
 	}
 	return nil
 }

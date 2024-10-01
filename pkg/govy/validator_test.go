@@ -97,6 +97,20 @@ func TestValidatorWithName(t *testing.T) {
     - test`)
 }
 
+func TestValidatorWithNameFunc(t *testing.T) {
+	r := govy.New(
+		govy.For(func(m mockValidatorStruct) string { return "test" }).
+			WithName("test").
+			Rules(govy.NewRule(func(v string) error { return errors.New("test") })),
+	).WithNameFunc(func(m mockValidatorStruct) string { return "validator with field: " + m.Field })
+
+	err := r.Validate(mockValidatorStruct{Field: "FIELD"})
+	assert.Require(t, assert.Error(t, err))
+	assert.EqualError(t, err, `Validation for validator with field: FIELD has failed for the following properties:
+  - 'test' with value 'test':
+    - test`)
+}
+
 func TestValidatorInferName(t *testing.T) {
 	r := govy.New(
 		govy.For(func(m mockValidatorStruct) string { return "test" }).

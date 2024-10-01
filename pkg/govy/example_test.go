@@ -72,6 +72,25 @@ func ExampleValidator_WithName() {
 	//   - always fails
 }
 
+// If statically defined name through [govy.Validator.WithName] is not enough,
+// you can use [govy.Validator.WithNameFunc].
+// The function receives the entity's instance you're validating and returns a string name.
+func ExampleValidator_WithNameFunc() {
+	v := govy.New(
+		govy.For(func(t Teacher) string { return t.Name }).
+			Rules(govy.NewRule(func(name string) error { return fmt.Errorf("always fails") })),
+	).WithNameFunc(func(t Teacher) string { return "Teacher " + t.Name })
+
+	err := v.Validate(Teacher{Name: "John"})
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	// Output:
+	// Validation for Teacher John has failed for the following properties:
+	//   - always fails
+}
+
 // You can also add [govy.Validator] name during runtime,
 // by calling [govy.ValidatorError.WithName] function on the returned error.
 //
