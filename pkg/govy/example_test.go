@@ -74,7 +74,7 @@ func ExampleValidator_WithName() {
 
 // If statically defined name through [govy.Validator.WithName] is not enough,
 // you can use [govy.Validator.WithNameFunc].
-// The functions receives the entity's instance you're validating and returns a string name.
+// The function receives the entity's instance you're validating and returns a string name.
 func ExampleValidator_WithNameFunc() {
 	v := govy.New(
 		govy.For(func(t Teacher) string { return t.Name }).
