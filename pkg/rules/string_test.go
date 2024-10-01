@@ -82,9 +82,7 @@ func TestStringDNSLabel(t *testing.T) {
 		err := StringDNSLabel().Validate(tc.in)
 		if tc.shouldFail {
 			assert.Error(t, err)
-			for _, e := range err.(govy.RuleSetError) {
-				assert.True(t, govy.HasErrorCode(e, ErrorCodeStringDNSLabel))
-			}
+			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringDNSLabel))
 		} else {
 			assert.NoError(t, err)
 		}

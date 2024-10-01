@@ -63,13 +63,11 @@ func StringDenyRegexp(re *regexp.Regexp, examples ...string) govy.Rule[string] {
 }
 
 // StringDNSLabel ensures the property's value is a valid DNS label as defined by RFC 1123.
-func StringDNSLabel() govy.RuleSet[string] {
-	return govy.NewRuleSet(
-		StringLength(1, 63),
-		StringMatchRegexp(rfc1123DnsLabelRegexp(), "my-name", "123-abc").
-			WithDetails("an RFC-1123 compliant label name must consist of lower case alphanumeric characters or '-',"+
-				" and must start and end with an alphanumeric character"),
-	).WithErrorCode(ErrorCodeStringDNSLabel)
+func StringDNSLabel() govy.Rule[string] {
+	return StringMatchRegexp(rfc1123DnsLabelRegexp(), "my-name", "123-abc").
+		WithDetails("an RFC-1123 compliant label name must consist of lower case alphanumeric characters or '-'," +
+			" and must start and end with an alphanumeric character").
+		WithErrorCode(ErrorCodeStringDNSLabel)
 }
 
 // StringEmail ensures the property's value is a valid email address.
