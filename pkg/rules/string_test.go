@@ -296,6 +296,9 @@ func TestStringIPv6(t *testing.T) {
 		shouldFail bool
 	}{
 		// cspell:disable
+		{"2001:cdba:0000:0000:0000:0000:3257:9652", false},
+		{"2001:cdba:0:0:0:0:3257:9652", false},
+		{"2001:cdba::3257:9652", false},
 		{"10.0.0.1", true},
 		{"172.16.0.1", true},
 		{"192.168.0.1", true},
@@ -303,9 +306,6 @@ func TestStringIPv6(t *testing.T) {
 		{"192.168.255.256", true},
 		{"172.16.255.254", true},
 		{"172.16.256.255", true},
-		{"2001:cdba:0000:0000:0000:0000:3257:9652", false},
-		{"2001:cdba:0:0:0:0:3257:9652", false},
-		{"2001:cdba::3257:9652", false},
 		// cspell:enable
 	}
 	for _, tc := range tests {

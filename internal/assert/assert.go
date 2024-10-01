@@ -36,7 +36,7 @@ func True(t *testing.T, actual bool) bool {
 	return true
 }
 
-// True fails the test if the actual value is not false.
+// False fails the test if the actual value is not false.
 func False(t *testing.T, actual bool) bool {
 	t.Helper()
 	if actual {

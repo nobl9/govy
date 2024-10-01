@@ -70,3 +70,33 @@ func TestURL(t *testing.T) {
 		}
 	})
 }
+
+func BenchmarkURL(b *testing.B) {
+	parseURLs := func(urls []string) []*url.URL {
+		parsedURLs := make([]*url.URL, 0, len(urls))
+		for _, rawURL := range urls {
+			u, err := url.Parse(rawURL)
+			if err != nil {
+				b.Fatalf("unexpected error: %v", err)
+			}
+			parsedURLs = append(parsedURLs, u)
+		}
+		return parsedURLs
+	}
+	parsedValidURLs := parseURLs(validURLs)
+	parsedInvalidURLs := parseURLs(invalidURLs)
+	b.Run("passes", func(b *testing.B) {
+		for range b.N {
+			for _, u := range parsedValidURLs {
+				_ = URL().Validate(u)
+			}
+		}
+	})
+	b.Run("fails", func(b *testing.B) {
+		for range b.N {
+			for _, u := range parsedInvalidURLs {
+				_ = URL().Validate(u)
+			}
+		}
+	})
+}
