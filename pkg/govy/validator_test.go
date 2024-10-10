@@ -11,19 +11,19 @@ import (
 
 func TestValidator(t *testing.T) {
 	t.Run("no errors", func(t *testing.T) {
-		r := govy.New(
+		v := govy.New(
 			govy.For(func(m mockValidatorStruct) string { return "test" }).
 				WithName("test").
 				Rules(govy.NewRule(func(v string) error { return nil })),
 		)
-		err := r.Validate(mockValidatorStruct{})
+		err := v.Validate(mockValidatorStruct{})
 		assert.NoError(t, err)
 	})
 
 	t.Run("errors", func(t *testing.T) {
 		err1 := errors.New("1")
 		err2 := errors.New("2")
-		r := govy.New(
+		v := govy.New(
 			govy.For(func(m mockValidatorStruct) string { return "test" }).
 				WithName("test").
 				Rules(govy.NewRule(func(v string) error { return nil })),
@@ -34,7 +34,7 @@ func TestValidator(t *testing.T) {
 				WithName("test.display").
 				Rules(govy.NewRule(func(v string) error { return err2 })),
 		)
-		err := mustValidatorError(t, r.Validate(mockValidatorStruct{}))
+		err := mustValidatorError(t, v.Validate(mockValidatorStruct{}))
 		assert.Require(t, assert.Len(t, err.Errors, 2))
 		assert.Equal(t, &govy.ValidatorError{Errors: govy.PropertyErrors{
 			&govy.PropertyError{
@@ -53,25 +53,25 @@ func TestValidator(t *testing.T) {
 
 func TestValidatorWhen(t *testing.T) {
 	t.Run("when condition is not met, don't validate", func(t *testing.T) {
-		r := govy.New(
+		v := govy.New(
 			govy.For(func(m mockValidatorStruct) string { return "test" }).
 				WithName("test").
 				Rules(govy.NewRule(func(v string) error { return errors.New("test") })),
 		).
 			When(func(validatorStruct mockValidatorStruct) bool { return false })
 
-		err := r.Validate(mockValidatorStruct{})
+		err := v.Validate(mockValidatorStruct{})
 		assert.NoError(t, err)
 	})
 	t.Run("when condition is met, validate", func(t *testing.T) {
-		r := govy.New(
+		v := govy.New(
 			govy.For(func(m mockValidatorStruct) string { return "test" }).
 				WithName("test").
 				Rules(govy.NewRule(func(v string) error { return errors.New("test") })),
 		).
 			When(func(validatorStruct mockValidatorStruct) bool { return true })
 
-		err := mustValidatorError(t, r.Validate(mockValidatorStruct{}))
+		err := mustValidatorError(t, v.Validate(mockValidatorStruct{}))
 		assert.Require(t, assert.Len(t, err.Errors, 1))
 		assert.Equal(t, &govy.ValidatorError{Errors: govy.PropertyErrors{
 			&govy.PropertyError{
@@ -84,13 +84,13 @@ func TestValidatorWhen(t *testing.T) {
 }
 
 func TestValidatorWithName(t *testing.T) {
-	r := govy.New(
+	v := govy.New(
 		govy.For(func(m mockValidatorStruct) string { return "test" }).
 			WithName("test").
 			Rules(govy.NewRule(func(v string) error { return errors.New("test") })),
 	).WithName("validator")
 
-	err := r.Validate(mockValidatorStruct{})
+	err := v.Validate(mockValidatorStruct{})
 	assert.Require(t, assert.Error(t, err))
 	assert.EqualError(t, err, `Validation for validator has failed for the following properties:
   - 'test' with value 'test':
@@ -98,13 +98,13 @@ func TestValidatorWithName(t *testing.T) {
 }
 
 func TestValidatorWithNameFunc(t *testing.T) {
-	r := govy.New(
+	v := govy.New(
 		govy.For(func(m mockValidatorStruct) string { return "test" }).
 			WithName("test").
 			Rules(govy.NewRule(func(v string) error { return errors.New("test") })),
 	).WithNameFunc(func(m mockValidatorStruct) string { return "validator with field: " + m.Field })
 
-	err := r.Validate(mockValidatorStruct{Field: "FIELD"})
+	err := v.Validate(mockValidatorStruct{Field: "FIELD"})
 	assert.Require(t, assert.Error(t, err))
 	assert.EqualError(t, err, `Validation for validator with field: FIELD has failed for the following properties:
   - 'test' with value 'test':
@@ -112,13 +112,13 @@ func TestValidatorWithNameFunc(t *testing.T) {
 }
 
 func TestValidatorInferName(t *testing.T) {
-	r := govy.New(
+	v := govy.New(
 		govy.For(func(m mockValidatorStruct) string { return "test" }).
 			WithName("test").
 			Rules(govy.NewRule(func(v string) error { return errors.New("test") })),
 	).InferName()
 
-	err := r.Validate(mockValidatorStruct{})
+	err := v.Validate(mockValidatorStruct{})
 	assert.Require(t, assert.Error(t, err))
 	assert.EqualError(t, err, `Validation for mockValidatorStruct has failed for the following properties:
   - 'test' with value 'test':

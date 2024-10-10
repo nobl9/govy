@@ -9,6 +9,10 @@ func NewForSlice[S any](validator Validator[S]) ValidatorForSlice[S] {
 
 // ValidatorForSlice is used to validate a slice of values.
 // The rules for each slice element are described by the underlying [Validator].
+//
+// Note: It is designed to be used for validating independent values.
+// If you need to validate the slice itself, for instance, to check if it has at most N elements,
+// you should use the [Validator] directly in tandem with [ForSlice] and [GetSelf].
 type ValidatorForSlice[S any] struct {
 	validator Validator[S]
 }

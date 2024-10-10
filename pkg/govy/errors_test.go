@@ -63,6 +63,53 @@ func TestValidatorError(t *testing.T) {
 	}
 }
 
+func TestValidatorErrors(t *testing.T) {
+	err := govy.ValidatorErrors{
+		{
+			Name: "Teacher",
+			Errors: govy.PropertyErrors{
+				{
+					PropertyName:  "this",
+					PropertyValue: "123",
+					Errors:        []*govy.RuleError{{Message: "this is an error"}},
+				},
+				{
+					PropertyName: "that",
+					Errors:       []*govy.RuleError{{Message: "that is an error"}},
+				},
+			},
+			SliceIndex: ptr(0),
+		},
+		{
+			Errors: govy.PropertyErrors{
+				{
+					PropertyName:  "this",
+					PropertyValue: "123",
+					Errors:        []*govy.RuleError{{Message: "this is an error"}},
+				},
+				{
+					PropertyName: "that",
+					Errors:       []*govy.RuleError{{Message: "that is an error"}},
+				},
+			},
+			SliceIndex: ptr(1),
+		},
+		{
+			Errors: govy.PropertyErrors{
+				{
+					Errors: []*govy.RuleError{{Message: "no name"}},
+				},
+				{
+					PropertyName: "that",
+					Errors:       []*govy.RuleError{{Message: "that is an error"}},
+				},
+			},
+			SliceIndex: ptr(3),
+		},
+	}
+	assert.EqualError(t, err, expectedErrorOutput(t, "validator_errors.txt"))
+}
+
 func TestNewPropertyError(t *testing.T) {
 	t.Run("string value", func(t *testing.T) {
 		err := govy.NewPropertyError("name", "value",

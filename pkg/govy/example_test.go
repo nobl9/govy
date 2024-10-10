@@ -973,6 +973,10 @@ func ExamplePropertyRules_Cascade() {
 // matches the wrapped [govy.Validator] type parameter, it will validate each element
 // according to the rules defined by the wrapped [govy.Validator].
 // It returns [govy.ValidatorErrors].
+//
+// Note: If you need to perform additional validation on the whole slice,
+// you should rather use [govy.New] with [govy.ForSlice] and [govy.GetSelf].
+// [govy.ValidatorForSlice] is designed to be used for processing independent values.
 func ExampleNewForSlice() {
 	teacherValidator := govy.New(
 		govy.For(func(t Teacher) string { return t.Name }).
