@@ -10,16 +10,25 @@ import (
 
 // StringLength ensures the string's length is between min and max (closed interval).
 func StringLength(minLen, maxLen int) govy.Rule[string] {
-	msg := fmt.Sprintf("length must be between %d and %d", minLen, maxLen)
+	tpl := getMessageTemplate(stringLengthTemplateKey)
+
 	return govy.NewRule(func(v string) error {
 		length := utf8.RuneCountInString(v)
 		if length < minLen || length > maxLen {
-			return errors.New(msg)
+			return govy.NewRuleErrorTemplate(ruleErrorTemplateVars[string]{
+				PropertyValue: v,
+				MinLength:     minLen,
+				MaxLength:     maxLen,
+			})
 		}
 		return nil
 	}).
 		WithErrorCode(ErrorCodeStringLength).
-		WithDescription(msg)
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, ruleErrorTemplateVars[string]{
+			MinLength: minLen,
+			MaxLength: maxLen,
+		}))
 }
 
 // StringMinLength ensures the string's length is greater than or equal to the limit.

@@ -221,6 +221,31 @@ func (r RuleSetError) Error() string {
 	return b.String()
 }
 
+// NewRuleErrorTemplate creates a new [RuleErrorTemplate] with the given template variables.
+// The variables can be of any type, most commonly it would be a struct or a map.
+// These variables are then passed to [template.Template.Execute].
+// For more details on Go templates see: https://pkg.go.dev/text/template.
+// Example:
+//
+//	return govy.NewRuleErrorTemplate(map[string]string{
+//	  "Name":      "my-property",
+//	  "MaxLength": 2,
+//	})
+func NewRuleErrorTemplate(vars any) RuleErrorTemplate {
+	return RuleErrorTemplate{Vars: vars}
+}
+
+// RuleErrorTemplate is a container for passing template variables under the guise of an error.
+// It's not meant to be used directly as an error but rather
+// unpacked by [Rule] in order to create a templated error message.
+type RuleErrorTemplate struct {
+	Vars any
+}
+
+func (e RuleErrorTemplate) Error() string {
+	return fmt.Sprintf("%T should not be used directly", e)
+}
+
 // HasErrorCode checks if an error contains given [ErrorCode].
 // It supports all govy errors.
 func HasErrorCode(err error, code ErrorCode) bool {
