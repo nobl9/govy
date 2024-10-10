@@ -198,6 +198,36 @@ func ExampleValidatorError() {
 	// }
 }
 
+// If you want to validate a slice of entities, you can combine [govy.New] with [govy.ForSlice].
+// The produced errors will contain information about the failing entity's index
+// in their [govy.PropertyError.PropertyName].
+func ExampleValidator_forSlice() {
+	teacherValidator := govy.New(
+		govy.For(func(t Teacher) string { return t.Name }).
+			WithName("name").
+			Rules(govy.NewRule(func(name string) error { return fmt.Errorf("always fails") })),
+	)
+	v := govy.New(
+		govy.ForSlice(govy.GetSelf[[]Teacher]()).
+			IncludeForEach(teacherValidator),
+	)
+
+	err := v.Validate([]Teacher{
+		{Name: "John"},
+		{Name: "Jake"},
+	})
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	// Output:
+	// Validation has failed for the following properties:
+	//   - '[0].name' with value 'John':
+	//     - always fails
+	//   - '[1].name' with value 'Jake':
+	//     - always fails
+}
+
 // So far we've been using a very simple [govy.PropertyRules] instance:
 //
 //	validation.For(func(t Teacher) string { return t.Name }).
@@ -937,6 +967,100 @@ func ExamplePropertyRules_Cascade() {
 	//     - should be not equal to 'Jerry'
 }
 
+// If combining [govy.New] with [govy.ForSlice] is not verbose enough for you,
+// you can use [govy.NewForSlice] constructor.
+// It wraps around [govy.Validator] and when called with a slice of values which type
+// matches the wrapped [govy.Validator] type parameter, it will validate each element
+// according to the rules defined by the wrapped [govy.Validator].
+// It returns [govy.ValidatorErrors].
+func ExampleNewForSlice() {
+	teacherValidator := govy.New(
+		govy.For(func(t Teacher) string { return t.Name }).
+			WithName("name").
+			Rules(govy.NewRule(func(name string) error { return fmt.Errorf("always fails") })),
+	).WithName("Teacher")
+	v := govy.NewForSlice(teacherValidator)
+
+	err := v.Validate([]Teacher{
+		{Name: "John"},
+		{Name: "Jake"},
+	})
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	// Output:
+	// Validation for Teacher at index 0 has failed for the following properties:
+	//   - 'name' with value 'John':
+	//     - always fails
+	// Validation for Teacher at index 1 has failed for the following properties:
+	//   - 'name' with value 'Jake':
+	//     - always fails
+}
+
+// [govy.ValidatorForSlice.Validate] outputs [govy.ValidatorErrors] which is a slice of [govy.ValidatorError].
+// Each [govy.ValidatorError] has an additional property set: SliceIndex, which is a 0-based slice element index.
+func ExampleValidatorErrors() {
+	teacherValidator := govy.New(
+		govy.For(func(t Teacher) string { return t.Name }).
+			WithName("name").
+			Rules(govy.NewRule(func(name string) error {
+				if name == "John" || name == "Jake" {
+					return fmt.Errorf("fails for John and Jake")
+				}
+				return nil
+			})),
+	).WithName("Teacher")
+	v := govy.NewForSlice(teacherValidator)
+
+	err := v.Validate([]Teacher{
+		{Name: "John"},
+		{Name: "George"},
+		{Name: "Jake"},
+	})
+	if err != nil {
+		enc := json.NewEncoder(os.Stdout)
+		enc.SetIndent("", "  ")
+		if err = enc.Encode(err); err != nil {
+			fmt.Printf("error encoding: %v\n", err)
+		}
+	}
+
+	// Output:
+	// [
+	//   {
+	//     "errors": [
+	//       {
+	//         "propertyName": "name",
+	//         "propertyValue": "John",
+	//         "errors": [
+	//           {
+	//             "error": "fails for John and Jake"
+	//           }
+	//         ]
+	//       }
+	//     ],
+	//     "name": "Teacher",
+	//     "sliceIndex": 0
+	//   },
+	//   {
+	//     "errors": [
+	//       {
+	//         "propertyName": "name",
+	//         "propertyValue": "Jake",
+	//         "errors": [
+	//           {
+	//             "error": "fails for John and Jake"
+	//           }
+	//         ]
+	//       }
+	//     ],
+	//     "name": "Teacher",
+	//     "sliceIndex": 2
+	//   }
+	// ]
+}
+
 // Bringing it all (mostly) together, let's create a fully fledged [govy.Validator] for [Teacher].
 func ExampleValidator() {
 	universityValidation := govy.New(
@@ -1099,7 +1223,7 @@ func ExamplePlan() {
 			),
 	).WithName("Teacher")
 
-	properties := govy.Plan(v)
+	properties := govy.Plan[Teacher](v)
 	enc := json.NewEncoder(os.Stdout)
 	enc.SetIndent("", "  ")
 	_ = enc.Encode(properties)
