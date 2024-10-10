@@ -5,10 +5,10 @@
     "golines@0.12",
     "govulncheck@latest",
     "gofumpt@0.7",
-    "golangci-lint@1.60",
+    "golangci-lint@1.61",
     "gosec@latest",
     "go@1.22",
-    "gotools@0.22"
+    "gotools@0.25"
   ],
   "shell": {
     "init_hook": [
