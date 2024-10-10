@@ -413,7 +413,7 @@ func Example_validationPlan() {
 	).
 		WithName("Teacher")
 
-	plan := govy.Plan(teacherValidator)
+	plan := govy.Plan[Teacher](teacherValidator)
 	enc := json.NewEncoder(os.Stdout)
 	enc.SetIndent("", "  ")
 	_ = enc.Encode(plan)

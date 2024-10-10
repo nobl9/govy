@@ -5,6 +5,7 @@ import (
 	_ "embed"
 	"encoding/json"
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/nobl9/govy/internal/assert"
@@ -133,13 +134,34 @@ func TestPlan(t *testing.T) {
 	).
 		WithName("Pod")
 
-	plan := govy.Plan(validator)
+	t.Run("plan for Validator", func(t *testing.T) {
+		plan := govy.Plan[Pod](validator)
 
-	buf := bytes.Buffer{}
-	enc := json.NewEncoder(&buf)
-	enc.SetIndent("", "  ")
-	err := enc.Encode(plan)
-	assert.Require(t, assert.NoError(t, err))
+		buf := bytes.Buffer{}
+		enc := json.NewEncoder(&buf)
+		enc.SetIndent("", "  ")
+		err := enc.Encode(plan)
+		assert.Require(t, assert.NoError(t, err))
 
-	assert.Equal(t, expectedPlanJSON, buf.String())
+		assert.Equal(t, expectedPlanJSON, buf.String())
+	})
+
+	t.Run("plan for ValidatorForSlice", func(t *testing.T) {
+		validatorForSlice := govy.NewForSlice(validator)
+
+		plan := govy.Plan[Pod](validatorForSlice)
+
+		buf := bytes.Buffer{}
+		enc := json.NewEncoder(&buf)
+		enc.SetIndent("", "  ")
+		err := enc.Encode(plan)
+		assert.Require(t, assert.NoError(t, err))
+
+		expectedSlicePlanJSON := expectedPlanJSON
+		i := strings.Index(expectedSlicePlanJSON, `  "properties": [`)
+		expectedSlicePlanJSON = expectedSlicePlanJSON[:i] + `  "isSlice": true,` + "\n" + expectedSlicePlanJSON[i:]
+		expectedSlicePlanJSON = strings.ReplaceAll(expectedSlicePlanJSON, `"path": "$`, `"path": "$[*]`)
+
+		assert.Equal(t, expectedSlicePlanJSON, buf.String())
+	})
 }

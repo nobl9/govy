@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-  # pull_request event is required only for auto-labeler
+  # pull_request event is required only for autolabeler
   # 'edited' event is required to account for initial invalid PR names
   pull_request:
     types: [opened, reopened, synchronize, edited]
@@ -17,7 +17,7 @@ jobs:
     permissions:
       # write permission is required to create a github release
       contents: write
-      # write permission is required for auto-labeler
+      # write permission is required for autolabeler
       # otherwise, read permission is required at least
       pull-requests: write
     runs-on: ubuntu-latest

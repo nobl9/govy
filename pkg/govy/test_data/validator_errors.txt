@@ -1,0 +1,14 @@
+Validation for Teacher at index 0 has failed for the following properties:
+  - 'this' with value '123':
+    - this is an error
+  - 'that':
+    - that is an error
+Validation at index 1 has failed for the following properties:
+  - 'this' with value '123':
+    - this is an error
+  - 'that':
+    - that is an error
+Validation at index 3 has failed for the following properties:
+  - no name
+  - 'that':
+    - that is an error

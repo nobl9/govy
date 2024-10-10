@@ -95,13 +95,13 @@ func (v Validator[S]) Validate(st S) error {
 }
 
 // plan constructs a validation plan for all the properties of the [Validator].
-func (v Validator[S]) plan(path planBuilder) {
+func (v Validator[S]) plan(builder planBuilder) {
 	for _, predicate := range v.predicates {
-		path.rulePlan.Conditions = append(path.rulePlan.Conditions, predicate.description)
+		builder.rulePlan.Conditions = append(builder.rulePlan.Conditions, predicate.description)
 	}
 	for _, rules := range v.props {
 		if p, ok := rules.(planner); ok {
-			p.plan(path)
+			p.plan(builder)
 		}
 	}
 }
