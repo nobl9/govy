@@ -26,7 +26,7 @@ type ValidatorError struct {
 	Errors PropertyErrors `json:"errors"`
 	// Name is an optional name of the [Validator].
 	Name string `json:"name,omitempty"`
-	// SliceIndex is set if the error was created through [ValidatorForSlice.Validate].
+	// SliceIndex is set if the error was created by [Validator.ValidateSlice].
 	// It contains a 0-based index.
 	SliceIndex *int `json:"sliceIndex,omitempty"`
 }

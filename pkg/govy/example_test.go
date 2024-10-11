@@ -1003,7 +1003,7 @@ func ExampleValidator_ValidateSlice() {
 	//     - always fails
 }
 
-// [govy.ValidatorForSlice.Validate] outputs [govy.ValidatorErrors] which is a slice of [govy.ValidatorError].
+// [govy.Validator.ValidateSlice] outputs [govy.ValidatorErrors] which is a slice of [govy.ValidatorError].
 // Each [govy.ValidatorError] has an additional property set: SliceIndex, which is a 0-based slice element index.
 func ExampleValidatorErrors() {
 	v := govy.New(
