@@ -10,7 +10,7 @@ import (
 // It should be used in conjunction with assert functions.
 // Example:
 //
-//	testutils.Require(t, testutils.AssertError(t, err))
+//	assert.Require(t, assert.AssertError(t, err))
 func Require(t *testing.T, isPassing bool) {
 	t.Helper()
 	if !isPassing {

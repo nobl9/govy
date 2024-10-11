@@ -198,6 +198,36 @@ func ExampleValidatorError() {
 	// }
 }
 
+// If you want to validate a slice of entities, you can combine [govy.New] with [govy.ForSlice].
+// The produced errors will contain information about the failing entity's index
+// in their [govy.PropertyError.PropertyName].
+func ExampleValidator_Validate_slice() {
+	teacherValidator := govy.New(
+		govy.For(func(t Teacher) string { return t.Name }).
+			WithName("name").
+			Rules(govy.NewRule(func(name string) error { return fmt.Errorf("always fails") })),
+	)
+	v := govy.New(
+		govy.ForSlice(govy.GetSelf[[]Teacher]()).
+			IncludeForEach(teacherValidator),
+	)
+
+	err := v.Validate([]Teacher{
+		{Name: "John"},
+		{Name: "Jake"},
+	})
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	// Output:
+	// Validation has failed for the following properties:
+	//   - '[0].name' with value 'John':
+	//     - always fails
+	//   - '[1].name' with value 'Jake':
+	//     - always fails
+}
+
 // So far we've been using a very simple [govy.PropertyRules] instance:
 //
 //	validation.For(func(t Teacher) string { return t.Name }).
@@ -935,6 +965,104 @@ func ExamplePropertyRules_Cascade() {
 	// Validation for Teacher has failed for the following properties:
 	//   - 'name' with value 'Jerry':
 	//     - should be not equal to 'Jerry'
+}
+
+// If combining [govy.New] with [govy.ForSlice] is not verbose enough for you,
+// you can use [govy.Validator.ValidateSlice] function.
+// It will validate each element according to the rules defined by [govy.Validator].
+// It returns [govy.ValidatorErrors].
+//
+// Note: If you need to perform additional validation on the whole slice,
+// you should rather use [govy.New] with [govy.ForSlice] and [govy.GetSelf].
+// [govy.Validator.ValidateSlice] is designed to be used for processing independent values.
+//
+// Note: Since each element is validated in isolation,
+// the property names will not start with the slice index,
+// they will instead start at the element's root.
+func ExampleValidator_ValidateSlice() {
+	v := govy.New(
+		govy.For(func(t Teacher) string { return t.Name }).
+			WithName("name").
+			Rules(govy.NewRule(func(name string) error { return fmt.Errorf("always fails") })),
+	).WithName("Teacher")
+
+	err := v.ValidateSlice([]Teacher{
+		{Name: "John"},
+		{Name: "Jake"},
+	})
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	// Output:
+	// Validation for Teacher at index 0 has failed for the following properties:
+	//   - 'name' with value 'John':
+	//     - always fails
+	// Validation for Teacher at index 1 has failed for the following properties:
+	//   - 'name' with value 'Jake':
+	//     - always fails
+}
+
+// [govy.Validator.ValidateSlice] outputs [govy.ValidatorErrors] which is a slice of [govy.ValidatorError].
+// Each [govy.ValidatorError] has an additional property set: SliceIndex, which is a 0-based slice element index.
+func ExampleValidatorErrors() {
+	v := govy.New(
+		govy.For(func(t Teacher) string { return t.Name }).
+			WithName("name").
+			Rules(govy.NewRule(func(name string) error {
+				if name == "John" || name == "Jake" {
+					return fmt.Errorf("fails for John and Jake")
+				}
+				return nil
+			})),
+	).WithName("Teacher")
+
+	err := v.ValidateSlice([]Teacher{
+		{Name: "John"},
+		{Name: "George"},
+		{Name: "Jake"},
+	})
+	if err != nil {
+		enc := json.NewEncoder(os.Stdout)
+		enc.SetIndent("", "  ")
+		if err = enc.Encode(err); err != nil {
+			fmt.Printf("error encoding: %v\n", err)
+		}
+	}
+
+	// Output:
+	// [
+	//   {
+	//     "errors": [
+	//       {
+	//         "propertyName": "name",
+	//         "propertyValue": "John",
+	//         "errors": [
+	//           {
+	//             "error": "fails for John and Jake"
+	//           }
+	//         ]
+	//       }
+	//     ],
+	//     "name": "Teacher",
+	//     "sliceIndex": 0
+	//   },
+	//   {
+	//     "errors": [
+	//       {
+	//         "propertyName": "name",
+	//         "propertyValue": "Jake",
+	//         "errors": [
+	//           {
+	//             "error": "fails for John and Jake"
+	//           }
+	//         ]
+	//       }
+	//     ],
+	//     "name": "Teacher",
+	//     "sliceIndex": 2
+	//   }
+	// ]
 }
 
 // Bringing it all (mostly) together, let's create a fully fledged [govy.Validator] for [Teacher].

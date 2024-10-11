@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
+	"strconv"
 	"testing"
 
 	"github.com/nobl9/govy/internal/assert"
@@ -61,6 +62,53 @@ func TestValidatorError(t *testing.T) {
 			assert.EqualError(t, err, expectedErrorOutput(t, fmt.Sprintf("validator_error_%s.txt", name)))
 		})
 	}
+}
+
+func TestValidatorErrors(t *testing.T) {
+	err := govy.ValidatorErrors{
+		{
+			Name: "Teacher",
+			Errors: govy.PropertyErrors{
+				{
+					PropertyName:  "this",
+					PropertyValue: "123",
+					Errors:        []*govy.RuleError{{Message: "this is an error"}},
+				},
+				{
+					PropertyName: "that",
+					Errors:       []*govy.RuleError{{Message: "that is an error"}},
+				},
+			},
+			SliceIndex: ptr(0),
+		},
+		{
+			Errors: govy.PropertyErrors{
+				{
+					PropertyName:  "this",
+					PropertyValue: "123",
+					Errors:        []*govy.RuleError{{Message: "this is an error"}},
+				},
+				{
+					PropertyName: "that",
+					Errors:       []*govy.RuleError{{Message: "that is an error"}},
+				},
+			},
+			SliceIndex: ptr(1),
+		},
+		{
+			Errors: govy.PropertyErrors{
+				{
+					Errors: []*govy.RuleError{{Message: "no name"}},
+				},
+				{
+					PropertyName: "that",
+					Errors:       []*govy.RuleError{{Message: "that is an error"}},
+				},
+			},
+			SliceIndex: ptr(3),
+		},
+	}
+	assert.EqualError(t, err, expectedErrorOutput(t, "validator_errors.txt"))
 }
 
 func TestNewPropertyError(t *testing.T) {
@@ -293,7 +341,7 @@ func TestMultiRuleError(t *testing.T) {
 }
 
 func TestHasErrorCode(t *testing.T) {
-	for _, test := range []struct {
+	tests := []struct {
 		Error        error
 		Code         govy.ErrorCode
 		HasErrorCode bool
@@ -324,6 +372,24 @@ func TestHasErrorCode(t *testing.T) {
 			HasErrorCode: true,
 		},
 		{
+			Error:        govy.RuleSetError{&govy.RuleError{Code: "another:code:this"}},
+			Code:         "code",
+			HasErrorCode: true,
+		},
+		{
+			Error: govy.RuleSetError{
+				&govy.RuleError{Code: "another:this"},
+				&govy.RuleError{Code: "another:code:this"},
+			},
+			Code:         "code",
+			HasErrorCode: true,
+		},
+		{
+			Error:        govy.RuleSetError{&govy.RuleError{Code: "code:this"}},
+			Code:         "that",
+			HasErrorCode: false,
+		},
+		{
 			Error:        &govy.PropertyError{Errors: []*govy.RuleError{{Code: "another"}}},
 			Code:         "code",
 			HasErrorCode: false,
@@ -335,8 +401,90 @@ func TestHasErrorCode(t *testing.T) {
 			Code:         "code",
 			HasErrorCode: true,
 		},
-	} {
-		assert.Equal(t, test.HasErrorCode, govy.HasErrorCode(test.Error, test.Code))
+		{
+			Error: govy.PropertyErrors{
+				{Errors: []*govy.RuleError{{Code: "this:another"}, {}, {Code: "another:code:this"}}},
+			},
+			Code:         "code",
+			HasErrorCode: true,
+		},
+		{
+			Error: govy.PropertyErrors{
+				{Errors: []*govy.RuleError{{Code: "this"}, {}, {Code: "this:code"}}},
+				{Errors: []*govy.RuleError{{Code: "this:another"}, {}, {Code: "code:this"}}},
+			},
+			Code:         "another",
+			HasErrorCode: true,
+		},
+		{
+			Error: govy.PropertyErrors{
+				{Errors: []*govy.RuleError{{Code: "this:another"}, {}, {Code: "another:code:this"}}},
+			},
+			Code:         "that",
+			HasErrorCode: false,
+		},
+		{
+			Error: &govy.ValidatorError{
+				Errors: govy.PropertyErrors{
+					{Errors: []*govy.RuleError{{Code: "this:another"}, {}, {Code: "another:code:this"}}},
+				},
+			},
+			Code:         "code",
+			HasErrorCode: true,
+		},
+		{
+			Error: &govy.ValidatorError{
+				Errors: govy.PropertyErrors{
+					{Errors: []*govy.RuleError{{Code: "this"}, {}, {Code: "this:code"}}},
+					{Errors: []*govy.RuleError{{Code: "that:another"}, {}, {Code: "code:this"}}},
+				},
+			},
+			Code:         "that",
+			HasErrorCode: true,
+		},
+		{
+			Error: &govy.ValidatorError{
+				Errors: govy.PropertyErrors{
+					{Errors: []*govy.RuleError{{Code: "this:another"}, {}, {Code: "another:code:this"}}},
+				},
+			},
+			Code:         "that",
+			HasErrorCode: false,
+		},
+		{
+			Error: govy.ValidatorErrors{
+				{
+					Errors: govy.PropertyErrors{
+						{Errors: []*govy.RuleError{{Code: "this:another"}, {}, {Code: "another:code:this"}}},
+					},
+				},
+			},
+			Code:         "that",
+			HasErrorCode: false,
+		},
+		{
+			Error: govy.ValidatorErrors{
+				{
+					Errors: govy.PropertyErrors{
+						{Errors: []*govy.RuleError{{Code: "this:another"}, {}, {Code: "another:code:this"}}},
+						{Errors: []*govy.RuleError{{Code: "this"}, {}, {Code: "another:code:this"}}},
+					},
+				},
+				{
+					Errors: govy.PropertyErrors{
+						{Errors: []*govy.RuleError{{Code: "this:another"}, {}, {Code: "another:code:this"}}},
+						{Errors: []*govy.RuleError{{Code: "this:that"}, {}, {Code: "another:code:this"}}},
+					},
+				},
+			},
+			Code:         "that",
+			HasErrorCode: true,
+		},
+	}
+	for i, test := range tests {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			assert.Equal(t, test.HasErrorCode, govy.HasErrorCode(test.Error, test.Code))
+		})
 	}
 }
 
