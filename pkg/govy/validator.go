@@ -94,6 +94,31 @@ func (v Validator[S]) Validate(st S) error {
 	return nil
 }
 
+// ValidatorSlice is used to validate a slice of values of the type S.
+// Under the hood [Validator.Validate] is called for each element and the errors
+// are aggregated into [ValidatorErrors].
+//
+// Note: It is designed to be used for validating independent values.
+// If you need to validate the slice itself, for instance, to check if it has at most N elements,
+// you should use the [Validator] directly in tandem with [ForSlice] and [GetSelf].
+func (v Validator[S]) ValidateSlice(s []S) error {
+	errs := make(ValidatorErrors, 0)
+	for i, st := range s {
+		if err := v.Validate(st); err != nil {
+			vErr, ok := err.(*ValidatorError)
+			if !ok {
+				return err
+			}
+			vErr.SliceIndex = &i
+			errs = append(errs, vErr)
+		}
+	}
+	if len(errs) == 0 {
+		return nil
+	}
+	return errs
+}
+
 // plan constructs a validation plan for all the properties of the [Validator].
 func (v Validator[S]) plan(builder planBuilder) {
 	for _, predicate := range v.predicates {

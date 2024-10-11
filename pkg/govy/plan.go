@@ -11,7 +11,6 @@ import (
 // ValidatorPlan is a validation plan for a single [Validator].
 type ValidatorPlan struct {
 	Name       string         `json:"name,omitempty"`
-	IsSlice    bool           `json:"isSlice,omitempty"`
 	Properties []PropertyPlan `json:"properties"`
 }
 
@@ -45,16 +44,10 @@ func (r RulePlan) isEmpty() bool {
 	return r.Description == "" && r.Details == "" && r.ErrorCode == "" && len(r.Conditions) == 0
 }
 
-type validationPlanInterface[S any] interface {
-	Validator[S] | ValidatorForSlice[S]
-	plan(builder planBuilder)
-}
-
-// Plan creates a validation plan for the provided validation entity.
-// It can be called with either [Validator] or [ValidatorForSlice].
+// Plan creates a validation plan for the provided [Validator].
 // Each property is represented by a [PropertyPlan] which aggregates its every [RulePlan].
 // If a property does not have any rules, it won't be included in the result.
-func Plan[S any, V validationPlanInterface[S]](v V) *ValidatorPlan {
+func Plan[S any](v Validator[S]) *ValidatorPlan {
 	all := make([]planBuilder, 0)
 	v.plan(planBuilder{path: "$", children: &all})
 	propertiesMap := make(map[string]PropertyPlan)
@@ -80,17 +73,10 @@ func Plan[S any, V validationPlanInterface[S]](v V) *ValidatorPlan {
 	}
 	properties := maps.Values(propertiesMap)
 	sort.Slice(properties, func(i, j int) bool { return properties[i].Path < properties[j].Path })
-	plan := &ValidatorPlan{
+	return &ValidatorPlan{
+		Name:       v.name,
 		Properties: properties,
 	}
-	switch val := any(v).(type) {
-	case Validator[S]:
-		plan.Name = val.name
-	case ValidatorForSlice[S]:
-		plan.Name = val.validator.name
-		plan.IsSlice = true
-	}
-	return plan
 }
 
 // planner is an interface for types that can create a [PropertyPlan] or [RulePlan].

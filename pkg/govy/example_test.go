@@ -201,7 +201,7 @@ func ExampleValidatorError() {
 // If you want to validate a slice of entities, you can combine [govy.New] with [govy.ForSlice].
 // The produced errors will contain information about the failing entity's index
 // in their [govy.PropertyError.PropertyName].
-func ExampleValidator_forSlice() {
+func ExampleValidator_Validate_slice() {
 	teacherValidator := govy.New(
 		govy.For(func(t Teacher) string { return t.Name }).
 			WithName("name").
@@ -968,24 +968,21 @@ func ExamplePropertyRules_Cascade() {
 }
 
 // If combining [govy.New] with [govy.ForSlice] is not verbose enough for you,
-// you can use [govy.NewForSlice] constructor.
-// It wraps around [govy.Validator] and when called with a slice of values which type
-// matches the wrapped [govy.Validator] type parameter, it will validate each element
-// according to the rules defined by the wrapped [govy.Validator].
+// you can use [govy.Validator.ValidateSlice] function.
+// It will validate each element according to the rules defined by [govy.Validator].
 // It returns [govy.ValidatorErrors].
 //
 // Note: If you need to perform additional validation on the whole slice,
 // you should rather use [govy.New] with [govy.ForSlice] and [govy.GetSelf].
-// [govy.ValidatorForSlice] is designed to be used for processing independent values.
-func ExampleNewForSlice() {
-	teacherValidator := govy.New(
+// [govy.Validator.ValidateSlice] is designed to be used for processing independent values.
+func ExampleValidator_ValidateSlice() {
+	v := govy.New(
 		govy.For(func(t Teacher) string { return t.Name }).
 			WithName("name").
 			Rules(govy.NewRule(func(name string) error { return fmt.Errorf("always fails") })),
 	).WithName("Teacher")
-	v := govy.NewForSlice(teacherValidator)
 
-	err := v.Validate([]Teacher{
+	err := v.ValidateSlice([]Teacher{
 		{Name: "John"},
 		{Name: "Jake"},
 	})
@@ -1005,7 +1002,7 @@ func ExampleNewForSlice() {
 // [govy.ValidatorForSlice.Validate] outputs [govy.ValidatorErrors] which is a slice of [govy.ValidatorError].
 // Each [govy.ValidatorError] has an additional property set: SliceIndex, which is a 0-based slice element index.
 func ExampleValidatorErrors() {
-	teacherValidator := govy.New(
+	v := govy.New(
 		govy.For(func(t Teacher) string { return t.Name }).
 			WithName("name").
 			Rules(govy.NewRule(func(name string) error {
@@ -1015,9 +1012,8 @@ func ExampleValidatorErrors() {
 				return nil
 			})),
 	).WithName("Teacher")
-	v := govy.NewForSlice(teacherValidator)
 
-	err := v.Validate([]Teacher{
+	err := v.ValidateSlice([]Teacher{
 		{Name: "John"},
 		{Name: "George"},
 		{Name: "Jake"},
@@ -1227,7 +1223,7 @@ func ExamplePlan() {
 			),
 	).WithName("Teacher")
 
-	properties := govy.Plan[Teacher](v)
+	properties := govy.Plan(v)
 	enc := json.NewEncoder(os.Stdout)
 	enc.SetIndent("", "  ")
 	_ = enc.Encode(properties)
@@ -1238,69 +1234,6 @@ func ExamplePlan() {
 	//   "properties": [
 	//     {
 	//       "path": "$.name",
-	//       "type": "string",
-	//       "examples": [
-	//         "Jake",
-	//         "John"
-	//       ],
-	//       "rules": [
-	//         {
-	//           "description": "should be not equal to 'Jerry'",
-	//           "details": "Jerry is just a name!",
-	//           "errorCode": "not_equal_to",
-	//           "conditions": [
-	//             "name is Jerry"
-	//           ]
-	//         },
-	//         {
-	//           "description": "this is a custom error!",
-	//           "conditions": [
-	//             "name is Jerry"
-	//           ]
-	//         }
-	//       ]
-	//     }
-	//   ]
-	// }
-}
-
-// If you want to generate a plan for a slice-based [govy.ValidatorForSlice],
-// you can call [govy.Plan] all the same, passing [govy.ValidatorForSlice] instance as its input.
-// The generated plan will diverge from the standard [govy.Validator] plan by:
-//   - Setting [govy.PropertyRules.IsSlice] to true.
-//   - Prefixing each property's path with '$[*]' instead of just '$' to make it a valid array JSON path.
-func ExamplePlan_forSlice() {
-	teacherValidator := govy.New(
-		govy.For(func(t Teacher) string { return t.Name }).
-			WithName("name").
-			WithExamples("Jake", "John").
-			When(
-				func(t Teacher) bool { return t.Name == "Jerry" },
-				govy.WhenDescription("name is Jerry"),
-			).
-			Rules(
-				rules.NEQ("Jerry").
-					WithDetails("Jerry is just a name!"),
-				govy.NewRule(func(v string) error {
-					return fmt.Errorf("some custom error")
-				}).
-					WithDescription("this is a custom error!"),
-			),
-	).WithName("Teacher")
-	teachersValidator := govy.NewForSlice(teacherValidator)
-
-	properties := govy.Plan[Teacher](teachersValidator)
-	enc := json.NewEncoder(os.Stdout)
-	enc.SetIndent("", "  ")
-	_ = enc.Encode(properties)
-
-	// Output:
-	// {
-	//   "name": "Teacher",
-	//   "isSlice": true,
-	//   "properties": [
-	//     {
-	//       "path": "$[*].name",
 	//       "type": "string",
 	//       "examples": [
 	//         "Jake",
