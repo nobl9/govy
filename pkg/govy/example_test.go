@@ -975,6 +975,10 @@ func ExamplePropertyRules_Cascade() {
 // Note: If you need to perform additional validation on the whole slice,
 // you should rather use [govy.New] with [govy.ForSlice] and [govy.GetSelf].
 // [govy.Validator.ValidateSlice] is designed to be used for processing independent values.
+//
+// Note: Since each element is validated in isolation,
+// the property names will not start with the slice index,
+// they will instead start at the element's root.
 func ExampleValidator_ValidateSlice() {
 	v := govy.New(
 		govy.For(func(t Teacher) string { return t.Name }).
