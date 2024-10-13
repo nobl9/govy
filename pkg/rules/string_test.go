@@ -300,6 +300,11 @@ func TestStringURL(t *testing.T) {
 			assert.NoError(t, err)
 		}
 	}
+	t.Run("failed to parse url", func(t *testing.T) {
+		err := StringURL().Validate("http://\x1f")
+		assert.ErrorContains(t, err, "failed to parse URL: parse \"http://\\x1f\": net/url: invalid control character in URL")
+		assert.True(t, govy.HasErrorCode(err, ErrorCodeStringURL))
+	})
 }
 
 func BenchmarkStringURL(b *testing.B) {
