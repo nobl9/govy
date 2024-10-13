@@ -302,7 +302,11 @@ func TestStringURL(t *testing.T) {
 	}
 	t.Run("failed to parse url", func(t *testing.T) {
 		err := StringURL().Validate("http://\x1f")
-		assert.ErrorContains(t, err, "failed to parse URL: parse \"http://\\x1f\": net/url: invalid control character in URL")
+		assert.ErrorContains(
+			t,
+			err,
+			"failed to parse URL: parse \"http://\\x1f\": net/url: invalid control character in URL",
+		)
 		assert.True(t, govy.HasErrorCode(err, ErrorCodeStringURL))
 	})
 }
