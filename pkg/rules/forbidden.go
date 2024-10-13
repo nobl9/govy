@@ -7,7 +7,7 @@ import (
 	"github.com/nobl9/govy/pkg/govy"
 )
 
-// Forbidden ensures the property's in is its type's zero in, i.e. it's empty.
+// Forbidden ensures the property's value is its type's zero in, i.e. it's empty.
 func Forbidden[T any]() govy.Rule[T] {
 	msg := "property is forbidden"
 	return govy.NewRule(func(v T) error {
