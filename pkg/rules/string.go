@@ -305,7 +305,7 @@ func StringEndsWith(suffixes ...string) govy.Rule[string] {
 		WithDescription(msg)
 }
 
-// StringTitle ensures each word value a string starts with a capital letter.
+// StringTitle ensures each word in a string starts with a capital letter.
 func StringTitle() govy.Rule[string] {
 	msg := "each word in a string must start with a capital letter"
 	return govy.NewRule(func(s string) error {
