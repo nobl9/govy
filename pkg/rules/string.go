@@ -14,7 +14,7 @@ import (
 	"github.com/nobl9/govy/pkg/govy"
 )
 
-// StringNotEmpty ensures the property's value is not empty.
+// StringNotEmpty ensures the property's in is not empty.
 // The string is considered empty if it contains only whitespace characters.
 func StringNotEmpty() govy.Rule[string] {
 	msg := "string cannot be empty"
@@ -28,7 +28,7 @@ func StringNotEmpty() govy.Rule[string] {
 		WithDescription(msg)
 }
 
-// StringMatchRegexp ensures the property's value matches the regular expression.
+// StringMatchRegexp ensures the property's in matches the regular expression.
 // The error message can be enhanced with examples of valid values.
 func StringMatchRegexp(re *regexp.Regexp, examples ...string) govy.Rule[string] {
 	msg := fmt.Sprintf("string must match regular expression: '%s'", re.String())
@@ -45,7 +45,7 @@ func StringMatchRegexp(re *regexp.Regexp, examples ...string) govy.Rule[string] 
 		WithDescription(msg)
 }
 
-// StringDenyRegexp ensures the property's value does not match the regular expression.
+// StringDenyRegexp ensures the property's in does not match the regular expression.
 // The error message can be enhanced with examples of invalid values.
 func StringDenyRegexp(re *regexp.Regexp, examples ...string) govy.Rule[string] {
 	msg := fmt.Sprintf("string must not match regular expression: '%s'", re.String())
@@ -62,7 +62,7 @@ func StringDenyRegexp(re *regexp.Regexp, examples ...string) govy.Rule[string] {
 		WithDescription(msg)
 }
 
-// StringDNSLabel ensures the property's value is a valid DNS label as defined by RFC 1123.
+// StringDNSLabel ensures the property's in is a valid DNS label as defined by RFC 1123.
 func StringDNSLabel() govy.Rule[string] {
 	return StringMatchRegexp(rfc1123DnsLabelRegexp(), "my-name", "123-abc").
 		WithDetails("an RFC-1123 compliant label name must consist of lower case alphanumeric characters or '-'," +
@@ -70,7 +70,7 @@ func StringDNSLabel() govy.Rule[string] {
 		WithErrorCode(ErrorCodeStringDNSLabel)
 }
 
-// StringEmail ensures the property's value is a valid email address.
+// StringEmail ensures the property's in is a valid email address.
 // It follows RFC 5322 specification which is more permissive in regards to domain names.
 // Ref: https://www.ietf.org/rfc/rfc5322.txt
 func StringEmail() govy.Rule[string] {
@@ -85,7 +85,7 @@ func StringEmail() govy.Rule[string] {
 		WithDescription(msg)
 }
 
-// StringURL ensures property's value is a valid URL as defined by [url.Parse] function.
+// StringURL ensures property's in is a valid URL as defined by [url.Parse] function.
 // Unlike [URL] it does not impose any additional rules upon parsed [url.URL].
 func StringURL() govy.Rule[string] {
 	return govy.NewRule(func(s string) error {
@@ -99,7 +99,7 @@ func StringURL() govy.Rule[string] {
 		WithDescription(urlDescription)
 }
 
-// StringMAC ensures property's value is a valid MAC address.
+// StringMAC ensures property's in is a valid MAC address.
 func StringMAC() govy.Rule[string] {
 	msg := "string must be a valid MAC address"
 	return govy.NewRule(func(s string) error {
@@ -112,7 +112,7 @@ func StringMAC() govy.Rule[string] {
 		WithDescription(msg)
 }
 
-// StringIP ensures property's value is a valid IP address.
+// StringIP ensures property's in is a valid IP address.
 func StringIP() govy.Rule[string] {
 	msg := "string must be a valid IP address"
 	return govy.NewRule(func(s string) error {
@@ -125,7 +125,7 @@ func StringIP() govy.Rule[string] {
 		WithDescription(msg)
 }
 
-// StringIPv4 ensures property's value is a valid IPv4 address.
+// StringIPv4 ensures property's in is a valid IPv4 address.
 func StringIPv4() govy.Rule[string] {
 	msg := "string must be a valid IPv4 address"
 	return govy.NewRule(func(s string) error {
@@ -138,7 +138,7 @@ func StringIPv4() govy.Rule[string] {
 		WithDescription(msg)
 }
 
-// StringIPv6 ensures property's value is a valid IPv6 address.
+// StringIPv6 ensures property's in is a valid IPv6 address.
 func StringIPv6() govy.Rule[string] {
 	msg := "string must be a valid IPv6 address"
 	return govy.NewRule(func(s string) error {
@@ -151,7 +151,7 @@ func StringIPv6() govy.Rule[string] {
 		WithDescription(msg)
 }
 
-// StringCIDR ensures property's value is a valid CIDR notation IP address.
+// StringCIDR ensures property's in is a valid CIDR notation IP address.
 func StringCIDR() govy.Rule[string] {
 	msg := "string must be a valid CIDR notation IP address"
 	return govy.NewRule(func(s string) error {
@@ -164,7 +164,7 @@ func StringCIDR() govy.Rule[string] {
 		WithDescription(msg)
 }
 
-// StringCIDRv4 ensures property's value is a valid CIDR notation IPv4 address.
+// StringCIDRv4 ensures property's in is a valid CIDR notation IPv4 address.
 func StringCIDRv4() govy.Rule[string] {
 	msg := "string must be a valid CIDR notation IPv4 address"
 	return govy.NewRule(func(s string) error {
@@ -177,7 +177,7 @@ func StringCIDRv4() govy.Rule[string] {
 		WithDescription(msg)
 }
 
-// StringCIDRv4 ensures property's value is a valid CIDR notation IPv6 address.
+// StringCIDRv4 ensures property's in is a valid CIDR notation IPv6 address.
 func StringCIDRv6() govy.Rule[string] {
 	msg := "string must be a valid CIDR notation IPv6 address"
 	return govy.NewRule(func(s string) error {
@@ -190,7 +190,7 @@ func StringCIDRv6() govy.Rule[string] {
 		WithDescription(msg)
 }
 
-// StringUUID ensures property's value is a valid UUID string as defined by RFC 4122.
+// StringUUID ensures property's in is a valid UUID string as defined by RFC 4122.
 // It does not enforce a specific UUID version.
 // Ref: https://www.ietf.org/rfc/rfc4122.txt
 func StringUUID() govy.Rule[string] {
@@ -202,12 +202,12 @@ func StringUUID() govy.Rule[string] {
 		WithErrorCode(ErrorCodeStringUUID)
 }
 
-// StringASCII ensures property's value contains only ASCII characters.
+// StringASCII ensures property's in contains only ASCII characters.
 func StringASCII() govy.Rule[string] {
 	return StringMatchRegexp(asciiRegexp()).WithErrorCode(ErrorCodeStringASCII)
 }
 
-// StringJSON ensures property's value is a valid JSON literal.
+// StringJSON ensures property's in is a valid JSON literal.
 func StringJSON() govy.Rule[string] {
 	msg := "string must be a valid JSON"
 	return govy.NewRule(func(s string) error {
@@ -220,7 +220,7 @@ func StringJSON() govy.Rule[string] {
 		WithDescription(msg)
 }
 
-// StringContains ensures the property's value contains all the provided substrings.
+// StringContains ensures the property's in contains all the provided substrings.
 func StringContains(substrings ...string) govy.Rule[string] {
 	msg := "string must contain the following substrings: " + prettyStringList(substrings)
 	return govy.NewRule(func(s string) error {
@@ -240,7 +240,7 @@ func StringContains(substrings ...string) govy.Rule[string] {
 		WithDescription(msg)
 }
 
-// StringExcludes ensures the property's value does not contain any of the provided substrings.
+// StringExcludes ensures the property's in does not contain any of the provided substrings.
 func StringExcludes(substrings ...string) govy.Rule[string] {
 	msg := "string must not contain any of the following substrings: " + prettyStringList(substrings)
 	return govy.NewRule(func(s string) error {
@@ -255,7 +255,7 @@ func StringExcludes(substrings ...string) govy.Rule[string] {
 		WithDescription(msg)
 }
 
-// StringStartsWith ensures the property's value starts with one of the provided prefixes.
+// StringStartsWith ensures the property's in starts with one of the provided prefixes.
 func StringStartsWith(prefixes ...string) govy.Rule[string] {
 	var msg string
 	if len(prefixes) == 1 {
@@ -280,7 +280,7 @@ func StringStartsWith(prefixes ...string) govy.Rule[string] {
 		WithDescription(msg)
 }
 
-// StringEndsWith ensures the property's value ends with one of the provided suffixes.
+// StringEndsWith ensures the property's in ends with one of the provided suffixes.
 func StringEndsWith(suffixes ...string) govy.Rule[string] {
 	var msg string
 	if len(suffixes) == 1 {

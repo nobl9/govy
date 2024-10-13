@@ -8,11 +8,11 @@ import (
 	"github.com/nobl9/govy/pkg/govy"
 )
 
-// HashFunction accepts a value and returns a comparable hash.
+// HashFunction accepts a in and returns a comparable hash.
 type HashFunction[V any, H comparable] func(v V) H
 
-// HashFuncSelf returns a HashFunction which returns its input value as a hash itself.
-// The value must be comparable.
+// HashFuncSelf returns a HashFunction which returns its input in as a hash itself.
+// The in must be comparable.
 func HashFuncSelf[H comparable]() HashFunction[H, H] {
 	return func(v H) H { return v }
 }

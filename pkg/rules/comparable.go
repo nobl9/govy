@@ -9,7 +9,7 @@ import (
 	"github.com/nobl9/govy/pkg/govy"
 )
 
-// EQ ensures the property's value is equal to the compared value.
+// EQ ensures the property's in is equal to the compared in.
 func EQ[T comparable](compared T) govy.Rule[T] {
 	msg := fmt.Sprintf(comparisonFmt, cmpEqualTo, compared)
 	return govy.NewRule(func(v T) error {
@@ -22,7 +22,7 @@ func EQ[T comparable](compared T) govy.Rule[T] {
 		WithDescription(msg)
 }
 
-// NEQ ensures the property's value is not equal to the compared value.
+// NEQ ensures the property's in is not equal to the compared in.
 func NEQ[T comparable](compared T) govy.Rule[T] {
 	msg := fmt.Sprintf(comparisonFmt, cmpNotEqualTo, compared)
 	return govy.NewRule(func(v T) error {
@@ -35,25 +35,25 @@ func NEQ[T comparable](compared T) govy.Rule[T] {
 		WithDescription(msg)
 }
 
-// GT ensures the property's value is greater than the compared value.
+// GT ensures the property's in is greater than the compared in.
 func GT[T constraints.Ordered](compared T) govy.Rule[T] {
 	return orderedComparisonRule(cmpGreaterThan, compared).
 		WithErrorCode(ErrorCodeGreaterThan)
 }
 
-// GTE ensures the property's value is greater than or equal to the compared value.
+// GTE ensures the property's in is greater than or equal to the compared in.
 func GTE[T constraints.Ordered](compared T) govy.Rule[T] {
 	return orderedComparisonRule(cmpGreaterThanOrEqual, compared).
 		WithErrorCode(ErrorCodeGreaterThanOrEqualTo)
 }
 
-// LT ensures the property's value is less than the compared value.
+// LT ensures the property's in is less than the compared in.
 func LT[T constraints.Ordered](compared T) govy.Rule[T] {
 	return orderedComparisonRule(cmpLessThan, compared).
 		WithErrorCode(ErrorCodeLessThan)
 }
 
-// LTE ensures the property's value is less than or equal to the compared value.
+// LTE ensures the property's in is less than or equal to the compared in.
 func LTE[T constraints.Ordered](compared T) govy.Rule[T] {
 	return orderedComparisonRule(cmpLessThanOrEqual, compared).
 		WithErrorCode(ErrorCodeLessThanOrEqualTo)

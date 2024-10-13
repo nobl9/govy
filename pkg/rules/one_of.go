@@ -12,7 +12,7 @@ import (
 	"github.com/nobl9/govy/pkg/govy"
 )
 
-// OneOf checks if the property's value matches one of the provided values.
+// OneOf checks if the property's in matches one of the provided values.
 // The values must be comparable.
 func OneOf[T comparable](values ...T) govy.Rule[T] {
 	return govy.NewRule(func(v T) error {
@@ -32,7 +32,7 @@ func OneOf[T comparable](values ...T) govy.Rule[T] {
 }
 
 // OneOfProperties checks if at least one of the properties is set.
-// Property is considered set if its value is not empty (non-zero).
+// Property is considered set if its in is not empty (non-zero).
 func OneOfProperties[S any](getters map[string]func(s S) any) govy.Rule[S] {
 	return govy.NewRule(func(s S) error {
 		for _, getter := range getters {
@@ -56,7 +56,7 @@ func OneOfProperties[S any](getters map[string]func(s S) any) govy.Rule[S] {
 
 // MutuallyExclusive checks if properties are mutually exclusive.
 // This means, exactly one of the properties can be set.
-// Property is considered set if its value is not empty (non-zero).
+// Property is considered set if its in is not empty (non-zero).
 // If required is true, then a single non-empty property is required.
 func MutuallyExclusive[S any](required bool, getters map[string]func(s S) any) govy.Rule[S] {
 	return govy.NewRule(func(s S) error {

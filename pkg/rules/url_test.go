@@ -9,94 +9,76 @@ import (
 	"github.com/nobl9/govy/pkg/govy"
 )
 
-var validURLs = []string{
-	"http://foo.bar#com",
-	"http://foobar.com",
-	"https://foobar.com",
-	"http://foobar.coffee/",
-	"http://foobar.中文网/",
-	"http://foobar.org/",
-	"http://foobar.org:8080/",
-	"ftp://foobar.ua/",
-	"http://user:pass@www.foobar.com/",
-	"http://127.0.0.1/",
-	"http://duckduckgo.com/?q=%2F",
-	"http://localhost:3000/",
-	"http://foobar.com/?foo=bar#baz=qux",
-	"http://foobar.com?foo=bar",
-	"http://www.xn--froschgrn-x9a.net/",
-	"xyz://foobar.com",
-	"rtmp://foobar.com",
-	"http://www.foo_bar.com/",
-	"http://localhost:3000/",
-	"http://foobar.com/#baz",
-	"http://foobar.com#baz=qux",
-	"http://foobar.com/t$-_.+!*\\'(),",
-	"http://www.foobar.com/~foobar",
-	"http://www.-foobar.com/",
-	"http://www.foo---bar.com/",
-	"mailto:someone@example.com",
-	"irc://irc.server.org/channel",
-	"irc://#channel@network",
-}
-
-var invalidURLs = []string{
-	"foobar.com",
-	"",
-	"invalid.",
-	".com",
-	"/abs/test/dir",
-	"./rel/test/dir",
-	"irc:",
-	"http://",
+var urlTestCases = []*struct {
+	url        string
+	shouldFail bool
+}{
+	{"http://foo.bar#com", false},
+	{"http://foobar.com", false},
+	{"https://foobar.com", false},
+	{"http://foobar.coffee/", false},
+	{"http://foobar.中文网/", false},
+	{"http://foobar.org/", false},
+	{"http://foobar.org:8080/", false},
+	{"ftp://foobar.ua/", false},
+	{"http://user:pass@www.foobar.com/", false},
+	{"http://127.0.0.1/", false},
+	{"http://duckduckgo.com/?q=%2F", false},
+	{"http://localhost:3000/", false},
+	{"http://foobar.com/?foo=bar#baz=qux", false},
+	{"http://foobar.com?foo=bar", false},
+	{"http://www.xn--froschgrn-x9a.net/", false},
+	{"xyz://foobar.com", false},
+	{"rtmp://foobar.com", false},
+	{"http://www.foo_bar.com/", false},
+	{"http://localhost:3000/", false},
+	{"http://foobar.com/#baz", false},
+	{"http://foobar.com#baz=qux", false},
+	{"http://foobar.com/t$-_.+!*\\'(),", false},
+	{"http://www.foobar.com/~foobar", false},
+	{"http://www.-foobar.com/", false},
+	{"http://www.foo---bar.com/", false},
+	{"mailto:someone@example.com", false},
+	{"irc://irc.server.org/channel", false},
+	{"irc://#channel@network", false},
+	{"foobar.com", true},
+	{"", true},
+	{"invalid.", true},
+	{".com", true},
+	{"/abs/test/dir", true},
+	{"./rel/test/dir", true},
+	{"irc:", true},
+	{"http://", true},
 }
 
 func TestURL(t *testing.T) {
-	t.Run("passes", func(t *testing.T) {
-		for _, input := range validURLs {
-			u, err := url.Parse(input)
-			assert.Require(t, assert.NoError(t, err))
-			err = URL().Validate(u)
-			assert.NoError(t, err)
-		}
-	})
-	t.Run("fails", func(t *testing.T) {
-		for _, input := range invalidURLs {
-			u, err := url.Parse(input)
-			assert.Require(t, assert.NoError(t, err))
-			err = URL().Validate(u)
+	for _, tc := range urlTestCases {
+		u, err := url.Parse(tc.url)
+		assert.Require(t, assert.NoError(t, err))
+		err = URL().Validate(u)
+		if tc.shouldFail {
 			assert.Require(t, assert.Error(t, err))
 			assert.True(t, govy.HasErrorCode(err, ErrorCodeURL))
+		} else {
+			assert.NoError(t, err)
 		}
-	})
+	}
 }
 
 func BenchmarkURL(b *testing.B) {
-	parseURLs := func(urls []string) []*url.URL {
-		parsedURLs := make([]*url.URL, 0, len(urls))
-		for _, rawURL := range urls {
-			u, err := url.Parse(rawURL)
-			if err != nil {
-				b.Fatalf("unexpected error: %v", err)
-			}
-			parsedURLs = append(parsedURLs, u)
+	parsedURLs := make([]*url.URL, 0, len(urlTestCases))
+	for _, tc := range urlTestCases {
+		u, err := url.Parse(tc.url)
+		if err != nil {
+			b.Fatalf("unexpected error: %v", err)
 		}
-		return parsedURLs
+		parsedURLs = append(parsedURLs, u)
 	}
-	parsedValidURLs := parseURLs(validURLs)
-	parsedInvalidURLs := parseURLs(invalidURLs)
-	b.Run("passes", func(b *testing.B) {
-		for range b.N {
-			for _, u := range parsedValidURLs {
-				_ = URL().Validate(u)
-			}
+	b.ResetTimer()
+
+	for range b.N {
+		for _, u := range parsedURLs {
+			_ = URL().Validate(u)
 		}
-	})
-	b.Run("fails", func(b *testing.B) {
-		for range b.N {
-			for _, u := range parsedInvalidURLs {
-				_ = URL().Validate(u)
-			}
-		}
-	})
+	}
 }

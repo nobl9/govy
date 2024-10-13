@@ -37,6 +37,12 @@ test:
 	$(call _print_step,Running unit tests)
 	go test -race -cover ./... ./docs/validator-comparison/...
 
+.PHONY: test/benchmark
+## Run benchmark tests.
+test/benchmark:
+	$(call _print_step,Running benchmark tests)
+	go test -bench=. -benchmem ./...
+
 .PHONY: test/coverage
 ## Produce test coverage report and inspect it in browser.
 test/coverage:
