@@ -3,9 +3,9 @@
   "private": true,
   "type": "module",
   "devDependencies": {
-    "cspell": "8.14.4",
+    "cspell": "8.15.1",
     "markdownlint-cli": "0.42.0",
-    "yaml": "2.5.1"
+    "yaml": "2.6.0"
   },
   "scripts": {
     "check-trailing-whitespaces": "node ./scripts/check-trailing-whitespaces.js",
