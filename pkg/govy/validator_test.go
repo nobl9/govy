@@ -133,8 +133,8 @@ func TestValidatorInferName(t *testing.T) {
 				WithName("test").
 				Rules(govy.NewRule(func(v string) error { return errors.New("test") })),
 		).
-      WithName("myValidator").
-      InferName()
+			WithName("myValidator").
+			InferName()
 
 		err := v.Validate(mockValidatorStruct{})
 		assert.Require(t, assert.Error(t, err))
