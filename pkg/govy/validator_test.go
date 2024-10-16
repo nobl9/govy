@@ -114,17 +114,34 @@ func TestValidatorWithNameFunc(t *testing.T) {
 }
 
 func TestValidatorInferName(t *testing.T) {
-	v := govy.New(
-		govy.For(func(m mockValidatorStruct) string { return "test" }).
-			WithName("test").
-			Rules(govy.NewRule(func(v string) error { return errors.New("test") })),
-	).InferName()
+	t.Run("infer name", func(t *testing.T) {
+		v := govy.New(
+			govy.For(func(m mockValidatorStruct) string { return "test" }).
+				WithName("test").
+				Rules(govy.NewRule(func(v string) error { return errors.New("test") })),
+		).InferName()
 
-	err := v.Validate(mockValidatorStruct{})
-	assert.Require(t, assert.Error(t, err))
-	assert.EqualError(t, err, `Validation for mockValidatorStruct has failed for the following properties:
+		err := v.Validate(mockValidatorStruct{})
+		assert.Require(t, assert.Error(t, err))
+		assert.EqualError(t, err, `Validation for mockValidatorStruct has failed for the following properties:
   - 'test' with value 'test':
     - test`)
+	})
+	t.Run("do not infer name if name was already set", func(t *testing.T) {
+		v := govy.New(
+			govy.For(func(m mockValidatorStruct) string { return "test" }).
+				WithName("test").
+				Rules(govy.NewRule(func(v string) error { return errors.New("test") })),
+		).
+      WithName("myValidator").
+      InferName()
+
+		err := v.Validate(mockValidatorStruct{})
+		assert.Require(t, assert.Error(t, err))
+		assert.EqualError(t, err, `Validation for myValidator has failed for the following properties:
+  - 'test' with value 'test':
+    - test`)
+	})
 }
 
 func TestValidatorValidateSlice(t *testing.T) {
