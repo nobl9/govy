@@ -879,3 +879,80 @@ func BenchmarkStringTitle(b *testing.B) {
 		}
 	}
 }
+
+var stringGitRefTestCases = []*struct {
+	in          string
+	expectedErr error
+}{
+	{"refs/heads/master", nil},
+	{"refs/notes/commits", nil},
+	{"refs/tags/this@", nil},
+	{"refs/remotes/origin/master", nil},
+	{"HEAD", nil},
+	{"refs/tags/v3.1.1", nil},
+	{"refs/pulls/1/head", nil},
+	{"refs/pulls/1/merge", nil},
+	{"refs/pulls/1/abc.123", nil},
+	{"refs/pulls", nil},
+	{"refs/-", nil},
+	{"refs", errGitRefAtLeastOneSlash},
+	{"refs/", errGitRefEmptyPart},
+	{"refs//", errGitRefEmptyPart},
+	{"refs/heads/\\", errGitRefForbiddenChars},
+	{"refs/heads/\\foo", errGitRefForbiddenChars},
+	{"refs/heads/\\foo/bar", errGitRefForbiddenChars},
+	{"abc", errGitRefAtLeastOneSlash},
+	{"", errGitRefEmpty},
+	{"refs/heads/ ", errGitRefForbiddenChars},
+	{"refs/heads/ /", errGitRefForbiddenChars},
+	{"refs/heads/ /foo", errGitRefForbiddenChars},
+	{"refs/heads/.", errGitRefEndsWithDot},
+	{"refs/heads/..", errGitRefEndsWithDot},
+	{"refs/heads/foo..", errGitRefEndsWithDot},
+	{"refs/heads/foo.lock", errGitRefForbiddenChars},
+	{"refs/heads/foo@{bar}", errGitRefForbiddenChars},
+	{"refs/heads/foo@{", errGitRefForbiddenChars},
+	{"refs/heads/foo[", errGitRefForbiddenChars},
+	{"refs/heads/foo~", errGitRefForbiddenChars},
+	{"refs/heads/foo^", errGitRefForbiddenChars},
+	{"refs/heads/foo:", errGitRefForbiddenChars},
+	{"refs/heads/foo?", errGitRefForbiddenChars},
+	{"refs/heads/foo*", errGitRefForbiddenChars},
+	{"refs/heads/foo[bar", errGitRefForbiddenChars},
+	{"refs/heads/foo\t", errGitRefForbiddenChars},
+	{"refs/heads/@", errGitRefForbiddenChars},
+	{"refs/heads/@{bar}", errGitRefForbiddenChars},
+	{"refs/heads/\n", errGitRefForbiddenChars},
+	{"refs/heads/-foo", errGitRefStartsWithDash},
+	{"refs/heads/foo..bar", errGitRefForbiddenChars},
+	{"refs/heads/-", errGitRefStartsWithDash},
+	{"refs/tags/-", errGitRefStartsWithDash},
+	{"refs/tags/-foo", errGitRefStartsWithDash},
+}
+
+func TestStringGitRef(t *testing.T) {
+	for _, tc := range stringGitRefTestCases {
+		t.Run(tc.in, func(t *testing.T) {
+			err := StringGitRef().Validate(tc.in)
+			if tc.expectedErr != nil {
+				assert.ErrorContains(t, err, tc.expectedErr.Error())
+				assert.True(t, govy.HasErrorCode(err, ErrorCodeStringGitRef))
+				assert.Equal(
+					t,
+					"see https://git-scm.com/docs/git-check-ref-format for more information on Git reference naming rules",
+					err.(*govy.RuleError).Details,
+				)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func BenchmarkStringGitRef(b *testing.B) {
+	for range b.N {
+		for _, tc := range stringGitRefTestCases {
+			_ = StringGitRef().Validate(tc.in)
+		}
+	}
+}

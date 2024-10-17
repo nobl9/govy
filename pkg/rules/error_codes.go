@@ -38,6 +38,7 @@ const (
 	ErrorCodeStringMinLength      govy.ErrorCode = "string_min_length"
 	ErrorCodeStringMaxLength      govy.ErrorCode = "string_max_length"
 	ErrorCodeStringTitle          govy.ErrorCode = "string_title"
+	ErrorCodeStringGitRef         govy.ErrorCode = "string_git_ref"
 	ErrorCodeSliceLength          govy.ErrorCode = "slice_length"
 	ErrorCodeSliceMinLength       govy.ErrorCode = "slice_min_length"
 	ErrorCodeSliceMaxLength       govy.ErrorCode = "slice_max_length"
