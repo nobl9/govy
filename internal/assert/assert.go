@@ -36,7 +36,7 @@ func True(t *testing.T, actual bool) bool {
 	return true
 }
 
-// True fails the test if the actual value is not false.
+// False fails the test if the actual value is not false.
 func False(t *testing.T, actual bool) bool {
 	t.Helper()
 	if actual {
@@ -85,25 +85,25 @@ func NoError(t *testing.T, err error) bool {
 }
 
 // EqualError fails the test if the expected error is not equal to the actual error message.
-func EqualError(t *testing.T, expected error, actual string) bool {
+func EqualError(t *testing.T, err error, expected string) bool {
 	t.Helper()
-	if !Error(t, expected) {
+	if !Error(t, err) {
 		return false
 	}
-	if expected.Error() != actual {
-		return fail(t, "Expected error message: %q, actual: %q", expected.Error(), actual)
+	if err.Error() != expected {
+		return fail(t, "Expected error message: %q, actual: %q", expected, err.Error())
 	}
 	return true
 }
 
 // ErrorContains fails the test if the expected error does not contain the provided string.
-func ErrorContains(t *testing.T, expected error, contains string) bool {
+func ErrorContains(t *testing.T, err error, contains string) bool {
 	t.Helper()
-	if !Error(t, expected) {
+	if !Error(t, err) {
 		return false
 	}
-	if !strings.Contains(expected.Error(), contains) {
-		return fail(t, "Expected error message to contain %q, actual %q", contains, expected.Error())
+	if !strings.Contains(err.Error(), contains) {
+		return fail(t, "Expected error message to contain %q, actual %q", contains, err.Error())
 	}
 	return true
 }
@@ -138,6 +138,23 @@ func ElementsMatch[T comparable](t *testing.T, expected, actual []T) bool {
 		}
 	}
 	return true
+}
+
+// Panic checks that the function panics with the expected message.
+func Panic(t *testing.T, f func(), expected string) (result bool) {
+	t.Helper()
+
+	defer func() {
+		r := recover()
+		if r == nil {
+			result = fail(t, "Function did not panic")
+			return
+		}
+		result = Equal(t, expected, r)
+	}()
+
+	f()
+	return false
 }
 
 func areEqual(expected, actual interface{}) bool {
