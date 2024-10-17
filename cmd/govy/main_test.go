@@ -9,9 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/nobl9/govy/internal/assert"
-
 	"github.com/nobl9/govy/internal"
+	"github.com/nobl9/govy/internal/assert"
 )
 
 // nolint: lll
