@@ -327,6 +327,104 @@ func StringTitle() govy.Rule[string] {
 		WithDescription(msg)
 }
 
+// StringGitRef validates a reference name.
+// This follows the git-check-ref-format rules.
+// See https://git-scm.com/docs/git-check-ref-format
+//
+// It is important to note that this function does not check if the reference exists in the repository.
+// It only checks if the reference name is valid.
+// This functions does not support the '--refspec-pattern', '--normalize', and '--allow-onelevel' options.
+//
+// Git imposes the following rules on how references are named:
+//
+//  1. They can include slash '/' for hierarchical (directory) grouping, but no
+//     slash-separated component can begin with a dot '.' or end with the
+//     sequence '.lock'.
+//  2. They must contain at least one '/'. This enforces the presence of a
+//     category (e.g. 'heads/', 'tags/'), but the actual names are not restricted.
+//  3. They cannot have ASCII control characters (i.e. bytes whose values are
+//     lower than '\040', or '\177' DEL).
+//  4. They cannot have '?', '*', '[', ' ', '~', '^', ', '\t', '\n', '@{', '\\' and '..',
+//  5. They cannot begin or end with a slash '/'.
+//  6. They cannot end with a '.'.
+//  7. They cannot be the single character '@'.
+//  8. 'HEAD' is an allowed special name.
+//
+// Slightly modified version of [go-git] implementation, kudos the authors!
+//
+// [go-git]: https://github.com/go-git/go-git/blob/95afe7e1cdf71c59ee8a71971fac71880020a744/plumbing/reference.go#L167
+func StringGitRef() govy.Rule[string] {
+	msg := "string must be a valid git reference"
+	return govy.NewRule(func(s string) error {
+		if len(s) == 0 {
+			return errGitRefEmpty
+		}
+		if s == "HEAD" {
+			return nil
+		}
+		if strings.HasSuffix(s, ".") {
+			return errGitRefEndsWithDot
+		}
+		parts := strings.Split(s, "/")
+		if len(parts) < 2 {
+			return errGitRefAtLeastOneSlash
+		}
+		isBranch := strings.HasPrefix(s, "refs/heads/")
+		isTag := strings.HasPrefix(s, "refs/tags/")
+		for _, part := range parts {
+			if len(part) == 0 {
+				return errGitRefEmptyPart
+			}
+			if (isBranch || isTag) && strings.HasPrefix(part, "-") {
+				return errGitRefStartsWithDash
+			}
+			if part == "@" ||
+				strings.HasPrefix(part, ".") ||
+				strings.HasSuffix(part, ".lock") ||
+				stringContainsGitRefForbiddenChars(part) {
+				return errGitRefForbiddenChars
+			}
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringGitRef).
+		WithDetails("see https://git-scm.com/docs/git-check-ref-format for more information on Git reference naming rules").
+		WithDescription(msg)
+}
+
+var (
+	errGitRefEmpty           = errors.New("git reference cannot be empty")
+	errGitRefEndsWithDot     = errors.New("git reference must not end with a '.'")
+	errGitRefAtLeastOneSlash = errors.New("git reference must contain at least one '/'")
+	errGitRefEmptyPart       = errors.New("git reference must not have empty parts")
+	errGitRefStartsWithDash  = errors.New("git branch and tag references must not start with '-'")
+	errGitRefForbiddenChars  = errors.New("git reference contains forbidden characters")
+)
+
+var gitRefDisallowedStrings = map[rune]struct{}{
+	'\\': {}, '?': {}, '*': {}, '[': {}, ' ': {}, '~': {}, '^': {}, ':': {}, '\t': {}, '\n': {},
+}
+
+// stringContainsGitRefForbiddenChars is a brute force method to check if a string contains
+// any of the Git reference forbidden characters.
+func stringContainsGitRefForbiddenChars(s string) bool {
+	for i, c := range s {
+		if c == '\177' || (c >= '\000' && c <= '\037') {
+			return true
+		}
+		// Check for '..' and '@{'.
+		if c == '.' && i < len(s)-1 && s[i+1] == '.' ||
+			c == '@' && i < len(s)-1 && s[i+1] == '{' {
+			return true
+		}
+		if _, ok := gitRefDisallowedStrings[c]; !ok {
+			continue
+		}
+		return true
+	}
+	return false
+}
+
 func prettyExamples(examples []string) string {
 	if len(examples) == 0 {
 		return ""
