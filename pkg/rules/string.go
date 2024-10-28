@@ -407,16 +407,8 @@ func StringGitRef() govy.Rule[string] {
 func StringFileSystemPath() govy.Rule[string] {
 	msg := "string must be an existing file system path"
 	return govy.NewRule(func(s string) error {
-		if strings.HasPrefix(s, "~") {
-			home, err := os.UserHomeDir()
-			if err != nil {
-				return fmt.Errorf("failed to get user home directory: %w", err)
-			}
-			s = filepath.Join(home, s[1:])
-		}
-		s = filepath.Clean(s)
-		if _, err := os.Stat(s); err != nil {
-			return handleOsStatError(msg, err)
+		if _, err := osStatFile(s); err != nil {
+			return handleFilePathError(err, msg)
 		}
 		return nil
 	}).
@@ -424,8 +416,42 @@ func StringFileSystemPath() govy.Rule[string] {
 		WithDescription(msg)
 }
 
+// StringFilePath ensures the property's value is a file system path pointing to an existing file.
+func StringFilePath() govy.Rule[string] {
+	msg := "string must be a file system path to an existing file"
+	return govy.NewRule(func(s string) error {
+		info, err := osStatFile(s)
+		if err != nil {
+			return handleFilePathError(err, msg)
+		}
+		if info.IsDir() {
+			return errFilePathNotFile
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringFilePath).
+		WithDescription(msg)
+}
+
+// StringDirPath ensures the property's value is a file system path pointing to an existing directory.
+func StringDirPath() govy.Rule[string] {
+	msg := "string must be a file system path to an existing directory"
+	return govy.NewRule(func(s string) error {
+		info, err := osStatFile(s)
+		if err != nil {
+			return handleFilePathError(err, msg)
+		}
+		if !info.IsDir() {
+			return errFilePathNotDir
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringDirPath).
+		WithDescription(msg)
+}
+
 // StringMatchFileSystemPath ensures the property's value matches the provided file path pattern.
-// It uses [filepath.Match] to match the pattern. The builtin function comes with some limitations,
+// It uses [filepath.Match] to match the pattern. The native function comes with some limitations,
 // most notably it does not support '**' recursive expansion.
 // It does not check if the file path exists on the file system.
 func StringMatchFileSystemPath(pattern string) govy.Rule[string] {
@@ -441,42 +467,6 @@ func StringMatchFileSystemPath(pattern string) govy.Rule[string] {
 		return nil
 	}).
 		WithErrorCode(ErrorCodeStringMatchFileSystemPath).
-		WithDescription(msg)
-}
-
-// StringFilePath ensures the property's value is a file system path pointing to an existing file.
-func StringFilePath() govy.Rule[string] {
-	msg := "string must be a file system path to an existing file"
-	return govy.NewRule(func(s string) error {
-		s = filepath.Clean(s)
-		info, err := os.Stat(s)
-		if err != nil {
-			return handleOsStatError(msg, err)
-		}
-		if info.IsDir() {
-			return errors.New("path must point to a file and not to a directory")
-		}
-		return nil
-	}).
-		WithErrorCode(ErrorCodeStringFilePath).
-		WithDescription(msg)
-}
-
-// StringDirPath ensures the property's value is a file system path pointing to an existing directory.
-func StringDirPath() govy.Rule[string] {
-	msg := "string must be a file system path to an existing directory"
-	return govy.NewRule(func(s string) error {
-		s = filepath.Clean(s)
-		info, err := os.Stat(s)
-		if err != nil {
-			return handleOsStatError(msg, err)
-		}
-		if !info.IsDir() {
-			return errors.New("path must point to a directory and not to a file")
-		}
-		return nil
-	}).
-		WithErrorCode(ErrorCodeStringDirPath).
 		WithDescription(msg)
 }
 
@@ -561,17 +551,44 @@ func stringContainsGitRefForbiddenChars(s string) bool {
 	return false
 }
 
+func osStatFile(path string) (os.FileInfo, error) {
+	if strings.TrimSpace(path) == "" {
+		return nil, errFilePathEmpty
+	}
+	hasSeparatorSuffix := strings.HasSuffix(path, string(filepath.Separator))
+	if strings.HasPrefix(path, "~") {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get user home directory: %w", err)
+		}
+		path = home + string(filepath.Separator) + path[1:]
+	}
+	path = filepath.Clean(path)
+	// If the path ends with a separator, we need to add it back after cleaning.
+	if hasSeparatorSuffix {
+		path += string(filepath.Separator)
+	}
+	return os.Stat(path)
+}
+
 var (
-	errOsStatNotExists = errors.New("path does not exist")
-	errOsStatNoPerm    = errors.New("permission to inspect path denied")
+	errFilePathNotExists = errors.New("path does not exist")
+	errFilePathNoPerm    = errors.New("permission to inspect path denied")
+	errFilePathEmpty     = errors.New("path does not exist")
+	errFilePathNotFile   = errors.New("path must point to a file and not to a directory")
+	errFilePathNotDir    = errors.New("path must point to a directory and not to a file")
 )
 
-func handleOsStatError(msg string, err error) error {
+func handleFilePathError(err error, msg string) error {
+	var pathErr *os.PathError
+	if !errors.As(err, &pathErr) {
+		return err
+	}
 	if errors.Is(err, os.ErrNotExist) {
-		return fmt.Errorf("%s: %w", msg, errOsStatNotExists)
+		return fmt.Errorf("%s: %w", msg, errFilePathNotExists)
 	}
 	if errors.Is(err, os.ErrPermission) {
-		return fmt.Errorf("%s: %w", msg, errOsStatNoPerm)
+		return fmt.Errorf("%s: %w", msg, errFilePathNoPerm)
 	}
 	return fmt.Errorf("%s: %w", msg, err)
 }

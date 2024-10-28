@@ -1,11 +1,11 @@
 package rules
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
+	"syscall"
 	"testing"
 
 	"github.com/nobl9/govy/internal/assert"
@@ -960,31 +960,6 @@ func BenchmarkStringGitRef(b *testing.B) {
 	}
 }
 
-type stringFileSystemPathTestCase struct {
-	in          string
-	expectedErr error
-}
-
-func getStringFileSystemPathTestCases(root string) []stringFileSystemPathTestCase {
-	testCases := []stringFileSystemPathTestCase{
-		{"~/dir1", nil},
-		{"dir1", nil},
-		{"dir1/file1", nil},
-		{"~/dir1/file1", nil},
-		{"dir1/file1/..", nil},
-		{"~/dir1/file1/..", nil},
-		{"dir1/file1/", errOsStatNotExists},
-		{"non-existing-dir", errOsStatNotExists},
-	}
-	for i := range testCases {
-		if !strings.HasPrefix(testCases[i].in, "~") {
-			// We're not using filepath.Join because it cleans the path.
-			testCases[i].in = root + string(filepath.Separator) + testCases[i].in
-		}
-	}
-	return testCases
-}
-
 func prepareFileSystemTests(t testing.TB) (root string) {
 	t.Helper()
 	root = t.TempDir()
@@ -994,8 +969,9 @@ func prepareFileSystemTests(t testing.TB) (root string) {
 		perm  os.FileMode
 		isDir bool
 	}{
+		{"file1", 0o755, false},
 		{"dir1", 0o755, true},
-		{"dir1/file1", 0o755, false},
+		{"dir1/file2", 0o755, false},
 		{"dir-no-perm", 0o222, true},
 		{"dir1/file-no-perm", 0o222, false},
 	} {
@@ -1010,105 +986,237 @@ func prepareFileSystemTests(t testing.TB) (root string) {
 	return root
 }
 
+type stringFileSystemPathTestCase struct {
+	in          string
+	expectedErr error
+}
+
+func getStringFileSystemPathTestCases(root string) []stringFileSystemPathTestCase {
+	addRoot := func(path string) string {
+		// We're not using filepath.Join because it cleans the path.
+		return root + string(filepath.Separator) + path
+	}
+	return []stringFileSystemPathTestCase{
+		{"~/dir1", nil},
+		{"~/dir1/", nil},
+		{addRoot("dir1"), nil},
+		{addRoot("dir1/file2"), nil},
+		{"~/dir1/file2", nil},
+		{addRoot("dir1/file2/.."), nil},
+		{"~/dir1/file2/..", nil},
+		{"~/dir1/file2/../../", nil},
+		{addRoot("."), nil},
+		{addRoot("./"), nil},
+		{addRoot("./file1"), nil},
+		{addRoot("dir1/file2/"), syscall.ENOTDIR},
+		{"~/dir1/../file1/", syscall.ENOTDIR},
+		{addRoot("non-existing-dir"), errFilePathNotExists},
+		{"", errFilePathEmpty},
+		{"	", errFilePathEmpty},
+	}
+}
+
 func TestStringFileSystemPath(t *testing.T) {
 	root := prepareFileSystemTests(t)
-	for i, tc := range getStringFileSystemPathTestCases(root) {
-		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
-			err := StringFileSystemPath().Validate(tc.in)
-			if tc.expectedErr != nil {
-				assert.ErrorContains(t, err, tc.expectedErr.Error())
-				assert.True(t, govy.HasErrorCode(err, ErrorCodeStringFileSystemPath))
-			} else {
-				assert.NoError(t, err)
-			}
-		})
+	for _, tc := range getStringFileSystemPathTestCases(root) {
+		err := StringFileSystemPath().Validate(tc.in)
+		if tc.expectedErr != nil {
+			assert.ErrorContains(t, err, tc.expectedErr.Error())
+			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringFileSystemPath))
+		} else {
+			assert.NoError(t, err)
+		}
 	}
 }
 
 func BenchmarkStringFileSystemPath(b *testing.B) {
 	root := prepareFileSystemTests(b)
+	testCases := getStringFileSystemPathTestCases(root)
 	for range b.N {
-		for _, tc := range getStringFileSystemPathTestCases(root) {
-			_ = StringGitRef().Validate(tc.in)
+		for _, tc := range testCases {
+			_ = StringFileSystemPath().Validate(tc.in)
 		}
 	}
 }
 
-type MatchTest struct {
-	pattern, s string
-	match      bool
-	err        error
+func getStringFilePathTestCases(root string) []stringFileSystemPathTestCase {
+	addRoot := func(path string) string {
+		// We're not using filepath.Join because it cleans the path.
+		return root + string(filepath.Separator) + path
+	}
+	return []stringFileSystemPathTestCase{
+		{addRoot("dir1/file2"), nil},
+		{"~/dir1/file2", nil},
+		{addRoot("./file1"), nil},
+		{addRoot("dir1"), errFilePathNotFile},
+		{addRoot("dir1/file2/.."), errFilePathNotFile},
+		{addRoot("."), errFilePathNotFile},
+		{addRoot("./"), errFilePathNotFile},
+		{"~/dir1/file2/..", errFilePathNotFile},
+		{"~/dir1/file2/../../", errFilePathNotFile},
+		{"~/dir1", errFilePathNotFile},
+		{"~/dir1/", errFilePathNotFile},
+		{addRoot("dir1/file2/"), syscall.ENOTDIR},
+		{"~/dir1/../file1/", syscall.ENOTDIR},
+		{addRoot("non-existing-dir"), errFilePathNotExists},
+		{"", errFilePathEmpty},
+		{"	", errFilePathEmpty},
+	}
 }
 
-var stringMatchFileSystemPathTestCases = []MatchTest{
-	{"abc", "abc", true, nil},
-	{"*", "abc", true, nil},
-	{"*c", "abc", true, nil},
-	{"a*", "a", true, nil},
-	{"a*", "abc", true, nil},
-	{"a*", "ab/c", false, nil},
-	{"a*/b", "abc/b", true, nil},
-	{"a*/b", "a/c/b", false, nil},
-	{"a*b*c*d*e*/f", "axbxcxdxe/f", true, nil},
-	{"a*b*c*d*e*/f", "axbxcxdxexxx/f", true, nil},
-	{"a*b*c*d*e*/f", "axbxcxdxe/xxx/f", false, nil},
-	{"a*b*c*d*e*/f", "axbxcxdxexxx/fff", false, nil},
-	{"a*b?c*x", "abxbbxdbxebxczzx", true, nil},
-	{"a*b?c*x", "abxbbxdbxebxczzy", false, nil},
-	{"ab[c]", "abc", true, nil},
-	{"ab[b-d]", "abc", true, nil},
-	{"ab[e-g]", "abc", false, nil},
-	{"ab[^c]", "abc", false, nil},
-	{"ab[^b-d]", "abc", false, nil},
-	{"ab[^e-g]", "abc", true, nil},
-	{"a\\*b", "a*b", true, nil},
-	{"a\\*b", "ab", false, nil},
-	{"a?b", "a☺b", true, nil},
-	{"a[^a]b", "a☺b", true, nil},
-	{"a???b", "a☺b", false, nil},
-	{"a[^a][^a][^a]b", "a☺b", false, nil},
-	{"[a-ζ]*", "α", true, nil},
-	{"*[a-ζ]", "A", false, nil},
-	{"a?b", "a/b", false, nil},
-	{"a*b", "a/b", false, nil},
-	{"[\\]a]", "]", true, nil},
-	{"[\\-]", "-", true, nil},
-	{"[x\\-]", "x", true, nil},
-	{"[x\\-]", "-", true, nil},
-	{"[x\\-]", "z", false, nil},
-	{"[\\-x]", "x", true, nil},
-	{"[\\-x]", "-", true, nil},
-	{"[\\-x]", "a", false, nil},
-	{"[]a]", "]", false, ErrBadPattern},
-	{"[-]", "-", false, ErrBadPattern},
-	{"[x-]", "x", false, ErrBadPattern},
-	{"[x-]", "-", false, ErrBadPattern},
-	{"[x-]", "z", false, ErrBadPattern},
-	{"[-x]", "x", false, ErrBadPattern},
-	{"[-x]", "-", false, ErrBadPattern},
-	{"[-x]", "a", false, ErrBadPattern},
-	{"\\", "a", false, ErrBadPattern},
-	{"[a-b-c]", "a", false, ErrBadPattern},
-	{"[", "a", false, ErrBadPattern},
-	{"[^", "a", false, ErrBadPattern},
-	{"[^bc", "a", false, ErrBadPattern},
-	{"a[", "a", false, ErrBadPattern},
-	{"a[", "ab", false, ErrBadPattern},
-	{"a[", "x", false, ErrBadPattern},
-	{"a/b[", "x", false, ErrBadPattern},
-	{"*x", "xxx", true, nil},
+func TestStringFilePath(t *testing.T) {
+	root := prepareFileSystemTests(t)
+	for _, tc := range getStringFilePathTestCases(root) {
+		err := StringFilePath().Validate(tc.in)
+		if tc.expectedErr != nil {
+			assert.ErrorContains(t, err, tc.expectedErr.Error())
+			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringFilePath))
+		} else {
+			assert.NoError(t, err)
+		}
+	}
+}
+
+func BenchmarkStringFilePath(b *testing.B) {
+	root := prepareFileSystemTests(b)
+	testCases := getStringFilePathTestCases(root)
+	for range b.N {
+		for _, tc := range testCases {
+			_ = StringFilePath().Validate(tc.in)
+		}
+	}
+}
+
+func getStringDirPathTestCases(root string) []stringFileSystemPathTestCase {
+	addRoot := func(path string) string {
+		// We're not using filepath.Join because it cleans the path.
+		return root + string(filepath.Separator) + path
+	}
+	return []stringFileSystemPathTestCase{
+		{addRoot("dir1"), nil},
+		{addRoot("dir1/file2/.."), nil},
+		{addRoot("."), nil},
+		{addRoot("./"), nil},
+		{"~/dir1/file2/..", nil},
+		{"~/dir1/file2/../../", nil},
+		{"~/dir1", nil},
+		{"~/dir1/", nil},
+		{addRoot("dir1/file2"), errFilePathNotDir},
+		{"~/dir1/file2", errFilePathNotDir},
+		{addRoot("./file1"), errFilePathNotDir},
+		{addRoot("dir1/file2/"), syscall.ENOTDIR},
+		{"~/dir1/../file1/", syscall.ENOTDIR},
+		{addRoot("non-existing-dir"), errFilePathNotExists},
+		{"", errFilePathEmpty},
+		{"	", errFilePathEmpty},
+	}
+}
+
+func TestStringDirPath(t *testing.T) {
+	root := prepareFileSystemTests(t)
+	for _, tc := range getStringDirPathTestCases(root) {
+		err := StringDirPath().Validate(tc.in)
+		if tc.expectedErr != nil {
+			assert.ErrorContains(t, err, tc.expectedErr.Error())
+			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringDirPath))
+		} else {
+			assert.NoError(t, err)
+		}
+	}
+}
+
+func BenchmarkStringDirPath(b *testing.B) {
+	root := prepareFileSystemTests(b)
+	testCases := getStringDirPathTestCases(root)
+	for range b.N {
+		for _, tc := range testCases {
+			_ = StringDirPath().Validate(tc.in)
+		}
+	}
+}
+
+// test cases copied from Go's [filepath] standard library.
+var stringMatchFileSystemPathTestCases = []*struct {
+	pattern, in string
+	shouldFail  bool
+}{
+	{"abc", "abc", false},
+	{"*", "abc", false},
+	{"*c", "abc", false},
+	{"a*", "a", false},
+	{"a*", "abc", false},
+	{"a*/b", "abc/b", false},
+	{"a*b*c*d*e*/f", "axbxcxdxe/f", false},
+	{"a*b*c*d*e*/f", "axbxcxdxexxx/f", false},
+	{"a*b?c*x", "abxbbxdbxebxczzx", false},
+	{"ab[c]", "abc", false},
+	{"ab[b-d]", "abc", false},
+	{"ab[^e-g]", "abc", false},
+	{"a\\*b", "a*b", false},
+	{"a?b", "a☺b", false},
+	{"a[^a]b", "a☺b", false},
+	{"[a-ζ]*", "α", false},
+	{"[\\]a]", "]", false},
+	{"[\\-]", "-", false},
+	{"*x", "xxx", false},
+	{"[x\\-]", "x", false},
+	{"[x\\-]", "-", false},
+	{"[\\-x]", "x", false},
+	{"[\\-x]", "-", false},
+	{"a*/b", "a/c/b", true},
+	{"ab[e-g]", "abc", true},
+	{"ab[^c]", "abc", true},
+	{"a*", "ab/c", true},
+	{"a*b*c*d*e*/f", "axbxcxdxe/xxx/f", true},
+	{"a*b*c*d*e*/f", "axbxcxdxexxx/fff", true},
+	{"a*b?c*x", "abxbbxdbxebxczzy", true},
+	{"ab[^b-d]", "abc", true},
+	{"a???b", "a☺b", true},
+	{"a\\*b", "ab", true},
+	{"a[^a][^a][^a]b", "a☺b", true},
+	{"*[a-ζ]", "A", true},
+	{"a?b", "a/b", true},
+	{"a*b", "a/b", true},
+	{"[x\\-]", "z", true},
+	{"[\\-x]", "a", true},
+	{"[]a]", "]", true},
+	{"[-]", "-", true},
+	{"[x-]", "x", true},
+	{"[x-]", "-", true},
+	{"[x-]", "z", true},
+	{"[-x]", "x", true},
+	{"[-x]", "-", true},
+	{"[-x]", "a", true},
+	{"\\", "a", true},
+	{"[a-b-c]", "a", true},
+	{"[", "a", true},
+	{"[^", "a", true},
+	{"[^bc", "a", true},
+	{"a[", "a", true},
+	{"a[", "ab", true},
+	{"a[", "x", true},
+	{"a/b[", "x", true},
 }
 
 func TestStringMatchFileSystemPath(t *testing.T) {
-	for i, tc := range getStringFileSystemPathTestCases(root) {
-		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
-			err := StringMatchFileSystemPath().Validate(tc.in)
-			if tc.expectedErr != nil {
-				assert.ErrorContains(t, err, tc.expectedErr.Error())
-				assert.True(t, govy.HasErrorCode(err, ErrorCodeStringMatchFileSystemPath))
-			} else {
-				assert.NoError(t, err)
+	for _, tc := range stringMatchFileSystemPathTestCases {
+		err := StringMatchFileSystemPath(tc.pattern).Validate(tc.in)
+		if tc.shouldFail {
+			if !strings.Contains(err.Error(), "string must match file path pattern") &&
+				!strings.Contains(err.Error(), filepath.ErrBadPattern.Error()) {
+				assert.Fail(t, "unexpected error: %v", err)
 			}
-		})
+			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringMatchFileSystemPath))
+		} else {
+			assert.NoError(t, err)
+		}
+	}
+}
+
+func BenchmarkStringMatchFileSystemPath(b *testing.B) {
+	for range b.N {
+		for _, tc := range stringMatchFileSystemPathTestCases {
+			_ = StringMatchFileSystemPath(tc.pattern).Validate(tc.in)
+		}
 	}
 }

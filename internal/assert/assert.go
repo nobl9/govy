@@ -6,6 +6,13 @@ import (
 	"testing"
 )
 
+// Fail fails the test with the provided message.
+func Fail(t testing.TB, msg string, a ...interface{}) bool {
+	t.Helper()
+	t.Errorf(msg, a...)
+	return false
+}
+
 // Require fails the test if the provided boolean is false.
 // It should be used in conjunction with assert functions.
 // Example:
@@ -22,7 +29,7 @@ func Require(t testing.TB, isPassing bool) {
 func Equal(t testing.TB, expected, actual interface{}) bool {
 	t.Helper()
 	if !areEqual(expected, actual) {
-		return fail(t, "Expected: %v, actual: %v", expected, actual)
+		return Fail(t, "Expected: %v, actual: %v", expected, actual)
 	}
 	return true
 }
@@ -31,7 +38,7 @@ func Equal(t testing.TB, expected, actual interface{}) bool {
 func True(t testing.TB, actual bool) bool {
 	t.Helper()
 	if !actual {
-		return fail(t, "Should be true")
+		return Fail(t, "Should be true")
 	}
 	return true
 }
@@ -40,7 +47,7 @@ func True(t testing.TB, actual bool) bool {
 func False(t testing.TB, actual bool) bool {
 	t.Helper()
 	if actual {
-		return fail(t, "Should be false")
+		return Fail(t, "Should be false")
 	}
 	return true
 }
@@ -49,7 +56,7 @@ func False(t testing.TB, actual bool) bool {
 func Len(t testing.TB, object interface{}, length int) bool {
 	t.Helper()
 	if actual := getLen(object); actual != length {
-		return fail(t, "Expected length: %d, actual: %d", length, actual)
+		return Fail(t, "Expected length: %d, actual: %d", length, actual)
 	}
 	return true
 }
@@ -62,7 +69,7 @@ func IsType[T any](t testing.TB, object interface{}) bool {
 	case T:
 		return true
 	default:
-		return fail(t, "Expected type: %T, actual: %T", *new(T), object)
+		return Fail(t, "Expected type: %T, actual: %T", *new(T), object)
 	}
 }
 
@@ -70,7 +77,7 @@ func IsType[T any](t testing.TB, object interface{}) bool {
 func Error(t testing.TB, err error) bool {
 	t.Helper()
 	if err == nil {
-		return fail(t, "An error is expected but actual nil.")
+		return Fail(t, "An error is expected but actual nil.")
 	}
 	return true
 }
@@ -79,7 +86,7 @@ func Error(t testing.TB, err error) bool {
 func NoError(t testing.TB, err error) bool {
 	t.Helper()
 	if err != nil {
-		return fail(t, "Unexpected error:\n%+v", err)
+		return Fail(t, "Unexpected error:\n%+v", err)
 	}
 	return true
 }
@@ -91,7 +98,7 @@ func EqualError(t testing.TB, err error, expected string) bool {
 		return false
 	}
 	if err.Error() != expected {
-		return fail(t, "Expected error message: %q, actual: %q", expected, err.Error())
+		return Fail(t, "Expected error message: %q, actual: %q", expected, err.Error())
 	}
 	return true
 }
@@ -103,7 +110,7 @@ func ErrorContains(t testing.TB, err error, contains string) bool {
 		return false
 	}
 	if !strings.Contains(err.Error(), contains) {
-		return fail(t, "Expected error message to contain %q, actual %q", contains, err.Error())
+		return Fail(t, "Expected error message to contain %q, actual %q", contains, err.Error())
 	}
 	return true
 }
@@ -112,7 +119,7 @@ func ErrorContains(t testing.TB, err error, contains string) bool {
 func ElementsMatch[T comparable](t testing.TB, expected, actual []T) bool {
 	t.Helper()
 	if len(expected) != len(actual) {
-		return fail(t, "Slices are not equal in length, expected: %d, actual: %d", len(expected), len(actual))
+		return Fail(t, "Slices are not equal in length, expected: %d, actual: %d", len(expected), len(actual))
 	}
 
 	actualVisited := make([]bool, len(actual))
@@ -129,12 +136,12 @@ func ElementsMatch[T comparable](t testing.TB, expected, actual []T) bool {
 			}
 		}
 		if !found {
-			return fail(t, "Expected element %v not found in actual slice", e)
+			return Fail(t, "Expected element %v not found in actual slice", e)
 		}
 	}
 	for i := range actual {
 		if !actualVisited[i] {
-			return fail(t, "Unexpected element %v found in actual slice", actual[i])
+			return Fail(t, "Unexpected element %v found in actual slice", actual[i])
 		}
 	}
 	return true
@@ -147,7 +154,7 @@ func Panic(t testing.TB, f func(), expected string) (result bool) {
 	defer func() {
 		r := recover()
 		if r == nil {
-			result = fail(t, "Function did not panic")
+			result = Fail(t, "Function did not panic")
 			return
 		}
 		result = Equal(t, expected, r)
@@ -175,10 +182,4 @@ func getLen(v interface{}) int {
 	default:
 		return -1
 	}
-}
-
-func fail(t testing.TB, msg string, a ...interface{}) bool {
-	t.Helper()
-	t.Errorf(msg, a...)
-	return false
 }
