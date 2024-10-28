@@ -1146,6 +1146,7 @@ var stringMatchFileSystemPathTestCases = []*struct {
 	pattern, in string
 	shouldFail  bool
 }{
+	// cspell:disable
 	{"abc", "abc", false},
 	{"*", "abc", false},
 	{"*c", "abc", false},
@@ -1202,6 +1203,7 @@ var stringMatchFileSystemPathTestCases = []*struct {
 	{"a[", "ab", true},
 	{"a[", "x", true},
 	{"a/b[", "x", true},
+	// cspell:enable
 }
 
 func TestStringMatchFileSystemPath(t *testing.T) {
