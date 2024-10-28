@@ -972,8 +972,8 @@ func prepareFileSystemTests(t testing.TB) (root string) {
 		{"file1", 0o755, false},
 		{"dir1", 0o755, true},
 		{"dir1/file2", 0o755, false},
-		{"dir-no-perm", 0o222, true},
-		{"dir1/file-no-perm", 0o222, false},
+		{"dir-no-perm", 0o000, true},
+		{"dir1/file-no-perm", 0o000, false},
 	} {
 		if path.isDir {
 			err := os.MkdirAll(filepath.Join(root, path.path), path.perm)
@@ -1008,6 +1008,8 @@ func getStringFileSystemPathTestCases(root string) []stringFileSystemPathTestCas
 		{addRoot("."), nil},
 		{addRoot("./"), nil},
 		{addRoot("./file1"), nil},
+		{addRoot("dir-no-perm"), nil},
+		{addRoot("dir1/file-no-perm"), nil},
 		{addRoot("dir1/file2/"), syscall.ENOTDIR},
 		{"~/dir1/../file1/", syscall.ENOTDIR},
 		{addRoot("non-existing-dir"), errFilePathNotExists},
@@ -1048,6 +1050,8 @@ func getStringFilePathTestCases(root string) []stringFileSystemPathTestCase {
 		{addRoot("dir1/file2"), nil},
 		{"~/dir1/file2", nil},
 		{addRoot("./file1"), nil},
+		{addRoot("dir1/file-no-perm"), nil},
+		{addRoot("dir-no-perm"), errFilePathNotFile},
 		{addRoot("dir1"), errFilePathNotFile},
 		{addRoot("dir1/file2/.."), errFilePathNotFile},
 		{addRoot("."), errFilePathNotFile},
@@ -1101,6 +1105,8 @@ func getStringDirPathTestCases(root string) []stringFileSystemPathTestCase {
 		{"~/dir1/file2/../../", nil},
 		{"~/dir1", nil},
 		{"~/dir1/", nil},
+		{addRoot("dir-no-perm"), nil},
+		{addRoot("dir1/file-no-perm"), errFilePathNotDir},
 		{addRoot("dir1/file2"), errFilePathNotDir},
 		{"~/dir1/file2", errFilePathNotDir},
 		{addRoot("./file1"), errFilePathNotDir},
