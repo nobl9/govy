@@ -7,6 +7,8 @@ import (
 	"net"
 	"net/mail"
 	"net/url"
+	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"unicode"
@@ -327,9 +329,17 @@ func StringTitle() govy.Rule[string] {
 		WithDescription(msg)
 }
 
-// StringGitRef validates a reference name.
-// This follows the git-check-ref-format rules.
-// See https://git-scm.com/docs/git-check-ref-format
+// StringGitRef errors.
+var (
+	errGitRefEmpty           = errors.New("git reference cannot be empty")
+	errGitRefEndsWithDot     = errors.New("git reference must not end with a '.'")
+	errGitRefAtLeastOneSlash = errors.New("git reference must contain at least one '/'")
+	errGitRefEmptyPart       = errors.New("git reference must not have empty parts")
+	errGitRefStartsWithDash  = errors.New("git branch and tag references must not start with '-'")
+	errGitRefForbiddenChars  = errors.New("git reference contains forbidden characters")
+)
+
+// StringGitRef ensures a git reference name follows the [git-check-ref-format] rules.
 //
 // It is important to note that this function does not check if the reference exists in the repository.
 // It only checks if the reference name is valid.
@@ -350,8 +360,9 @@ func StringTitle() govy.Rule[string] {
 //  7. They cannot be the single character '@'.
 //  8. 'HEAD' is an allowed special name.
 //
-// Slightly modified version of [go-git] implementation, kudos the authors!
+// Slightly modified version of [go-git] implementation, kudos to the authors!
 //
+// [git-check-ref-format] :https://git-scm.com/docs/git-check-ref-format
 // [go-git]: https://github.com/go-git/go-git/blob/95afe7e1cdf71c59ee8a71971fac71880020a744/plumbing/reference.go#L167
 func StringGitRef() govy.Rule[string] {
 	msg := "string must be a valid git reference"
@@ -392,37 +403,71 @@ func StringGitRef() govy.Rule[string] {
 		WithDescription(msg)
 }
 
-var (
-	errGitRefEmpty           = errors.New("git reference cannot be empty")
-	errGitRefEndsWithDot     = errors.New("git reference must not end with a '.'")
-	errGitRefAtLeastOneSlash = errors.New("git reference must contain at least one '/'")
-	errGitRefEmptyPart       = errors.New("git reference must not have empty parts")
-	errGitRefStartsWithDash  = errors.New("git branch and tag references must not start with '-'")
-	errGitRefForbiddenChars  = errors.New("git reference contains forbidden characters")
-)
-
-var gitRefDisallowedStrings = map[rune]struct{}{
-	'\\': {}, '?': {}, '*': {}, '[': {}, ' ': {}, '~': {}, '^': {}, ':': {}, '\t': {}, '\n': {},
+// StringFileSystemPath ensures the property's value is an existing file system path.
+func StringFileSystemPath() govy.Rule[string] {
+	msg := "string must be an existing file system path"
+	return govy.NewRule(func(s string) error {
+		if _, err := osStatFile(s); err != nil {
+			return handleFilePathError(err, msg)
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringFileSystemPath).
+		WithDescription(msg)
 }
 
-// stringContainsGitRefForbiddenChars is a brute force method to check if a string contains
-// any of the Git reference forbidden characters.
-func stringContainsGitRefForbiddenChars(s string) bool {
-	for i, c := range s {
-		if c == '\177' || (c >= '\000' && c <= '\037') {
-			return true
+// StringFilePath ensures the property's value is a file system path pointing to an existing file.
+func StringFilePath() govy.Rule[string] {
+	msg := "string must be a file system path to an existing file"
+	return govy.NewRule(func(s string) error {
+		info, err := osStatFile(s)
+		if err != nil {
+			return handleFilePathError(err, msg)
 		}
-		// Check for '..' and '@{'.
-		if c == '.' && i < len(s)-1 && s[i+1] == '.' ||
-			c == '@' && i < len(s)-1 && s[i+1] == '{' {
-			return true
+		if info.IsDir() {
+			return errFilePathNotFile
 		}
-		if _, ok := gitRefDisallowedStrings[c]; !ok {
-			continue
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringFilePath).
+		WithDescription(msg)
+}
+
+// StringDirPath ensures the property's value is a file system path pointing to an existing directory.
+func StringDirPath() govy.Rule[string] {
+	msg := "string must be a file system path to an existing directory"
+	return govy.NewRule(func(s string) error {
+		info, err := osStatFile(s)
+		if err != nil {
+			return handleFilePathError(err, msg)
 		}
-		return true
-	}
-	return false
+		if !info.IsDir() {
+			return errFilePathNotDir
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringDirPath).
+		WithDescription(msg)
+}
+
+// StringMatchFileSystemPath ensures the property's value matches the provided file path pattern.
+// It uses [filepath.Match] to match the pattern. The native function comes with some limitations,
+// most notably it does not support '**' recursive expansion.
+// It does not check if the file path exists on the file system.
+func StringMatchFileSystemPath(pattern string) govy.Rule[string] {
+	msg := fmt.Sprintf("string must match file path pattern: '%s'", pattern)
+	return govy.NewRule(func(s string) error {
+		ok, err := filepath.Match(pattern, s)
+		if err != nil {
+			return err
+		}
+		if !ok {
+			return errors.New(msg)
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringMatchFileSystemPath).
+		WithDescription(msg)
 }
 
 func prettyExamples(examples []string) string {
@@ -480,4 +525,70 @@ func isStringSeparator(r rune) bool {
 	}
 	// Otherwise, all we can do for now is treat spaces as separators.
 	return unicode.IsSpace(r)
+}
+
+var gitRefDisallowedStrings = map[rune]struct{}{
+	'\\': {}, '?': {}, '*': {}, '[': {}, ' ': {}, '~': {}, '^': {}, ':': {}, '\t': {}, '\n': {},
+}
+
+// stringContainsGitRefForbiddenChars is a brute force method to check if a string contains
+// any of the Git reference forbidden characters.
+func stringContainsGitRefForbiddenChars(s string) bool {
+	for i, c := range s {
+		if c == '\177' || (c >= '\000' && c <= '\037') {
+			return true
+		}
+		// Check for '..' and '@{'.
+		if c == '.' && i < len(s)-1 && s[i+1] == '.' ||
+			c == '@' && i < len(s)-1 && s[i+1] == '{' {
+			return true
+		}
+		if _, ok := gitRefDisallowedStrings[c]; !ok {
+			continue
+		}
+		return true
+	}
+	return false
+}
+
+func osStatFile(path string) (os.FileInfo, error) {
+	if strings.TrimSpace(path) == "" {
+		return nil, errFilePathEmpty
+	}
+	hasSeparatorSuffix := strings.HasSuffix(path, string(filepath.Separator))
+	if strings.HasPrefix(path, "~") {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get user home directory: %w", err)
+		}
+		path = home + string(filepath.Separator) + path[1:]
+	}
+	path = filepath.Clean(path)
+	// If the path ends with a separator, we need to add it back after cleaning.
+	if hasSeparatorSuffix {
+		path += string(filepath.Separator)
+	}
+	return os.Stat(path)
+}
+
+var (
+	errFilePathNotExists = errors.New("path does not exist")
+	errFilePathNoPerm    = errors.New("permission to inspect path denied")
+	errFilePathEmpty     = errors.New("path does not exist")
+	errFilePathNotFile   = errors.New("path must point to a file and not to a directory")
+	errFilePathNotDir    = errors.New("path must point to a directory and not to a file")
+)
+
+func handleFilePathError(err error, msg string) error {
+	var pathErr *os.PathError
+	if !errors.As(err, &pathErr) {
+		return err
+	}
+	if errors.Is(err, os.ErrNotExist) {
+		return fmt.Errorf("%s: %w", msg, errFilePathNotExists)
+	}
+	if errors.Is(err, os.ErrPermission) {
+		return fmt.Errorf("%s: %w", msg, errFilePathNoPerm)
+	}
+	return fmt.Errorf("%s: %w", msg, err)
 }
