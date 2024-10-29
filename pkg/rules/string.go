@@ -486,7 +486,7 @@ func StringRegexp() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringRegexp).
 		// nolint: lll
-		WithDetails(`the accepted regular expression syntax must comply to RE2, it is described at https://golang.org/s/re2syntax, except for \C; for an overview of the syntax, see https://pkg.go.dev/regexp/syntax`).
+		WithDetails(`the regular expression syntax must comply to RE2, it is described at https://golang.org/s/re2syntax, except for \C; for an overview of the syntax, see https://pkg.go.dev/regexp/syntax`).
 		WithDescription(msg)
 }
 
