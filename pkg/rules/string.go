@@ -470,6 +470,25 @@ func StringMatchFileSystemPath(pattern string) govy.Rule[string] {
 		WithDescription(msg)
 }
 
+// StringRegexp ensures the property's value is a valid regular expression.
+// The accepted regular expression syntax must comply to RE2.
+// It is described at https://golang.org/s/re2syntax, except for \C.
+// For an overview of the syntax, see [regexp/syntax] package.
+//
+// [regexp/syntax]: https://pkg.go.dev/regexp/syntax
+func StringRegexp() govy.Rule[string] {
+	msg := "string must be a valid regular expression"
+	return govy.NewRule(func(s string) error {
+		if _, err := regexp.Compile(s); err != nil {
+			return fmt.Errorf("%s: %w", msg, err)
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringRegexp).
+		WithDetails(`the accepted regular expression syntax must comply to RE2, it is described at https://golang.org/s/re2syntax, except for \C; for an overview of the syntax, see https://pkg.go.dev/regexp/syntax`).
+		WithDescription(msg)
+}
+
 func prettyExamples(examples []string) string {
 	if len(examples) == 0 {
 		return ""

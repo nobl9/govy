@@ -1228,3 +1228,61 @@ func BenchmarkStringMatchFileSystemPath(b *testing.B) {
 		}
 	}
 }
+
+// test cases copied from Go's [regexp] standard library.
+var stringRegexpTestCases = []*struct {
+	in         string
+	shouldFail bool
+}{
+	// cspell:disable
+	{``, false},
+	{`.`, false},
+	{`^.$`, false},
+	{`a`, false},
+	{`a*`, false},
+	{`a+`, false},
+	{`a?`, false},
+	{`a|b`, false},
+	{`a*|b*`, false},
+	{`(a*|b)(c*|d)`, false},
+	{`[a-z]`, false},
+	{`[a-abc-c\-\]\[]`, false},
+	{`[a-z]+`, false},
+	{`[abc]`, false},
+	{`[^1234]`, false},
+	{`[^\n]`, false},
+	{`\!\\`, false},
+	{`*`, true},
+	{`+`, true},
+	{`?`, true},
+	{`(abc`, true},
+	{`abc)`, true},
+	{`x[a-z`, true},
+	{`[z-a]`, true},
+	{`abc\`, true},
+	{`a**`, true},
+	{`a*+`, true},
+	{`\x`, true},
+	{strings.Repeat(`\pL`, 27000), true},
+	// cspell:enable
+}
+
+func TestStringRegexp(t *testing.T) {
+	for _, tc := range stringRegexpTestCases {
+		err := StringRegexp().Validate(tc.in)
+		if tc.shouldFail {
+			assert.ErrorContains(t, err, "string must be a valid regular expression")
+			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringRegexp))
+		} else {
+			assert.NoError(t, err)
+		}
+	}
+}
+
+func BenchmarkStringRegexp(b *testing.B) {
+	for range b.N {
+		for _, tc := range stringRegexpTestCases {
+			_ = StringRegexp().Validate(tc.in)
+		}
+	}
+}
