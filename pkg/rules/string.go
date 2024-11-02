@@ -499,7 +499,7 @@ func StringCrontab() govy.Rule[string] {
 	msg := "string must be a valid cron schedule expression"
 	return govy.NewRule(parseCrontab).
 		WithMessage(msg).
-		WithErrorCode(ErrorCodeStringCron)
+		WithErrorCode(ErrorCodeStringCrontab)
 }
 
 func prettyExamples(examples []string) string {

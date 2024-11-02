@@ -1289,13 +1289,13 @@ func BenchmarkStringRegexp(b *testing.B) {
 	}
 }
 
-type stringCronTestCase struct {
+type stringCrontabTestCase struct {
 	in         string
 	shouldFail bool
 }
 
-func getStringCronTestCases() []*stringCronTestCase {
-	testCases := []*stringCronTestCase{
+func getStringCronTestCases() []*stringCrontabTestCase {
+	testCases := []*stringCrontabTestCase{
 		{"@annually", false},
 		{"@yearly", false},
 		{"@monthly", false},
@@ -1364,44 +1364,44 @@ func getStringCronTestCases() []*stringCronTestCase {
 			return field.lower + rand.Intn(field.upper-field.lower)
 		}
 		testCases = append(testCases,
-			&stringCronTestCase{createCron(field.n, "%d", getRandom()), false},
-			&stringCronTestCase{createCron(field.n, "%d", field.lower), false},
-			&stringCronTestCase{createCron(field.n, "%d", field.upper), false},
-			&stringCronTestCase{createCron(field.n, "%d,%d", field.lower, field.upper), false},
-			&stringCronTestCase{createCron(field.n, "%d,%d", field.upper, field.lower), false},
-			&stringCronTestCase{createCron(field.n, "%d-%d", field.lower, field.upper), false},
-			&stringCronTestCase{createCron(field.n, "%d-%d/10", field.lower, field.upper), false},
-			&stringCronTestCase{createCron(field.n, "*/10"), false},
-			&stringCronTestCase{createCron(field.n, "%d", field.lower-1), true},
-			&stringCronTestCase{createCron(field.n, "%d", field.upper+1), true},
-			&stringCronTestCase{createCron(field.n, "%d,", field.lower), true},
-			&stringCronTestCase{createCron(field.n, "%d,%d", field.lower, field.upper+1), true},
-			&stringCronTestCase{createCron(field.n, "%d,%d", field.lower-1, field.upper), true},
-			&stringCronTestCase{createCron(field.n, "%d/10", getRandom()), true},
-			&stringCronTestCase{createCron(field.n, "%d,%d/10", field.lower, field.upper), true},
-			&stringCronTestCase{createCron(field.n, "a"), true},
-			&stringCronTestCase{createCron(field.n, "%d,a", field.lower), true},
-			&stringCronTestCase{createCron(field.n, "a,%d", field.upper), true},
-			&stringCronTestCase{createCron(field.n, "%d-", field.lower), true},
-			&stringCronTestCase{createCron(field.n, "%d-/", field.lower), true},
-			&stringCronTestCase{createCron(field.n, "-/"), true},
-			&stringCronTestCase{createCron(field.n, "%d-%d/", field.lower, field.upper), true},
-			&stringCronTestCase{createCron(field.n, "%d-%d/a", field.lower, field.upper), true},
-			&stringCronTestCase{createCron(field.n, "%d-%d/-10", field.lower, field.upper), true},
-			&stringCronTestCase{createCron(field.n, "%d-*/10", field.lower), true},
-			&stringCronTestCase{createCron(field.n, "*-*/10", field.lower, field.upper), true},
-			&stringCronTestCase{createCron(field.n, "*-%d/10", field.upper), true},
+			&stringCrontabTestCase{createCron(field.n, "%d", getRandom()), false},
+			&stringCrontabTestCase{createCron(field.n, "%d", field.lower), false},
+			&stringCrontabTestCase{createCron(field.n, "%d", field.upper), false},
+			&stringCrontabTestCase{createCron(field.n, "%d,%d", field.lower, field.upper), false},
+			&stringCrontabTestCase{createCron(field.n, "%d,%d", field.upper, field.lower), false},
+			&stringCrontabTestCase{createCron(field.n, "%d-%d", field.lower, field.upper), false},
+			&stringCrontabTestCase{createCron(field.n, "%d-%d/10", field.lower, field.upper), false},
+			&stringCrontabTestCase{createCron(field.n, "*/10"), false},
+			&stringCrontabTestCase{createCron(field.n, "%d", field.lower-1), true},
+			&stringCrontabTestCase{createCron(field.n, "%d", field.upper+1), true},
+			&stringCrontabTestCase{createCron(field.n, "%d,", field.lower), true},
+			&stringCrontabTestCase{createCron(field.n, "%d,%d", field.lower, field.upper+1), true},
+			&stringCrontabTestCase{createCron(field.n, "%d,%d", field.lower-1, field.upper), true},
+			&stringCrontabTestCase{createCron(field.n, "%d/10", getRandom()), true},
+			&stringCrontabTestCase{createCron(field.n, "%d,%d/10", field.lower, field.upper), true},
+			&stringCrontabTestCase{createCron(field.n, "a"), true},
+			&stringCrontabTestCase{createCron(field.n, "%d,a", field.lower), true},
+			&stringCrontabTestCase{createCron(field.n, "a,%d", field.upper), true},
+			&stringCrontabTestCase{createCron(field.n, "%d-", field.lower), true},
+			&stringCrontabTestCase{createCron(field.n, "%d-/", field.lower), true},
+			&stringCrontabTestCase{createCron(field.n, "-/"), true},
+			&stringCrontabTestCase{createCron(field.n, "%d-%d/", field.lower, field.upper), true},
+			&stringCrontabTestCase{createCron(field.n, "%d-%d/a", field.lower, field.upper), true},
+			&stringCrontabTestCase{createCron(field.n, "%d-%d/-10", field.lower, field.upper), true},
+			&stringCrontabTestCase{createCron(field.n, "%d-*/10", field.lower), true},
+			&stringCrontabTestCase{createCron(field.n, "*-*/10", field.lower, field.upper), true},
+			&stringCrontabTestCase{createCron(field.n, "*-%d/10", field.upper), true},
 		)
 	}
 	for month := range crontabMonthsMap {
-		testCases = append(testCases, &stringCronTestCase{createCron(3, month), false})
+		testCases = append(testCases, &stringCrontabTestCase{createCron(3, month), false})
 	}
 	for day := range crontabDaysMap {
 		// Skip special cases for Sunday.
 		if strings.Contains(day, "-") {
 			continue
 		}
-		testCases = append(testCases, &stringCronTestCase{createCron(4, day), false})
+		testCases = append(testCases, &stringCrontabTestCase{createCron(4, day), false})
 	}
 	return testCases
 }
@@ -1412,7 +1412,7 @@ func TestStringCrontab(t *testing.T) {
 			err := StringCrontab().Validate(tc.in)
 			if tc.shouldFail {
 				assert.ErrorContains(t, err, "string must be a valid cron schedule expression")
-				assert.True(t, govy.HasErrorCode(err, ErrorCodeStringCron))
+				assert.True(t, govy.HasErrorCode(err, ErrorCodeStringCrontab))
 			} else {
 				assert.NoError(t, err)
 			}
