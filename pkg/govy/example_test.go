@@ -308,6 +308,47 @@ func ExampleForPointer() {
 	//     - length must be less than or equal to 5
 }
 
+// [Transform] constructor can be used to transform the property value before it's passed to the rules' evaluation.
+// It's useful when you want to use rules that operate on a different type than the property's.
+//
+// Along with the standard [PropertyGetter] it accepts a [Transformer] function which takes the property value
+// and returns the transformed value along with an error.
+// If the error is not nil, the validation will fail with the error message returned by [Transformer] error.
+//
+// In this example we'll use [time.ParseDuration] to transform the string value of [Clock.Duration] to [time.Duration].
+// The first value we'll validate will force [Transformer] to return an error, the second will succeed transformation,
+// but it will fail the validation for [rules.DurationPrecision].
+//
+// Notice how the [Transformer] shape adheres to a lot of standard library conversion/parsing functions.
+func ExampleTransform() {
+	type Clock struct {
+		Duration string `json:"duration"`
+	}
+	v := govy.New(
+		govy.Transform(func(c Clock) string { return c.Duration }, time.ParseDuration).
+			WithName("duration").
+			Rules(rules.DurationPrecision(time.Minute)),
+	).WithName("MyClock")
+
+	err := v.Validate(Clock{Duration: "bad duration!"})
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	err = v.Validate(Clock{Duration: (256 * time.Second).String()})
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	// Output:
+	// Validation for MyClock has failed for the following properties:
+	//   - 'duration' with value 'bad duration!':
+	//     - time: invalid duration "bad duration!"
+	// Validation for MyClock has failed for the following properties:
+	//   - 'duration' with value '4m16s':
+	//     - duration must be defined with 1m0s precision
+}
+
 // By default, when [govy.PropertyRules] is constructed using [govy.ForPointer]
 // it will skip validation of the property if the pointer is nil.
 // To enforce a value is set for pointer use [govy.PropertyRules.Required].

@@ -490,6 +490,20 @@ func StringRegexp() govy.Rule[string] {
 		WithDescription(msg)
 }
 
+// StringCrontab ensures the property's value is a valid crontab schedule expression.
+// For more details on cron expressions read [crontab manual] and visit [crontab.guru].
+//
+// [crontab manual]: https://www.man7.org/linux/man-pages/man5/crontab.5.html
+// [crontab.guru]: https://crontab.guru
+func StringCrontab() govy.Rule[string] {
+	msg := "string must be a valid cron schedule expression"
+	return govy.NewRule(func(s string) error {
+		return parseCrontab(s)
+	}).
+		WithMessage(msg).
+		WithErrorCode(ErrorCodeStringCron)
+}
+
 func prettyExamples(examples []string) string {
 	if len(examples) == 0 {
 		return ""
