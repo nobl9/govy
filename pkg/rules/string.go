@@ -497,9 +497,7 @@ func StringRegexp() govy.Rule[string] {
 // [crontab.guru]: https://crontab.guru
 func StringCrontab() govy.Rule[string] {
 	msg := "string must be a valid cron schedule expression"
-	return govy.NewRule(func(s string) error {
-		return parseCrontab(s)
-	}).
+	return govy.NewRule(parseCrontab).
 		WithMessage(msg).
 		WithErrorCode(ErrorCodeStringCron)
 }

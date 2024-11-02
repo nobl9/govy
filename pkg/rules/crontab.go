@@ -121,11 +121,12 @@ func validateCrontabField(field string, lowerLimit, upperLimit int, parse cronta
 			}
 			// Take step value into account.
 			stepIdx := strings.Index(el, "/")
-			if stepIdx == -1 {
+			switch {
+			case stepIdx == -1:
 				stepIdx = len(el)
-			} else if stepIdx == len(el)-1 {
+			case stepIdx == len(el)-1:
 				return false
-			} else {
+			default:
 				if v, err := strconv.Atoi(el[stepIdx+1:]); err != nil || v < 0 {
 					return false
 				}

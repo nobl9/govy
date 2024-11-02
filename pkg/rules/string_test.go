@@ -1406,7 +1406,7 @@ func getStringCronTestCases() []*stringCronTestCase {
 	return testCases
 }
 
-func TestStringCron(t *testing.T) {
+func TestStringCrontab(t *testing.T) {
 	for _, tc := range getStringCronTestCases() {
 		t.Run(tc.in, func(t *testing.T) {
 			err := StringCrontab().Validate(tc.in)
@@ -1420,7 +1420,7 @@ func TestStringCron(t *testing.T) {
 	}
 }
 
-func BenchmarkStringCron(b *testing.B) {
+func BenchmarkStringCrontab(b *testing.B) {
 	testCases := getStringCronTestCases()
 	for range b.N {
 		for _, tc := range testCases {
