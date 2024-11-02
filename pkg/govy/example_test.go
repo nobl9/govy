@@ -308,18 +308,19 @@ func ExampleForPointer() {
 	//     - length must be less than or equal to 5
 }
 
-// [Transform] constructor can be used to transform the property value before it's passed to the rules' evaluation.
+// [govy.Transform] constructor can be used to transform the property's value
+// before it's passed to the rules' evaluation.
 // It's useful when you want to use rules that operate on a different type than the property's.
 //
-// Along with the standard [PropertyGetter] it accepts a [Transformer] function which takes the property value
-// and returns the transformed value along with an error.
-// If the error is not nil, the validation will fail with the error message returned by [Transformer] error.
+// Along with the standard [govy.PropertyGetter] it accepts a [govy.Transformer] function
+// which takes the property value and returns the transformed value along with an error.
+// If the error is not nil, the validation will fail with the error message returned by [govy.Transformer] error.
 //
 // In this example we'll use [time.ParseDuration] to transform the string value of [Clock.Duration] to [time.Duration].
-// The first value we'll validate will force [Transformer] to return an error, the second will succeed transformation,
-// but it will fail the validation for [rules.DurationPrecision].
+// The first value we'll validate will force [govy.Transformer] to return an error,
+// the second will succeed transformation, but it will fail the validation for [rules.DurationPrecision].
 //
-// Notice how the [Transformer] shape adheres to a lot of standard library conversion/parsing functions.
+// Notice how the [govy.Transformer] shape adheres to a lot of standard library conversion/parsing functions.
 func ExampleTransform() {
 	type Clock struct {
 		Duration string `json:"duration"`
