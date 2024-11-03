@@ -9,6 +9,25 @@ func NewRule[T any](validate func(v T) error) Rule[T] {
 	return Rule[T]{validate: validate}
 }
 
+// RuleToPointer converts an existing [Rule] to its pointer variant.
+// It retains all the properties of the original [Rule],
+// but modifies its type constraints to work with a pointer to the original type.
+// If the validated value is nil, the validation will be skipped.
+func RuleToPointer[T any](rule Rule[T]) Rule[*T] {
+	return Rule[*T]{
+		validate: func(v *T) error {
+			if v == nil {
+				return nil
+			}
+			return rule.validate(*v)
+		},
+		errorCode:   rule.errorCode,
+		details:     rule.details,
+		message:     rule.message,
+		description: rule.description,
+	}
+}
+
 // Rule is the basic validation building block.
 // It evaluates the provided validation function and enhances it
 // with optional [ErrorCode] and arbitrary details.

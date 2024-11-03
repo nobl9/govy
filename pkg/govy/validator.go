@@ -6,7 +6,7 @@ import (
 )
 
 // validationInterface is a common interface implemented by all validation entities.
-// These include [Validator], [PropertyRules], and [Rule].
+// These include [Validator], [PropertyRules] and [Rule].
 type validationInterface[T any] interface {
 	Validate(s T) error
 }

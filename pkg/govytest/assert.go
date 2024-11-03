@@ -19,7 +19,8 @@ type testingT interface {
 // ExpectedRuleError defines the expectations for the asserted error.
 // Its fields are used to find and match an actual [govy.RuleError].
 type ExpectedRuleError struct {
-	// Required. Matched against [govy.PropertyError.PropertyName].
+	// Optional. Matched against [govy.PropertyError.PropertyName].
+	// It should be only left empty if the validate property has no name.
 	PropertyName string `json:"propertyName"`
 	// Optional. Matched against [govy.RuleError.Code].
 	Code govy.ErrorCode `json:"code,omitempty"`
@@ -33,9 +34,6 @@ type ExpectedRuleError struct {
 
 // expectedRuleErrorValidation defines the validation rules for [ExpectedRuleError].
 var expectedRuleErrorValidation = govy.New(
-	govy.For(func(e ExpectedRuleError) string { return e.PropertyName }).
-		WithName("propertyName").
-		Required(),
 	govy.For(govy.GetSelf[ExpectedRuleError]()).
 		Rules(rules.OneOfProperties(map[string]func(e ExpectedRuleError) any{
 			"code":            func(e ExpectedRuleError) any { return e.Code },

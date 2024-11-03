@@ -49,8 +49,6 @@ func TestAssertError(t *testing.T) {
 			ok:             false,
 			expectedErrors: []govytest.ExpectedRuleError{{}},
 			out: `Validation for ExpectedRuleError has failed for the following properties:
-  - 'propertyName':
-    - property is required but was empty
   - one of [code, containsMessage, message] properties must be set, none was provided`,
 		},
 		"nil error": {

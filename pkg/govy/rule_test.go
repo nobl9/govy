@@ -141,3 +141,26 @@ func TestRule_WithDescription(t *testing.T) {
 		Description: "the integer must be positive",
 	}, err)
 }
+
+func TestRuleToPointer(t *testing.T) {
+	r := govy.NewRule(func(v int) error {
+		if v < 0 {
+			return errors.New("must be positive")
+		}
+		return nil
+	}).
+		WithErrorCode("test")
+	rp := govy.RuleToPointer(r)
+	t.Run("passes", func(t *testing.T) {
+		err := rp.Validate(ptr(0))
+		assert.NoError(t, err)
+	})
+	t.Run("fails", func(t *testing.T) {
+		err := rp.Validate(ptr(-1))
+		assert.Require(t, assert.Error(t, err))
+		assert.Equal(t, govy.RuleError{
+			Message: "must be positive",
+			Code:    "test",
+		}, *err.(*govy.RuleError))
+	})
+}
