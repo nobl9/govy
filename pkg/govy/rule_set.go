@@ -1,13 +1,28 @@
 package govy
 
 // NewRuleSet creates a new [RuleSet] instance.
-func NewRuleSet[T any](rules ...validationInterface[T]) RuleSet[T] {
+func NewRuleSet[T any](rules ...Rule[T]) RuleSet[T] {
 	return RuleSet[T]{rules: rules}
+}
+
+// RuleSetToPointer converts an existing [RuleSet] to its pointer variant.
+// It retains all the properties of the original [RuleSet],
+// and modifies its type constraints to work with a pointer to the original type.
+// It calls [RuleToPointer] for each of the underlying [Rule].
+func RuleSetToPointer[T any](ruleSet RuleSet[T]) RuleSet[*T] {
+	rules := make([]Rule[*T], 0, len(ruleSet.rules))
+	for _, rule := range ruleSet.rules {
+		rules = append(rules, RuleToPointer(rule))
+	}
+	return RuleSet[*T]{
+		rules:     rules,
+		errorCode: ruleSet.errorCode,
+	}
 }
 
 // RuleSet allows defining a [Rule] which aggregates multiple sub-rules.
 type RuleSet[T any] struct {
-	rules     []validationInterface[T]
+	rules     []Rule[T]
 	errorCode ErrorCode
 }
 
@@ -48,8 +63,6 @@ func (r RuleSet[T]) WithErrorCode(code ErrorCode) RuleSet[T] {
 
 func (r RuleSet[T]) plan(builder planBuilder) {
 	for _, rule := range r.rules {
-		if p, ok := rule.(planner); ok {
-			p.plan(builder)
-		}
+		rule.plan(builder)
 	}
 }
