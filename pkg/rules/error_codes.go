@@ -44,6 +44,7 @@ const (
 	ErrorCodeStringFilePath            govy.ErrorCode = "string_file_path"
 	ErrorCodeStringDirPath             govy.ErrorCode = "string_dir_path"
 	ErrorCodeStringRegexp              govy.ErrorCode = "string_regexp"
+	ErrorCodeStringCrontab             govy.ErrorCode = "string_crontab"
 	ErrorCodeSliceLength               govy.ErrorCode = "slice_length"
 	ErrorCodeSliceMinLength            govy.ErrorCode = "slice_min_length"
 	ErrorCodeSliceMaxLength            govy.ErrorCode = "slice_max_length"

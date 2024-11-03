@@ -1,6 +1,8 @@
 package rules
 
 import (
+	"fmt"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -991,12 +993,12 @@ type stringFileSystemPathTestCase struct {
 	expectedErr error
 }
 
-func getStringFileSystemPathTestCases(root string) []stringFileSystemPathTestCase {
+func getStringFileSystemPathTestCases(root string) []*stringFileSystemPathTestCase {
 	addRoot := func(path string) string {
 		// We're not using filepath.Join because it cleans the path.
 		return root + string(filepath.Separator) + path
 	}
-	return []stringFileSystemPathTestCase{
+	return []*stringFileSystemPathTestCase{
 		{"~/dir1", nil},
 		{"~/dir1/", nil},
 		{addRoot("dir1"), nil},
@@ -1041,12 +1043,12 @@ func BenchmarkStringFileSystemPath(b *testing.B) {
 	}
 }
 
-func getStringFilePathTestCases(root string) []stringFileSystemPathTestCase {
+func getStringFilePathTestCases(root string) []*stringFileSystemPathTestCase {
 	addRoot := func(path string) string {
 		// We're not using filepath.Join because it cleans the path.
 		return root + string(filepath.Separator) + path
 	}
-	return []stringFileSystemPathTestCase{
+	return []*stringFileSystemPathTestCase{
 		{addRoot("dir1/file2"), nil},
 		{"~/dir1/file2", nil},
 		{addRoot("./file1"), nil},
@@ -1091,12 +1093,12 @@ func BenchmarkStringFilePath(b *testing.B) {
 	}
 }
 
-func getStringDirPathTestCases(root string) []stringFileSystemPathTestCase {
+func getStringDirPathTestCases(root string) []*stringFileSystemPathTestCase {
 	addRoot := func(path string) string {
 		// We're not using filepath.Join because it cleans the path.
 		return root + string(filepath.Separator) + path
 	}
-	return []stringFileSystemPathTestCase{
+	return []*stringFileSystemPathTestCase{
 		{addRoot("dir1"), nil},
 		{addRoot("dir1/file2/.."), nil},
 		{addRoot("."), nil},
@@ -1283,6 +1285,146 @@ func BenchmarkStringRegexp(b *testing.B) {
 	for range b.N {
 		for _, tc := range stringRegexpTestCases {
 			_ = StringRegexp().Validate(tc.in)
+		}
+	}
+}
+
+type stringCrontabTestCase struct {
+	in         string
+	shouldFail bool
+}
+
+func getStringCronTestCases() []*stringCrontabTestCase {
+	testCases := []*stringCrontabTestCase{
+		{"@annually", false},
+		{"@yearly", false},
+		{"@monthly", false},
+		{"@weekly", false},
+		{"@daily", false},
+		{"@hourly", false},
+		{"@reboot", false},
+		{"* * * * *", false},
+		{"* * * JAN,MAY,DEC *", false},
+		{"* * * JAN-DEC *", false},
+		{"* * * FEB-MAY/2 *", false},
+		{"* * * fEb-may/10 *", false},
+		{"* * * SEP-SEP/2 *", false},
+		{"* * * JAN-1 *", false},
+		{"* * * JAN-12 *", false},
+		{"* * * 1-DEC *", false},
+		{"* * * * FRI-7", false},
+		{"* * * * 2-WED", false},
+		{"* * * * THU-FRI", false},
+		{"* * * * TUE-THU/10", false},
+		{"* * * * SUN-MON", false},
+		{"* * * * WED-3", false},
+		{"* * * * THU,FRI,MON", false},
+		{"* * * * *", false},
+		{"", true},
+		{"  @hourly", true},
+		{"1h @every", true},
+		{"@every 1Y", true},
+		{"wrong", true},
+		{"@minutely", true},
+		{"@every 1h", true},
+		{"@every 1h30m10ts", true},
+		{"a * * * *", true},
+		{"1 b * * *", true},
+		{"1 1 c * *", true},
+		{"1 1 1 d *", true},
+		{"1 1 1 1 e", true},
+		{"* * * MAZ *", true},
+		{"* * * MAY-FEB/2 *", true},
+		{"* * * MAY-2 *", true},
+		{"* * * 2-JAN *", true},
+		{"* * * FEB-JUN/-10 *", true},
+		{"* * * JAN,MAY,DEZ *", true},
+		{"* * * * MOZ", true},
+		{"* * * * MON-SUN", true},
+		{"* * * * 7-FRI", true},
+		{"* * * * WED-2", true},
+		{"* * * * MON-FRI/-10", true},
+		{"* * * * THU,FRI,MOZ", true},
+	}
+	createCron := func(n int, format string, a ...any) string {
+		fields := strings.Fields("* * * * *")
+		fields[n] = fmt.Sprintf(format, a...)
+		return strings.Join(fields, " ")
+	}
+	for _, field := range []struct {
+		n, lower, upper int
+	}{
+		{0, 0, 59},
+		{1, 0, 23},
+		{2, 1, 31},
+		{3, 1, 12},
+		{4, 0, 7},
+	} {
+		getRandom := func() int {
+			return field.lower + rand.Intn(field.upper-field.lower)
+		}
+		testCases = append(testCases,
+			&stringCrontabTestCase{createCron(field.n, "%d", getRandom()), false},
+			&stringCrontabTestCase{createCron(field.n, "%d", field.lower), false},
+			&stringCrontabTestCase{createCron(field.n, "%d", field.upper), false},
+			&stringCrontabTestCase{createCron(field.n, "%d,%d", field.lower, field.upper), false},
+			&stringCrontabTestCase{createCron(field.n, "%d,%d", field.upper, field.lower), false},
+			&stringCrontabTestCase{createCron(field.n, "%d-%d", field.lower, field.upper), false},
+			&stringCrontabTestCase{createCron(field.n, "%d-%d/10", field.lower, field.upper), false},
+			&stringCrontabTestCase{createCron(field.n, "*/10"), false},
+			&stringCrontabTestCase{createCron(field.n, "%d", field.lower-1), true},
+			&stringCrontabTestCase{createCron(field.n, "%d", field.upper+1), true},
+			&stringCrontabTestCase{createCron(field.n, "%d,", field.lower), true},
+			&stringCrontabTestCase{createCron(field.n, "%d,%d", field.lower, field.upper+1), true},
+			&stringCrontabTestCase{createCron(field.n, "%d,%d", field.lower-1, field.upper), true},
+			&stringCrontabTestCase{createCron(field.n, "%d/10", getRandom()), true},
+			&stringCrontabTestCase{createCron(field.n, "%d,%d/10", field.lower, field.upper), true},
+			&stringCrontabTestCase{createCron(field.n, "a"), true},
+			&stringCrontabTestCase{createCron(field.n, "%d,a", field.lower), true},
+			&stringCrontabTestCase{createCron(field.n, "a,%d", field.upper), true},
+			&stringCrontabTestCase{createCron(field.n, "%d-", field.lower), true},
+			&stringCrontabTestCase{createCron(field.n, "%d-/", field.lower), true},
+			&stringCrontabTestCase{createCron(field.n, "-/"), true},
+			&stringCrontabTestCase{createCron(field.n, "%d-%d/", field.lower, field.upper), true},
+			&stringCrontabTestCase{createCron(field.n, "%d-%d/a", field.lower, field.upper), true},
+			&stringCrontabTestCase{createCron(field.n, "%d-%d/-10", field.lower, field.upper), true},
+			&stringCrontabTestCase{createCron(field.n, "%d-*/10", field.lower), true},
+			&stringCrontabTestCase{createCron(field.n, "*-*/10", field.lower, field.upper), true},
+			&stringCrontabTestCase{createCron(field.n, "*-%d/10", field.upper), true},
+		)
+	}
+	for month := range crontabMonthsMap {
+		testCases = append(testCases, &stringCrontabTestCase{createCron(3, month), false})
+	}
+	for day := range crontabDaysMap {
+		// Skip special cases for Sunday.
+		if strings.Contains(day, "-") {
+			continue
+		}
+		testCases = append(testCases, &stringCrontabTestCase{createCron(4, day), false})
+	}
+	return testCases
+}
+
+func TestStringCrontab(t *testing.T) {
+	for _, tc := range getStringCronTestCases() {
+		t.Run(tc.in, func(t *testing.T) {
+			err := StringCrontab().Validate(tc.in)
+			if tc.shouldFail {
+				assert.ErrorContains(t, err, "string must be a valid cron schedule expression")
+				assert.True(t, govy.HasErrorCode(err, ErrorCodeStringCrontab))
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func BenchmarkStringCrontab(b *testing.B) {
+	testCases := getStringCronTestCases()
+	for range b.N {
+		for _, tc := range testCases {
+			_ = StringCrontab().Validate(tc.in)
 		}
 	}
 }
