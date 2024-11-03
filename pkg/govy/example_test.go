@@ -668,10 +668,10 @@ func ExampleRule_WithDescription() {
 // The builtin rules, and most likely your custom rules as well, all operate on non-pointer values.
 // This means you cannot use them on pointers to the same type.
 //
-// To solve this problem you can use [govy.ForPointer] constructor and convert any [govy.Rule]
-// to work on pointers.
+// If for whatever reason you don't want to use [govy.ForPointer] constructor,
+// you can use [govy.RuleToPointer] constructor and convert any [govy.Rule] to work on pointers.
 //
-// Note: [govy.ForPointer] will skip validation for nil pointers.
+// Note: [govy.RuleToPointer] will skip validation for nil pointers.
 // If you want to enforce the value to be non-nil, you can use [rules.Required].
 // This behaviour is consistent with [govy.ForPointer] constructor, which will skip the validation
 // unless you add [govy.PropertyRules.Required] to enforce the value to be a non-nil pointer.
