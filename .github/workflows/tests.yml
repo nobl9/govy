@@ -45,6 +45,7 @@ jobs:
         with:
           name: Govy Go Benchmark
           tool: 'go'
+          alert-threshold: '150%'
           output-file-path: benchmark.txt
           external-data-json-path: ./cache/benchmark-data.json
           fail-on-alert: false
