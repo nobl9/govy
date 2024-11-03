@@ -673,7 +673,7 @@ func ExampleRule_WithDescription() {
 //
 // Note: [govy.RuleToPointer] will skip validation for nil pointers.
 // If you want to enforce the value to be non-nil, you can use [rules.Required].
-// This behaviour is consistent with [govy.ForPointer] constructor, which will skip the validation
+// This behavior is consistent with [govy.ForPointer] constructor, which will skip the validation
 // unless you add [govy.PropertyRules.Required] to enforce the value to be a non-nil pointer.
 func ExampleRuleToPointer() {
 	type Pointer struct {
@@ -977,7 +977,7 @@ func ExampleForSlice() {
 //   - 'faultyValidator' which will not fail for 'nil' value
 //   - 'goodValidator' which will fail for 'nil' value by using [rules.Required] rule
 //
-// This behaviour is consistent with [govy.ForPointer] constructor, which will skip the validation
+// This behavior is consistent with [govy.ForPointer] constructor, which will skip the validation
 // unless you add [govy.PropertyRules.Required] to enforce the value to be a non-nil pointer.
 func ExampleForSlice_sliceOfPointers() {
 	type Pointers struct {
