@@ -1138,6 +1138,10 @@ func ExamplePropertyRules_When() {
 // To customize how [govy.Rule] are evaluated use [govy.PropertyRules.Cascade].
 // Use [govy.CascadeModeStop] to stop validation after the first error.
 // If you wish to revert to the default behavior, use [govy.CascadeModeContinue].
+//
+// Note: the cascade mode change only applies to the given [govy.PropertyRules] instance
+// and not the parent [govy.Validator] or neighboring [govy.PropertyRules].
+// It does however override the [govy.CascadeMode] set for [govy.Validator].
 func ExamplePropertyRules_Cascade() {
 	alwaysFailingRule := govy.NewRule(func(string) error {
 		return fmt.Errorf("always fails")
@@ -1202,6 +1206,53 @@ func ExampleValidator_ValidateSlice() {
 	// Validation for Teacher at index 1 has failed for the following properties:
 	//   - 'name' with value 'Jake':
 	//     - always fails
+}
+
+// Unlike [govy.PropertyRules.Cascade] which works on [govy.PropertyRules] level,
+// [govy.Validator.Cascade] propagates to all the properties of [govy.Validator] and
+// furthermore, will stop evaluating the next property if any preceding property fails.
+//
+// If [govy.PropertyRules.Cascade] is set, the setting will take precedence over
+// [govy.Validator] cascade mode.
+//
+// See [ExamplePropertyRules_Cascade] for more details on [govy.PropertyRules.Cascade].
+func ExampleValidator_Cascade() {
+	v := govy.New(
+		govy.For(func(t Teacher) string { return t.Name }).
+			WithName("name").
+			Cascade(govy.CascadeModeContinue).
+			Rules(rules.NEQ("Jerry")).
+			Rules(rules.EQ("Tom")),
+		govy.For(func(t Teacher) time.Duration { return t.Age }).
+			WithName("age").
+			Rules(
+				rules.GT(18*year),
+				govy.NewRule(func(time.Duration) error {
+					return fmt.Errorf("always fails")
+				}),
+			),
+	).
+		Cascade(govy.CascadeModeStop)
+
+	for _, name := range []string{"Tom", "Jerry"} {
+		teacher := Teacher{
+			Name: name,
+			Age:  17 * year,
+		}
+		err := v.WithName(name).Validate(teacher)
+		if err != nil {
+			fmt.Println(err)
+		}
+	}
+
+	// Output:
+	// Validation for Tom has failed for the following properties:
+	//   - 'age' with value '148920h0m0s':
+	//     - should be greater than '157680h0m0s'
+	// Validation for Jerry has failed for the following properties:
+	//   - 'name' with value 'Jerry':
+	//     - should be not equal to 'Jerry'
+	//     - should be equal to 'Tom'
 }
 
 // [govy.Validator.ValidateSlice] outputs [govy.ValidatorErrors] which is a slice of [govy.ValidatorError].

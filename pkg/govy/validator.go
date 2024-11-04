@@ -11,8 +11,19 @@ type validationInterface[T any] interface {
 	Validate(s T) error
 }
 
+// propertyRulesInterface is an internal interface which further limits
+// what [New] constructor and [Validator] can accept as property rules.
+//
+// On top of [validationInterface] requirements it specifies internal functions
+// which allow interacting with [propertyRulesInterface] instances like [PropertyRules]
+// in an immutable fashion (no pointer receivers).
+type propertyRulesInterface[T any] interface {
+	validationInterface[T]
+	cascadeInternal(mode CascadeMode) propertyRulesInterface[T]
+}
+
 // New creates a new [Validator] aggregating the provided property rules.
-func New[S any](props ...validationInterface[S]) Validator[S] {
+func New[S any](props ...propertyRulesInterface[S]) Validator[S] {
 	return Validator[S]{props: props}
 }
 
@@ -20,9 +31,10 @@ func New[S any](props ...validationInterface[S]) Validator[S] {
 // It serves as an aggregator for [PropertyRules].
 // Typically, it represents a struct.
 type Validator[S any] struct {
-	props    []validationInterface[S]
+	props    []propertyRulesInterface[S]
 	name     string
 	nameFunc func(S) string
+	mode     CascadeMode
 
 	predicateMatcher[S]
 }
@@ -64,6 +76,18 @@ func (v Validator[S]) InferName() Validator[S] {
 	return v
 }
 
+// Cascade sets the [CascadeMode] for the validator,
+// which controls the flow of evaluating the validation rules.
+func (v Validator[S]) Cascade(mode CascadeMode) Validator[S] {
+	v.mode = mode
+	props := make([]propertyRulesInterface[S], 0, len(v.props))
+	for _, prop := range v.props {
+		props = append(props, prop.cascadeInternal(mode))
+	}
+	v.props = props
+	return v
+}
+
 // Validate will first evaluate predicates before validating any rules.
 // If any predicate does not pass the validation won't be executed (returns nil).
 // All errors returned by property rules will be aggregated and wrapped in [ValidatorError].
@@ -83,6 +107,9 @@ func (v Validator[S]) Validate(st S) error {
 			continue
 		}
 		allErrors = append(allErrors, pErrs...)
+		if v.mode == CascadeModeStop {
+			break
+		}
 	}
 	if len(allErrors) != 0 {
 		name := v.name
