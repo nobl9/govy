@@ -8,7 +8,7 @@ permissions:
   contents: write
 jobs:
   test:
-    name: Run unit tests
+    name: Run coverage and benchmark
     runs-on: ubuntu-latest
     steps:
       - name: Check out code

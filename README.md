@@ -14,7 +14,7 @@ It also allows writing self-documenting validation rules through a
 
 **GO** **V**alidate **Y**ourself!
 
-**DISCLAIMER** govy is in active development, while the core API is unlikely
+**DISCLAIMER**: govy is in active development, while the core API is unlikely
 to change, breaking changes may be introduced with new versions until v1
 is released. Checkout [roadmap](./docs/ROADMAP.md) for upcoming,
 planned features.
@@ -39,6 +39,8 @@ planned features.
     1. [Reflection](#reflection)
     2. [Trivia](#trivia)
 5. [Development](#development)
+    1. [Tests coverage](#tests-coverage)
+    2. [Benchmarks](#benchmarks)
 6. [Acknowledgments](#acknowledgments)
 
 ## Getting started
@@ -612,6 +614,19 @@ with them, and the idea for `govy` was born.
 
 Checkout both [contributing guidelines](./docs/CONTRIBUTING.md) and
 [development instructions](./docs/DEVELOPMENT.md).
+
+### Tests coverage
+
+Tests coverage HTML for current `main` branch state can be inspected
+[here](https://raw.githack.com/wiki/nobl9/govy/coverage.html).
+
+Note that `cmd` package is tested by building and running Go binaries directly.
+This means there won't be any coverage for some of the core functions there.
+
+### Benchmarks
+
+Benchmarks' history is collected and can be viewed as charts over time
+[here](https://nobl9.github.io/govy/dev/bench/).
 
 ## Acknowledgments
 
