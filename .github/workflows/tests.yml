@@ -55,6 +55,11 @@ jobs:
           github-token: ${{ secrets.GO_BENCHMARK_TOKEN }}
           # We update GitHub pages only on on 'push' events below.
           auto-push: false
-      - name: Push benchmark result
+      - name: Checkout gh-pages branch
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
         if: github.event_name == 'push'
+      - name: Push benchmark result
         run: git push 'https://nobl9:${{ secrets.GO_BENCHMARK_TOKEN }}@github.com/nobl9/govy.git' gh-pages:gh-pages
+        if: github.event_name == 'push'
