@@ -74,3 +74,25 @@ Refer to this [README.md](../internal/validation/README.md) for more information
 Renovate is configured to automatically merge minor and patch updates.
 For major versions, which sadly includes GitHub Actions, manual approval
 is required.
+
+## Tests coverage
+
+Tests coverage reporting is automated using the following actions:
+- [go-coverage-report](https://github.com/ncruces/go-coverage-report) which
+  is responsible for updating the coverage badge in main README.md.
+  It stores the coverage results in GitHub wiki and it can be easily inspected
+  [here](https://raw.githack.com/wiki/nobl9/govy/coverage.html).
+  This action is run only on `push` events to _main_ branch.
+- [coverdiff](https://github.com/kskitek/coverdiff) which is executed on each
+  PR runs the tests coverage and posts a summary report as a comment.
+  It highlights positive and negative changes.
+
+## Benchmarks
+
+[github-action-benchmark](https://github.com/benchmark-action/github-action-benchmark)
+is used to collect and store benchmarks' results.
+It inspects PRs and if a configured threshold difference between previous
+and current results is breached it will leave a comment on the affected PR.
+
+On top of that it publishes benchmarks' history charts onto
+[GitHub Pages](https://nobl9.github.io/govy/dev/bench).
