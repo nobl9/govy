@@ -52,9 +52,9 @@ jobs:
           # Commit comment.
           comment-on-alert: true
           alert-comment-cc-users: '@nieomylnieja'
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.GO_BENCHMARK_TOKEN }}
           # We update GitHub pages only on on 'push' events below.
           auto-push: false
       - name: Push benchmark result
         if: github.event_name == 'push'
-        run: git push 'https://nobl9:${{ secrets.GITHUB_TOKEN }}@github.com/nobl9/govy.git' gh-pages:gh-pages
+        run: git push 'https://nobl9:${{ secrets.GO_BENCHMARK_TOKEN }}@github.com/nobl9/govy.git' gh-pages:gh-pages
