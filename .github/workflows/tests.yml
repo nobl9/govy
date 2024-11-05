@@ -55,7 +55,7 @@ jobs:
           github-token: ${{ secrets.GO_BENCHMARK_TOKEN }}
           # We update GitHub pages only on on 'push' events below.
           auto-push: false
-      - name: Check out gh-pages branch
+      - name: Checkout gh-pages branch
         uses: actions/checkout@v4
         with:
           ref: gh-pages
