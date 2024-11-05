@@ -220,6 +220,16 @@ func (r PropertyRules[T, S]) Cascade(mode CascadeMode) PropertyRules[T, S] {
 	return r
 }
 
+// cascadeInternal is an internal wrapper around [PropertyRules.Cascade] which
+// fulfills [propertyRulesInterface] interface.
+// If the [CascadeMode] is already set, it won't change it.
+func (r PropertyRules[T, S]) cascadeInternal(mode CascadeMode) propertyRulesInterface[S] {
+	if r.mode != 0 {
+		return r
+	}
+	return r.Cascade(mode)
+}
+
 // plan constructs a validation plan for the property.
 func (r PropertyRules[T, S]) plan(builder planBuilder) {
 	builder.propertyPlan.IsOptional = (r.omitEmpty || r.isPointer) && !r.required

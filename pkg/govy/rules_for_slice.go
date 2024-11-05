@@ -109,6 +109,16 @@ func (r PropertyRulesForSlice[T, S]) Cascade(mode CascadeMode) PropertyRulesForS
 	return r
 }
 
+// cascadeInternal is an internal wrapper around [PropertyRulesForMap.Cascade] which
+// fulfills [propertyRulesInterface] interface.
+// If the [CascadeMode] is already set, it won't change it.
+func (r PropertyRulesForSlice[T, S]) cascadeInternal(mode CascadeMode) propertyRulesInterface[S] {
+	if r.mode != 0 {
+		return r
+	}
+	return r.Cascade(mode)
+}
+
 // plan generates a validation plan for the property rules.
 func (r PropertyRulesForSlice[T, S]) plan(builder planBuilder) {
 	for _, predicate := range r.predicates {

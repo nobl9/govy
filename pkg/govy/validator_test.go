@@ -8,6 +8,7 @@ import (
 	"github.com/nobl9/govy/internal/assert"
 
 	"github.com/nobl9/govy/pkg/govy"
+	"github.com/nobl9/govy/pkg/govytest"
 	"github.com/nobl9/govy/pkg/rules"
 )
 
@@ -198,6 +199,110 @@ func TestValidatorValidateSlice(t *testing.T) {
 			},
 		}, errs)
 	})
+}
+
+func TestValidatorCascade(t *testing.T) {
+	propertyRulesNeverFails := govy.For(func(m mockValidatorStruct) string { return "test" }).
+		WithName("neverFails").
+		Rules(
+			govy.NewRule(func(v string) error { return nil }),
+		)
+	propertyRules := govy.For(func(m mockValidatorStruct) string { return "test" }).
+		WithName("string").
+		Rules(
+			govy.NewRule(func(v string) error { return errors.New("1") }),
+			govy.NewRule(func(v string) error { return errors.New("2") }),
+		)
+	propertyRulesForSlice := govy.ForSlice(func(m mockValidatorStruct) []string { return []string{"test"} }).
+		WithName("slice").
+		Rules(
+			govy.NewRule(func(v []string) error { return errors.New("1") }),
+			govy.NewRule(func(v []string) error { return errors.New("2") }),
+		)
+	propertyRulesForMap := govy.ForMap(
+		func(m mockValidatorStruct) map[string]string { return map[string]string{"test": "v"} },
+	).
+		WithName("map").
+		Rules(
+			govy.NewRule(func(v map[string]string) error { return errors.New("1") }),
+			govy.NewRule(func(v map[string]string) error { return errors.New("2") }),
+		)
+	validator := govy.New(
+		propertyRulesNeverFails,
+		propertyRules,
+		propertyRulesForSlice,
+		propertyRulesForMap,
+	)
+
+	allErrors := []govytest.ExpectedRuleError{
+		{PropertyName: "string", Message: "1"},
+		{PropertyName: "string", Message: "2"},
+		{PropertyName: "slice", Message: "1"},
+		{PropertyName: "slice", Message: "2"},
+		{PropertyName: "map", Message: "1"},
+		{PropertyName: "map", Message: "2"},
+	}
+	firstErrors := []govytest.ExpectedRuleError{
+		{PropertyName: "string", Message: "1"},
+		{PropertyName: "slice", Message: "1"},
+		{PropertyName: "map", Message: "1"},
+	}
+
+	testCases := map[string]struct {
+		validator      govy.Validator[mockValidatorStruct]
+		expectedErrors []govytest.ExpectedRuleError
+	}{
+		"mode stop": {
+			validator.Cascade(govy.CascadeModeStop),
+			[]govytest.ExpectedRuleError{
+				{PropertyName: "string", Message: "1"},
+			},
+		},
+		"mode continue": {
+			validator.Cascade(govy.CascadeModeContinue),
+			allErrors,
+		},
+		"no mode": {
+			validator,
+			allErrors,
+		},
+		"no mode and mode overrides": {
+			govy.New(
+				propertyRules.Cascade(govy.CascadeModeStop),
+				propertyRulesForSlice.Cascade(govy.CascadeModeStop),
+				propertyRulesForMap.Cascade(govy.CascadeModeStop),
+			),
+			firstErrors,
+		},
+		"mode continue and mode overrides": {
+			govy.New(
+				propertyRulesNeverFails,
+				propertyRules.Cascade(govy.CascadeModeStop),
+				propertyRulesForSlice.Cascade(govy.CascadeModeStop),
+				propertyRulesForMap.Cascade(govy.CascadeModeStop),
+			).Cascade(govy.CascadeModeContinue),
+			firstErrors,
+		},
+		"mode stop and mode overrides": {
+			govy.New(
+				propertyRulesNeverFails,
+				propertyRules.Cascade(govy.CascadeModeContinue),
+				propertyRulesForSlice.Cascade(govy.CascadeModeContinue),
+				propertyRulesForMap.Cascade(govy.CascadeModeContinue),
+			).Cascade(govy.CascadeModeStop),
+			[]govytest.ExpectedRuleError{
+				{PropertyName: "string", Message: "1"},
+				{PropertyName: "string", Message: "2"},
+			},
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			err := tc.validator.Validate(mockValidatorStruct{})
+			govytest.AssertError(t, err, tc.expectedErrors...)
+		})
+	}
 }
 
 func mustValidatorError(t *testing.T, err error) *govy.ValidatorError {
