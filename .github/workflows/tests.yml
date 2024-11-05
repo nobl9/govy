@@ -59,6 +59,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: gh-pages
-      - name: Push benchmark result
         if: github.event_name == 'push'
+      - name: Push benchmark result
         run: git push 'https://nobl9:${{ secrets.GO_BENCHMARK_TOKEN }}@github.com/nobl9/govy.git' gh-pages:gh-pages
+        if: github.event_name == 'push'
