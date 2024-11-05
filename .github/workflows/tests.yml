@@ -6,6 +6,10 @@ on:
   pull_request:
     branches:
       - main
+permissions:
+  deployments: write
+  contents: write
+  pull-requests: write
 jobs:
   test:
     name: Run unit tests
@@ -29,3 +33,28 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GO_COVERAGE_TOKEN }}
         if: github.event_name == 'push'
         continue-on-error: true
+      - name: Run benchmark
+        run: make test/benchmark | tee benchmark.txt
+      - name: Download previous benchmark data
+        uses: actions/cache@v4
+        with:
+          path: ./cache
+          key: ${{ runner.os }}-benchmark
+      - name: Store benchmark result
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          name: Govy Go Benchmark
+          tool: 'go'
+          alert-threshold: '150%'
+          output-file-path: benchmark.txt
+          external-data-json-path: ./cache/benchmark-data.json
+          fail-on-alert: false
+          # Commit comment.
+          comment-on-alert: true
+          alert-comment-cc-users: '@nieomylnieja'
+          github-token: ${{ secrets.GO_BENCHMARK_TOKEN }}
+          # We update GitHub pages only on on 'push' events below.
+          auto-push: false
+      - name: Push benchmark result
+        if: github.event_name == 'push'
+        run: git push 'https://nobl9:${{ secrets.GO_BENCHMARK_TOKEN }}@github.com/nobl9/govy.git' gh-pages:gh-pages
