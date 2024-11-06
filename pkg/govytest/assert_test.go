@@ -457,7 +457,12 @@ ACTUAL:
 					},
 				},
 			}},
-			expectedError: govytest.ExpectedRuleError{PropertyName: "this", Message: "test1", Code: "code1", ContainsMessage: "test"},
+			expectedError: govytest.ExpectedRuleError{
+				PropertyName:    "this",
+				Message:         "test1",
+				Code:            "code1",
+				ContainsMessage: "test",
+			},
 		},
 	}
 	for name, tc := range tests {
