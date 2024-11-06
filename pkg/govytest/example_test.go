@@ -47,7 +47,7 @@ func ExampleAssertNoError() {
 		},
 	}
 
-	// We'll use a mock testing.T to capture the error produced by the assertion.
+	// We're using a mock testing.T to capture the error produced by the assertion.
 	mt := new(mockTestingT)
 
 	err := teacherValidator.WithName("John").Validate(teacher)
@@ -118,7 +118,7 @@ func ExampleAssertError() {
 		},
 	}
 
-	// We'll use a mock testing.T to capture the error produced by the assertion.
+	// We're using a mock testing.T to capture the error produced by the assertion.
 	mt := new(mockTestingT)
 
 	err := teacherValidator.WithName("John").Validate(teacher)
@@ -132,6 +132,89 @@ func ExampleAssertError() {
 			Code:         "greater_than",
 		},
 	)
+
+	// This will print the error produced by the assertion.
+	fmt.Println(mt.recordedError)
+
+	// Output:
+	// Expected error was not found.
+	// EXPECTED:
+	// {
+	//   "propertyName": "university.address",
+	//   "code": "greater_than"
+	// }
+	// ACTUAL:
+	// [
+	//   {
+	//     "propertyName": "name",
+	//     "propertyValue": "John",
+	//     "errors": [
+	//       {
+	//         "error": "must be one of [Jake, George]",
+	//         "code": "one_of",
+	//         "description": "must be one of: Jake, George"
+	//       }
+	//     ]
+	//   },
+	//   {
+	//     "propertyName": "university.address",
+	//     "errors": [
+	//       {
+	//         "error": "property is required but was empty",
+	//         "code": "required"
+	//       }
+	//     ]
+	//   }
+	// ]
+}
+
+// If you don't want to verify all the errors returned by [govy.Validator],
+// but ensure a single, expected error is produced use [govytest.AssertErrorContains]
+// instead of [govytest.AssertError].
+//
+// To demonstrate the erroneous output of [govytest.AssertErrorContains]
+// we'll first match the error and then fail the assertion.
+func ExampleAssertErrorContains() {
+	teacherValidator := govy.New(
+		govy.For(func(t Teacher) string { return t.Name }).
+			WithName("name").
+			Required().
+			Rules(
+				rules.StringNotEmpty(),
+				rules.OneOf("Jake", "George")),
+		govy.For(func(t Teacher) University { return t.University }).
+			WithName("university").
+			Include(govy.New(
+				govy.For(func(u University) string { return u.Address }).
+					WithName("address").
+					Required(),
+			)),
+	)
+
+	teacher := Teacher{
+		Name: "John",
+		University: University{
+			Name:    "Poznan University of Technology",
+			Address: "",
+		},
+	}
+
+	// We're using a mock testing.T to capture the error produced by the assertion.
+	mt := new(mockTestingT)
+
+	// Match the error.
+	err := teacherValidator.WithName("John").Validate(teacher)
+	govytest.AssertErrorContains(mt, err, govytest.ExpectedRuleError{
+		PropertyName: "name",
+		Code:         "one_of",
+	})
+
+	// Fail to match the error.
+	err = teacherValidator.WithName("John").Validate(teacher)
+	govytest.AssertErrorContains(mt, err, govytest.ExpectedRuleError{
+		PropertyName: "university.address",
+		Code:         "greater_than",
+	})
 
 	// This will print the error produced by the assertion.
 	fmt.Println(mt.recordedError)

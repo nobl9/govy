@@ -68,13 +68,16 @@ func AssertNoError(t testingT, err error) bool {
 
 // AssertError asserts that the given error has:
 //   - type equal to [*govy.ValidatorError]
-//   - the expected number of [govy.RuleError]
+//   - the expected number of [govy.RuleError] equal to the number of provided [ExpectedRuleError]
 //   - at least one error which matches each of the provided [ExpectedRuleError]
 //
-// [ExpectedRuleError] and actual error are considered equal if their [] to the same property and either:
+// [ExpectedRuleError] and actual error are considered equal if they have the same property name and:
 //   - [ExpectedRuleError.Code] is equal to [govy.RuleError.Code]
 //   - [ExpectedRuleError.Message] is equal to [govy.RuleError.Message]
 //   - [ExpectedRuleError.ContainsMessage] is part of [govy.RuleError.Message]
+//
+// At least one of the above must be set for [ExpectedRuleError]
+// and once set, it will need to match the actual error.
 //
 // If [ExpectedRuleError.IsKeyError] is provided it will be required to match
 // the actual [govy.PropertyError.IsKeyError].
@@ -86,16 +89,56 @@ func AssertError(
 	expectedErrors ...ExpectedRuleError,
 ) bool {
 	t.Helper()
+	return assertError(t, true, err, expectedErrors...)
+}
 
-	if !validateExpectedErrors(t, expectedErrors) {
+// AssertErrorContains asserts that the given error has:
+//   - type equal to [*govy.ValidatorError]
+//   - at least one error which matches the provided [ExpectedRuleError]
+//
+// Unlike [AssertError], it checks only a single error.
+// The actual error may contain other errors, If you want to match them all, use [AssertError].
+//
+// [ExpectedRuleError] and actual error are considered equal if they have the same property name and:
+//   - [ExpectedRuleError.Code] is equal to [govy.RuleError.Code]
+//   - [ExpectedRuleError.Message] is equal to [govy.RuleError.Message]
+//   - [ExpectedRuleError.ContainsMessage] is part of [govy.RuleError.Message]
+//
+// At least one of the above must be set for [ExpectedRuleError]
+// and once set, it will need to match the actual error.
+//
+// If [ExpectedRuleError.IsKeyError] is provided it will be required to match
+// the actual [govy.PropertyError.IsKeyError].
+//
+// It returns true if the error matches the expectations, false otherwise.
+func AssertErrorContains(
+	t testingT,
+	err error,
+	expectedError ExpectedRuleError,
+) bool {
+	t.Helper()
+	return assertError(t, false, err, expectedError)
+}
+
+func assertError(
+	t testingT,
+	countErrors bool,
+	err error,
+	expectedErrors ...ExpectedRuleError,
+) bool {
+	t.Helper()
+
+	if !validateExpectedErrors(t, expectedErrors...) {
 		return false
 	}
 	validatorErr, ok := assertValidatorError(t, err)
 	if !ok {
 		return false
 	}
-	if !assertErrorsCount(t, validatorErr, len(expectedErrors)) {
-		return false
+	if countErrors {
+		if !assertErrorsCount(t, validatorErr, len(expectedErrors)) {
+			return false
+		}
 	}
 	matched := make(matchedErrors, len(expectedErrors))
 	for _, expected := range expectedErrors {
@@ -106,7 +149,7 @@ func AssertError(
 	return true
 }
 
-func validateExpectedErrors(t testingT, expectedErrors []ExpectedRuleError) bool {
+func validateExpectedErrors(t testingT, expectedErrors ...ExpectedRuleError) bool {
 	t.Helper()
 	if len(expectedErrors) == 0 {
 		t.Errorf("%T must not be empty.", expectedErrors)
