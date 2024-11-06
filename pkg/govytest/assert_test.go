@@ -267,11 +267,332 @@ ACTUAL:
 			},
 			out: "Actual error was matched multiple times. Consider providing a more specific govytest.ExpectedRuleError list.",
 		},
+		"matched key error": {
+			ok: true,
+			inputError: &govy.ValidatorError{Errors: []*govy.PropertyError{
+				{
+					PropertyName: "that",
+					Errors:       []*govy.RuleError{{Message: "test3"}},
+					IsKeyError:   true,
+				},
+				{
+					PropertyName: "this",
+					Errors:       []*govy.RuleError{{Message: "test2"}},
+					IsKeyError:   true,
+				},
+			}},
+			expectedErrors: []govytest.ExpectedRuleError{
+				{PropertyName: "this", Message: "test2", IsKeyError: true},
+				{PropertyName: "that", Message: "test3", IsKeyError: true},
+			},
+		},
+		"failed to match key error": {
+			ok: false,
+			inputError: &govy.ValidatorError{Errors: []*govy.PropertyError{
+				{
+					PropertyName: "that",
+					Errors:       []*govy.RuleError{{Message: "test3"}},
+					IsKeyError:   false,
+				},
+				{
+					PropertyName: "this",
+					Errors:       []*govy.RuleError{{Message: "test2"}},
+					IsKeyError:   true,
+				},
+			}},
+			expectedErrors: []govytest.ExpectedRuleError{
+				{PropertyName: "this", Message: "test2", IsKeyError: true},
+				{PropertyName: "that", Message: "test3", IsKeyError: true},
+			},
+			out: `Expected error was not found.
+EXPECTED:
+{
+  "propertyName": "that",
+  "message": "test3",
+  "isKeyError": true
+}
+ACTUAL:
+[
+  {
+    "propertyName": "that",
+    "errors": [
+      {
+        "error": "test3"
+      }
+    ]
+  },
+  {
+    "propertyName": "this",
+    "isKeyError": true,
+    "errors": [
+      {
+        "error": "test2"
+      }
+    ]
+  }
+]`,
+		},
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			mt := new(mockTestingT)
 			ok := govytest.AssertError(mt, tc.inputError, tc.expectedErrors...)
+			if tc.ok {
+				assert.True(t, ok)
+			} else {
+				assert.Require(t, assert.False(t, ok))
+				assert.Equal(t, tc.out, mt.recordedError)
+			}
+		})
+	}
+}
+
+func TestAssertErrorContains(t *testing.T) {
+	tests := map[string]struct {
+		ok            bool
+		inputError    error
+		expectedError govytest.ExpectedRuleError
+		out           string
+	}{
+		"invalid input": {
+			ok:            false,
+			expectedError: govytest.ExpectedRuleError{},
+			out: `Validation for ExpectedRuleError has failed for the following properties:
+  - one of [code, containsMessage, message] properties must be set, none was provided`,
+		},
+		"nil error": {
+			ok:            false,
+			inputError:    nil,
+			expectedError: govytest.ExpectedRuleError{PropertyName: "this", Message: "test"},
+			out:           "Input error should not be nil.",
+		},
+		"wrong type of error": {
+			ok:            false,
+			inputError:    errors.New(""),
+			expectedError: govytest.ExpectedRuleError{PropertyName: "this", Message: "test"},
+			out:           "Input error should be of type *govy.ValidatorError.",
+		},
+		"no matches": {
+			ok: false,
+			inputError: &govy.ValidatorError{Errors: []*govy.PropertyError{
+				{
+					PropertyName: "that",
+					Errors:       []*govy.RuleError{{Message: "test"}},
+				},
+			}},
+			expectedError: govytest.ExpectedRuleError{PropertyName: "this", Message: "test"},
+			out: `Expected error was not found.
+EXPECTED:
+{
+  "propertyName": "this",
+  "message": "test"
+}
+ACTUAL:
+[
+  {
+    "propertyName": "that",
+    "errors": [
+      {
+        "error": "test"
+      }
+    ]
+  }
+]`,
+		},
+		"match on message": {
+			ok: true,
+			inputError: &govy.ValidatorError{Errors: []*govy.PropertyError{
+				{
+					PropertyName: "that",
+					Errors:       []*govy.RuleError{{Message: "test3"}},
+				},
+				{
+					PropertyName: "this",
+					Errors:       []*govy.RuleError{{Message: "test2"}, {Message: "test1"}},
+				},
+			}},
+			expectedError: govytest.ExpectedRuleError{PropertyName: "this", Message: "test1"},
+		},
+		"match on code": {
+			ok: true,
+			inputError: &govy.ValidatorError{Errors: []*govy.PropertyError{
+				{
+					PropertyName: "that",
+					Errors:       []*govy.RuleError{{Code: "test3"}},
+				},
+				{
+					PropertyName: "this",
+					Errors:       []*govy.RuleError{{Code: "test2"}, {Code: "test1"}},
+				},
+			}},
+			expectedError: govytest.ExpectedRuleError{PropertyName: "this", Code: "test1"},
+		},
+		"match on message contains": {
+			ok: true,
+			inputError: &govy.ValidatorError{Errors: []*govy.PropertyError{
+				{
+					PropertyName: "that",
+					Errors:       []*govy.RuleError{{Message: "test3"}},
+				},
+				{
+					PropertyName: "this",
+					Errors:       []*govy.RuleError{{Message: "test2"}, {Message: "test1"}},
+				},
+			}},
+			expectedError: govytest.ExpectedRuleError{PropertyName: "this", ContainsMessage: "test"},
+		},
+		"match on message and code": {
+			ok: true,
+			inputError: &govy.ValidatorError{Errors: []*govy.PropertyError{
+				{
+					PropertyName: "that",
+					Errors:       []*govy.RuleError{{Message: "test3", Code: "code3"}},
+				},
+				{
+					PropertyName: "this",
+					Errors: []*govy.RuleError{
+						{Message: "test2", Code: "code2"},
+						{Message: "test1", Code: "code1"},
+					},
+				},
+			}},
+			expectedError: govytest.ExpectedRuleError{PropertyName: "this", Message: "test1", Code: "code1"},
+		},
+		"fail to match on message and code": {
+			ok: false,
+			inputError: &govy.ValidatorError{Errors: []*govy.PropertyError{
+				{
+					PropertyName: "that",
+					Errors:       []*govy.RuleError{{Message: "test3", Code: "code3"}},
+				},
+				{
+					PropertyName: "this",
+					Errors: []*govy.RuleError{
+						{Message: "test2", Code: "code2"},
+						{Message: "test1", Code: "code1"},
+					},
+				},
+			}},
+			expectedError: govytest.ExpectedRuleError{PropertyName: "that", Message: "test3", Code: "code4"},
+			out: `Expected error was not found.
+EXPECTED:
+{
+  "propertyName": "that",
+  "code": "code4",
+  "message": "test3"
+}
+ACTUAL:
+[
+  {
+    "propertyName": "that",
+    "errors": [
+      {
+        "error": "test3",
+        "code": "code3"
+      }
+    ]
+  },
+  {
+    "propertyName": "this",
+    "errors": [
+      {
+        "error": "test2",
+        "code": "code2"
+      },
+      {
+        "error": "test1",
+        "code": "code1"
+      }
+    ]
+  }
+]`,
+		},
+		"match on message, code and message contains": {
+			ok: true,
+			inputError: &govy.ValidatorError{Errors: []*govy.PropertyError{
+				{
+					PropertyName: "that",
+					Errors:       []*govy.RuleError{{Message: "test3", Code: "code3"}},
+				},
+				{
+					PropertyName: "this",
+					Errors: []*govy.RuleError{
+						{Message: "test2", Code: "code2"},
+						{Message: "test1", Code: "code1"},
+					},
+				},
+			}},
+			expectedError: govytest.ExpectedRuleError{
+				PropertyName:    "this",
+				Message:         "test1",
+				Code:            "code1",
+				ContainsMessage: "test",
+			},
+		},
+		"matched key error": {
+			ok: true,
+			inputError: &govy.ValidatorError{Errors: []*govy.PropertyError{
+				{
+					PropertyName: "that",
+					Errors:       []*govy.RuleError{{Message: "test3"}},
+					IsKeyError:   true,
+				},
+				{
+					PropertyName: "this",
+					Errors:       []*govy.RuleError{{Message: "test2"}},
+					IsKeyError:   true,
+				},
+			}},
+			expectedError: govytest.ExpectedRuleError{PropertyName: "that", Message: "test3", IsKeyError: true},
+		},
+		"failed to match key error": {
+			ok: false,
+			inputError: &govy.ValidatorError{Errors: []*govy.PropertyError{
+				{
+					PropertyName: "that",
+					Errors:       []*govy.RuleError{{Message: "test3"}},
+					IsKeyError:   false,
+				},
+				{
+					PropertyName: "this",
+					Errors:       []*govy.RuleError{{Message: "test2"}},
+					IsKeyError:   true,
+				},
+			}},
+			expectedError: govytest.ExpectedRuleError{PropertyName: "that", Message: "test3", IsKeyError: true},
+			out: `Expected error was not found.
+EXPECTED:
+{
+  "propertyName": "that",
+  "message": "test3",
+  "isKeyError": true
+}
+ACTUAL:
+[
+  {
+    "propertyName": "that",
+    "errors": [
+      {
+        "error": "test3"
+      }
+    ]
+  },
+  {
+    "propertyName": "this",
+    "isKeyError": true,
+    "errors": [
+      {
+        "error": "test2"
+      }
+    ]
+  }
+]`,
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			mt := new(mockTestingT)
+			ok := govytest.AssertErrorContains(mt, tc.inputError, tc.expectedError)
 			if tc.ok {
 				assert.True(t, ok)
 			} else {
