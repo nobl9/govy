@@ -62,7 +62,7 @@ Govy's code documentation is available at
 You can read
 [this blog post](https://www.nobl9.com/resources/type-safe-validation-in-go-with-govy)
 for a quick overview of the library, its capabilities,
-what distinguishes it from other validation libraries and why was it conceived.
+what distinguishes it from other solutions and why was it conceived.
 
 Here's a quick example of `govy` in action:
 
