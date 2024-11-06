@@ -59,6 +59,11 @@ or locally at [example_test.go](./pkg/govy/example_test.go).
 Govy's code documentation is available at
 [pkg.go.dev](https://pkg.go.dev/github.com/nobl9/govy).
 
+You can read
+[this blog post](https://www.nobl9.com/resources/type-safe-validation-in-go-with-govy)
+for a quick overview of the library, its capabilities,
+what distinguishes it from other solutions and why was it conceived.
+
 Here's a quick example of `govy` in action:
 
 [//]: # (embed: internal/examples/readme_intro_example_test.go)
@@ -178,6 +183,10 @@ func Example_basicUsage() {
    it's used for validating complex k8s-like schema, it contains both simple
    and very advanced validation rules and is a great place to draw some
    inspiration from.
+2. [OpenSLO](https://github.com/OpenSLO/OpenSLO). \
+   It's used for validating open specification for defining SLOs.
+   The specification is a complex, YAML-based and k8s compatible schema,
+   similar to Nobl9's configuration.
 
 ### Comparison with other libraries
 
