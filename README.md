@@ -59,6 +59,11 @@ or locally at [example_test.go](./pkg/govy/example_test.go).
 Govy's code documentation is available at
 [pkg.go.dev](https://pkg.go.dev/github.com/nobl9/govy).
 
+You can read
+[this blog post](https://www.nobl9.com/resources/type-safe-validation-in-go-with-govy)
+for a quick overview of the library, its capabilities,
+what distinguishes it from other validation libraries and why was it conceived.
+
 Here's a quick example of `govy` in action:
 
 [//]: # (embed: internal/examples/readme_intro_example_test.go)
