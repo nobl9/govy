@@ -9,6 +9,7 @@ import (
 	"strings"
 	"syscall"
 	"testing"
+	"time"
 
 	"github.com/nobl9/govy/internal/assert"
 
@@ -1425,6 +1426,95 @@ func BenchmarkStringCrontab(b *testing.B) {
 	for range b.N {
 		for _, tc := range testCases {
 			_ = StringCrontab().Validate(tc.in)
+		}
+	}
+}
+
+var stringDateTimeTestCases = []*struct {
+	layout   string
+	examples []string
+	in       string
+	errMsg   string
+}{
+	{time.RFC3339, nil, "2024-01-01T15:00:00Z", ""},
+	{time.RFC3339, nil, "2024-01-01T15:00:00+01:00", ""},
+	{time.DateTime, nil, "2024-01-01 15:00:00", ""},
+	{time.DateOnly, nil, "2024-01-01", ""},
+	{time.TimeOnly, nil, "15:00:00", ""},
+	{
+		"invalid-layout",
+		nil,
+		"2024-01-01T15:00:00Z",
+		"string must be a valid date and time in 'invalid-layout' format",
+	},
+	{
+		time.RFC3339,
+		nil,
+		"2024-01-01 15:00:00Z",
+		"string must be a valid date and time in '2006-01-02T15:04:05Z07:00' format",
+	},
+	{
+		"15:04",
+		[]string{"16:00", "08:31"},
+		"15:00:00",
+		"string must be a valid date and time in '15:04' format (e.g. '16:00', '08:31')",
+	},
+}
+
+func TestStringDateTime(t *testing.T) {
+	for _, tc := range stringDateTimeTestCases {
+		t.Run(tc.layout+tc.in, func(t *testing.T) {
+			err := StringDateTime(tc.layout, tc.examples...).Validate(tc.in)
+			if tc.errMsg != "" {
+				assert.ErrorContains(t, err, tc.errMsg)
+				assert.True(t, govy.HasErrorCode(err, ErrorCodeStringDateTime))
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func BenchmarkStringDateTime(b *testing.B) {
+	for range b.N {
+		for _, tc := range stringDateTimeTestCases {
+			_ = StringDateTime(tc.layout, tc.examples...).Validate(tc.in)
+		}
+	}
+}
+
+var stringTimeZoneTestCases = []*struct {
+	in         string
+	shouldFail bool
+}{
+	{"UTC", false},
+	{"America/New_York", false},
+	{"Europe/Warsaw", false},
+	{"", true},
+	{"Local", true},
+	{"America/New_Yorker", true},
+	{"x/x", true},
+	{"America/Warsaw", true},
+}
+
+func TestStringTimeZone(t *testing.T) {
+	for _, tc := range stringTimeZoneTestCases {
+		t.Run(tc.in, func(t *testing.T) {
+			err := StringTimeZone().Validate(tc.in)
+			if tc.shouldFail {
+				assert.ErrorContains(t, err, "string must be a valid IANA Time Zone Database code")
+				assert.True(t, govy.HasErrorCode(err, ErrorCodeStringTimeZone))
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func BenchmarkStringTimeZone(b *testing.B) {
+	for range b.N {
+		for _, tc := range stringDateTimeTestCases {
+			_ = StringTimeZone().Validate(tc.in)
 		}
 	}
 }

@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 	"unicode"
 
 	"github.com/nobl9/govy/pkg/govy"
@@ -500,6 +501,53 @@ func StringCrontab() govy.Rule[string] {
 	return govy.NewRule(parseCrontab).
 		WithMessage(msg).
 		WithErrorCode(ErrorCodeStringCrontab)
+}
+
+// StringDateTime ensures the property's value is a valid date and time in the specified layout.
+//
+// The layout must be a valid time format string as defined by [time.Parse],
+// an example of which is [time.RFC3339].
+func StringDateTime(layout string, examples ...string) govy.Rule[string] {
+	msg := fmt.Sprintf("string must be a valid date and time in '%s' format", layout)
+	if len(examples) > 0 {
+		msg += " " + prettyExamples(examples)
+	}
+	return govy.NewRule(func(s string) error {
+		if _, err := time.Parse(layout, s); err != nil {
+			return fmt.Errorf("%s: %w", msg, err)
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringDateTime).
+		WithDetails("date and time format follows Go's time layout, see https://pkg.go.dev/time#Layout for more details").
+		WithDescription(msg)
+}
+
+// StringTimeZone ensures the property's value is a valid time zone name which
+// uniquely identifies a time zone in the IANA Time Zone database.
+// Example: "America/New_York", "Europe/London".
+//
+// Under the hood [time.LoadLocation] is called to parse the zone.
+// The native function allows empty string and 'Local' keyword to be supplied.
+// However, these two options are explicitly forbidden by [StringTimeZone].
+//
+// Furthermore, the time zone data is not readily available in one predefined place.
+// [time.LoadLocation] looks for the IANA Time Zone database in specific places,
+// please refer to its documentation for more information.
+func StringTimeZone() govy.Rule[string] {
+	msg := "string must be a valid IANA Time Zone Database code " +
+		prettyExamples([]string{"UTC", "America/New_York", "Europe/Warsaw"})
+	return govy.NewRule(func(s string) error {
+		if s == "" || s == "Local" {
+			return errors.New(msg)
+		}
+		if _, err := time.LoadLocation(s); err != nil {
+			return fmt.Errorf("%s: %w", msg, err)
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringTimeZone).
+		WithDescription(msg)
 }
 
 func prettyExamples(examples []string) string {
