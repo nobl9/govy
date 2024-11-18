@@ -221,6 +221,15 @@ func TestRequiredAndOmitEmpty(t *testing.T) {
 			assert.True(t, govy.HasErrorCode(errs, rules.ErrorCodeStringMinLength))
 		})
 	})
+
+	t.Run("required with when condition", func(t *testing.T) {
+		r := govy.ForPointer(func(s *string) *string { return s }).
+			When(func(s *string) bool { return s != nil }).
+			Required().
+			Rules(rules.StringMinLength(10))
+		err := r.Validate(nil)
+		assert.NoError(t, err)
+	})
 }
 
 func TestTransform(t *testing.T) {
