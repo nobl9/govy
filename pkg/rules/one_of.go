@@ -26,7 +26,7 @@ func OneOf[T comparable](values ...T) govy.Rule[T] {
 		WithErrorCode(ErrorCodeOneOf).
 		WithDescription(func() string {
 			b := strings.Builder{}
-			prettyStringListBuilder(&b, values, false)
+			internal.PrettyStringListBuilder(&b, values, false)
 			return "must be one of: " + b.String()
 		}())
 }
@@ -98,7 +98,7 @@ func prettyOneOfList[T any](values []T) string {
 	b := strings.Builder{}
 	b.Grow(2 + len(values))
 	b.WriteString("[")
-	prettyStringListBuilder(&b, values, false)
+	internal.PrettyStringListBuilder(&b, values, false)
 	b.WriteString("]")
 	return b.String()
 }

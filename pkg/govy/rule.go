@@ -2,6 +2,8 @@ package govy
 
 import (
 	"fmt"
+
+	"github.com/nobl9/govy/internal/collections"
 )
 
 // NewRule creates a new [Rule] instance.
@@ -36,6 +38,7 @@ type Rule[T any] struct {
 	errorCode   ErrorCode
 	details     string
 	message     string
+	examples    []T
 	description string
 }
 
@@ -54,6 +57,7 @@ func (r Rule[T]) Validate(v T) error {
 			}
 			ev.Details = r.details
 			ev.Description = r.description
+			ev.Examples = collections.MapSlice(r.examples)
 			return ev.AddCode(r.errorCode)
 		case *PropertyError:
 			for _, e := range ev.Errors {
@@ -69,6 +73,7 @@ func (r Rule[T]) Validate(v T) error {
 				Message:     msg,
 				Code:        r.errorCode,
 				Details:     r.details,
+				Examples:    r.examples,
 				Description: r.description,
 			}
 		}
@@ -102,6 +107,13 @@ func (r Rule[T]) WithDetails(format string, a ...any) Rule[T] {
 	return r
 }
 
+// WithExamples adds examples to the returned [RuleError].
+// Each example is converted to a string.
+func (r Rule[T]) WithExamples(examples ...T) Rule[T] {
+	r.examples = examples
+  return r
+}
+
 // WithDescription adds a custom description to the rule.
 // It is used to enhance the [RulePlan], but otherwise does not appear in standard [RuleError.Error] output.
 func (r Rule[T]) WithDescription(description string) Rule[T] {
@@ -118,3 +130,5 @@ func (r Rule[T]) plan(builder planBuilder) {
 	}
 	*builder.children = append(*builder.children, builder)
 }
+
+func anyToString[T any](v T) string { return fmt.Sprint(v) }

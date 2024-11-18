@@ -38,6 +38,7 @@ type RulePlan struct {
 	// Conditions are all the predicates set through [PropertyRules.When] and [Validator.When]
 	// which had [WhenDescription] added to the [WhenOptions].
 	Conditions []string `json:"conditions,omitempty"`
+	Examples   []string `json:"examples,omitempty"`
 }
 
 func (r RulePlan) isEmpty() bool {

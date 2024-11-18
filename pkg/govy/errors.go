@@ -212,18 +212,26 @@ type RuleError struct {
 	Message     string    `json:"error"`
 	Code        ErrorCode `json:"code,omitempty"`
 	Details     string    `json:"details,omitempty"`
+	Examples    []string  `json:"examples,omitempty"`
 	Description string    `json:"description,omitempty"`
 }
 
 // Error implements the error interface.
+// If [RuleError.Details] is set, it will be appended after the [RuleError.Message],
+// spearated by a semicolon.
+// If [RuleError.Examples] are provided, they will be appended to the message.
+// Example:
+//
+//	ruleErr := RuleError{Message: "error", Details: "details", Examples: []string{"example1", "example2"}}
+//	fmt.Println(ruleErr.Error()) -> "error (e.g. example1, example2); details"
 func (r *RuleError) Error() string {
 	if r.Details == "" {
-		return r.Message
+		return addExamplesToMessage(r.Message, r.Examples)
 	}
 	if r.Message == "" {
 		return r.Details
 	}
-	return r.Message + "; " + r.Details
+	return addExamplesToMessage(r.Message, r.Examples) + "; " + r.Details
 }
 
 // AddCode extends the [RuleError] with the given error code.
@@ -331,4 +339,15 @@ func logWrongErrorType(expected, actual error) {
 	slog.Error("unexpected error type",
 		slog.String("actual_type", fmt.Sprintf("%T", actual)),
 		slog.String("expected_type", fmt.Sprintf("%T", expected)))
+}
+
+func addExamplesToMessage(s string, examples []string) string {
+	if len(examples) == 0 {
+		return s
+	}
+	b := strings.Builder{}
+	b.WriteString(" (e.g. ")
+	internal.PrettyStringListBuilder(&b, examples, true)
+	b.WriteString(")")
+	return s + b.String()
 }

@@ -14,6 +14,7 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/nobl9/govy/internal"
 	"github.com/nobl9/govy/pkg/govy"
 )
 
@@ -35,9 +36,6 @@ func StringNotEmpty() govy.Rule[string] {
 // The error message can be enhanced with examples of valid values.
 func StringMatchRegexp(re *regexp.Regexp, examples ...string) govy.Rule[string] {
 	msg := fmt.Sprintf("string must match regular expression: '%s'", re.String())
-	if len(examples) > 0 {
-		msg += " " + prettyExamples(examples)
-	}
 	return govy.NewRule(func(s string) error {
 		if !re.MatchString(s) {
 			return errors.New(msg)
@@ -45,6 +43,7 @@ func StringMatchRegexp(re *regexp.Regexp, examples ...string) govy.Rule[string] 
 		return nil
 	}).
 		WithErrorCode(ErrorCodeStringMatchRegexp).
+		WithExamples(examples...).
 		WithDescription(msg)
 }
 
@@ -52,9 +51,6 @@ func StringMatchRegexp(re *regexp.Regexp, examples ...string) govy.Rule[string] 
 // The error message can be enhanced with examples of invalid values.
 func StringDenyRegexp(re *regexp.Regexp, examples ...string) govy.Rule[string] {
 	msg := fmt.Sprintf("string must not match regular expression: '%s'", re.String())
-	if len(examples) > 0 {
-		msg += " " + prettyExamples(examples)
-	}
 	return govy.NewRule(func(s string) error {
 		if re.MatchString(s) {
 			return errors.New(msg)
@@ -62,6 +58,7 @@ func StringDenyRegexp(re *regexp.Regexp, examples ...string) govy.Rule[string] {
 		return nil
 	}).
 		WithErrorCode(ErrorCodeStringDenyRegexp).
+		WithExamples(examples...).
 		WithDescription(msg)
 }
 
@@ -509,9 +506,6 @@ func StringCrontab() govy.Rule[string] {
 // an example of which is [time.RFC3339].
 func StringDateTime(layout string, examples ...string) govy.Rule[string] {
 	msg := fmt.Sprintf("string must be a valid date and time in '%s' format", layout)
-	if len(examples) > 0 {
-		msg += " " + prettyExamples(examples)
-	}
 	return govy.NewRule(func(s string) error {
 		if _, err := time.Parse(layout, s); err != nil {
 			return fmt.Errorf("%s: %w", msg, err)
@@ -520,6 +514,7 @@ func StringDateTime(layout string, examples ...string) govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringDateTime).
 		WithDetails("date and time format follows Go's time layout, see https://pkg.go.dev/time#Layout for more details").
+		WithExamples(examples...).
 		WithDescription(msg)
 }
 
@@ -535,8 +530,7 @@ func StringDateTime(layout string, examples ...string) govy.Rule[string] {
 // [time.LoadLocation] looks for the IANA Time Zone database in specific places,
 // please refer to its documentation for more information.
 func StringTimeZone() govy.Rule[string] {
-	msg := "string must be a valid IANA Time Zone Database code " +
-		prettyExamples([]string{"UTC", "America/New_York", "Europe/Warsaw"})
+	msg := "string must be a valid IANA Time Zone Database code"
 	return govy.NewRule(func(s string) error {
 		if s == "" || s == "Local" {
 			return errors.New(msg)
@@ -547,40 +541,14 @@ func StringTimeZone() govy.Rule[string] {
 		return nil
 	}).
 		WithErrorCode(ErrorCodeStringTimeZone).
+		WithExamples("UTC", "America/New_York", "Europe/Warsaw").
 		WithDescription(msg)
-}
-
-func prettyExamples(examples []string) string {
-	if len(examples) == 0 {
-		return ""
-	}
-	b := strings.Builder{}
-	b.WriteString("(e.g. ")
-	prettyStringListBuilder(&b, examples, true)
-	b.WriteString(")")
-	return b.String()
 }
 
 func prettyStringList[T any](values []T) string {
 	b := new(strings.Builder)
-	prettyStringListBuilder(b, values, true)
+	internal.PrettyStringListBuilder(b, values, true)
 	return b.String()
-}
-
-func prettyStringListBuilder[T any](b *strings.Builder, values []T, surroundInSingleQuotes bool) {
-	b.Grow(len(values))
-	for i := range values {
-		if i > 0 {
-			b.WriteString(", ")
-		}
-		if surroundInSingleQuotes {
-			b.WriteString("'")
-		}
-		fmt.Fprint(b, values[i])
-		if surroundInSingleQuotes {
-			b.WriteString("'")
-		}
-	}
 }
 
 // isStringSeparator is directly copied from [strings] package.
