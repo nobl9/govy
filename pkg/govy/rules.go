@@ -106,6 +106,9 @@ type PropertyRules[T, S any] struct {
 
 // Validate validates the property value using provided rules.
 func (r PropertyRules[T, S]) Validate(st S) error {
+	if !r.matchPredicates(st) {
+		return nil
+	}
 	var (
 		ruleErrors []error
 		allErrors  PropertyErrors
@@ -118,9 +121,6 @@ func (r PropertyRules[T, S]) Validate(st S) error {
 		return PropertyErrors{propErr}
 	}
 	if skip {
-		return nil
-	}
-	if !r.matchPredicates(st) {
 		return nil
 	}
 	for _, step := range r.steps {
