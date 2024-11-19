@@ -562,13 +562,13 @@ func StringAlphanumeric() govy.Rule[string] {
 		WithErrorCode(ErrorCodeStringAlphanumeric)
 }
 
-// StringAlpha ensures the property's value consists only of unicode letters.
+// StringAlpha ensures the property's value consists only of Unicode letters.
 func StringAlphaUnicode() govy.Rule[string] {
 	return StringMatchRegexp(alphaUnicodeRegexp()).
 		WithErrorCode(ErrorCodeStringAlphaUnicode)
 }
 
-// StringAlpha ensures the property's value consists only of unicode letters and numbers.
+// StringAlpha ensures the property's value consists only of Unicode letters and numbers.
 func StringAlphanumericUnicode() govy.Rule[string] {
 	return StringMatchRegexp(alphanumericUnicodeRegexp()).
 		WithErrorCode(ErrorCodeStringAlphanumericUnicode)
