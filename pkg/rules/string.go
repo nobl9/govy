@@ -550,6 +550,30 @@ func StringTimeZone() govy.Rule[string] {
 		WithDescription(msg)
 }
 
+// StringAlpha ensures the property's value consists only of ASCII letters.
+func StringAlpha() govy.Rule[string] {
+	return StringMatchRegexp(alphaRegexp()).
+		WithErrorCode(ErrorCodeStringAlpha)
+}
+
+// StringAlpha ensures the property's value consists only of ASCII letters and numbers.
+func StringAlphanumeric() govy.Rule[string] {
+	return StringMatchRegexp(alphanumericRegexp()).
+		WithErrorCode(ErrorCodeStringAlphanumeric)
+}
+
+// StringAlpha ensures the property's value consists only of unicode letters.
+func StringAlphaUnicode() govy.Rule[string] {
+	return StringMatchRegexp(alphaUnicodeRegexp()).
+		WithErrorCode(ErrorCodeStringAlphaUnicode)
+}
+
+// StringAlpha ensures the property's value consists only of unicode letters and numbers.
+func StringAlphanumericUnicode() govy.Rule[string] {
+	return StringMatchRegexp(alphanumericUnicodeRegexp()).
+		WithErrorCode(ErrorCodeStringAlphanumericUnicode)
+}
+
 func prettyExamples(examples []string) string {
 	if len(examples) == 0 {
 		return ""

@@ -1518,3 +1518,172 @@ func BenchmarkStringTimeZone(b *testing.B) {
 		}
 	}
 }
+
+var stringAlphaTestCases = []*struct {
+	in         string
+	shouldFail bool
+}{
+	// cspell:disable
+	{"test", false},
+	{"tEsT", false},
+	{"s", false},
+	{"LOL", false},
+	{"test-this", true},
+	{" test", true},
+	{"  ", true},
+	{" ", true},
+	{"test1", true},
+	{"tęst", true},
+	// cspell:enable
+}
+
+func TestStringAlpha(t *testing.T) {
+	for _, tc := range stringAlphaTestCases {
+		err := StringAlpha().Validate(tc.in)
+		if tc.shouldFail {
+			assert.Error(t, err)
+			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringAlpha))
+		} else {
+			assert.NoError(t, err)
+		}
+	}
+}
+
+func BenchmarkStringAlpha(b *testing.B) {
+	for range b.N {
+		for _, tc := range stringAlphaTestCases {
+			_ = StringAlpha().Validate(tc.in)
+		}
+	}
+}
+
+var stringAlphanumericTestCases = []*struct {
+	in         string
+	shouldFail bool
+}{
+	// cspell:disable
+	{"test", false},
+	{"tEsT", false},
+	{"s", false},
+	{"4", false},
+	{"LOL", false},
+	{"test1", false},
+	{"-921", true},
+	{"test-this", true},
+	{" test", true},
+	{" 1", true},
+	{"  ", true},
+	{" ", true},
+	{"tęst", true},
+	{"tęst1", true},
+	// cspell:enable
+}
+
+func TestStringAlphanumeric(t *testing.T) {
+	for _, tc := range stringAlphanumericTestCases {
+		err := StringAlphanumeric().Validate(tc.in)
+		if tc.shouldFail {
+			assert.Error(t, err)
+			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringAlphanumeric))
+		} else {
+			assert.NoError(t, err)
+		}
+	}
+}
+
+func BenchmarkStringAlphanumeric(b *testing.B) {
+	for range b.N {
+		for _, tc := range stringAlphanumericTestCases {
+			_ = StringAlphanumeric().Validate(tc.in)
+		}
+	}
+}
+
+var stringAlphaUnicodeTestCases = []*struct {
+	in         string
+	shouldFail bool
+}{
+	// cspell:disable
+	{"test", false},
+	{"tEsT", false},
+	{"s", false},
+	{"LOL", false},
+	{"tęst", false},
+	{"汉语", false},
+	{"一二三", false},
+	{"test-this", true},
+	{" test", true},
+	{"  ", true},
+	{" ", true},
+	{"test1", true},
+	{"汉语!", true},
+	{"1汉语", true},
+	// cspell:enable
+}
+
+func TestStringAlphaUnicode(t *testing.T) {
+	for _, tc := range stringAlphaUnicodeTestCases {
+		err := StringAlphaUnicode().Validate(tc.in)
+		if tc.shouldFail {
+			assert.Error(t, err)
+			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringAlphaUnicode))
+		} else {
+			assert.NoError(t, err)
+		}
+	}
+}
+
+func BenchmarkStringAlphaUnicode(b *testing.B) {
+	for range b.N {
+		for _, tc := range stringAlphaUnicodeTestCases {
+			_ = StringAlphaUnicode().Validate(tc.in)
+		}
+	}
+}
+
+var stringAlphanumericUnicodeTestCases = []*struct {
+	in         string
+	shouldFail bool
+}{
+	// cspell:disable
+	{"test", false},
+	{"tEsT", false},
+	{"s", false},
+	{"5", false},
+	{"LOL", false},
+	{"tęst", false},
+	{"汉语", false},
+	{"1汉语", false},
+	{"test1", false},
+	{"tęst1", false},
+	{"一二三", false},
+	{"-550", true},
+	{"test-this", true},
+	{" test", true},
+	{"  ", true},
+	{" ", true},
+	{"汉语!", true},
+	{"-921", true},
+	{" 1", true},
+	// cspell:enable
+}
+
+func TestStringAlphanumericUnicode(t *testing.T) {
+	for _, tc := range stringAlphanumericUnicodeTestCases {
+		err := StringAlphanumericUnicode().Validate(tc.in)
+		if tc.shouldFail {
+			assert.Error(t, err)
+			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringAlphanumericUnicode))
+		} else {
+			assert.NoError(t, err)
+		}
+	}
+}
+
+func BenchmarkStringAlphanumericUnicode(b *testing.B) {
+	for range b.N {
+		for _, tc := range stringAlphanumericUnicodeTestCases {
+			_ = StringAlphanumericUnicode().Validate(tc.in)
+		}
+	}
+}
