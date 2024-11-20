@@ -106,7 +106,7 @@ func ExampleEqualProperties() {
 	v := govy.New(
 		govy.ForSlice(func(t Teacher) []Student { return t.Students }).
 			WithName("students").
-			RulesForEach(rules.EqualProperties(rules.Compare, map[string]func(Student) any{
+			RulesForEach(rules.EqualProperties(rules.CompareFunc, map[string]func(Student) any{
 				"index":     func(s Student) any { return s.Index },
 				"indexCopy": func(s Student) any { return s.IndexCopy },
 			})),

@@ -198,7 +198,7 @@ var equalPropertiesTestCases = []*struct {
 }{
 	{
 		run: func() error {
-			return EqualProperties(CompareDeepEqual, paymentMethodGetters).Validate(paymentMethod{
+			return EqualProperties(CompareDeepEqualFunc, paymentMethodGetters).Validate(paymentMethod{
 				Cash:     ptr("2$"),
 				Card:     ptr("2$"),
 				Transfer: ptr("2$"),
@@ -207,7 +207,7 @@ var equalPropertiesTestCases = []*struct {
 	},
 	{
 		run: func() error {
-			return EqualProperties(Compare, paymentMethodGetters).Validate(paymentMethod{
+			return EqualProperties(CompareFunc, paymentMethodGetters).Validate(paymentMethod{
 				Cash:     nil,
 				Card:     ptr("2$"),
 				Transfer: ptr("2$"),
@@ -217,7 +217,7 @@ var equalPropertiesTestCases = []*struct {
 	},
 	{
 		run: func() error {
-			return EqualProperties(Compare, paymentMethodGetters).Validate(paymentMethod{
+			return EqualProperties(CompareFunc, paymentMethodGetters).Validate(paymentMethod{
 				Cash:     nil,
 				Card:     nil,
 				Transfer: nil,
@@ -226,7 +226,7 @@ var equalPropertiesTestCases = []*struct {
 	},
 	{
 		run: func() error {
-			return EqualProperties(CompareDeepEqual, paymentMethodGetters).Validate(paymentMethod{
+			return EqualProperties(CompareDeepEqualFunc, paymentMethodGetters).Validate(paymentMethod{
 				Cash:     ptr("2$"),
 				Card:     ptr("2$"),
 				Transfer: ptr("3$"),
@@ -236,7 +236,7 @@ var equalPropertiesTestCases = []*struct {
 	},
 	{
 		run: func() error {
-			return EqualProperties(CompareDeepEqual, paymentMethodGetters).Validate(paymentMethod{
+			return EqualProperties(CompareDeepEqualFunc, paymentMethodGetters).Validate(paymentMethod{
 				Cash:     ptr("1$"),
 				Card:     ptr("2$"),
 				Transfer: ptr("3$"),

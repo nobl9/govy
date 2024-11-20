@@ -66,23 +66,23 @@ func LTE[T constraints.Ordered](compared T) govy.Rule[T] {
 // It should return true if the values are equal, false otherwise.
 type ComparisonFunc[T any] func(v1, v2 T) bool
 
-// Compare compares two values of the same type.
+// CompareFunc compares two values of the same type.
 // The type is constrained by the [comparable] interface.
-func Compare[T comparable](v1, v2 T) bool {
+func CompareFunc[T comparable](v1, v2 T) bool {
 	return v1 == v2
 }
 
-// CompareDeepEqual compares two values of the same type using [reflect.DeepEqual].
+// CompareDeepEqualFunc compares two values of the same type using [reflect.DeepEqual].
 // It is particularly useful when comparing pointers' values.
-func CompareDeepEqual[T any](v1, v2 T) bool {
+func CompareDeepEqualFunc[T any](v1, v2 T) bool {
 	return reflect.DeepEqual(v1, v2)
 }
 
 // EqualProperties checks if all of the specified properties are equal.
 // It uses the provided [ComparisonFunc] to compare the values.
 // The following built-in comparison functions are available:
-//   - [Compare]
-//   - [CompareDeepEqual]
+//   - [CompareFunc]
+//   - [CompareDeepEqualFunc]
 //
 // If builtin [ComparisonFunc] are not enough, a custom function can be used.
 func EqualProperties[S, T any](compare ComparisonFunc[T], getters map[string]func(s S) T) govy.Rule[S] {
