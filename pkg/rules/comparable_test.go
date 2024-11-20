@@ -191,3 +191,77 @@ func BenchmarkLTE(b *testing.B) {
 		}
 	}
 }
+
+var equalPropertiesTestCases = []*struct {
+	run           func() error
+	expectedError string
+}{
+	{
+		run: func() error {
+			return EqualProperties(CompareDeepEqualFunc, paymentMethodGetters).Validate(paymentMethod{
+				Cash:     ptr("2$"),
+				Card:     ptr("2$"),
+				Transfer: ptr("2$"),
+			})
+		},
+	},
+	{
+		run: func() error {
+			return EqualProperties(CompareFunc, paymentMethodGetters).Validate(paymentMethod{
+				Cash:     nil,
+				Card:     ptr("2$"),
+				Transfer: ptr("2$"),
+			})
+		},
+		expectedError: "all of [Card, Cash, Transfer] properties must be equal, but 'Card' is not equal to 'Cash'",
+	},
+	{
+		run: func() error {
+			return EqualProperties(CompareFunc, paymentMethodGetters).Validate(paymentMethod{
+				Cash:     nil,
+				Card:     nil,
+				Transfer: nil,
+			})
+		},
+	},
+	{
+		run: func() error {
+			return EqualProperties(CompareDeepEqualFunc, paymentMethodGetters).Validate(paymentMethod{
+				Cash:     ptr("2$"),
+				Card:     ptr("2$"),
+				Transfer: ptr("3$"),
+			})
+		},
+		expectedError: "all of [Card, Cash, Transfer] properties must be equal, but 'Cash' is not equal to 'Transfer'",
+	},
+	{
+		run: func() error {
+			return EqualProperties(CompareDeepEqualFunc, paymentMethodGetters).Validate(paymentMethod{
+				Cash:     ptr("1$"),
+				Card:     ptr("2$"),
+				Transfer: ptr("3$"),
+			})
+		},
+		expectedError: "all of [Card, Cash, Transfer] properties must be equal, but 'Card' is not equal to 'Cash'",
+	},
+}
+
+func TestEqualProperties(t *testing.T) {
+	for _, tc := range equalPropertiesTestCases {
+		err := tc.run()
+		if tc.expectedError != "" {
+			assert.EqualError(t, err, tc.expectedError)
+			assert.True(t, govy.HasErrorCode(err, ErrorCodeEqualProperties))
+		} else {
+			assert.NoError(t, err)
+		}
+	}
+}
+
+func BenchmarkEqualProperties(b *testing.B) {
+	for range b.N {
+		for _, tc := range equalPropertiesTestCases {
+			_ = tc.run()
+		}
+	}
+}
