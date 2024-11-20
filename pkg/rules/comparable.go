@@ -114,7 +114,10 @@ func EqualProperties[S, T any](compare ComparisonFunc[T], getters map[string]fun
 	}).
 		WithErrorCode(ErrorCodeEqualProperties).
 		WithDescription(func() string {
-			return fmt.Sprintf("all of the properties must be equal: %s", strings.Join(collections.SortedKeys(getters), ", "))
+			return fmt.Sprintf(
+				"all of the properties must be equal: %s",
+				strings.Join(collections.SortedKeys(getters), ", "),
+			)
 		}())
 }
 

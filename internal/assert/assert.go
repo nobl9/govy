@@ -110,7 +110,7 @@ func ErrorContains(t testing.TB, err error, contains string) bool {
 		return false
 	}
 	if !strings.Contains(err.Error(), contains) {
-    return Fail(t, "Expected error message to contain: %q\nActual: %q", contains, err.Error())
+		return Fail(t, "Expected error message to contain: %q\nActual: %q", contains, err.Error())
 	}
 	return true
 }
