@@ -15,7 +15,9 @@ func TestRules_EnsureTestsAndBenchmarksAreWritten(t *testing.T) {
 	// Functions that should be excluded from this test.
 	// It's easier to list them here rather than complicate the AST traversal.
 	excludeFuncs := map[string]bool{
-		"HashFuncSelf": true,
+		"HashFuncSelf":     true,
+		"Compare":          true,
+		"CompareDeepEqual": true,
 	}
 	rulesDir := filepath.Join(internal.FindModuleRoot(), "pkg/rules")
 	fset := token.NewFileSet()

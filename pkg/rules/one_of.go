@@ -6,9 +6,8 @@ import (
 	"slices"
 	"strings"
 
-	"golang.org/x/exp/maps"
-
 	"github.com/nobl9/govy/internal"
+	"github.com/nobl9/govy/internal/collections"
 	"github.com/nobl9/govy/pkg/govy"
 )
 
@@ -41,16 +40,14 @@ func OneOfProperties[S any](getters map[string]func(s S) any) govy.Rule[S] {
 				return nil
 			}
 		}
-		keys := maps.Keys(getters)
-		slices.Sort(keys)
 		return fmt.Errorf(
 			"one of %s properties must be set, none was provided",
-			prettyOneOfList(keys))
+			prettyOneOfList(collections.SortedKeys(getters)))
 	}).
 		WithErrorCode(ErrorCodeOneOfProperties).
 		WithDescription(func() string {
-			keys := maps.Keys(getters)
-			return fmt.Sprintf("at least one of the properties must be set: %s", strings.Join(keys, ", "))
+			return fmt.Sprintf("at least one of the properties must be set: %s",
+				strings.Join(collections.SortedKeys(getters), ", "))
 		}())
 }
 
@@ -73,11 +70,9 @@ func MutuallyExclusive[S any](required bool, getters map[string]func(s S) any) g
 			if !required {
 				return nil
 			}
-			keys := maps.Keys(getters)
-			slices.Sort(keys)
 			return fmt.Errorf(
 				"one of %s properties must be set, none was provided",
-				prettyOneOfList(keys))
+				prettyOneOfList(collections.SortedKeys(getters)))
 		case 1:
 			return nil
 		default:
@@ -89,8 +84,8 @@ func MutuallyExclusive[S any](required bool, getters map[string]func(s S) any) g
 	}).
 		WithErrorCode(ErrorCodeMutuallyExclusive).
 		WithDescription(func() string {
-			keys := maps.Keys(getters)
-			return fmt.Sprintf("properties are mutually exclusive: %s", strings.Join(keys, ", "))
+			return fmt.Sprintf("properties are mutually exclusive: %s",
+				strings.Join(collections.SortedKeys(getters), ", "))
 		}())
 }
 
