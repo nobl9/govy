@@ -5,8 +5,8 @@ go 1.22
 replace github.com/nobl9/govy => ../../.
 
 require (
-	github.com/go-playground/validator/v10 v10.22.0
-	github.com/nobl9/govy v0.1.1
+	github.com/go-playground/validator/v10 v10.23.0
+	github.com/nobl9/govy v0.11.0
 )
 
 require (
