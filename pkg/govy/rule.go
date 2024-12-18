@@ -38,7 +38,7 @@ type Rule[T any] struct {
 	errorCode   ErrorCode
 	details     string
 	message     string
-	examples    []T
+	examples    []string
 	description string
 }
 
@@ -57,7 +57,7 @@ func (r Rule[T]) Validate(v T) error {
 			}
 			ev.Details = r.details
 			ev.Description = r.description
-			ev.Examples = collections.MapSlice(r.examples)
+			ev.Examples = r.examples
 			return ev.AddCode(r.errorCode)
 		case *PropertyError:
 			for _, e := range ev.Errors {
@@ -110,8 +110,8 @@ func (r Rule[T]) WithDetails(format string, a ...any) Rule[T] {
 // WithExamples adds examples to the returned [RuleError].
 // Each example is converted to a string.
 func (r Rule[T]) WithExamples(examples ...T) Rule[T] {
-	r.examples = examples
-  return r
+	r.examples = collections.GenericToString(examples)
+	return r
 }
 
 // WithDescription adds a custom description to the rule.
