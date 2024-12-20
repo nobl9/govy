@@ -943,10 +943,10 @@ func TestStringGitRef(t *testing.T) {
 			if tc.expectedErr != nil {
 				assert.ErrorContains(t, err, tc.expectedErr.Error())
 				assert.True(t, govy.HasErrorCode(err, ErrorCodeStringGitRef))
-				assert.Equal(
+				assert.ErrorContains(
 					t,
+					err,
 					"see https://git-scm.com/docs/git-check-ref-format for more information on Git reference naming rules",
-					err.(*govy.RuleError).Details,
 				)
 			} else {
 				assert.NoError(t, err)

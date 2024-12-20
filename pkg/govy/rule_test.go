@@ -135,9 +135,8 @@ func TestRule_WithDescription(t *testing.T) {
 	err := r.Validate(-1)
 	assert.Require(t, assert.Error(t, err))
 	assert.Equal(t, &govy.RuleError{
-		Message:     "must be positive",
+		Message:     "must be positive; some details",
 		Code:        "test",
-		Details:     "some details",
 		Description: "the integer must be positive",
 	}, err)
 }
