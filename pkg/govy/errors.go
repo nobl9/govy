@@ -211,19 +211,12 @@ func NewRuleError(message string, codes ...ErrorCode) *RuleError {
 type RuleError struct {
 	Message     string    `json:"error"`
 	Code        ErrorCode `json:"code,omitempty"`
-	Details     string    `json:"details,omitempty"`
 	Description string    `json:"description,omitempty"`
 }
 
 // Error implements the error interface.
 func (r *RuleError) Error() string {
-	if r.Details == "" {
-		return r.Message
-	}
-	if r.Message == "" {
-		return r.Details
-	}
-	return r.Message + "; " + r.Details
+	return r.Message
 }
 
 // AddCode extends the [RuleError] with the given error code.
