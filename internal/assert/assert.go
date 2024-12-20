@@ -29,7 +29,7 @@ func Require(t testing.TB, isPassing bool) {
 func Equal(t testing.TB, expected, actual interface{}) bool {
 	t.Helper()
 	if !areEqual(expected, actual) {
-		return Fail(t, "Expected: %v, actual: %v", expected, actual)
+		return Fail(t, "Expected: %v\nActual: %v", expected, actual)
 	}
 	return true
 }
@@ -56,7 +56,7 @@ func False(t testing.TB, actual bool) bool {
 func Len(t testing.TB, object interface{}, length int) bool {
 	t.Helper()
 	if actual := getLen(object); actual != length {
-		return Fail(t, "Expected length: %d, actual: %d", length, actual)
+		return Fail(t, "Expected length: %d\nActual: %d", length, actual)
 	}
 	return true
 }
@@ -69,7 +69,7 @@ func IsType[T any](t testing.TB, object interface{}) bool {
 	case T:
 		return true
 	default:
-		return Fail(t, "Expected type: %T, actual: %T", *new(T), object)
+		return Fail(t, "Expected type: %T\nActual: %T", *new(T), object)
 	}
 }
 
@@ -98,7 +98,7 @@ func EqualError(t testing.TB, err error, expected string) bool {
 		return false
 	}
 	if err.Error() != expected {
-		return Fail(t, "Expected error message: %q, actual: %q", expected, err.Error())
+		return Fail(t, "Expected error message: %q\nActual: %q", expected, err.Error())
 	}
 	return true
 }
@@ -110,7 +110,7 @@ func ErrorContains(t testing.TB, err error, contains string) bool {
 		return false
 	}
 	if !strings.Contains(err.Error(), contains) {
-		return Fail(t, "Expected error message to contain %q, actual %q", contains, err.Error())
+		return Fail(t, "Expected error message to contain: %q\nActual: %q", contains, err.Error())
 	}
 	return true
 }

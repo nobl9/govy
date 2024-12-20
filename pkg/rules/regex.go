@@ -12,7 +12,11 @@ var (
 	uuidRegexp  = lazyRegexCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
 	asciiRegexp = lazyRegexCompile(`^[\x00-\x7F]*$`)
 	// Ref: https://www.ietf.org/rfc/rfc1123.txt
-	rfc1123DnsLabelRegexp = lazyRegexCompile("^[a-z0-9]([-a-z0-9]{0,61}[a-z0-9])?$")
+	rfc1123DnsLabelRegexp     = lazyRegexCompile("^[a-z0-9]([-a-z0-9]{0,61}[a-z0-9])?$")
+	alphaRegexp               = lazyRegexCompile("^[a-zA-Z]*$")
+	alphanumericRegexp        = lazyRegexCompile("^[a-zA-Z0-9]*$")
+	alphaUnicodeRegexp        = lazyRegexCompile("^[\\p{L}]*$")
+	alphanumericUnicodeRegexp = lazyRegexCompile("^[\\p{L}\\p{N}]+$")
 )
 
 // lazyRegexCompile returns a function that compiles the regular expression

@@ -46,7 +46,7 @@ func TestConvert(t *testing.T) {
 		},
 		{
 			v:        map[string]any{"a": 1, "b": "2", "c": []float64{0.64, 0.1, 0.0}},
-      expected: `{"a":1,"b":"2","c":[0.64,0.1,0]}`,
+			expected: `{"a":1,"b":"2","c":[0.64,0.1,0]}`,
 		},
 	}
 	for _, tc := range testCases {
