@@ -53,11 +53,9 @@ func (r Rule[T]) Validate(v T) error {
 		switch ev := err.(type) {
 		case *RuleError:
 			if len(r.message) > 0 {
-				ev.Message = r.message
+				ev.Message = addDetailsToErrorMessage(r.message, r.details)
 			}
-			ev.Details = r.details
 			ev.Description = r.description
-			ev.Examples = r.examples
 			return ev.AddCode(r.errorCode)
 		case *PropertyError:
 			for _, e := range ev.Errors {
@@ -70,10 +68,8 @@ func (r Rule[T]) Validate(v T) error {
 				msg = r.message
 			}
 			return &RuleError{
-				Message:     msg,
+				Message:     addDetailsToErrorMessage(msg, r.details),
 				Code:        r.errorCode,
-				Details:     r.details,
-				Examples:    r.examples,
 				Description: r.description,
 			}
 		}
@@ -131,4 +127,12 @@ func (r Rule[T]) plan(builder planBuilder) {
 	*builder.children = append(*builder.children, builder)
 }
 
-func anyToString[T any](v T) string { return fmt.Sprint(v) }
+func addDetailsToErrorMessage(message, details string) string {
+	if details == "" {
+		return message
+	}
+	if message == "" {
+		return details
+	}
+	return message + "; " + details
+}

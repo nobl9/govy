@@ -211,8 +211,6 @@ func NewRuleError(message string, codes ...ErrorCode) *RuleError {
 type RuleError struct {
 	Message     string    `json:"error"`
 	Code        ErrorCode `json:"code,omitempty"`
-	Details     string    `json:"details,omitempty"`
-	Examples    []string  `json:"examples,omitempty"`
 	Description string    `json:"description,omitempty"`
 }
 
@@ -225,13 +223,7 @@ type RuleError struct {
 //	ruleErr := RuleError{Message: "error", Details: "details", Examples: []string{"example1", "example2"}}
 //	fmt.Println(ruleErr.Error()) -> "error (e.g. example1, example2); details"
 func (r *RuleError) Error() string {
-	if r.Details == "" {
-		return addExamplesToMessage(r.Message, r.Examples)
-	}
-	if r.Message == "" {
-		return r.Details
-	}
-	return addExamplesToMessage(r.Message, r.Examples) + "; " + r.Details
+	return r.Message
 }
 
 // AddCode extends the [RuleError] with the given error code.
