@@ -1,9 +1,11 @@
 package internal
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"sync"
 )
 
@@ -47,4 +49,26 @@ func FindModuleRoot() string {
 		}
 	})
 	return moduleRoot
+}
+
+// PrettyStringListBuilder writes a list of arbitrary values to the provided [strings.Builder].
+// It produces a human-readable comma-separated list.
+// Example:
+//
+//	PrettyStringListBuilder(b, []string{"foo", "bar"}, false) -> "foo, bar"
+//	PrettyStringListBuilder(b, []string{"foo", "bar"}, true) -> "'foo', 'bar'"
+func PrettyStringListBuilder[T any](b *strings.Builder, values []T, surroundInSingleQuotes bool) {
+	b.Grow(len(values))
+	for i := range values {
+		if i > 0 {
+			b.WriteString(", ")
+		}
+		if surroundInSingleQuotes {
+			b.WriteString("'")
+		}
+		fmt.Fprint(b, values[i])
+		if surroundInSingleQuotes {
+			b.WriteString("'")
+		}
+	}
 }

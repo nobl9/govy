@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/nobl9/govy/internal/assert"
@@ -34,5 +35,22 @@ func TestIsEmpty(t *testing.T) {
 	}
 	for _, tc := range tests {
 		assert.Equal(t, tc.out, IsEmpty(tc.in))
+	}
+}
+
+func TestPrettyStringListBuilder(t *testing.T) {
+	tests := []struct {
+		in                     []any
+		out                    string
+		surroundInSingleQuotes bool
+	}{
+		{[]any{"foo", "bar"}, "foo, bar", false},
+		{[]any{true, struct{ this string }{this: "that"}}, "true, {that}", false},
+		{[]any{"foo", "bar"}, "'foo', 'bar'", true},
+	}
+	for _, tc := range tests {
+		b := new(strings.Builder)
+		PrettyStringListBuilder(b, tc.in, false)
+		assert.Equal(t, tc.out, b.String())
 	}
 }

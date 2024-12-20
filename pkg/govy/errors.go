@@ -206,7 +206,7 @@ func NewRuleError(message string, codes ...ErrorCode) *RuleError {
 	return ruleError
 }
 
-// RuleError is the fundamental error container associated with a [Rule].
+// RuleError is the base error associated with a [Rule].
 // It is returned by [Rule.Validate].
 type RuleError struct {
 	Message     string    `json:"error"`
@@ -215,6 +215,13 @@ type RuleError struct {
 }
 
 // Error implements the error interface.
+// If [RuleError.Details] is set, it will be appended after the [RuleError.Message],
+// spearated by a semicolon.
+// If [RuleError.Examples] are provided, they will be appended to the message.
+// Example:
+//
+//	ruleErr := RuleError{Message: "error", Details: "details", Examples: []string{"example1", "example2"}}
+//	fmt.Println(ruleErr.Error()) -> "error (e.g. example1, example2); details"
 func (r *RuleError) Error() string {
 	return r.Message
 }
@@ -324,4 +331,15 @@ func logWrongErrorType(expected, actual error) {
 	slog.Error("unexpected error type",
 		slog.String("actual_type", fmt.Sprintf("%T", actual)),
 		slog.String("expected_type", fmt.Sprintf("%T", expected)))
+}
+
+func addExamplesToMessage(s string, examples []string) string {
+	if len(examples) == 0 {
+		return s
+	}
+	b := strings.Builder{}
+	b.WriteString(" (e.g. ")
+	internal.PrettyStringListBuilder(&b, examples, true)
+	b.WriteString(")")
+	return s + b.String()
 }

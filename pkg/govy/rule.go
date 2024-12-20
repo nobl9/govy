@@ -2,6 +2,8 @@ package govy
 
 import (
 	"fmt"
+
+	"github.com/nobl9/govy/internal/collections"
 )
 
 // NewRule creates a new [Rule] instance.
@@ -36,6 +38,7 @@ type Rule[T any] struct {
 	errorCode   ErrorCode
 	details     string
 	message     string
+	examples    []string
 	description string
 }
 
@@ -97,6 +100,13 @@ func (r Rule[T]) WithDetails(format string, a ...any) Rule[T] {
 	} else {
 		r.details = fmt.Sprintf(format, a...)
 	}
+	return r
+}
+
+// WithExamples adds examples to the returned [RuleError].
+// Each example is converted to a string.
+func (r Rule[T]) WithExamples(examples ...T) Rule[T] {
+	r.examples = collections.GenericToString(examples)
 	return r
 }
 
