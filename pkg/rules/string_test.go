@@ -48,7 +48,6 @@ var (
 	stringMatchRegexpRegexp    = regexp.MustCompile("[ab]+")
 	stringMatchRegexpTestCases = []*struct {
 		in            string
-		examples      []string
 		expectedError string
 	}{
 		{
@@ -58,17 +57,12 @@ var (
 			in:            "cd",
 			expectedError: "string must match regular expression: '[ab]+'",
 		},
-		{
-			in:            "cd",
-			examples:      []string{"ab", "a", "b"},
-			expectedError: "string must match regular expression: '[ab]+' (e.g. 'ab', 'a', 'b')",
-		},
 	}
 )
 
 func TestStringMatchRegexp(t *testing.T) {
 	for _, tc := range stringMatchRegexpTestCases {
-		err := StringMatchRegexp(stringMatchRegexpRegexp, tc.examples...).Validate(tc.in)
+		err := StringMatchRegexp(stringMatchRegexpRegexp).Validate(tc.in)
 		if tc.expectedError != "" {
 			assert.EqualError(t, err, tc.expectedError)
 			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringMatchRegexp))
@@ -81,7 +75,7 @@ func TestStringMatchRegexp(t *testing.T) {
 func BenchmarkStringMatchRegexp(b *testing.B) {
 	for range b.N {
 		for _, tc := range stringMatchRegexpTestCases {
-			_ = StringMatchRegexp(stringMatchRegexpRegexp, tc.examples...).Validate(tc.in)
+			_ = StringMatchRegexp(stringMatchRegexpRegexp).Validate(tc.in)
 		}
 	}
 }
@@ -90,7 +84,6 @@ var (
 	stringDenyRegexpRegexp    = regexp.MustCompile("[ab]+")
 	stringDenyRegexpTestCases = []*struct {
 		in            string
-		examples      []string
 		expectedError string
 	}{
 		{
@@ -100,17 +93,12 @@ var (
 			in:            "ab",
 			expectedError: "string must not match regular expression: '[ab]+'",
 		},
-		{
-			in:            "ab",
-			examples:      []string{"ab", "a", "b"},
-			expectedError: "string must not match regular expression: '[ab]+' (e.g. 'ab', 'a', 'b')",
-		},
 	}
 )
 
 func TestStringDenyRegexp(t *testing.T) {
 	for _, tc := range stringDenyRegexpTestCases {
-		err := StringDenyRegexp(stringDenyRegexpRegexp, tc.examples...).Validate(tc.in)
+		err := StringDenyRegexp(stringDenyRegexpRegexp).Validate(tc.in)
 		if tc.expectedError != "" {
 			assert.EqualError(t, err, tc.expectedError)
 			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringDenyRegexp))
@@ -123,7 +111,7 @@ func TestStringDenyRegexp(t *testing.T) {
 func BenchmarkStringDenyRegexp(b *testing.B) {
 	for range b.N {
 		for _, tc := range stringDenyRegexpTestCases {
-			_ = StringDenyRegexp(stringDenyRegexpRegexp, tc.examples...).Validate(tc.in)
+			_ = StringDenyRegexp(stringDenyRegexpRegexp).Validate(tc.in)
 		}
 	}
 }
@@ -1431,40 +1419,36 @@ func BenchmarkStringCrontab(b *testing.B) {
 }
 
 var stringDateTimeTestCases = []*struct {
-	layout   string
-	examples []string
-	in       string
-	errMsg   string
+	layout string
+	in     string
+	errMsg string
 }{
-	{time.RFC3339, nil, "2024-01-01T15:00:00Z", ""},
-	{time.RFC3339, nil, "2024-01-01T15:00:00+01:00", ""},
-	{time.DateTime, nil, "2024-01-01 15:00:00", ""},
-	{time.DateOnly, nil, "2024-01-01", ""},
-	{time.TimeOnly, nil, "15:00:00", ""},
+	{time.RFC3339, "2024-01-01T15:00:00Z", ""},
+	{time.RFC3339, "2024-01-01T15:00:00+01:00", ""},
+	{time.DateTime, "2024-01-01 15:00:00", ""},
+	{time.DateOnly, "2024-01-01", ""},
+	{time.TimeOnly, "15:00:00", ""},
 	{
 		"invalid-layout",
-		nil,
 		"2024-01-01T15:00:00Z",
 		"string must be a valid date and time in 'invalid-layout' format",
 	},
 	{
 		time.RFC3339,
-		nil,
 		"2024-01-01 15:00:00Z",
 		"string must be a valid date and time in '2006-01-02T15:04:05Z07:00' format",
 	},
 	{
 		"15:04",
-		[]string{"16:00", "08:31"},
 		"15:00:00",
-		"string must be a valid date and time in '15:04' format (e.g. '16:00', '08:31')",
+		"string must be a valid date and time in '15:04'",
 	},
 }
 
 func TestStringDateTime(t *testing.T) {
 	for _, tc := range stringDateTimeTestCases {
 		t.Run(tc.layout+tc.in, func(t *testing.T) {
-			err := StringDateTime(tc.layout, tc.examples...).Validate(tc.in)
+			err := StringDateTime(tc.layout).Validate(tc.in)
 			if tc.errMsg != "" {
 				assert.ErrorContains(t, err, tc.errMsg)
 				assert.True(t, govy.HasErrorCode(err, ErrorCodeStringDateTime))
@@ -1478,7 +1462,7 @@ func TestStringDateTime(t *testing.T) {
 func BenchmarkStringDateTime(b *testing.B) {
 	for range b.N {
 		for _, tc := range stringDateTimeTestCases {
-			_ = StringDateTime(tc.layout, tc.examples...).Validate(tc.in)
+			_ = StringDateTime(tc.layout).Validate(tc.in)
 		}
 	}
 }

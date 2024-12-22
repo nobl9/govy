@@ -40,17 +40,17 @@ func TestIsEmpty(t *testing.T) {
 
 func TestPrettyStringListBuilder(t *testing.T) {
 	tests := []struct {
-		in                     []any
-		out                    string
-		surroundInSingleQuotes bool
+		in             []any
+		out            string
+		surroundingStr string
 	}{
-		{[]any{"foo", "bar"}, "foo, bar", false},
-		{[]any{true, struct{ this string }{this: "that"}}, "true, {that}", false},
-		{[]any{"foo", "bar"}, "'foo', 'bar'", true},
+		{[]any{"foo", "bar"}, "foo, bar", ""},
+		{[]any{true, struct{ this string }{this: "that"}}, "true, {that}", ""},
+		{[]any{"foo", "bar"}, "'foo', 'bar'", "'"},
 	}
 	for _, tc := range tests {
 		b := new(strings.Builder)
-		PrettyStringListBuilder(b, tc.in, false)
+		PrettyStringListBuilder(b, tc.in, tc.surroundingStr)
 		assert.Equal(t, tc.out, b.String())
 	}
 }

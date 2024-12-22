@@ -34,7 +34,7 @@ func StringNotEmpty() govy.Rule[string] {
 
 // StringMatchRegexp ensures the property's value matches the regular expression.
 // The error message can be enhanced with examples of valid values.
-func StringMatchRegexp(re *regexp.Regexp, examples ...string) govy.Rule[string] {
+func StringMatchRegexp(re *regexp.Regexp) govy.Rule[string] {
 	msg := fmt.Sprintf("string must match regular expression: '%s'", re.String())
 	return govy.NewRule(func(s string) error {
 		if !re.MatchString(s) {
@@ -43,13 +43,12 @@ func StringMatchRegexp(re *regexp.Regexp, examples ...string) govy.Rule[string] 
 		return nil
 	}).
 		WithErrorCode(ErrorCodeStringMatchRegexp).
-		WithExamples(examples...).
 		WithDescription(msg)
 }
 
 // StringDenyRegexp ensures the property's value does not match the regular expression.
 // The error message can be enhanced with examples of invalid values.
-func StringDenyRegexp(re *regexp.Regexp, examples ...string) govy.Rule[string] {
+func StringDenyRegexp(re *regexp.Regexp) govy.Rule[string] {
 	msg := fmt.Sprintf("string must not match regular expression: '%s'", re.String())
 	return govy.NewRule(func(s string) error {
 		if re.MatchString(s) {
@@ -58,15 +57,15 @@ func StringDenyRegexp(re *regexp.Regexp, examples ...string) govy.Rule[string] {
 		return nil
 	}).
 		WithErrorCode(ErrorCodeStringDenyRegexp).
-		WithExamples(examples...).
 		WithDescription(msg)
 }
 
 // StringDNSLabel ensures the property's value is a valid DNS label as defined by RFC 1123.
 func StringDNSLabel() govy.Rule[string] {
-	return StringMatchRegexp(rfc1123DnsLabelRegexp(), "my-name", "123-abc").
-		WithDetails("an RFC-1123 compliant label name must consist of lower case alphanumeric characters or '-'," +
+	return StringMatchRegexp(rfc1123DnsLabelRegexp()).
+		WithDetails("an RFC-1123 compliant label name must consist of lower case alphanumeric characters or '-',"+
 			" and must start and end with an alphanumeric character").
+		WithExamples("my-name", "123-abc").
 		WithErrorCode(ErrorCodeStringDNSLabel)
 }
 
@@ -194,11 +193,13 @@ func StringCIDRv6() govy.Rule[string] {
 // It does not enforce a specific UUID version.
 // Ref: https://www.ietf.org/rfc/rfc4122.txt
 func StringUUID() govy.Rule[string] {
-	return StringMatchRegexp(uuidRegexp(),
-		"00000000-0000-0000-0000-000000000000",
-		"e190c630-8873-11ee-b9d1-0242ac120002",
-		"79258D24-01A7-47E5-ACBB-7E762DE52298").
+	return StringMatchRegexp(uuidRegexp()).
 		WithDetails("expected RFC-4122 compliant UUID string").
+		WithExamples(
+			"00000000-0000-0000-0000-000000000000",
+			"e190c630-8873-11ee-b9d1-0242ac120002",
+			"79258D24-01A7-47E5-ACBB-7E762DE52298",
+		).
 		WithErrorCode(ErrorCodeStringUUID)
 }
 
@@ -504,7 +505,7 @@ func StringCrontab() govy.Rule[string] {
 //
 // The layout must be a valid time format string as defined by [time.Parse],
 // an example of which is [time.RFC3339].
-func StringDateTime(layout string, examples ...string) govy.Rule[string] {
+func StringDateTime(layout string) govy.Rule[string] {
 	msg := fmt.Sprintf("string must be a valid date and time in '%s' format", layout)
 	return govy.NewRule(func(s string) error {
 		if _, err := time.Parse(layout, s); err != nil {
@@ -514,7 +515,6 @@ func StringDateTime(layout string, examples ...string) govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringDateTime).
 		WithDetails("date and time format follows Go's time layout, see https://pkg.go.dev/time#Layout for more details").
-		WithExamples(examples...).
 		WithDescription(msg)
 }
 
@@ -571,7 +571,7 @@ func StringAlphanumericUnicode() govy.Rule[string] {
 
 func prettyStringList[T any](values []T) string {
 	b := new(strings.Builder)
-	internal.PrettyStringListBuilder(b, values, true)
+	internal.PrettyStringListBuilder(b, values, "'")
 	return b.String()
 }
 

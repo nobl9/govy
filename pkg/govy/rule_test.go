@@ -141,6 +141,27 @@ func TestRule_WithDescription(t *testing.T) {
 	}, err)
 }
 
+func TestRule_WithExamples(t *testing.T) {
+	r := govy.NewRule(func(v string) error {
+		if v != "foo" && v != "bar" {
+			return errors.New("must be foo or bar")
+		}
+		return nil
+	}).
+		WithErrorCode("test").
+		WithDetails("some details").
+		WithExamples("foo", "bar").
+		WithDescription("string must be foo or bar")
+
+	err := r.Validate("baz")
+	assert.Require(t, assert.Error(t, err))
+	assert.Equal(t, &govy.RuleError{
+		Message:     "must be foo or bar (e.g. 'foo', 'bar'); some details",
+		Code:        "test",
+		Description: "string must be foo or bar",
+	}, err)
+}
+
 func TestRuleToPointer(t *testing.T) {
 	r := govy.NewRule(func(v int) error {
 		if v < 0 {

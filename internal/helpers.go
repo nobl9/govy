@@ -55,20 +55,16 @@ func FindModuleRoot() string {
 // It produces a human-readable comma-separated list.
 // Example:
 //
-//	PrettyStringListBuilder(b, []string{"foo", "bar"}, false) -> "foo, bar"
-//	PrettyStringListBuilder(b, []string{"foo", "bar"}, true) -> "'foo', 'bar'"
-func PrettyStringListBuilder[T any](b *strings.Builder, values []T, surroundInSingleQuotes bool) {
+//	PrettyStringListBuilder(b, []string{"foo", "bar"}, "") -> "foo, bar"
+//	PrettyStringListBuilder(b, []string{"foo", "bar"}, "'") -> "'foo', 'bar'"
+func PrettyStringListBuilder[T any](b *strings.Builder, values []T, surroundingStr string) {
 	b.Grow(len(values))
 	for i := range values {
 		if i > 0 {
 			b.WriteString(", ")
 		}
-		if surroundInSingleQuotes {
-			b.WriteString("'")
-		}
+		b.WriteString(surroundingStr)
 		fmt.Fprint(b, values[i])
-		if surroundInSingleQuotes {
-			b.WriteString("'")
-		}
+		b.WriteString(surroundingStr)
 	}
 }

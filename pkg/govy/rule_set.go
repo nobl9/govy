@@ -24,7 +24,6 @@ func RuleSetToPointer[T any](ruleSet RuleSet[T]) RuleSet[*T] {
 type RuleSet[T any] struct {
 	rules     []Rule[T]
 	errorCode ErrorCode
-	examples  []string
 }
 
 // Validate works the same way as [Rule.Validate],

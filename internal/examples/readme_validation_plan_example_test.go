@@ -35,8 +35,9 @@ func Example_validationPlan() {
 			Required().
 			Rules(rules.StringMatchRegexp(
 				regexp.MustCompile(`[\w\s.]+, [0-9]{2}-[0-9]{3} \w+`),
-				"5 M. Skłodowska-Curie Square, 60-965 Poznan").
-				WithDetails("Polish address format must consist of the main address and zip code")).
+			).
+				WithDetails("Polish address format must consist of the main address and zip code").
+				WithExamples("5 M. Skłodowska-Curie Square, 60-965 Poznan")).
 			When(func(u University) bool { return u.Name == "PUT" },
 				govy.WhenDescription("University name is PUT University")),
 	)
@@ -133,12 +134,15 @@ func Example_validationPlan() {
 	//       "type": "string",
 	//       "rules": [
 	//         {
-	//           "description": "string must match regular expression: '[\\w\\s.]+, [0-9]{2}-[0-9]{3} \\w+' (e.g. '5 M. Skłodowska-Curie Square, 60-965 Poznan')",
+	//           "description": "string must match regular expression: '[\\w\\s.]+, [0-9]{2}-[0-9]{3} \\w+'",
 	//           "details": "Polish address format must consist of the main address and zip code",
 	//           "errorCode": "string_match_regexp",
 	//           "conditions": [
 	//             "Teacher name is John",
 	//             "University name is PUT University"
+	//           ],
+	//           "examples": [
+	//             "5 M. Skłodowska-Curie Square, 60-965 Poznan"
 	//           ]
 	//         }
 	//       ]
