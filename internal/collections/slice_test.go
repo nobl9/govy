@@ -8,21 +8,21 @@ import (
 	"github.com/nobl9/govy/internal/assert"
 )
 
-func TestGenericToString(t *testing.T) {
+func TestToStringSlice(t *testing.T) {
 	testCases := []struct {
 		f        func() []string
 		expected []string
 	}{
 		{
-			f:        func() []string { return GenericToString([]int{1, 2, 4}) },
+			f:        func() []string { return ToStringSlice([]int{1, 2, 4}) },
 			expected: []string{"1", "2", "4"},
 		},
 		{
-			f:        func() []string { return GenericToString([]string{"1", "2", "4"}) },
+			f:        func() []string { return ToStringSlice([]string{"1", "2", "4"}) },
 			expected: []string{"1", "2", "4"},
 		},
 		{
-			f:        func() []string { return GenericToString([]any{1, "2", []float64{0.64}}) },
+			f:        func() []string { return ToStringSlice([]any{1, "2", []float64{0.64}}) },
 			expected: []string{"1", "2", "[0.64]"},
 		},
 	}

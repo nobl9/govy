@@ -6,7 +6,7 @@ import (
 	"github.com/nobl9/govy/internal/assert"
 )
 
-func TestConvert(t *testing.T) {
+func TestFormat(t *testing.T) {
 	testCases := []struct {
 		v        any
 		expected string
@@ -50,6 +50,6 @@ func TestConvert(t *testing.T) {
 		},
 	}
 	for _, tc := range testCases {
-		assert.Equal(t, tc.expected, Convert(tc.v))
+		assert.Equal(t, tc.expected, Format(tc.v))
 	}
 }

@@ -7,11 +7,11 @@ import (
 	"reflect"
 )
 
-// Convert converts any value to a pretty, human-readable string representation.
-func Convert(v any) string {
+// Format converts any value to a pretty, human-readable string representation.
+func Format(v any) string {
 	rv := reflect.ValueOf(v)
 	if rv.Kind() == reflect.Ptr || rv.Kind() == reflect.Interface {
-		return Convert(rv.Elem())
+		return Format(rv.Elem())
 	}
 	switch rv.Kind() {
 	case reflect.Struct, reflect.Map:
@@ -26,7 +26,7 @@ func Convert(v any) string {
 			if i > 0 {
 				result += ", "
 			}
-			result += Convert(rv.Index(i).Interface())
+			result += Format(rv.Index(i).Interface())
 		}
 		return result + "]"
 	default:

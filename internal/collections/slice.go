@@ -2,9 +2,9 @@ package collections
 
 import "github.com/nobl9/govy/internal/stringconvert"
 
-// GenericToString converts a slice of T to a slice of string.
-func GenericToString[T any](s []T) []string {
-	return mapSlice(s, func(v T) string { return stringconvert.Convert(v) })
+// ToStringSlice converts a slice of T to a slice of strings.
+func ToStringSlice[T any](s []T) []string {
+	return mapSlice(s, func(v T) string { return stringconvert.Format(v) })
 }
 
 // mapSlice applies a mapping function f to each element of the slice (type T)

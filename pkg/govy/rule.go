@@ -108,7 +108,7 @@ func (r Rule[T]) WithDetails(format string, a ...any) Rule[T] {
 // WithExamples adds examples to the returned [RuleError].
 // Each example is converted to a string.
 func (r Rule[T]) WithExamples(examples ...T) Rule[T] {
-	r.examples = collections.GenericToString(examples)
+	r.examples = collections.ToStringSlice(examples)
 	return r
 }
 
