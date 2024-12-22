@@ -49,5 +49,6 @@
     "**/vendor/**",
     "**/node_modules/**",
     "**/test_data/**",
+    "docs/validator-comparison/**",
   ]
 }
