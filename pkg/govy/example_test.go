@@ -570,6 +570,38 @@ func ExampleRule_WithDetails() {
 	//     - string must match regular expression: '^(Tom|Jerry)$'; Teacher can be either Tom or Jerry :)
 }
 
+// You can use [govy.Rule.WithExamples] to add examples of valid inputs
+// which pass the [govy.Rule].
+// This can be useful for more complex rules, especially regex based, where
+// it might not be immediately obvious how a valid value should look like.
+//
+// Note: examples are added between the error message and details
+// (configured with [govy.Rule.WithDetails]).
+func ExampleRule_WithExamples() {
+	v := govy.New(
+		govy.For(func(t Teacher) string { return t.Name }).
+			WithName("name").
+			Rules(rules.StringMatchRegexp(regexp.MustCompile("^(Tom|Jerry)$")).
+				WithDetails("Teacher can be either Tom or Jerry :)").
+				WithExamples("Tom", "Jerry")),
+	).WithName("Teacher")
+
+	teacher := Teacher{
+		Name: "Jake",
+		Age:  51 * year,
+	}
+
+	err := v.Validate(teacher)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	// Output:
+	// Validation for Teacher has failed for the following properties:
+	//   - 'name' with value 'Jake':
+	//     - string must match regular expression: '^(Tom|Jerry)$' (e.g. 'Tom', 'Jerry'); Teacher can be either Tom or Jerry :)
+}
+
 // When testing, it can be tedious to always rely on error messages as these can change over time.
 // Enter [govy.ErrorCode], which is a simple string type alias used to ease testing,
 // but also potentially allow third parties to integrate with your validation results.
