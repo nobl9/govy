@@ -135,9 +135,52 @@ func TestRule_WithDescription(t *testing.T) {
 	err := r.Validate(-1)
 	assert.Require(t, assert.Error(t, err))
 	assert.Equal(t, &govy.RuleError{
-		Message:     "must be positive",
+		Message:     "must be positive; some details",
 		Code:        "test",
-		Details:     "some details",
 		Description: "the integer must be positive",
 	}, err)
+}
+
+func TestRule_WithExamples(t *testing.T) {
+	r := govy.NewRule(func(v string) error {
+		if v != "foo" && v != "bar" {
+			return errors.New("must be foo or bar")
+		}
+		return nil
+	}).
+		WithErrorCode("test").
+		WithDetails("some details").
+		WithExamples("foo", "bar").
+		WithDescription("string must be foo or bar")
+
+	err := r.Validate("baz")
+	assert.Require(t, assert.Error(t, err))
+	assert.Equal(t, &govy.RuleError{
+		Message:     "must be foo or bar (e.g. 'foo', 'bar'); some details",
+		Code:        "test",
+		Description: "string must be foo or bar",
+	}, err)
+}
+
+func TestRuleToPointer(t *testing.T) {
+	r := govy.NewRule(func(v int) error {
+		if v < 0 {
+			return errors.New("must be positive")
+		}
+		return nil
+	}).
+		WithErrorCode("test")
+	rp := govy.RuleToPointer(r)
+	t.Run("passes", func(t *testing.T) {
+		err := rp.Validate(ptr(0))
+		assert.NoError(t, err)
+	})
+	t.Run("fails", func(t *testing.T) {
+		err := rp.Validate(ptr(-1))
+		assert.Require(t, assert.Error(t, err))
+		assert.Equal(t, govy.RuleError{
+			Message: "must be positive",
+			Code:    "test",
+		}, *err.(*govy.RuleError))
+	})
 }

@@ -1,0 +1,41 @@
+name: Coverage and Benchmark
+on:
+  push:
+    branches:
+      - main
+permissions:
+  deployments: write
+  contents: write
+jobs:
+  test:
+    name: Run coverage and benchmark
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+      - name: Install devbox
+        uses: jetpack-io/devbox-install-action@v0.11.0
+        with:
+          enable-cache: true
+      - name: Update coverage report
+        uses: ncruces/go-coverage-report@v0
+        with:
+          report: true
+          chart: true
+          amend: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GO_COVERAGE_TOKEN }}
+        continue-on-error: true
+      - name: Run benchmark
+        run: make test/benchmark | tee benchmark.txt
+      - name: Publish benchmark result
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          name: Govy Go Benchmark
+          tool: 'go'
+          output-file-path: benchmark.txt
+          fail-on-alert: false
+          auto-push: true
+          gh-pages-branch: gh-pages
+          skip-fetch-gh-pages: false
+          github-token: ${{ secrets.GO_BENCHMARK_TOKEN }}

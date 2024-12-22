@@ -14,7 +14,7 @@ It also allows writing self-documenting validation rules through a
 
 **GO** **V**alidate **Y**ourself!
 
-**DISCLAIMER** govy is in active development, while the core API is unlikely
+**DISCLAIMER**: govy is in active development, while the core API is unlikely
 to change, breaking changes may be introduced with new versions until v1
 is released. Checkout [roadmap](./docs/ROADMAP.md) for upcoming,
 planned features.
@@ -34,10 +34,13 @@ planned features.
     5. [Custom rules](#custom-rules)
     6. [Validation plan](#validation-plan)
     7. [Properties name inference](#properties-name-inference)
+    8. [Testing helpers](#testing-helpers)
 4. [Rationale](#rationale)
     1. [Reflection](#reflection)
     2. [Trivia](#trivia)
 5. [Development](#development)
+    1. [Tests coverage](#tests-coverage)
+    2. [Benchmarks](#benchmarks)
 6. [Acknowledgments](#acknowledgments)
 
 ## Getting started
@@ -55,6 +58,11 @@ or locally at [example_test.go](./pkg/govy/example_test.go).
 
 Govy's code documentation is available at
 [pkg.go.dev](https://pkg.go.dev/github.com/nobl9/govy).
+
+You can read
+[this blog post](https://www.nobl9.com/resources/type-safe-validation-in-go-with-govy)
+for a quick overview of the library, its capabilities,
+what distinguishes it from other solutions and why was it conceived.
 
 Here's a quick example of `govy` in action:
 
@@ -97,8 +105,9 @@ func Example_basicUsage() {
 			Required().
 			Rules(rules.StringMatchRegexp(
 				regexp.MustCompile(`[\w\s.]+, [0-9]{2}-[0-9]{3} \w+`),
-				"5 M. Skłodowska-Curie Square, 60-965 Poznan").
-				WithDetails("Polish address format must consist of the main address and zip code")),
+			).
+				WithDetails("Polish address format must consist of the main address and zip code").
+				WithExamples("5 M. Skłodowska-Curie Square, 60-965 Poznan")),
 	)
 	studentValidator := govy.New(
 		govy.For(func(s Student) string { return s.Index }).
@@ -175,6 +184,10 @@ func Example_basicUsage() {
    it's used for validating complex k8s-like schema, it contains both simple
    and very advanced validation rules and is a great place to draw some
    inspiration from.
+2. [OpenSLO](https://github.com/OpenSLO/OpenSLO). \
+   It's used for validating open specification for defining SLOs.
+   The specification is a complex, YAML-based and k8s compatible schema,
+   similar to Nobl9's configuration.
 
 ### Comparison with other libraries
 
@@ -378,8 +391,9 @@ func Example_validationPlan() {
 			Required().
 			Rules(rules.StringMatchRegexp(
 				regexp.MustCompile(`[\w\s.]+, [0-9]{2}-[0-9]{3} \w+`),
-				"5 M. Skłodowska-Curie Square, 60-965 Poznan").
-				WithDetails("Polish address format must consist of the main address and zip code")).
+			).
+				WithDetails("Polish address format must consist of the main address and zip code").
+				WithExamples("5 M. Skłodowska-Curie Square, 60-965 Poznan")).
 			When(func(u University) bool { return u.Name == "PUT" },
 				govy.WhenDescription("University name is PUT University")),
 	)
@@ -476,12 +490,15 @@ func Example_validationPlan() {
 	//       "type": "string",
 	//       "rules": [
 	//         {
-	//           "description": "string must match regular expression: '[\\w\\s.]+, [0-9]{2}-[0-9]{3} \\w+' (e.g. '5 M. Skłodowska-Curie Square, 60-965 Poznan')",
+	//           "description": "string must match regular expression: '[\\w\\s.]+, [0-9]{2}-[0-9]{3} \\w+'",
 	//           "details": "Polish address format must consist of the main address and zip code",
 	//           "errorCode": "string_match_regexp",
 	//           "conditions": [
 	//             "Teacher name is John",
 	//             "University name is PUT University"
+	//           ],
+	//           "examples": [
+	//             "5 M. Skłodowska-Curie Square, 60-965 Poznan"
 	//           ]
 	//         }
 	//       ]
@@ -558,6 +575,13 @@ func Example_nameInference() {
 }
 ```
 
+### Testing helpers
+
+Package [govytest](./pkg/govytest/) provides utilities which aid the process of
+writing unit tests for validation rules defined with govy.
+Checkout [testable examples](https://pkg.go.dev/github.com/nobl9/govy/pkg/govytest#pkg-examples)
+for a concise overview of the package's capabilities.
+
 ## Rationale
 
 Why was this library created?
@@ -604,6 +628,19 @@ with them, and the idea for `govy` was born.
 
 Checkout both [contributing guidelines](./docs/CONTRIBUTING.md) and
 [development instructions](./docs/DEVELOPMENT.md).
+
+### Tests coverage
+
+Tests coverage HTML for current `main` branch state can be inspected
+[here](https://raw.githack.com/wiki/nobl9/govy/coverage.html).
+
+Note that `cmd` package is tested by building and running Go binaries directly.
+This means there won't be any coverage for some of the core functions there.
+
+### Benchmarks
+
+Benchmarks' history is collected and can be viewed as charts over time
+[here](https://nobl9.github.io/govy/dev/bench/).
 
 ## Acknowledgments
 

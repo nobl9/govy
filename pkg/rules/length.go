@@ -10,6 +10,7 @@ import (
 
 // StringLength ensures the string's length is between min and max (closed interval).
 func StringLength(minLen, maxLen int) govy.Rule[string] {
+	enforceMinMaxLength(minLen, maxLen)
 	tpl := getMessageTemplate(stringLengthTemplateKey)
 
 	return govy.NewRule(func(v string) error {
@@ -61,6 +62,7 @@ func StringMaxLength(limit int) govy.Rule[string] {
 
 // SliceLength ensures the slice's length is between min and max (closed interval).
 func SliceLength[S ~[]E, E any](minLen, maxLen int) govy.Rule[S] {
+	enforceMinMaxLength(minLen, maxLen)
 	msg := fmt.Sprintf("length must be between %d and %d", minLen, maxLen)
 	return govy.NewRule(func(v S) error {
 		length := len(v)
@@ -103,6 +105,7 @@ func SliceMaxLength[S ~[]E, E any](limit int) govy.Rule[S] {
 
 // MapLength ensures the map's length is between min and max (closed interval).
 func MapLength[M ~map[K]V, K comparable, V any](minLen, maxLen int) govy.Rule[M] {
+	enforceMinMaxLength(minLen, maxLen)
 	msg := fmt.Sprintf("length must be between %d and %d", minLen, maxLen)
 	return govy.NewRule(func(v M) error {
 		length := len(v)
@@ -141,4 +144,10 @@ func MapMaxLength[M ~map[K]V, K comparable, V any](limit int) govy.Rule[M] {
 	}).
 		WithErrorCode(ErrorCodeMapMaxLength).
 		WithDescription(msg)
+}
+
+func enforceMinMaxLength(minLen, maxLen int) {
+	if minLen > maxLen {
+		panic(fmt.Sprintf("minLen '%d' is greater than maxLen '%d'", minLen, maxLen))
+	}
 }

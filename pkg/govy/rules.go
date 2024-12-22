@@ -51,7 +51,7 @@ func Transform[T, N, S any](getter PropertyGetter[T, S], transform Transformer[T
 		name: inferName(),
 		transformGetter: func(s S) (transformed N, original any, err error) {
 			v := getter(s)
-			if internal.IsEmptyFunc(v) {
+			if internal.IsEmpty(v) {
 				return transformed, nil, emptyErr{}
 			}
 			transformed, err = transform(v)
@@ -106,6 +106,9 @@ type PropertyRules[T, S any] struct {
 
 // Validate validates the property value using provided rules.
 func (r PropertyRules[T, S]) Validate(st S) error {
+	if !r.matchPredicates(st) {
+		return nil
+	}
 	var (
 		ruleErrors []error
 		allErrors  PropertyErrors
@@ -118,9 +121,6 @@ func (r PropertyRules[T, S]) Validate(st S) error {
 		return PropertyErrors{propErr}
 	}
 	if skip {
-		return nil
-	}
-	if !r.matchPredicates(st) {
 		return nil
 	}
 	for _, step := range r.steps {
@@ -220,6 +220,16 @@ func (r PropertyRules[T, S]) Cascade(mode CascadeMode) PropertyRules[T, S] {
 	return r
 }
 
+// cascadeInternal is an internal wrapper around [PropertyRules.Cascade] which
+// fulfills [propertyRulesInterface] interface.
+// If the [CascadeMode] is already set, it won't change it.
+func (r PropertyRules[T, S]) cascadeInternal(mode CascadeMode) propertyRulesInterface[S] {
+	if r.mode != 0 {
+		return r
+	}
+	return r.Cascade(mode)
+}
+
 // plan constructs a validation plan for the property.
 func (r PropertyRules[T, S]) plan(builder planBuilder) {
 	builder.propertyPlan.IsOptional = (r.omitEmpty || r.isPointer) && !r.required
@@ -280,7 +290,7 @@ func (r PropertyRules[T, S]) getValue(st S) (v T, skip bool, propErr *PropertyEr
 		}
 		return v, false, NewPropertyError(r.name, propValue, err)
 	}
-	isEmpty := isEmptyError || (!r.isPointer && internal.IsEmptyFunc(v))
+	isEmpty := isEmptyError || (!r.isPointer && internal.IsEmpty(v))
 	// If the value is not empty we simply return it.
 	if !isEmpty {
 		return v, false, nil

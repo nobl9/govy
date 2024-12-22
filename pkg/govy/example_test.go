@@ -72,6 +72,25 @@ func ExampleValidator_WithName() {
 	//   - always fails
 }
 
+// If statically defined name through [govy.Validator.WithName] is not enough,
+// you can use [govy.Validator.WithNameFunc].
+// The function receives the entity's instance you're validating and returns a string name.
+func ExampleValidator_WithNameFunc() {
+	v := govy.New(
+		govy.For(func(t Teacher) string { return t.Name }).
+			Rules(govy.NewRule(func(name string) error { return fmt.Errorf("always fails") })),
+	).WithNameFunc(func(t Teacher) string { return "Teacher " + t.Name })
+
+	err := v.Validate(Teacher{Name: "John"})
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	// Output:
+	// Validation for Teacher John has failed for the following properties:
+	//   - always fails
+}
+
 // You can also add [govy.Validator] name during runtime,
 // by calling [govy.ValidatorError.WithName] function on the returned error.
 //
@@ -179,6 +198,36 @@ func ExampleValidatorError() {
 	// }
 }
 
+// If you want to validate a slice of entities, you can combine [govy.New] with [govy.ForSlice].
+// The produced errors will contain information about the failing entity's index
+// in their [govy.PropertyError.PropertyName].
+func ExampleValidator_Validate_slice() {
+	teacherValidator := govy.New(
+		govy.For(func(t Teacher) string { return t.Name }).
+			WithName("name").
+			Rules(govy.NewRule(func(name string) error { return fmt.Errorf("always fails") })),
+	)
+	v := govy.New(
+		govy.ForSlice(govy.GetSelf[[]Teacher]()).
+			IncludeForEach(teacherValidator),
+	)
+
+	err := v.Validate([]Teacher{
+		{Name: "John"},
+		{Name: "Jake"},
+	})
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	// Output:
+	// Validation has failed for the following properties:
+	//   - '[0].name' with value 'John':
+	//     - always fails
+	//   - '[1].name' with value 'Jake':
+	//     - always fails
+}
+
 // So far we've been using a very simple [govy.PropertyRules] instance:
 //
 //	validation.For(func(t Teacher) string { return t.Name }).
@@ -257,6 +306,48 @@ func ExampleForPointer() {
 	// Validation for Teacher has failed for the following properties:
 	//   - 'middleName' with value 'Thaddeus':
 	//     - length must be less than or equal to 5
+}
+
+// [govy.Transform] constructor can be used to transform the property's value
+// before it's passed to the rules' evaluation.
+// It's useful when you want to use rules that operate on a different type than the property's.
+//
+// Along with the standard [govy.PropertyGetter] it accepts a [govy.Transformer] function
+// which takes the property value and returns the transformed value along with an error.
+// If the error is not nil, the validation will fail with the error message returned by [govy.Transformer] error.
+//
+// In this example we'll use [time.ParseDuration] to transform the string value of [Clock.Duration] to [time.Duration].
+// The first value we'll validate will force [govy.Transformer] to return an error,
+// the second will succeed transformation, but it will fail the validation for [rules.DurationPrecision].
+//
+// Notice how the [govy.Transformer] shape adheres to a lot of standard library conversion/parsing functions.
+func ExampleTransform() {
+	type Clock struct {
+		Duration string `json:"duration"`
+	}
+	v := govy.New(
+		govy.Transform(func(c Clock) string { return c.Duration }, time.ParseDuration).
+			WithName("duration").
+			Rules(rules.DurationPrecision(time.Minute)),
+	).WithName("MyClock")
+
+	err := v.Validate(Clock{Duration: "bad duration!"})
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	err = v.Validate(Clock{Duration: (256 * time.Second).String()})
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	// Output:
+	// Validation for MyClock has failed for the following properties:
+	//   - 'duration' with value 'bad duration!':
+	//     - time: invalid duration "bad duration!"
+	// Validation for MyClock has failed for the following properties:
+	//   - 'duration' with value '4m16s':
+	//     - duration must be defined with 1m0s precision
 }
 
 // By default, when [govy.PropertyRules] is constructed using [govy.ForPointer]
@@ -417,6 +508,41 @@ func ExampleGetSelf() {
 	//   - now I have access to the whole teacher
 }
 
+// Govy comes with a set of predefined rules,
+// which you can use out of the box by importing [rules] package.
+//
+// However, you can also create your own rules by using [govy.NewRule] constructor.
+// It accepts a simple validation function which takes in a value
+// and returns an error if the validation failed.
+//
+// Note: the [govy.Rule] struct has all its fields private,
+// so you can only create and modify them using exported constructor and methods.
+func ExampleRule() {
+	myRule := govy.NewRule(func(name string) error {
+		if name != "Tom" {
+			return fmt.Errorf("Teacher can be only Tom")
+		}
+		return nil
+	})
+	v := govy.New(
+		govy.For(func(t Teacher) string { return t.Name }).
+			WithName("name").
+			Rules(myRule),
+	)
+
+	teacher := Teacher{Name: "Jake"}
+
+	err := v.Validate(teacher)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	// Output:
+	// Validation has failed for the following properties:
+	//   - 'name' with value 'Jake':
+	//     - Teacher can be only Tom
+}
+
 // You can use [govy.Rule.WithDetails] to add additional details to the error message.
 // This allows you to extend existing rules by adding your use case context.
 // Let's give a regex validation some more clarity.
@@ -442,6 +568,38 @@ func ExampleRule_WithDetails() {
 	// Validation for Teacher has failed for the following properties:
 	//   - 'name' with value 'Jake':
 	//     - string must match regular expression: '^(Tom|Jerry)$'; Teacher can be either Tom or Jerry :)
+}
+
+// You can use [govy.Rule.WithExamples] to add examples of valid inputs
+// which pass the [govy.Rule].
+// This can be useful for more complex rules, especially regex based, where
+// it might not be immediately obvious how a valid value should look like.
+//
+// Note: examples are added between the error message and details
+// (configured with [govy.Rule.WithDetails]).
+func ExampleRule_WithExamples() {
+	v := govy.New(
+		govy.For(func(t Teacher) string { return t.Name }).
+			WithName("name").
+			Rules(rules.StringMatchRegexp(regexp.MustCompile("^(Tom|Jerry)$")).
+				WithDetails("Teacher can be either Tom or Jerry :)").
+				WithExamples("Tom", "Jerry")),
+	).WithName("Teacher")
+
+	teacher := Teacher{
+		Name: "Jake",
+		Age:  51 * year,
+	}
+
+	err := v.Validate(teacher)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	// Output:
+	// Validation for Teacher has failed for the following properties:
+	//   - 'name' with value 'Jake':
+	//     - string must match regular expression: '^(Tom|Jerry)$' (e.g. 'Tom', 'Jerry'); Teacher can be either Tom or Jerry :)
 }
 
 // When testing, it can be tedious to always rely on error messages as these can change over time.
@@ -539,6 +697,39 @@ func ExampleRule_WithDescription() {
 	//     - unsupported name; Teacher can be either Tom or Jerry :)
 }
 
+// The builtin rules, and most likely your custom rules as well, all operate on non-pointer values.
+// This means you cannot use them on pointers to the same type.
+//
+// If for whatever reason you don't want to use [govy.ForPointer] constructor,
+// you can use [govy.RuleToPointer] constructor and convert any [govy.Rule] to work on pointers.
+//
+// Note: [govy.RuleToPointer] will skip validation for nil pointers.
+// If you want to enforce the value to be non-nil, you can use [rules.Required].
+// This behavior is consistent with [govy.ForPointer] constructor, which will skip the validation
+// unless you add [govy.PropertyRules.Required] to enforce the value to be a non-nil pointer.
+func ExampleRuleToPointer() {
+	type Pointer struct {
+		Pointer *string `json:"pointer"`
+	}
+	validator := govy.New(
+		govy.For(func(p Pointer) *string { return p.Pointer }).
+			WithName("pointer").
+			Rules(govy.RuleToPointer(rules.EQ("foo"))),
+	)
+
+	pointer := Pointer{Pointer: ptr("bar")}
+
+	err := validator.Validate(pointer)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	// Output:
+	// Validation has failed for the following properties:
+	//   - 'pointer' with value 'bar':
+	//     - should be equal to 'foo'
+}
+
 // Sometimes it's useful to aggregate multiple [govy.Rule] into a single, composite rule.
 // To do that we'll use [govy.RuleSet] and [govy.NewRuleSet] constructor.
 // RuleSet is a simple container for multiple [govy.Rule].
@@ -580,6 +771,38 @@ func ExampleRuleSet() {
 	//   - 'name' with value 'Jonathan':
 	//     - length must be between 1 and 5
 	//     - string must match regular expression: '^(Tom|Jerry)$'; Teacher can be either Tom or Jerry :)
+}
+
+// Similar to [govy.RuleToPointer], you can use [govy.RuleSetToPointer] to convert
+// [govy.RuleSet] to work with pointers.
+//
+// See [ExampleRuleToPointer] for more details.
+func ExampleRuleSetToPointer() {
+	type Pointer struct {
+		Pointer *string `json:"pointer"`
+	}
+	ruleSet := govy.NewRuleSet(
+		rules.StringStartsWith("f"),
+		rules.StringEndsWith("o"),
+	)
+	validator := govy.New(
+		govy.For(func(p Pointer) *string { return p.Pointer }).
+			WithName("pointer").
+			Rules(govy.RuleSetToPointer(ruleSet)),
+	)
+
+	pointer := Pointer{Pointer: ptr("bar")}
+
+	err := validator.Validate(pointer)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	// Output:
+	// Validation has failed for the following properties:
+	//   - 'pointer' with value 'bar':
+	//     - string must start with 'f' prefix
+	//     - string must end with 'o' suffix
 }
 
 // To inspect if an error contains a given [govy.ErrorCode], use [govy.HasErrorCode] function.
@@ -774,6 +997,65 @@ func ExampleForSlice() {
 	//     - length must be between 9 and 9
 }
 
+// When dealing with slices of pointers you may find it problematic to add [govy.Rule]
+// with [govy.PropertyRulesForSlice.RulesForEach].
+// The builtin rules, and most likely your custom rules as well, all operate on non-pointer values.
+// This means you cannot use them on your slice's pointer elements.
+//
+// To solve this problem you can use [govy.ForPointer] constructor and convert any [govy.Rule]
+// to work on pointers.
+//
+// In the below example we're defining two [govy.Validator] instances:
+//   - 'faultyValidator' which will not fail for 'nil' value
+//   - 'goodValidator' which will fail for 'nil' value by using [rules.Required] rule
+//
+// This behavior is consistent with [govy.ForPointer] constructor, which will skip the validation
+// unless you add [govy.PropertyRules.Required] to enforce the value to be a non-nil pointer.
+func ExampleForSlice_sliceOfPointers() {
+	type Pointers struct {
+		Pointers []*string `json:"pointers"`
+	}
+	pointersRules := govy.ForSlice(func(p Pointers) []*string { return p.Pointers }).
+		WithName("pointers").
+		Rules(rules.SliceMaxLength[[]*string](2)).
+		RulesForEach(
+			govy.RuleToPointer(rules.StringLength(9, 9)),
+		)
+	faultyValidator := govy.New(
+		pointersRules,
+	)
+	goodValidator := govy.New(
+		pointersRules.RulesForEach(rules.Required[*string]()),
+	)
+
+	pointers := Pointers{
+		Pointers: []*string{ptr("918230014"), ptr("9182300123"), ptr("918230014"), nil},
+	}
+
+	err := faultyValidator.Validate(pointers)
+	if err != nil {
+		fmt.Println(err)
+	}
+	err = goodValidator.Validate(pointers)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	// Output:
+	// Validation has failed for the following properties:
+	//   - 'pointers' with value '["918230014","9182300123","918230014",null]':
+	//     - length must be less than or equal to 2
+	//   - 'pointers[1]' with value '9182300123':
+	//     - length must be between 9 and 9
+	// Validation has failed for the following properties:
+	//   - 'pointers' with value '["918230014","9182300123","918230014",null]':
+	//     - length must be less than or equal to 2
+	//   - 'pointers[1]' with value '9182300123':
+	//     - length must be between 9 and 9
+	//   - 'pointers[3]':
+	//     - property is required but was empty
+}
+
 // When dealing with maps there are three forms of iteration:
 //   - keys
 //   - values
@@ -888,6 +1170,10 @@ func ExamplePropertyRules_When() {
 // To customize how [govy.Rule] are evaluated use [govy.PropertyRules.Cascade].
 // Use [govy.CascadeModeStop] to stop validation after the first error.
 // If you wish to revert to the default behavior, use [govy.CascadeModeContinue].
+//
+// Note: the cascade mode change only applies to the given [govy.PropertyRules] instance
+// and not the parent [govy.Validator] or neighboring [govy.PropertyRules].
+// It does however override the [govy.CascadeMode] set for [govy.Validator].
 func ExamplePropertyRules_Cascade() {
 	alwaysFailingRule := govy.NewRule(func(string) error {
 		return fmt.Errorf("always fails")
@@ -916,6 +1202,151 @@ func ExamplePropertyRules_Cascade() {
 	// Validation for Teacher has failed for the following properties:
 	//   - 'name' with value 'Jerry':
 	//     - should be not equal to 'Jerry'
+}
+
+// If combining [govy.New] with [govy.ForSlice] is not verbose enough for you,
+// you can use [govy.Validator.ValidateSlice] function.
+// It will validate each element according to the rules defined by [govy.Validator].
+// It returns [govy.ValidatorErrors].
+//
+// Note: If you need to perform additional validation on the whole slice,
+// you should rather use [govy.New] with [govy.ForSlice] and [govy.GetSelf].
+// [govy.Validator.ValidateSlice] is designed to be used for processing independent values.
+//
+// Note: Since each element is validated in isolation,
+// the property names will not start with the slice index,
+// they will instead start at the element's root.
+func ExampleValidator_ValidateSlice() {
+	v := govy.New(
+		govy.For(func(t Teacher) string { return t.Name }).
+			WithName("name").
+			Rules(govy.NewRule(func(name string) error { return fmt.Errorf("always fails") })),
+	).WithName("Teacher")
+
+	err := v.ValidateSlice([]Teacher{
+		{Name: "John"},
+		{Name: "Jake"},
+	})
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	// Output:
+	// Validation for Teacher at index 0 has failed for the following properties:
+	//   - 'name' with value 'John':
+	//     - always fails
+	// Validation for Teacher at index 1 has failed for the following properties:
+	//   - 'name' with value 'Jake':
+	//     - always fails
+}
+
+// Unlike [govy.PropertyRules.Cascade] which works on [govy.PropertyRules] level,
+// [govy.Validator.Cascade] propagates to all the properties of [govy.Validator] and
+// furthermore, will stop evaluating the next property if any preceding property fails.
+//
+// If [govy.PropertyRules.Cascade] is set, the setting will take precedence over
+// [govy.Validator] cascade mode.
+//
+// See [ExamplePropertyRules_Cascade] for more details on [govy.PropertyRules.Cascade].
+func ExampleValidator_Cascade() {
+	v := govy.New(
+		govy.For(func(t Teacher) string { return t.Name }).
+			WithName("name").
+			Cascade(govy.CascadeModeContinue).
+			Rules(rules.NEQ("Jerry")).
+			Rules(rules.EQ("Tom")),
+		govy.For(func(t Teacher) time.Duration { return t.Age }).
+			WithName("age").
+			Rules(
+				rules.GT(18*year),
+				govy.NewRule(func(time.Duration) error {
+					return fmt.Errorf("always fails")
+				}),
+			),
+	).
+		Cascade(govy.CascadeModeStop)
+
+	for _, name := range []string{"Tom", "Jerry"} {
+		teacher := Teacher{
+			Name: name,
+			Age:  17 * year,
+		}
+		err := v.WithName(name).Validate(teacher)
+		if err != nil {
+			fmt.Println(err)
+		}
+	}
+
+	// Output:
+	// Validation for Tom has failed for the following properties:
+	//   - 'age' with value '148920h0m0s':
+	//     - should be greater than '157680h0m0s'
+	// Validation for Jerry has failed for the following properties:
+	//   - 'name' with value 'Jerry':
+	//     - should be not equal to 'Jerry'
+	//     - should be equal to 'Tom'
+}
+
+// [govy.Validator.ValidateSlice] outputs [govy.ValidatorErrors] which is a slice of [govy.ValidatorError].
+// Each [govy.ValidatorError] has an additional property set: SliceIndex, which is a 0-based slice element index.
+func ExampleValidatorErrors() {
+	v := govy.New(
+		govy.For(func(t Teacher) string { return t.Name }).
+			WithName("name").
+			Rules(govy.NewRule(func(name string) error {
+				if name == "John" || name == "Jake" {
+					return fmt.Errorf("fails for John and Jake")
+				}
+				return nil
+			})),
+	).WithName("Teacher")
+
+	err := v.ValidateSlice([]Teacher{
+		{Name: "John"},
+		{Name: "George"},
+		{Name: "Jake"},
+	})
+	if err != nil {
+		enc := json.NewEncoder(os.Stdout)
+		enc.SetIndent("", "  ")
+		if err = enc.Encode(err); err != nil {
+			fmt.Printf("error encoding: %v\n", err)
+		}
+	}
+
+	// Output:
+	// [
+	//   {
+	//     "errors": [
+	//       {
+	//         "propertyName": "name",
+	//         "propertyValue": "John",
+	//         "errors": [
+	//           {
+	//             "error": "fails for John and Jake"
+	//           }
+	//         ]
+	//       }
+	//     ],
+	//     "name": "Teacher",
+	//     "sliceIndex": 0
+	//   },
+	//   {
+	//     "errors": [
+	//       {
+	//         "propertyName": "name",
+	//         "propertyValue": "Jake",
+	//         "errors": [
+	//           {
+	//             "error": "fails for John and Jake"
+	//           }
+	//         ]
+	//       }
+	//     ],
+	//     "name": "Teacher",
+	//     "sliceIndex": 2
+	//   }
+	// ]
 }
 
 // Bringing it all (mostly) together, let's create a fully fledged [govy.Validator] for [Teacher].

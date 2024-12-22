@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/nobl9/govy/internal/assert"
@@ -9,88 +8,260 @@ import (
 	"github.com/nobl9/govy/pkg/govy"
 )
 
+var eqTestCases = []*struct {
+	value         any
+	input         any
+	expectedError string
+}{
+	{value: 1, input: 1},
+	{value: 1.1, input: 1.3, expectedError: "should be equal to '1.1'"},
+}
+
 func TestEQ(t *testing.T) {
-	t.Run("passes", func(t *testing.T) {
-		err := EQ(1.1).Validate(1.1)
-		assert.NoError(t, err)
-	})
-	t.Run("fails", func(t *testing.T) {
-		err := EQ(1.1).Validate(1.3)
-		assert.Require(t, assert.Error(t, err))
-		assert.EqualError(t, err, "should be equal to '1.1'")
-		assert.True(t, govy.HasErrorCode(err, ErrorCodeEqualTo))
-	})
+	for _, tc := range eqTestCases {
+		err := EQ(tc.value).Validate(tc.input)
+		if tc.expectedError != "" {
+			assert.Require(t, assert.Error(t, err))
+			assert.EqualError(t, err, tc.expectedError)
+			assert.True(t, govy.HasErrorCode(err, ErrorCodeEqualTo))
+		} else {
+			assert.NoError(t, err)
+		}
+	}
+}
+
+func BenchmarkEQ(b *testing.B) {
+	for range b.N {
+		for _, tc := range eqTestCases {
+			_ = EQ(tc.value).Validate(tc.input)
+		}
+	}
+}
+
+var neqTestCases = []*struct {
+	value         any
+	input         any
+	expectedError string
+}{
+	{value: 1.1, input: 1.3},
+	{value: 1.1, input: 1.1, expectedError: "should be not equal to '1.1'"},
 }
 
 func TestNEQ(t *testing.T) {
-	t.Run("passes", func(t *testing.T) {
-		err := NEQ(1.1).Validate(1.3)
-		assert.NoError(t, err)
-	})
-	t.Run("fails", func(t *testing.T) {
-		err := NEQ(1.1).Validate(1.1)
-		assert.Require(t, assert.Error(t, err))
-		assert.EqualError(t, err, "should be not equal to '1.1'")
-		assert.True(t, govy.HasErrorCode(err, ErrorCodeNotEqualTo))
-	})
+	for _, tc := range neqTestCases {
+		err := NEQ(tc.value).Validate(tc.input)
+		if tc.expectedError != "" {
+			assert.Require(t, assert.Error(t, err))
+			assert.EqualError(t, err, tc.expectedError)
+			assert.True(t, govy.HasErrorCode(err, ErrorCodeNotEqualTo))
+		} else {
+			assert.NoError(t, err)
+		}
+	}
+}
+
+func BenchmarkNEQ(b *testing.B) {
+	for range b.N {
+		for _, tc := range neqTestCases {
+			_ = NEQ(tc.value).Validate(tc.input)
+		}
+	}
+}
+
+var gtTestCases = []*struct {
+	value         int
+	input         int
+	expectedError string
+}{
+	{value: 1, input: 2},
+	{value: 1, input: 1, expectedError: "should be greater than '1'"},
+	{value: 4, input: 2, expectedError: "should be greater than '4'"},
 }
 
 func TestGT(t *testing.T) {
-	t.Run("passes", func(t *testing.T) {
-		err := GT(1).Validate(2)
-		assert.NoError(t, err)
-	})
-	t.Run("fails", func(t *testing.T) {
-		for n, v := range map[int]int{1: 1, 4: 2} {
-			err := GT(n).Validate(v)
+	for _, tc := range gtTestCases {
+		err := GT(tc.value).Validate(tc.input)
+		if tc.expectedError != "" {
 			assert.Require(t, assert.Error(t, err))
-			assert.EqualError(t, err, fmt.Sprintf("should be greater than '%v'", n))
+			assert.EqualError(t, err, tc.expectedError)
 			assert.True(t, govy.HasErrorCode(err, ErrorCodeGreaterThan))
+		} else {
+			assert.NoError(t, err)
 		}
-	})
+	}
+}
+
+func BenchmarkGT(b *testing.B) {
+	for range b.N {
+		for _, tc := range gtTestCases {
+			_ = GT(tc.value).Validate(tc.input)
+		}
+	}
+}
+
+var gteTestCases = []*struct {
+	value         int
+	input         int
+	expectedError string
+}{
+	{value: 1, input: 1},
+	{value: 2, input: 4},
+	{value: 4, input: 2, expectedError: "should be greater than or equal to '4'"},
 }
 
 func TestGTE(t *testing.T) {
-	t.Run("passes", func(t *testing.T) {
-		for n, v := range map[int]int{1: 1, 2: 4} {
-			err := GTE(n).Validate(v)
+	for _, tc := range gteTestCases {
+		err := GTE(tc.value).Validate(tc.input)
+		if tc.expectedError != "" {
+			assert.Require(t, assert.Error(t, err))
+			assert.EqualError(t, err, tc.expectedError)
+			assert.True(t, govy.HasErrorCode(err, ErrorCodeGreaterThanOrEqualTo))
+		} else {
 			assert.NoError(t, err)
 		}
-	})
-	t.Run("fails", func(t *testing.T) {
-		err := GTE(4).Validate(2)
-		assert.Require(t, assert.Error(t, err))
-		assert.EqualError(t, err, "should be greater than or equal to '4'")
-		assert.True(t, govy.HasErrorCode(err, ErrorCodeGreaterThanOrEqualTo))
-	})
+	}
+}
+
+func BenchmarkGTE(b *testing.B) {
+	for range b.N {
+		for _, tc := range gteTestCases {
+			_ = GTE(tc.value).Validate(tc.input)
+		}
+	}
+}
+
+var ltTestCases = []*struct {
+	value         int
+	input         int
+	expectedError string
+}{
+	{value: 4, input: 2},
+	{value: 1, input: 1, expectedError: "should be less than '1'"},
+	{value: 2, input: 4, expectedError: "should be less than '2'"},
 }
 
 func TestLT(t *testing.T) {
-	t.Run("passes", func(t *testing.T) {
-		err := LT(4).Validate(2)
-		assert.NoError(t, err)
-	})
-	t.Run("fails", func(t *testing.T) {
-		for n, v := range map[int]int{1: 1, 2: 4} {
-			err := LT(n).Validate(v)
+	for _, tc := range ltTestCases {
+		err := LT(tc.value).Validate(tc.input)
+		if tc.expectedError != "" {
 			assert.Require(t, assert.Error(t, err))
-			assert.EqualError(t, err, fmt.Sprintf("should be less than '%v'", n))
+			assert.EqualError(t, err, tc.expectedError)
 			assert.True(t, govy.HasErrorCode(err, ErrorCodeLessThan))
+		} else {
+			assert.NoError(t, err)
 		}
-	})
+	}
+}
+
+func BenchmarkLT(b *testing.B) {
+	for range b.N {
+		for _, tc := range ltTestCases {
+			_ = LT(tc.value).Validate(tc.input)
+		}
+	}
+}
+
+var lteTestCases = []*struct {
+	value         int
+	input         int
+	expectedError string
+}{
+	{value: 1, input: 1},
+	{value: 4, input: 2},
+	{value: 2, input: 4, expectedError: "should be less than or equal to '2'"},
 }
 
 func TestLTE(t *testing.T) {
-	t.Run("passes", func(t *testing.T) {
-		for n, v := range map[int]int{1: 1, 4: 2} {
-			err := LTE(n).Validate(v)
+	for _, tc := range lteTestCases {
+		err := LTE(tc.value).Validate(tc.input)
+		if tc.expectedError != "" {
+			assert.Require(t, assert.Error(t, err))
+			assert.EqualError(t, err, tc.expectedError)
+			assert.True(t, govy.HasErrorCode(err, ErrorCodeLessThanOrEqualTo))
+		} else {
 			assert.NoError(t, err)
 		}
-	})
-	t.Run("fails", func(t *testing.T) {
-		err := LTE(2).Validate(4)
-		assert.Require(t, assert.Error(t, err))
-		assert.EqualError(t, err, "should be less than or equal to '2'")
-		assert.True(t, govy.HasErrorCode(err, ErrorCodeLessThanOrEqualTo))
-	})
+	}
+}
+
+func BenchmarkLTE(b *testing.B) {
+	for range b.N {
+		for _, tc := range lteTestCases {
+			_ = LTE(tc.value).Validate(tc.input)
+		}
+	}
+}
+
+var equalPropertiesTestCases = []*struct {
+	run           func() error
+	expectedError string
+}{
+	{
+		run: func() error {
+			return EqualProperties(CompareDeepEqualFunc, paymentMethodGetters).Validate(paymentMethod{
+				Cash:     ptr("2$"),
+				Card:     ptr("2$"),
+				Transfer: ptr("2$"),
+			})
+		},
+	},
+	{
+		run: func() error {
+			return EqualProperties(CompareFunc, paymentMethodGetters).Validate(paymentMethod{
+				Cash:     nil,
+				Card:     ptr("2$"),
+				Transfer: ptr("2$"),
+			})
+		},
+		expectedError: "all of [Card, Cash, Transfer] properties must be equal, but 'Card' is not equal to 'Cash'",
+	},
+	{
+		run: func() error {
+			return EqualProperties(CompareFunc, paymentMethodGetters).Validate(paymentMethod{
+				Cash:     nil,
+				Card:     nil,
+				Transfer: nil,
+			})
+		},
+	},
+	{
+		run: func() error {
+			return EqualProperties(CompareDeepEqualFunc, paymentMethodGetters).Validate(paymentMethod{
+				Cash:     ptr("2$"),
+				Card:     ptr("2$"),
+				Transfer: ptr("3$"),
+			})
+		},
+		expectedError: "all of [Card, Cash, Transfer] properties must be equal, but 'Cash' is not equal to 'Transfer'",
+	},
+	{
+		run: func() error {
+			return EqualProperties(CompareDeepEqualFunc, paymentMethodGetters).Validate(paymentMethod{
+				Cash:     ptr("1$"),
+				Card:     ptr("2$"),
+				Transfer: ptr("3$"),
+			})
+		},
+		expectedError: "all of [Card, Cash, Transfer] properties must be equal, but 'Card' is not equal to 'Cash'",
+	},
+}
+
+func TestEqualProperties(t *testing.T) {
+	for _, tc := range equalPropertiesTestCases {
+		err := tc.run()
+		if tc.expectedError != "" {
+			assert.EqualError(t, err, tc.expectedError)
+			assert.True(t, govy.HasErrorCode(err, ErrorCodeEqualProperties))
+		} else {
+			assert.NoError(t, err)
+		}
+	}
+}
+
+func BenchmarkEqualProperties(b *testing.B) {
+	for range b.N {
+		for _, tc := range equalPropertiesTestCases {
+			_ = tc.run()
+		}
+	}
 }

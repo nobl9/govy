@@ -8,7 +8,7 @@ LDFLAGS += -s -w
 # Print Makefile target step description for check.
 # Only print 'check' steps this way, and not dependent steps, like 'install'.
 # ${1} - step description
-define _print_check_step
+define _print_step
 	printf -- '------\n%s...\n' "${1}"
 endef
 
@@ -23,6 +23,7 @@ install/devbox:
 .PHONY: build
 ## Build govy binary.
 build:
+	$(call _print_step,Building govy binary)
 	mkdir -p $(BIN_DIR)
 	go build -ldflags="$(LDFLAGS)" -o $(BIN_DIR)/$(APP_NAME) ./cmd/$(APP_NAME)
 
@@ -37,6 +38,12 @@ test:
 	$(call _print_step,Running unit tests)
 	go test -race -cover ./... ./docs/validator-comparison/...
 
+.PHONY: test/benchmark
+## Run benchmark tests.
+test/benchmark:
+	$(call _print_step,Running benchmark tests)
+	go test -bench=. -benchmem ./...
+
 .PHONY: test/coverage
 ## Produce test coverage report and inspect it in browser.
 test/coverage:
@@ -50,48 +57,48 @@ check: check/vet check/lint check/gosec check/spell check/trailing check/markdow
 
 ## Run 'go vet' on the whole project.
 check/vet:
-	$(call _print_check_step,Running go vet)
+	$(call _print_step,Running go vet)
 	go vet ./...
 
 ## Run golangci-lint all-in-one linter with configuration defined inside .golangci.yml.
 check/lint:
-	$(call _print_check_step,Running golangci-lint)
+	$(call _print_step,Running golangci-lint)
 	golangci-lint run
 
 ## Check for security problems using gosec, which inspects the Go code by scanning the AST.
 check/gosec:
-	$(call _print_check_step,Running gosec)
+	$(call _print_step,Running gosec)
 	gosec -exclude-generated -quiet ./...
 
 ## Check spelling, rules are defined in cspell.json.
 check/spell:
-	$(call _print_check_step,Verifying spelling)
+	$(call _print_step,Verifying spelling)
 	yarn --silent cspell --no-progress '**/**'
 
 ## Check for trailing whitespaces in any of the projects' files.
 check/trailing:
-	$(call _print_check_step,Looking for trailing whitespaces)
+	$(call _print_step,Looking for trailing whitespaces)
 	yarn --silent check-trailing-whitespaces
 
 ## Check markdown files for potential issues with markdownlint.
 check/markdown:
-	$(call _print_check_step,Verifying Markdown files)
+	$(call _print_step,Verifying Markdown files)
 	yarn --silent markdownlint '*.md' --disable MD010 # MD010 does not handle code blocks well.
 
 ## Check for potential vulnerabilities across all Go dependencies.
 check/vulns:
-	$(call _print_check_step,Running govulncheck)
+	$(call _print_step,Running govulncheck)
 	govulncheck ./...
 
 ## Verify if the auto generated code has been committed.
 check/generate:
-	$(call _print_check_step,Checking if generated code matches the provided definitions)
+	$(call _print_step,Checking if generated code matches the provided definitions)
 	./scripts/check-generate.sh
 
 ## Verify if the files are formatted.
 ## You must first commit the changes, otherwise it won't detect the diffs.
 check/format:
-	$(call _print_check_step,Checking if files are formatted)
+	$(call _print_step,Checking if files are formatted)
 	./scripts/check-formatting.sh
 
 .PHONY: generate generate/code generate/readme

@@ -8,7 +8,7 @@ import (
 // Required ensures the property's value is not empty (i.e. it's not its type's zero value).
 func Required[T any]() govy.Rule[T] {
 	return govy.NewRule(func(v T) error {
-		if internal.IsEmptyFunc(v) {
+		if internal.IsEmpty(v) {
 			return govy.NewRuleError(
 				internal.RequiredErrorMessage,
 				ErrorCodeRequired,

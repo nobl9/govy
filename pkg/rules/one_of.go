@@ -6,9 +6,8 @@ import (
 	"slices"
 	"strings"
 
-	"golang.org/x/exp/maps"
-
 	"github.com/nobl9/govy/internal"
+	"github.com/nobl9/govy/internal/collections"
 	"github.com/nobl9/govy/pkg/govy"
 )
 
@@ -26,20 +25,42 @@ func OneOf[T comparable](values ...T) govy.Rule[T] {
 		WithErrorCode(ErrorCodeOneOf).
 		WithDescription(func() string {
 			b := strings.Builder{}
-			prettyStringListBuilder(&b, values, false)
+			internal.PrettyStringListBuilder(&b, values, "")
 			return "must be one of: " + b.String()
 		}())
 }
 
+// OneOfProperties checks if at least one of the properties is set.
+// Property is considered set if its value is not empty (non-zero).
+func OneOfProperties[S any](getters map[string]func(s S) any) govy.Rule[S] {
+	return govy.NewRule(func(s S) error {
+		for _, getter := range getters {
+			v := getter(s)
+			if !internal.IsEmpty(v) {
+				return nil
+			}
+		}
+		return fmt.Errorf(
+			"one of %s properties must be set, none was provided",
+			prettyOneOfList(collections.SortedKeys(getters)))
+	}).
+		WithErrorCode(ErrorCodeOneOfProperties).
+		WithDescription(func() string {
+			return fmt.Sprintf("at least one of the properties must be set: %s",
+				strings.Join(collections.SortedKeys(getters), ", "))
+		}())
+}
+
 // MutuallyExclusive checks if properties are mutually exclusive.
-// This means, exactly one of the properties can be provided.
+// This means, exactly one of the properties can be set.
+// Property is considered set if its value is not empty (non-zero).
 // If required is true, then a single non-empty property is required.
 func MutuallyExclusive[S any](required bool, getters map[string]func(s S) any) govy.Rule[S] {
 	return govy.NewRule(func(s S) error {
 		var nonEmpty []string
 		for name, getter := range getters {
 			v := getter(s)
-			if internal.IsEmptyFunc(v) {
+			if internal.IsEmpty(v) {
 				continue
 			}
 			nonEmpty = append(nonEmpty, name)
@@ -49,11 +70,9 @@ func MutuallyExclusive[S any](required bool, getters map[string]func(s S) any) g
 			if !required {
 				return nil
 			}
-			keys := maps.Keys(getters)
-			slices.Sort(keys)
 			return fmt.Errorf(
 				"one of %s properties must be set, none was provided",
-				prettyOneOfList(keys))
+				prettyOneOfList(collections.SortedKeys(getters)))
 		case 1:
 			return nil
 		default:
@@ -65,8 +84,8 @@ func MutuallyExclusive[S any](required bool, getters map[string]func(s S) any) g
 	}).
 		WithErrorCode(ErrorCodeMutuallyExclusive).
 		WithDescription(func() string {
-			keys := maps.Keys(getters)
-			return fmt.Sprintf("properties are mutually exclusive: %s", strings.Join(keys, ", "))
+			return fmt.Sprintf("properties are mutually exclusive: %s",
+				strings.Join(collections.SortedKeys(getters), ", "))
 		}())
 }
 
@@ -74,7 +93,7 @@ func prettyOneOfList[T any](values []T) string {
 	b := strings.Builder{}
 	b.Grow(2 + len(values))
 	b.WriteString("[")
-	prettyStringListBuilder(&b, values, false)
+	internal.PrettyStringListBuilder(&b, values, "")
 	b.WriteString("]")
 	return b.String()
 }

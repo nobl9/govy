@@ -7,10 +7,14 @@ import (
 	"net"
 	"net/mail"
 	"net/url"
+	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 	"unicode"
 
+	"github.com/nobl9/govy/internal"
 	"github.com/nobl9/govy/pkg/govy"
 )
 
@@ -30,11 +34,8 @@ func StringNotEmpty() govy.Rule[string] {
 
 // StringMatchRegexp ensures the property's value matches the regular expression.
 // The error message can be enhanced with examples of valid values.
-func StringMatchRegexp(re *regexp.Regexp, examples ...string) govy.Rule[string] {
+func StringMatchRegexp(re *regexp.Regexp) govy.Rule[string] {
 	msg := fmt.Sprintf("string must match regular expression: '%s'", re.String())
-	if len(examples) > 0 {
-		msg += " " + prettyExamples(examples)
-	}
 	return govy.NewRule(func(s string) error {
 		if !re.MatchString(s) {
 			return errors.New(msg)
@@ -47,11 +48,8 @@ func StringMatchRegexp(re *regexp.Regexp, examples ...string) govy.Rule[string] 
 
 // StringDenyRegexp ensures the property's value does not match the regular expression.
 // The error message can be enhanced with examples of invalid values.
-func StringDenyRegexp(re *regexp.Regexp, examples ...string) govy.Rule[string] {
+func StringDenyRegexp(re *regexp.Regexp) govy.Rule[string] {
 	msg := fmt.Sprintf("string must not match regular expression: '%s'", re.String())
-	if len(examples) > 0 {
-		msg += " " + prettyExamples(examples)
-	}
 	return govy.NewRule(func(s string) error {
 		if re.MatchString(s) {
 			return errors.New(msg)
@@ -63,13 +61,12 @@ func StringDenyRegexp(re *regexp.Regexp, examples ...string) govy.Rule[string] {
 }
 
 // StringDNSLabel ensures the property's value is a valid DNS label as defined by RFC 1123.
-func StringDNSLabel() govy.RuleSet[string] {
-	return govy.NewRuleSet(
-		StringLength(1, 63),
-		StringMatchRegexp(rfc1123DnsLabelRegexp(), "my-name", "123-abc").
-			WithDetails("an RFC-1123 compliant label name must consist of lower case alphanumeric characters or '-',"+
-				" and must start and end with an alphanumeric character"),
-	).WithErrorCode(ErrorCodeStringDNSLabel)
+func StringDNSLabel() govy.Rule[string] {
+	return StringMatchRegexp(rfc1123DnsLabelRegexp()).
+		WithDetails("an RFC-1123 compliant label name must consist of lower case alphanumeric characters or '-',"+
+			" and must start and end with an alphanumeric character").
+		WithExamples("my-name", "123-abc").
+		WithErrorCode(ErrorCodeStringDNSLabel)
 }
 
 // StringEmail ensures the property's value is a valid email address.
@@ -196,11 +193,13 @@ func StringCIDRv6() govy.Rule[string] {
 // It does not enforce a specific UUID version.
 // Ref: https://www.ietf.org/rfc/rfc4122.txt
 func StringUUID() govy.Rule[string] {
-	return StringMatchRegexp(uuidRegexp(),
-		"00000000-0000-0000-0000-000000000000",
-		"e190c630-8873-11ee-b9d1-0242ac120002",
-		"79258D24-01A7-47E5-ACBB-7E762DE52298").
+	return StringMatchRegexp(uuidRegexp()).
 		WithDetails("expected RFC-4122 compliant UUID string").
+		WithExamples(
+			"00000000-0000-0000-0000-000000000000",
+			"e190c630-8873-11ee-b9d1-0242ac120002",
+			"79258D24-01A7-47E5-ACBB-7E762DE52298",
+		).
 		WithErrorCode(ErrorCodeStringUUID)
 }
 
@@ -329,37 +328,251 @@ func StringTitle() govy.Rule[string] {
 		WithDescription(msg)
 }
 
-func prettyExamples(examples []string) string {
-	if len(examples) == 0 {
-		return ""
-	}
-	b := strings.Builder{}
-	b.WriteString("(e.g. ")
-	prettyStringListBuilder(&b, examples, true)
-	b.WriteString(")")
-	return b.String()
+// StringGitRef errors.
+var (
+	errGitRefEmpty           = errors.New("git reference cannot be empty")
+	errGitRefEndsWithDot     = errors.New("git reference must not end with a '.'")
+	errGitRefAtLeastOneSlash = errors.New("git reference must contain at least one '/'")
+	errGitRefEmptyPart       = errors.New("git reference must not have empty parts")
+	errGitRefStartsWithDash  = errors.New("git branch and tag references must not start with '-'")
+	errGitRefForbiddenChars  = errors.New("git reference contains forbidden characters")
+)
+
+// StringGitRef ensures a git reference name follows the [git-check-ref-format] rules.
+//
+// It is important to note that this function does not check if the reference exists in the repository.
+// It only checks if the reference name is valid.
+// This functions does not support the '--refspec-pattern', '--normalize', and '--allow-onelevel' options.
+//
+// Git imposes the following rules on how references are named:
+//
+//  1. They can include slash '/' for hierarchical (directory) grouping, but no
+//     slash-separated component can begin with a dot '.' or end with the
+//     sequence '.lock'.
+//  2. They must contain at least one '/'. This enforces the presence of a
+//     category (e.g. 'heads/', 'tags/'), but the actual names are not restricted.
+//  3. They cannot have ASCII control characters (i.e. bytes whose values are
+//     lower than '\040', or '\177' DEL).
+//  4. They cannot have '?', '*', '[', ' ', '~', '^', ', '\t', '\n', '@{', '\\' and '..',
+//  5. They cannot begin or end with a slash '/'.
+//  6. They cannot end with a '.'.
+//  7. They cannot be the single character '@'.
+//  8. 'HEAD' is an allowed special name.
+//
+// Slightly modified version of [go-git] implementation, kudos to the authors!
+//
+// [git-check-ref-format] :https://git-scm.com/docs/git-check-ref-format
+// [go-git]: https://github.com/go-git/go-git/blob/95afe7e1cdf71c59ee8a71971fac71880020a744/plumbing/reference.go#L167
+func StringGitRef() govy.Rule[string] {
+	msg := "string must be a valid git reference"
+	return govy.NewRule(func(s string) error {
+		if len(s) == 0 {
+			return errGitRefEmpty
+		}
+		if s == "HEAD" {
+			return nil
+		}
+		if strings.HasSuffix(s, ".") {
+			return errGitRefEndsWithDot
+		}
+		parts := strings.Split(s, "/")
+		if len(parts) < 2 {
+			return errGitRefAtLeastOneSlash
+		}
+		isBranch := strings.HasPrefix(s, "refs/heads/")
+		isTag := strings.HasPrefix(s, "refs/tags/")
+		for _, part := range parts {
+			if len(part) == 0 {
+				return errGitRefEmptyPart
+			}
+			if (isBranch || isTag) && strings.HasPrefix(part, "-") {
+				return errGitRefStartsWithDash
+			}
+			if part == "@" ||
+				strings.HasPrefix(part, ".") ||
+				strings.HasSuffix(part, ".lock") ||
+				stringContainsGitRefForbiddenChars(part) {
+				return errGitRefForbiddenChars
+			}
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringGitRef).
+		WithDetails("see https://git-scm.com/docs/git-check-ref-format for more information on Git reference naming rules").
+		WithDescription(msg)
+}
+
+// StringFileSystemPath ensures the property's value is an existing file system path.
+func StringFileSystemPath() govy.Rule[string] {
+	msg := "string must be an existing file system path"
+	return govy.NewRule(func(s string) error {
+		if _, err := osStatFile(s); err != nil {
+			return handleFilePathError(err, msg)
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringFileSystemPath).
+		WithDescription(msg)
+}
+
+// StringFilePath ensures the property's value is a file system path pointing to an existing file.
+func StringFilePath() govy.Rule[string] {
+	msg := "string must be a file system path to an existing file"
+	return govy.NewRule(func(s string) error {
+		info, err := osStatFile(s)
+		if err != nil {
+			return handleFilePathError(err, msg)
+		}
+		if info.IsDir() {
+			return errFilePathNotFile
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringFilePath).
+		WithDescription(msg)
+}
+
+// StringDirPath ensures the property's value is a file system path pointing to an existing directory.
+func StringDirPath() govy.Rule[string] {
+	msg := "string must be a file system path to an existing directory"
+	return govy.NewRule(func(s string) error {
+		info, err := osStatFile(s)
+		if err != nil {
+			return handleFilePathError(err, msg)
+		}
+		if !info.IsDir() {
+			return errFilePathNotDir
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringDirPath).
+		WithDescription(msg)
+}
+
+// StringMatchFileSystemPath ensures the property's value matches the provided file path pattern.
+// It uses [filepath.Match] to match the pattern. The native function comes with some limitations,
+// most notably it does not support '**' recursive expansion.
+// It does not check if the file path exists on the file system.
+func StringMatchFileSystemPath(pattern string) govy.Rule[string] {
+	msg := fmt.Sprintf("string must match file path pattern: '%s'", pattern)
+	return govy.NewRule(func(s string) error {
+		ok, err := filepath.Match(pattern, s)
+		if err != nil {
+			return err
+		}
+		if !ok {
+			return errors.New(msg)
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringMatchFileSystemPath).
+		WithDescription(msg)
+}
+
+// StringRegexp ensures the property's value is a valid regular expression.
+// The accepted regular expression syntax must comply to RE2.
+// It is described at https://golang.org/s/re2syntax, except for \C.
+// For an overview of the syntax, see [regexp/syntax] package.
+//
+// [regexp/syntax]: https://pkg.go.dev/regexp/syntax
+func StringRegexp() govy.Rule[string] {
+	msg := "string must be a valid regular expression"
+	return govy.NewRule(func(s string) error {
+		if _, err := regexp.Compile(s); err != nil {
+			return fmt.Errorf("%s: %w", msg, err)
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringRegexp).
+		// nolint: lll
+		WithDetails(`the regular expression syntax must comply to RE2, it is described at https://golang.org/s/re2syntax, except for \C; for an overview of the syntax, see https://pkg.go.dev/regexp/syntax`).
+		WithDescription(msg)
+}
+
+// StringCrontab ensures the property's value is a valid crontab schedule expression.
+// For more details on cron expressions read [crontab manual] and visit [crontab.guru].
+//
+// [crontab manual]: https://www.man7.org/linux/man-pages/man5/crontab.5.html
+// [crontab.guru]: https://crontab.guru
+func StringCrontab() govy.Rule[string] {
+	msg := "string must be a valid cron schedule expression"
+	return govy.NewRule(parseCrontab).
+		WithMessage(msg).
+		WithErrorCode(ErrorCodeStringCrontab)
+}
+
+// StringDateTime ensures the property's value is a valid date and time in the specified layout.
+//
+// The layout must be a valid time format string as defined by [time.Parse],
+// an example of which is [time.RFC3339].
+func StringDateTime(layout string) govy.Rule[string] {
+	msg := fmt.Sprintf("string must be a valid date and time in '%s' format", layout)
+	return govy.NewRule(func(s string) error {
+		if _, err := time.Parse(layout, s); err != nil {
+			return fmt.Errorf("%s: %w", msg, err)
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringDateTime).
+		WithDetails("date and time format follows Go's time layout, see https://pkg.go.dev/time#Layout for more details").
+		WithDescription(msg)
+}
+
+// StringTimeZone ensures the property's value is a valid time zone name which
+// uniquely identifies a time zone in the IANA Time Zone database.
+// Example: "America/New_York", "Europe/London".
+//
+// Under the hood [time.LoadLocation] is called to parse the zone.
+// The native function allows empty string and 'Local' keyword to be supplied.
+// However, these two options are explicitly forbidden by [StringTimeZone].
+//
+// Furthermore, the time zone data is not readily available in one predefined place.
+// [time.LoadLocation] looks for the IANA Time Zone database in specific places,
+// please refer to its documentation for more information.
+func StringTimeZone() govy.Rule[string] {
+	msg := "string must be a valid IANA Time Zone Database code"
+	return govy.NewRule(func(s string) error {
+		if s == "" || s == "Local" {
+			return errors.New(msg)
+		}
+		if _, err := time.LoadLocation(s); err != nil {
+			return fmt.Errorf("%s: %w", msg, err)
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringTimeZone).
+		WithExamples("UTC", "America/New_York", "Europe/Warsaw").
+		WithDescription(msg)
+}
+
+// StringAlpha ensures the property's value consists only of ASCII letters.
+func StringAlpha() govy.Rule[string] {
+	return StringMatchRegexp(alphaRegexp()).
+		WithErrorCode(ErrorCodeStringAlpha)
+}
+
+// StringAlpha ensures the property's value consists only of ASCII letters and numbers.
+func StringAlphanumeric() govy.Rule[string] {
+	return StringMatchRegexp(alphanumericRegexp()).
+		WithErrorCode(ErrorCodeStringAlphanumeric)
+}
+
+// StringAlpha ensures the property's value consists only of Unicode letters.
+func StringAlphaUnicode() govy.Rule[string] {
+	return StringMatchRegexp(alphaUnicodeRegexp()).
+		WithErrorCode(ErrorCodeStringAlphaUnicode)
+}
+
+// StringAlpha ensures the property's value consists only of Unicode letters and numbers.
+func StringAlphanumericUnicode() govy.Rule[string] {
+	return StringMatchRegexp(alphanumericUnicodeRegexp()).
+		WithErrorCode(ErrorCodeStringAlphanumericUnicode)
 }
 
 func prettyStringList[T any](values []T) string {
 	b := new(strings.Builder)
-	prettyStringListBuilder(b, values, true)
+	internal.PrettyStringListBuilder(b, values, "'")
 	return b.String()
-}
-
-func prettyStringListBuilder[T any](b *strings.Builder, values []T, surroundInSingleQuotes bool) {
-	b.Grow(len(values))
-	for i := range values {
-		if i > 0 {
-			b.WriteString(", ")
-		}
-		if surroundInSingleQuotes {
-			b.WriteString("'")
-		}
-		fmt.Fprint(b, values[i])
-		if surroundInSingleQuotes {
-			b.WriteString("'")
-		}
-	}
 }
 
 // isStringSeparator is directly copied from [strings] package.
@@ -384,4 +597,70 @@ func isStringSeparator(r rune) bool {
 	}
 	// Otherwise, all we can do for now is treat spaces as separators.
 	return unicode.IsSpace(r)
+}
+
+var gitRefDisallowedStrings = map[rune]struct{}{
+	'\\': {}, '?': {}, '*': {}, '[': {}, ' ': {}, '~': {}, '^': {}, ':': {}, '\t': {}, '\n': {},
+}
+
+// stringContainsGitRefForbiddenChars is a brute force method to check if a string contains
+// any of the Git reference forbidden characters.
+func stringContainsGitRefForbiddenChars(s string) bool {
+	for i, c := range s {
+		if c == '\177' || (c >= '\000' && c <= '\037') {
+			return true
+		}
+		// Check for '..' and '@{'.
+		if c == '.' && i < len(s)-1 && s[i+1] == '.' ||
+			c == '@' && i < len(s)-1 && s[i+1] == '{' {
+			return true
+		}
+		if _, ok := gitRefDisallowedStrings[c]; !ok {
+			continue
+		}
+		return true
+	}
+	return false
+}
+
+func osStatFile(path string) (os.FileInfo, error) {
+	if strings.TrimSpace(path) == "" {
+		return nil, errFilePathEmpty
+	}
+	hasSeparatorSuffix := strings.HasSuffix(path, string(filepath.Separator))
+	if strings.HasPrefix(path, "~") {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get user home directory: %w", err)
+		}
+		path = home + string(filepath.Separator) + path[1:]
+	}
+	path = filepath.Clean(path)
+	// If the path ends with a separator, we need to add it back after cleaning.
+	if hasSeparatorSuffix {
+		path += string(filepath.Separator)
+	}
+	return os.Stat(path)
+}
+
+var (
+	errFilePathNotExists = errors.New("path does not exist")
+	errFilePathNoPerm    = errors.New("permission to inspect path denied")
+	errFilePathEmpty     = errors.New("path does not exist")
+	errFilePathNotFile   = errors.New("path must point to a file and not to a directory")
+	errFilePathNotDir    = errors.New("path must point to a directory and not to a file")
+)
+
+func handleFilePathError(err error, msg string) error {
+	var pathErr *os.PathError
+	if !errors.As(err, &pathErr) {
+		return err
+	}
+	if errors.Is(err, os.ErrNotExist) {
+		return fmt.Errorf("%s: %w", msg, errFilePathNotExists)
+	}
+	if errors.Is(err, os.ErrPermission) {
+		return fmt.Errorf("%s: %w", msg, errFilePathNoPerm)
+	}
+	return fmt.Errorf("%s: %w", msg, err)
 }

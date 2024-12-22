@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/nobl9/govy/internal"
@@ -23,7 +24,11 @@ func NewValidatorError(errs PropertyErrors) *ValidatorError {
 // It aggregates the property errors of [Validator].
 type ValidatorError struct {
 	Errors PropertyErrors `json:"errors"`
-	Name   string         `json:"name"`
+	// Name is an optional name of the [Validator].
+	Name string `json:"name,omitempty"`
+	// SliceIndex is set if the error was created by [Validator.ValidateSlice].
+	// It contains a 0-based index.
+	SliceIndex *int `json:"sliceIndex,omitempty"`
 }
 
 // WithName sets the [ValidatorError.Name] field.
@@ -32,6 +37,7 @@ func (e *ValidatorError) WithName(name string) *ValidatorError {
 	return e
 }
 
+// Error implements the error interface.
 func (e *ValidatorError) Error() string {
 	b := strings.Builder{}
 	b.WriteString("Validation")
@@ -39,20 +45,41 @@ func (e *ValidatorError) Error() string {
 		b.WriteString(" for ")
 		b.WriteString(e.Name)
 	}
+	if e.SliceIndex != nil {
+		b.WriteString(" at index ")
+		b.WriteString(strconv.Itoa(*e.SliceIndex))
+	}
 	b.WriteString(" has failed for the following properties:\n")
 	internal.JoinErrors(&b, e.Errors, strings.Repeat(" ", 2))
+	return b.String()
+}
+
+// ValidatorErrors is a slice of [ValidatorError].
+type ValidatorErrors []*ValidatorError
+
+// Error implements the error interface.
+func (e ValidatorErrors) Error() string {
+	b := strings.Builder{}
+	for i, vErr := range e {
+		b.WriteString(vErr.Error())
+		if i < len(e)-1 {
+			b.WriteString("\n")
+		}
+	}
 	return b.String()
 }
 
 // PropertyErrors is a slice of [PropertyError].
 type PropertyErrors []*PropertyError
 
+// Error implements the error interface.
 func (e PropertyErrors) Error() string {
 	b := strings.Builder{}
 	internal.JoinErrors(&b, e, "")
 	return b.String()
 }
 
+// HideValue hides the property value from each of the [PropertyError].
 func (e PropertyErrors) HideValue() PropertyErrors {
 	for _, err := range e {
 		_ = err.HideValue()
@@ -108,9 +135,11 @@ func NewPropertyError(propertyName string, propertyValue interface{}, errs ...er
 	}
 }
 
+// PropertyError is the error returned by [PropertyRules.Validate].
+// It contains property level details along with all the [RuleError] encountered for that property.
 type PropertyError struct {
 	PropertyName  string `json:"propertyName"`
-	PropertyValue string `json:"propertyValue"`
+	PropertyValue string `json:"propertyValue,omitempty"`
 	// IsKeyError is set to true if the error was created through map key validation.
 	// PropertyValue in this scenario will be the key value, equal to the last element of PropertyName path.
 	IsKeyError bool `json:"isKeyError,omitempty"`
@@ -119,6 +148,7 @@ type PropertyError struct {
 	Errors              []*RuleError `json:"errors"`
 }
 
+// Error implements the error interface.
 func (e *PropertyError) Error() string {
 	b := new(strings.Builder)
 	indent := ""
@@ -176,22 +206,18 @@ func NewRuleError(message string, codes ...ErrorCode) *RuleError {
 	return ruleError
 }
 
-// RuleError is the fundamental error container associated with a [Rule].
+// RuleError is the base error associated with a [Rule].
+// It is returned by [Rule.Validate].
 type RuleError struct {
 	Message     string    `json:"error"`
 	Code        ErrorCode `json:"code,omitempty"`
-	Details     string    `json:"details,omitempty"`
 	Description string    `json:"description,omitempty"`
 }
 
+// Error implements the error interface.
+// It simply returns the underlying [RuleError.Message].
 func (r *RuleError) Error() string {
-	if r.Details == "" {
-		return r.Message
-	}
-	if r.Message == "" {
-		return r.Details
-	}
-	return r.Message + "; " + r.Details
+	return r.Message
 }
 
 // AddCode extends the [RuleError] with the given error code.
@@ -212,9 +238,10 @@ func (r *RuleError) HideValue(stringValue string) *RuleError {
 	return r
 }
 
-// RuleSetError is a container for transferring multiple errors reported by [govy.RuleSet].
+// RuleSetError is a container for transferring multiple errors reported by [RuleSet.Validate].
 type RuleSetError []error
 
+// Error implements the error interface.
 func (r RuleSetError) Error() string {
 	b := new(strings.Builder)
 	internal.JoinErrors(b, r, "")
@@ -250,13 +277,6 @@ func (e RuleErrorTemplate) Error() string {
 // It supports all govy errors.
 func HasErrorCode(err error, code ErrorCode) bool {
 	switch v := err.(type) {
-	case PropertyErrors:
-		for _, e := range v {
-			if HasErrorCode(e, code) {
-				return true
-			}
-		}
-		return false
 	case *ValidatorError:
 		for _, e := range v.Errors {
 			if HasErrorCode(e, code) {
@@ -264,6 +284,26 @@ func HasErrorCode(err error, code ErrorCode) bool {
 			}
 		}
 		return false
+	case ValidatorErrors:
+		for _, e := range v {
+			if HasErrorCode(e, code) {
+				return true
+			}
+		}
+		return false
+	case PropertyErrors:
+		for _, e := range v {
+			if HasErrorCode(e, code) {
+				return true
+			}
+		}
+		return false
+	case *PropertyError:
+		for _, e := range v.Errors {
+			if HasErrorCode(e, code) {
+				return true
+			}
+		}
 	case *RuleError:
 		codes := strings.Split(v.Code, ErrorCodeSeparator)
 		for i := range codes {
@@ -271,8 +311,8 @@ func HasErrorCode(err error, code ErrorCode) bool {
 				return true
 			}
 		}
-	case *PropertyError:
-		for _, e := range v.Errors {
+	case RuleSetError:
+		for _, e := range v {
 			if HasErrorCode(e, code) {
 				return true
 			}
@@ -281,7 +321,7 @@ func HasErrorCode(err error, code ErrorCode) bool {
 	return false
 }
 
-// unpackRuleErrors unpacks error messages recursively scanning [ruleSetError] if it is detected.
+// unpackRuleErrors unpacks error messages recursively scanning [RuleSetError] if it is detected.
 func unpackRuleErrors(errs []error, ruleErrors []*RuleError) []*RuleError {
 	for _, err := range errs {
 		switch v := err.(type) {

@@ -2,12 +2,35 @@ package govy
 
 import (
 	"fmt"
+	"strings"
 	"text/template"
+
+	"github.com/nobl9/govy/internal"
+	"github.com/nobl9/govy/internal/collections"
 )
 
 // NewRule creates a new [Rule] instance.
 func NewRule[T any](validate func(v T) error) Rule[T] {
 	return Rule[T]{validate: validate}
+}
+
+// RuleToPointer converts an existing [Rule] to its pointer variant.
+// It retains all the properties of the original [Rule],
+// but modifies its type constraints to work with a pointer to the original type.
+// If the validated value is nil, the validation will be skipped.
+func RuleToPointer[T any](rule Rule[T]) Rule[*T] {
+	return Rule[*T]{
+		validate: func(v *T) error {
+			if v == nil {
+				return nil
+			}
+			return rule.validate(*v)
+		},
+		errorCode:   rule.errorCode,
+		details:     rule.details,
+		message:     rule.message,
+		description: rule.description,
+	}
 }
 
 // Rule is the basic validation building block.
@@ -19,6 +42,7 @@ type Rule[T any] struct {
 	details         string
 	message         string
 	messageTemplate *template.Template
+	examples        []string
 	description     string
 }
 
@@ -36,9 +60,8 @@ func (r Rule[T]) Validate(v T) error {
 		switch ev := err.(type) {
 		case *RuleError:
 			if len(r.message) > 0 {
-				ev.Message = r.message
+				ev.Message = createErrorMessage(r.message, r.details, r.examples)
 			}
-			ev.Details = r.details
 			ev.Description = r.description
 			return ev.AddCode(r.errorCode)
 		case *PropertyError:
@@ -53,9 +76,8 @@ func (r Rule[T]) Validate(v T) error {
 				msg = r.message
 			}
 			return &RuleError{
-				Message:     msg,
+				Message:     createErrorMessage(msg, r.details, r.examples),
 				Code:        r.errorCode,
-				Details:     r.details,
 				Description: r.description,
 			}
 		}
@@ -103,6 +125,13 @@ func (r Rule[T]) WithDetails(format string, a ...any) Rule[T] {
 	return r
 }
 
+// WithExamples adds examples to the returned [RuleError].
+// Each example is converted to a string.
+func (r Rule[T]) WithExamples(examples ...T) Rule[T] {
+	r.examples = collections.ToStringSlice(examples)
+	return r
+}
+
 // WithDescription adds a custom description to the rule.
 // It is used to enhance the [RulePlan], but otherwise does not appear in standard [RuleError.Error] output.
 func (r Rule[T]) WithDescription(description string) Rule[T] {
@@ -119,6 +148,29 @@ func (r Rule[T]) plan(builder planBuilder) {
 		Details:     r.details,
 		Description: r.description,
 		Conditions:  builder.rulePlan.Conditions,
+		Examples:    r.examples,
 	}
 	*builder.children = append(*builder.children, builder)
+}
+
+func createErrorMessage(message, details string, examples []string) string {
+	if message == "" {
+		return details
+	}
+	message = addExamplesToErrorMessage(message, examples)
+	if details == "" {
+		return message
+	}
+	return message + "; " + details
+}
+
+func addExamplesToErrorMessage(message string, examples []string) string {
+	if len(examples) == 0 {
+		return message
+	}
+	b := strings.Builder{}
+	b.WriteString(" (e.g. ")
+	internal.PrettyStringListBuilder(&b, examples, "'")
+	b.WriteString(")")
+	return message + b.String()
 }
