@@ -14,6 +14,7 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/nobl9/govy/internal"
 	"github.com/nobl9/govy/pkg/govy"
 )
 
@@ -33,11 +34,8 @@ func StringNotEmpty() govy.Rule[string] {
 
 // StringMatchRegexp ensures the property's value matches the regular expression.
 // The error message can be enhanced with examples of valid values.
-func StringMatchRegexp(re *regexp.Regexp, examples ...string) govy.Rule[string] {
+func StringMatchRegexp(re *regexp.Regexp) govy.Rule[string] {
 	msg := fmt.Sprintf("string must match regular expression: '%s'", re.String())
-	if len(examples) > 0 {
-		msg += " " + prettyExamples(examples)
-	}
 	return govy.NewRule(func(s string) error {
 		if !re.MatchString(s) {
 			return errors.New(msg)
@@ -50,11 +48,8 @@ func StringMatchRegexp(re *regexp.Regexp, examples ...string) govy.Rule[string] 
 
 // StringDenyRegexp ensures the property's value does not match the regular expression.
 // The error message can be enhanced with examples of invalid values.
-func StringDenyRegexp(re *regexp.Regexp, examples ...string) govy.Rule[string] {
+func StringDenyRegexp(re *regexp.Regexp) govy.Rule[string] {
 	msg := fmt.Sprintf("string must not match regular expression: '%s'", re.String())
-	if len(examples) > 0 {
-		msg += " " + prettyExamples(examples)
-	}
 	return govy.NewRule(func(s string) error {
 		if re.MatchString(s) {
 			return errors.New(msg)
@@ -67,9 +62,10 @@ func StringDenyRegexp(re *regexp.Regexp, examples ...string) govy.Rule[string] {
 
 // StringDNSLabel ensures the property's value is a valid DNS label as defined by RFC 1123.
 func StringDNSLabel() govy.Rule[string] {
-	return StringMatchRegexp(rfc1123DnsLabelRegexp(), "my-name", "123-abc").
-		WithDetails("an RFC-1123 compliant label name must consist of lower case alphanumeric characters or '-'," +
+	return StringMatchRegexp(rfc1123DnsLabelRegexp()).
+		WithDetails("an RFC-1123 compliant label name must consist of lower case alphanumeric characters or '-',"+
 			" and must start and end with an alphanumeric character").
+		WithExamples("my-name", "123-abc").
 		WithErrorCode(ErrorCodeStringDNSLabel)
 }
 
@@ -197,11 +193,13 @@ func StringCIDRv6() govy.Rule[string] {
 // It does not enforce a specific UUID version.
 // Ref: https://www.ietf.org/rfc/rfc4122.txt
 func StringUUID() govy.Rule[string] {
-	return StringMatchRegexp(uuidRegexp(),
-		"00000000-0000-0000-0000-000000000000",
-		"e190c630-8873-11ee-b9d1-0242ac120002",
-		"79258D24-01A7-47E5-ACBB-7E762DE52298").
+	return StringMatchRegexp(uuidRegexp()).
 		WithDetails("expected RFC-4122 compliant UUID string").
+		WithExamples(
+			"00000000-0000-0000-0000-000000000000",
+			"e190c630-8873-11ee-b9d1-0242ac120002",
+			"79258D24-01A7-47E5-ACBB-7E762DE52298",
+		).
 		WithErrorCode(ErrorCodeStringUUID)
 }
 
@@ -507,11 +505,8 @@ func StringCrontab() govy.Rule[string] {
 //
 // The layout must be a valid time format string as defined by [time.Parse],
 // an example of which is [time.RFC3339].
-func StringDateTime(layout string, examples ...string) govy.Rule[string] {
+func StringDateTime(layout string) govy.Rule[string] {
 	msg := fmt.Sprintf("string must be a valid date and time in '%s' format", layout)
-	if len(examples) > 0 {
-		msg += " " + prettyExamples(examples)
-	}
 	return govy.NewRule(func(s string) error {
 		if _, err := time.Parse(layout, s); err != nil {
 			return fmt.Errorf("%s: %w", msg, err)
@@ -535,8 +530,7 @@ func StringDateTime(layout string, examples ...string) govy.Rule[string] {
 // [time.LoadLocation] looks for the IANA Time Zone database in specific places,
 // please refer to its documentation for more information.
 func StringTimeZone() govy.Rule[string] {
-	msg := "string must be a valid IANA Time Zone Database code " +
-		prettyExamples([]string{"UTC", "America/New_York", "Europe/Warsaw"})
+	msg := "string must be a valid IANA Time Zone Database code"
 	return govy.NewRule(func(s string) error {
 		if s == "" || s == "Local" {
 			return errors.New(msg)
@@ -547,6 +541,7 @@ func StringTimeZone() govy.Rule[string] {
 		return nil
 	}).
 		WithErrorCode(ErrorCodeStringTimeZone).
+		WithExamples("UTC", "America/New_York", "Europe/Warsaw").
 		WithDescription(msg)
 }
 
@@ -574,37 +569,10 @@ func StringAlphanumericUnicode() govy.Rule[string] {
 		WithErrorCode(ErrorCodeStringAlphanumericUnicode)
 }
 
-func prettyExamples(examples []string) string {
-	if len(examples) == 0 {
-		return ""
-	}
-	b := strings.Builder{}
-	b.WriteString("(e.g. ")
-	prettyStringListBuilder(&b, examples, true)
-	b.WriteString(")")
-	return b.String()
-}
-
 func prettyStringList[T any](values []T) string {
 	b := new(strings.Builder)
-	prettyStringListBuilder(b, values, true)
+	internal.PrettyStringListBuilder(b, values, "'")
 	return b.String()
-}
-
-func prettyStringListBuilder[T any](b *strings.Builder, values []T, surroundInSingleQuotes bool) {
-	b.Grow(len(values))
-	for i := range values {
-		if i > 0 {
-			b.WriteString(", ")
-		}
-		if surroundInSingleQuotes {
-			b.WriteString("'")
-		}
-		fmt.Fprint(b, values[i])
-		if surroundInSingleQuotes {
-			b.WriteString("'")
-		}
-	}
 }
 
 // isStringSeparator is directly copied from [strings] package.

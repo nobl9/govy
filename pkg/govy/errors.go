@@ -206,7 +206,7 @@ func NewRuleError(message string, codes ...ErrorCode) *RuleError {
 	return ruleError
 }
 
-// RuleError is the fundamental error container associated with a [Rule].
+// RuleError is the base error associated with a [Rule].
 // It is returned by [Rule.Validate].
 type RuleError struct {
 	Message     string    `json:"error"`
@@ -215,6 +215,7 @@ type RuleError struct {
 }
 
 // Error implements the error interface.
+// It simply returns the underlying [RuleError.Message].
 func (r *RuleError) Error() string {
 	return r.Message
 }

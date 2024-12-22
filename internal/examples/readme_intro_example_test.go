@@ -34,8 +34,9 @@ func Example_basicUsage() {
 			Required().
 			Rules(rules.StringMatchRegexp(
 				regexp.MustCompile(`[\w\s.]+, [0-9]{2}-[0-9]{3} \w+`),
-				"5 M. Skłodowska-Curie Square, 60-965 Poznan").
-				WithDetails("Polish address format must consist of the main address and zip code")),
+			).
+				WithDetails("Polish address format must consist of the main address and zip code").
+				WithExamples("5 M. Skłodowska-Curie Square, 60-965 Poznan")),
 	)
 	studentValidator := govy.New(
 		govy.For(func(s Student) string { return s.Index }).
