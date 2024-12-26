@@ -1,12 +1,14 @@
 package govy
 
 import (
+	"bytes"
 	"fmt"
 	"strings"
 	"text/template"
 
 	"github.com/nobl9/govy/internal"
 	"github.com/nobl9/govy/internal/collections"
+	"github.com/nobl9/govy/internal/messagetemplates"
 )
 
 // NewRule creates a new [Rule] instance.
@@ -50,9 +52,9 @@ type Rule[T any] struct {
 // It can handle different types of errors returned by the function:
 //   - [*RuleError], which details and [ErrorCode] are optionally extended with the ones defined by [Rule].
 //   - [*PropertyError], for each of its errors their [ErrorCode] is extended with the one defined by [Rule].
-//   - [*RuleErrorTemplate], if message template was set with [Rule.WithMessageTemplate] or
+//   - [*ruleErrorTemplate], if message template was set with [Rule.WithMessageTemplate] or
 //     [Rule.WithMessageTemplateString] then the [RuleError.Message] is constructed from the provided template
-//     using variables passed inside [RuleErrorTemplate.Vars].
+//     using variables passed inside [ruleErrorTemplate.Vars].
 //
 // By default, it will construct a new [*RuleError].
 func (r Rule[T]) Validate(v T) error {
@@ -69,7 +71,22 @@ func (r Rule[T]) Validate(v T) error {
 				_ = e.AddCode(r.errorCode)
 			}
 			return ev
-		case *RuleErrorTemplate:
+		case ruleErrorTemplate[T]:
+			if r.messageTemplate == nil {
+				panic("message template is not set")
+			}
+			ev.Vars.PropertyValue = v
+			ev.Vars.Details = r.details
+			ev.Vars.Examples = r.examples
+			var buf bytes.Buffer
+			if err = r.messageTemplate.Execute(&buf, ev.Vars); err != nil {
+				panic(fmt.Sprintf("failed to execute message template: %s", err))
+			}
+			return &RuleError{
+				Message:     buf.String(),
+				Code:        r.errorCode,
+				Description: r.description,
+			}
 		default:
 			msg := ev.Error()
 			if len(r.message) > 0 {
@@ -104,7 +121,7 @@ func (r Rule[T]) WithMessage(format string, a ...any) Rule[T] {
 
 // WithMessageTemplate overrides the returned [RuleError] error message using provided [template.Template].
 func (r Rule[T]) WithMessageTemplate(tpl *template.Template) Rule[T] {
-	r.messageTemplate = tpl
+	r.messageTemplate = messagetemplates.AddFunctions(tpl)
 	return r
 }
 
@@ -139,9 +156,6 @@ func (r Rule[T]) WithDescription(description string) Rule[T] {
 	return r
 }
 
-func (r Rule[T]) getErrorMessage(err error) string {
-}
-
 func (r Rule[T]) plan(builder planBuilder) {
 	builder.rulePlan = RulePlan{
 		ErrorCode:   r.errorCode,
@@ -157,20 +171,20 @@ func createErrorMessage(message, details string, examples []string) string {
 	if message == "" {
 		return details
 	}
-	message = addExamplesToErrorMessage(message, examples)
+	message += examplesToString(examples)
 	if details == "" {
 		return message
 	}
 	return message + "; " + details
 }
 
-func addExamplesToErrorMessage(message string, examples []string) string {
+func examplesToString(examples []string) string {
 	if len(examples) == 0 {
-		return message
+		return ""
 	}
 	b := strings.Builder{}
 	b.WriteString(" (e.g. ")
 	internal.PrettyStringListBuilder(&b, examples, "'")
 	b.WriteString(")")
-	return message + b.String()
+	return b.String()
 }

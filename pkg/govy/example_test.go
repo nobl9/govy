@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"text/template"
 	"time"
 
 	"github.com/nobl9/govy/pkg/govy"
@@ -658,6 +659,37 @@ func ExampleRule_WithMessage() {
 	// Validation for Teacher has failed for the following properties:
 	//   - 'name' with value 'Jake':
 	//     - unsupported name; Teacher can be either Tom or Jerry :)
+}
+
+// If you want have more control over the resulting error message,
+// but [govy.Rule.WithMessage] is not enough, you can use [govy.Rule.WithMessageTemplate].
+//
+//	TODO
+func ExampleRule_WithMessageTemplate() {
+	tplString := "Teacher's name '{{ .PropertyValue }}' is not supported. {{ .Details }}"
+	tpl := template.Must(template.New("").Parse(tplString))
+	v := govy.New(
+		govy.For(func(t Teacher) string { return t.Name }).
+			WithName("name").
+			Rules(rules.StringLength(5, 10).
+				WithDetails("Teacher's name must be between 5 and 10 characters").
+				WithExamples("Joanna", "Angeline").
+				WithMessageTemplate(tpl)),
+	).WithName("Teacher")
+
+	teacher := Teacher{
+		Name: "Eve",
+	}
+
+	err := v.Validate(teacher)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	// Output:
+	// Validation for Teacher has failed for the following properties:
+	//   - 'name' with value 'Eve':
+	//     - Teacher's name 'Eve' is not supported.
 }
 
 // [govy.Rule] error might be static, i.e. a single [govy.Rule] always returns

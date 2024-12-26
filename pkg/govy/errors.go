@@ -248,29 +248,46 @@ func (r RuleSetError) Error() string {
 	return b.String()
 }
 
-// NewRuleErrorTemplate creates a new [RuleErrorTemplate] with the given template variables.
+// NewRuleErrorTemplate creates a new [ruleErrorTemplate] with the given template variables.
 // The variables can be of any type, most commonly it would be a struct or a map.
 // These variables are then passed to [template.Template.Execute].
-// For more details on Go templates see: https://pkg.go.dev/text/template.
 // Example:
 //
 //	return govy.NewRuleErrorTemplate(map[string]string{
 //	  "Name":      "my-property",
 //	  "MaxLength": 2,
 //	})
-func NewRuleErrorTemplate(vars any) RuleErrorTemplate {
-	return RuleErrorTemplate{Vars: vars}
+//
+// For more details on Go templates see: https://pkg.go.dev/text/template.
+func NewRuleErrorTemplate[T any](vars TemplateVars[T]) ruleErrorTemplate[T] {
+	return ruleErrorTemplate[T]{Vars: vars}
 }
 
-// RuleErrorTemplate is a container for passing template variables under the guise of an error.
+// ruleErrorTemplate is a container for passing template variables under the guise of an error.
 // It's not meant to be used directly as an error but rather
 // unpacked by [Rule] in order to create a templated error message.
-type RuleErrorTemplate struct {
-	Vars any
+type ruleErrorTemplate[T any] struct {
+	Vars TemplateVars[T]
 }
 
-func (e RuleErrorTemplate) Error() string {
+func (e ruleErrorTemplate[T]) Error() string {
 	return fmt.Sprintf("%T should not be used directly", e)
+}
+
+// TemplateVars lists all the possible variables that can be used by builtin rules' message templates.
+// Reuse the variable names to keep the consistency across all the rules.
+type TemplateVars[T any] struct {
+	// Common variables which are available for all the rules.
+	PropertyValue T
+	Examples      []string
+	Details       string
+	// Builtin variables which are available only for selected rules.
+	Error     string
+	MinLength int
+	MaxLength int
+	// Custom variables provided by the user, this can be anything,
+	// e.g. map[string]any or a struct.
+	Custom any
 }
 
 // HasErrorCode checks if an error contains given [ErrorCode].

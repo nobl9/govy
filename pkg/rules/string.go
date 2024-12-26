@@ -176,7 +176,7 @@ func StringCIDRv4() govy.Rule[string] {
 		WithDescription(msg)
 }
 
-// StringCIDRv4 ensures property's value is a valid CIDR notation IPv6 address.
+// StringCIDRv6 ensures property's value is a valid CIDR notation IPv6 address.
 func StringCIDRv6() govy.Rule[string] {
 	msg := "string must be a valid CIDR notation IPv6 address"
 	return govy.NewRule(func(s string) error {
@@ -551,28 +551,22 @@ func StringAlpha() govy.Rule[string] {
 		WithErrorCode(ErrorCodeStringAlpha)
 }
 
-// StringAlpha ensures the property's value consists only of ASCII letters and numbers.
+// StringAlphanumeric ensures the property's value consists only of ASCII letters and numbers.
 func StringAlphanumeric() govy.Rule[string] {
 	return StringMatchRegexp(alphanumericRegexp()).
 		WithErrorCode(ErrorCodeStringAlphanumeric)
 }
 
-// StringAlpha ensures the property's value consists only of Unicode letters.
+// StringAlphaUnicode ensures the property's value consists only of Unicode letters.
 func StringAlphaUnicode() govy.Rule[string] {
 	return StringMatchRegexp(alphaUnicodeRegexp()).
 		WithErrorCode(ErrorCodeStringAlphaUnicode)
 }
 
-// StringAlpha ensures the property's value consists only of Unicode letters and numbers.
+// StringAlphanumericUnicode ensures the property's value consists only of Unicode letters and numbers.
 func StringAlphanumericUnicode() govy.Rule[string] {
 	return StringMatchRegexp(alphanumericUnicodeRegexp()).
 		WithErrorCode(ErrorCodeStringAlphanumericUnicode)
-}
-
-func prettyStringList[T any](values []T) string {
-	b := new(strings.Builder)
-	internal.PrettyStringListBuilder(b, values, "'")
-	return b.String()
 }
 
 // isStringSeparator is directly copied from [strings] package.
@@ -663,4 +657,10 @@ func handleFilePathError(err error, msg string) error {
 		return fmt.Errorf("%s: %w", msg, errFilePathNoPerm)
 	}
 	return fmt.Errorf("%s: %w", msg, err)
+}
+
+func prettyStringList[T any](values []T) string {
+	b := new(strings.Builder)
+	internal.PrettyStringListBuilder(b, values, "'")
+	return b.String()
 }

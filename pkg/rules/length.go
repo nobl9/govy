@@ -5,18 +5,19 @@ import (
 	"fmt"
 	"unicode/utf8"
 
+	"github.com/nobl9/govy/internal/messagetemplates"
 	"github.com/nobl9/govy/pkg/govy"
 )
 
 // StringLength ensures the string's length is between min and max (closed interval).
 func StringLength(minLen, maxLen int) govy.Rule[string] {
 	enforceMinMaxLength(minLen, maxLen)
-	tpl := getMessageTemplate(stringLengthTemplateKey)
+	tpl := messagetemplates.Get(messagetemplates.StringLengthTemplate)
 
 	return govy.NewRule(func(v string) error {
 		length := utf8.RuneCountInString(v)
 		if length < minLen || length > maxLen {
-			return govy.NewRuleErrorTemplate(ruleErrorTemplateVars[string]{
+			return govy.NewRuleErrorTemplate(govy.TemplateVars[string]{
 				PropertyValue: v,
 				MinLength:     minLen,
 				MaxLength:     maxLen,
@@ -26,7 +27,7 @@ func StringLength(minLen, maxLen int) govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringLength).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, ruleErrorTemplateVars[string]{
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars[string]{
 			MinLength: minLen,
 			MaxLength: maxLen,
 		}))
