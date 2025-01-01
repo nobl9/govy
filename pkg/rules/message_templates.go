@@ -8,7 +8,7 @@ import (
 	"github.com/nobl9/govy/pkg/govy"
 )
 
-func mustExecuteTemplate[T any](tpl *template.Template, vars govy.TemplateVars[T]) string {
+func mustExecuteTemplate(tpl *template.Template, vars govy.TemplateVars) string {
 	var buf bytes.Buffer
 	if err := tpl.Execute(&buf, vars); err != nil {
 		slog.Error("failed to execute message template",

@@ -10,6 +10,10 @@ import (
 )
 
 // StringLength ensures the string's length is between min and max (closed interval).
+//
+// The following, additional template variables are supported:
+//   - [govy.TemplateVars.MinLength].
+//   - [govy.TemplateVars.MaxLength].
 func StringLength(minLen, maxLen int) govy.Rule[string] {
 	enforceMinMaxLength(minLen, maxLen)
 	tpl := messagetemplates.Get(messagetemplates.StringLengthTemplate)
@@ -17,7 +21,7 @@ func StringLength(minLen, maxLen int) govy.Rule[string] {
 	return govy.NewRule(func(v string) error {
 		length := utf8.RuneCountInString(v)
 		if length < minLen || length > maxLen {
-			return govy.NewRuleErrorTemplate(govy.TemplateVars[string]{
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
 				PropertyValue: v,
 				MinLength:     minLen,
 				MaxLength:     maxLen,
@@ -27,7 +31,7 @@ func StringLength(minLen, maxLen int) govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringLength).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars[string]{
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
 			MinLength: minLen,
 			MaxLength: maxLen,
 		}))

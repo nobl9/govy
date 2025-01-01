@@ -9,8 +9,8 @@ import (
 
 // AddFunctions adds a set of custom functions to the provided template.
 // These functions are used by builtin templates.
-func AddFunctions(t *template.Template) *template.Template {
-	return t.Funcs(functions)
+func AddFunctions(tpl *template.Template) *template.Template {
+	return tpl.Funcs(functions)
 }
 
 var functions = template.FuncMap{

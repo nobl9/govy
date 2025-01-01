@@ -248,7 +248,7 @@ func (r RuleSetError) Error() string {
 	return b.String()
 }
 
-// NewRuleErrorTemplate creates a new [ruleErrorTemplate] with the given template variables.
+// NewRuleErrorTemplate creates a new [RuleErrorTemplate] with the given template variables.
 // The variables can be of any type, most commonly it would be a struct or a map.
 // These variables are then passed to [template.Template.Execute].
 // Example:
@@ -259,26 +259,28 @@ func (r RuleSetError) Error() string {
 //	})
 //
 // For more details on Go templates see: https://pkg.go.dev/text/template.
-func NewRuleErrorTemplate[T any](vars TemplateVars[T]) ruleErrorTemplate[T] {
-	return ruleErrorTemplate[T]{Vars: vars}
+func NewRuleErrorTemplate(vars TemplateVars) RuleErrorTemplate {
+	return RuleErrorTemplate{vars: vars}
 }
 
-// ruleErrorTemplate is a container for passing template variables under the guise of an error.
+// RuleErrorTemplate is a container for passing template variables under the guise of an error.
 // It's not meant to be used directly as an error but rather
 // unpacked by [Rule] in order to create a templated error message.
-type ruleErrorTemplate[T any] struct {
-	Vars TemplateVars[T]
+type RuleErrorTemplate struct {
+	vars TemplateVars
 }
 
-func (e ruleErrorTemplate[T]) Error() string {
+// Error implements the error interface.
+// Since [RuleErrorTemplate] should not be used directly this function returns.
+func (e RuleErrorTemplate) Error() string {
 	return fmt.Sprintf("%T should not be used directly", e)
 }
 
 // TemplateVars lists all the possible variables that can be used by builtin rules' message templates.
 // Reuse the variable names to keep the consistency across all the rules.
-type TemplateVars[T any] struct {
+type TemplateVars struct {
 	// Common variables which are available for all the rules.
-	PropertyValue T
+	PropertyValue any
 	Examples      []string
 	Details       string
 	// Builtin variables which are available only for selected rules.

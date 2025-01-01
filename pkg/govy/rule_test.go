@@ -168,7 +168,7 @@ func TestRule_WithMessageTemplate(t *testing.T) {
 	assert.Require(t, assert.NoError(t, err))
 
 	rule := govy.NewRule(func(v string) error {
-		return govy.NewRuleErrorTemplate(govy.TemplateVars[string]{
+		return govy.NewRuleErrorTemplate(govy.TemplateVars{
 			Error: "error",
 		})
 	}).
@@ -186,7 +186,7 @@ func TestRule_WithMessageTemplate(t *testing.T) {
 
 func TestRule_WithMessageTemplateString(t *testing.T) {
 	rule := govy.NewRule(func(v string) error {
-		return govy.NewRuleErrorTemplate(govy.TemplateVars[string]{
+		return govy.NewRuleErrorTemplate(govy.TemplateVars{
 			Error: "error",
 		})
 	}).
