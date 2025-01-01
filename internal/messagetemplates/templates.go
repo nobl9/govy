@@ -12,5 +12,6 @@ var rawMessageTemplates = map[templateKey]string{
 }
 
 // commonTemplateSuffix is a suffix that is added to all message templates.
-// It includes examples and details and handles their absensce.
-const commonTemplateSuffix = `{{- if .Examples }} {{ formatExamples .Examples }}{{- end }}{{- if .Details }}; {{ .Details }}{{- end }}`
+// It includes examples and details and handles their absence.
+const commonTemplateSuffix = "{{- if .Examples }} {{ formatExamples .Examples }}{{- end }}" +
+	"{{- if .Details }}; {{ .Details }}{{- end }}"
