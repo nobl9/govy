@@ -1,9 +1,14 @@
 package messagetemplates
 
 import (
+	"os"
+	"path/filepath"
+	"regexp"
+	"slices"
 	"testing"
 	"text/template"
 
+	"github.com/nobl9/govy/internal"
 	"github.com/nobl9/govy/internal/assert"
 )
 
@@ -42,24 +47,24 @@ func TestAddFunctions(t *testing.T) {
 				Expected: "(e.g. 'foo', 'bar', 'baz')",
 			},
 		},
-		"formatStringSlice": {
+		"joinStringsSlice": {
 			{
-				Text:     `{{ formatStringSlice .Examples "'" }}`,
+				Text:     `{{ joinStringsSlice .Examples "'" }}`,
 				Vars:     templateVariables{Examples: nil},
 				Expected: "",
 			},
 			{
-				Text:     `{{ formatStringSlice .Examples "'" }}`,
+				Text:     `{{ joinStringsSlice .Examples "'" }}`,
 				Vars:     templateVariables{Examples: []string{}},
 				Expected: "",
 			},
 			{
-				Text:     `{{ formatStringSlice .Examples "'" }}`,
+				Text:     `{{ joinStringsSlice .Examples "'" }}`,
 				Vars:     templateVariables{Examples: []string{"foo"}},
 				Expected: "'foo'",
 			},
 			{
-				Text:     `{{ formatStringSlice .Examples "'" }}`,
+				Text:     `{{ joinStringsSlice .Examples "'" }}`,
 				Vars:     templateVariables{Examples: []string{"foo", "bar", "baz"}},
 				Expected: "'foo', 'bar', 'baz'",
 			},
@@ -77,5 +82,26 @@ func TestAddFunctions(t *testing.T) {
 				assert.Equal(t, tc.Expected, actual)
 			}
 		})
+	}
+}
+
+func TestFunctions_EnsureExamplesAreDefined(t *testing.T) {
+	root := internal.FindModuleRoot()
+	path := filepath.Join(root, "pkg", "govy", "example_test.go")
+
+	data, err := os.ReadFile(path)
+	assert.Require(t, assert.NoError(t, err))
+
+	re, err := regexp.Compile(`(?m)^func ExampleAddTemplateFunctions_(\w+)\(\)`)
+	assert.Require(t, assert.NoError(t, err))
+
+	matches := re.FindAllStringSubmatch(string(data), -1)
+	for funcName := range templateFunctions {
+		if !slices.ContainsFunc(matches, func(match []string) bool { return match[1] == funcName }) {
+			assert.Fail(t,
+				"Example for template function %[1]q is missing"+
+					", expected the following signature: 'func ExampleAddTemplateFunctions_%[1]s()'",
+				funcName)
+		}
 	}
 }

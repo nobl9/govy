@@ -745,7 +745,7 @@ func ExampleRule_WithMessageTemplate() {
 // Note: Builtin functions are automatically added to the parsed [template.Template] if you're using
 // [govy.Rule.WithMessageTemplateString].
 //
-// Note: Under the hood [template.Template.Funcs] is called, which will not add the functions
+// Note: [govy.AddTemplateFunctions] calls [template.Template.Funcs], which will not add the functions
 // to your template If it was already parsed.
 func ExampleAddTemplateFunctions() {
 	tplString := `Teacher's name '{{ .PropertyValue }}' is not supported {{ formatExamples .Examples }}.`
@@ -774,6 +774,42 @@ func ExampleAddTemplateFunctions() {
 	// Validation for Teacher has failed for the following properties:
 	//   - 'name' with value 'Eve':
 	//     - Teacher's name 'Eve' is not supported (e.g. 'Joanna', 'Angeline').
+}
+
+func ExampleAddTemplateFunctions_formatExamples() {
+	tplString := "{{ formatExamples .Examples }}"
+	tpl := template.New("")
+	tpl = govy.AddTemplateFunctions(tpl)
+	tpl = template.Must(tpl.Parse(tplString))
+
+	err := tpl.Execute(
+		os.Stdout,
+		map[string]any{"Examples": []string{"Joanna", "Angeline"}},
+	)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	// Output:
+	// (e.g. 'Joanna', 'Angeline')
+}
+
+func ExampleAddTemplateFunctions_joinStringsSlice() {
+	tplString := `{{ joinStringsSlice .Slice "'" }}`
+	tpl := template.New("")
+	tpl = govy.AddTemplateFunctions(tpl)
+	tpl = template.Must(tpl.Parse(tplString))
+
+	err := tpl.Execute(
+		os.Stdout,
+		map[string]any{"Slice": []string{"Joanna", "Angeline"}},
+	)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	// Output:
+	// 'Joanna', 'Angeline'
 }
 
 // [govy.Rule] error might be static, i.e. a single [govy.Rule] always returns
