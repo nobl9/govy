@@ -30,11 +30,12 @@ planned features.
     1. [Type safety](#type-safety)
     2. [Immutability](#immutability)
     3. [Verbose error messages](#verbose-error-messages)
-    4. [Predefined rules](#predefined-rules)
-    5. [Custom rules](#custom-rules)
-    6. [Validation plan](#validation-plan)
-    7. [Properties name inference](#properties-name-inference)
-    8. [Testing helpers](#testing-helpers)
+    4. [Error message templates](#error-message-templates)
+    5. [Predefined rules](#predefined-rules)
+    6. [Custom rules](#custom-rules)
+    7. [Validation plan](#validation-plan)
+    8. [Properties name inference](#properties-name-inference)
+    9. [Testing helpers](#testing-helpers)
 4. [Rationale](#rationale)
     1. [Reflection](#reflection)
     2. [Trivia](#trivia)
@@ -282,6 +283,53 @@ The errors themselves are structured and can be parsed programmatically
 allowing custom error handling.
 They come with exported fields, JSON tags and can be easily serialized and
 deserialized.
+
+#### Error message templates
+
+If you want a more fine-grained control over the error messages,
+you can define custom error message templates for each builtin rule:
+
+[//]: # (embed: internal/examples/readme_message_templates_example_test.go)
+
+```go
+package examples
+
+import (
+	"fmt"
+
+	"github.com/nobl9/govy/pkg/govy"
+	"github.com/nobl9/govy/pkg/rules"
+)
+
+func Example_messageTemplates() {
+	type Teacher struct {
+		Name string `json:"name"`
+	}
+
+	templateString := "name length should be between {{ .MinLength }} and {{ .MaxLength }} {{ formatExamples .Examples }}"
+
+	v := govy.New(
+		govy.For(func(t Teacher) string { return t.Name }).
+			WithName("name").
+			Rules(
+				rules.StringLength(5, 10).
+					WithExamples("Joanna", "Jerry").
+					WithMessageTemplateString(templateString),
+			),
+	).WithName("Teacher")
+
+	teacher := Teacher{Name: "Tom"}
+	err := v.Validate(teacher)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	// Output:
+	// Validation for Teacher has failed for the following properties:
+	//   - 'name' with value 'Tom':
+	//     - name length should be between 5 and 10 (e.g. 'Joanna', 'Jerry')
+}
+```
 
 ### Predefined rules
 
