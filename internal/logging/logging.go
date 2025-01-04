@@ -56,18 +56,6 @@ func (h contextHandler) Handle(ctx context.Context, r slog.Record) error {
 	return h.Handler.Handle(ctx, r)
 }
 
-// ContextAttr appends a [slog.Attr] to the provided [context.Context] so that it will be
-// included in any [slog.Record] created with such context.
-func ContextAttr(ctx context.Context, attr ...slog.Attr) context.Context {
-	if ctx == nil {
-		ctx = context.Background()
-	}
-	if v, ok := ctx.Value(logContextAttrKey{}).([]slog.Attr); ok {
-		return context.WithValue(ctx, logContextAttrKey{}, append(v, attr...))
-	}
-	return context.WithValue(ctx, logContextAttrKey{}, attr)
-}
-
 // sourceHandler is a [slog.Handler] that adds [slog.Source] information to the [slog.Record].
 type sourceHandler struct{ slog.Handler }
 

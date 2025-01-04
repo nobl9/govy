@@ -92,10 +92,9 @@ func TestFunctions_EnsureExamplesAreDefined(t *testing.T) {
 	data, err := os.ReadFile(path)
 	assert.Require(t, assert.NoError(t, err))
 
-	re, err := regexp.Compile(`(?m)^func ExampleAddTemplateFunctions_(\w+)\(\)`)
-	assert.Require(t, assert.NoError(t, err))
-
+	re := regexp.MustCompile(`(?m)^func ExampleAddTemplateFunctions_(\w+)\(\)`)
 	matches := re.FindAllStringSubmatch(string(data), -1)
+
 	for funcName := range templateFunctions {
 		if !slices.ContainsFunc(matches, func(match []string) bool { return match[1] == funcName }) {
 			assert.Fail(t,

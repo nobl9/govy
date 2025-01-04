@@ -20,7 +20,6 @@ var templateFunctions = template.FuncMap{
 
 // formatExamplesTplFunc formats a list of strings which are example valid values
 // as a single string representation.
-//
 // Example: `{{ formatExamples ["foo", "bar"] }}` -> "(e.g. 'foo', 'bar')"
 func formatExamplesTplFunc(examples []string) string {
 	if len(examples) == 0 {
@@ -35,7 +34,6 @@ func formatExamplesTplFunc(examples []string) string {
 
 // joinStringsSliceTplFunc joins a list of strings into a comma separated list of values.
 // Its second argument determines a surrounding string for each value.
-//
 // Example: `{{ joinStringsSlice ["foo", "bar"] "'" }}` -> "'foo', 'bar'"
 func joinStringsSliceTplFunc(values []string, surroundingStr string) string {
 	if len(values) == 0 {

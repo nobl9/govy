@@ -26,6 +26,7 @@ ignorePaths:
   - bin/**
   - docs/assets/**
 words:
+  - Elts
   - Fset
   - Skłodowska
   - atoi
