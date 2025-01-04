@@ -14,8 +14,8 @@ func AddFunctions(tpl *template.Template) *template.Template {
 }
 
 var templateFunctions = template.FuncMap{
-	"formatExamples":   formatExamplesTplFunc,
-	"joinStringsSlice": joinStringsSliceTplFunc,
+	"formatExamples":  formatExamplesTplFunc,
+	"joinStringSlice": joinStringSliceTplFunc,
 }
 
 // formatExamplesTplFunc formats a list of strings which are example valid values
@@ -32,10 +32,10 @@ func formatExamplesTplFunc(examples []string) string {
 	return b.String()
 }
 
-// joinStringsSliceTplFunc joins a list of strings into a comma separated list of values.
+// joinStringSliceTplFunc joins a list of strings into a comma separated list of values.
 // Its second argument determines a surrounding string for each value.
-// Example: `{{ joinStringsSlice ["foo", "bar"] "'" }}` -> "'foo', 'bar'"
-func joinStringsSliceTplFunc(values []string, surroundingStr string) string {
+// Example: `{{ joinStringSlice ["foo", "bar"] "'" }}` -> "'foo', 'bar'"
+func joinStringSliceTplFunc(values []string, surroundingStr string) string {
 	if len(values) == 0 {
 		return ""
 	}

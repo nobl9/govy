@@ -47,24 +47,24 @@ func TestAddFunctions(t *testing.T) {
 				Expected: "(e.g. 'foo', 'bar', 'baz')",
 			},
 		},
-		"joinStringsSlice": {
+		"joinStringSlice": {
 			{
-				Text:     `{{ joinStringsSlice .Examples "'" }}`,
+				Text:     `{{ joinStringSlice .Examples "'" }}`,
 				Vars:     templateVariables{Examples: nil},
 				Expected: "",
 			},
 			{
-				Text:     `{{ joinStringsSlice .Examples "'" }}`,
+				Text:     `{{ joinStringSlice .Examples "'" }}`,
 				Vars:     templateVariables{Examples: []string{}},
 				Expected: "",
 			},
 			{
-				Text:     `{{ joinStringsSlice .Examples "'" }}`,
+				Text:     `{{ joinStringSlice .Examples "'" }}`,
 				Vars:     templateVariables{Examples: []string{"foo"}},
 				Expected: "'foo'",
 			},
 			{
-				Text:     `{{ joinStringsSlice .Examples "'" }}`,
+				Text:     `{{ joinStringSlice .Examples "'" }}`,
 				Vars:     templateVariables{Examples: []string{"foo", "bar", "baz"}},
 				Expected: "'foo', 'bar', 'baz'",
 			},

@@ -50,7 +50,7 @@ func main() {
 		return true
 	})
 
-	file, err := os.OpenFile(path, os.O_WRONLY, 0) // #nosec G304
+	file, err := os.Create(path) // #nosec G304
 	if err != nil {
 		logFatal(err, "Failed to open file %q", path)
 	}
