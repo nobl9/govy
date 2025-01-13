@@ -286,8 +286,15 @@ deserialized.
 
 #### Error message templates
 
+**NOTE: Coming up in v0.12.0**
+
 If you want a more fine-grained control over the error messages,
-you can define custom error message templates for each builtin rule:
+you can define custom error message templates for each builtin rule.
+
+The templates are powered by [Go's native templating system](https://pkg.go.dev/text/template).
+Each builtin validation rule has specific variables available and there are also builtin
+functions shipped which help construct the message templates
+(like _formatExamples_ in the example below).
 
 [//]: # (embed: internal/examples/readme_message_templates_example_test.go)
 
