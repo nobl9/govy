@@ -286,15 +286,15 @@ deserialized.
 
 #### Error message templates
 
-**NOTE: Coming up in v0.12.0**
+_DISCLAIMER_: Coming up in v0.12.0
 
 If you want a more fine-grained control over the error messages,
 you can define custom error message templates for each builtin rule.
 
 The templates are powered by [Go's native templating system](https://pkg.go.dev/text/template).
-Each builtin validation rule has specific variables available and there are also builtin
-functions shipped which help construct the message templates
-(like _formatExamples_ in the example below).
+Each builtin validation rule has specific variables available
+and there are also builtin functions shipped which help construct
+the message templates (like _formatExamples_ in the example below).
 
 [//]: # (embed: internal/examples/readme_message_templates_example_test.go)
 
@@ -399,7 +399,7 @@ func Example_customRules() {
 
 ### Validation plan
 
-*DISCLAIMER*: This feature is experimental and is subject to change.
+_DISCLAIMER_: This feature is experimental and is subject to change.
 
 Validation plan provides a way to self-document your validation rules.
 It helps keep your documentation and validation rules in sync.
@@ -577,7 +577,7 @@ func Example_validationPlan() {
 
 ### Properties name inference
 
-*DISCLAIMER*: This feature is experimental and is subject to change.
+_DISCLAIMER_: This feature is experimental and is subject to change.
 
 Govy provides a way to automatically infer property names from the code itself.
 This way, there's no need to manually provide properties' names with
@@ -670,7 +670,7 @@ The library was first conceived at
 which is [Nobl9's](https://www.nobl9.com/) Go SDK.
 It was born out of a need for a better validation mechanism,
 which would also allow us to auto-document validation rules.
-At the time, we were using *go-playground/validator*,
+At the time, we were using _go-playground/validator_,
 while it's a great, matured library,
 it is quiet "magical" as it operates entirely on reflection.
 It's default errors are also not very informative.
