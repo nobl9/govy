@@ -30,11 +30,12 @@ planned features.
     1. [Type safety](#type-safety)
     2. [Immutability](#immutability)
     3. [Verbose error messages](#verbose-error-messages)
-    4. [Predefined rules](#predefined-rules)
-    5. [Custom rules](#custom-rules)
-    6. [Validation plan](#validation-plan)
-    7. [Properties name inference](#properties-name-inference)
-    8. [Testing helpers](#testing-helpers)
+    4. [Error message templates](#error-message-templates)
+    5. [Predefined rules](#predefined-rules)
+    6. [Custom rules](#custom-rules)
+    7. [Validation plan](#validation-plan)
+    8. [Properties name inference](#properties-name-inference)
+    9. [Testing helpers](#testing-helpers)
 4. [Rationale](#rationale)
     1. [Reflection](#reflection)
     2. [Trivia](#trivia)
@@ -283,6 +284,60 @@ allowing custom error handling.
 They come with exported fields, JSON tags and can be easily serialized and
 deserialized.
 
+#### Error message templates
+
+_DISCLAIMER_: Coming up in v0.12.0
+
+If you want a more fine-grained control over the error messages,
+you can define custom error message templates for each builtin rule.
+
+The templates are powered by [Go's native templating system](https://pkg.go.dev/text/template).
+Each builtin validation rule has specific variables available
+and there are also builtin functions shipped which help construct
+the message templates (like _formatExamples_ in the example below).
+
+[//]: # (embed: internal/examples/readme_message_templates_example_test.go)
+
+```go
+package examples
+
+import (
+	"fmt"
+
+	"github.com/nobl9/govy/pkg/govy"
+	"github.com/nobl9/govy/pkg/rules"
+)
+
+func Example_messageTemplates() {
+	type Teacher struct {
+		Name string `json:"name"`
+	}
+
+	templateString := "name length should be between {{ .MinLength }} and {{ .MaxLength }} {{ formatExamples .Examples }}"
+
+	v := govy.New(
+		govy.For(func(t Teacher) string { return t.Name }).
+			WithName("name").
+			Rules(
+				rules.StringLength(5, 10).
+					WithExamples("Joanna", "Jerry").
+					WithMessageTemplateString(templateString),
+			),
+	).WithName("Teacher")
+
+	teacher := Teacher{Name: "Tom"}
+	err := v.Validate(teacher)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	// Output:
+	// Validation for Teacher has failed for the following properties:
+	//   - 'name' with value 'Tom':
+	//     - name length should be between 5 and 10 (e.g. 'Joanna', 'Jerry')
+}
+```
+
 ### Predefined rules
 
 Govy comes with a set of predefined rules defined
@@ -344,7 +399,7 @@ func Example_customRules() {
 
 ### Validation plan
 
-*DISCLAIMER*: This feature is experimental and is subject to change.
+_DISCLAIMER_: This feature is experimental and is subject to change.
 
 Validation plan provides a way to self-document your validation rules.
 It helps keep your documentation and validation rules in sync.
@@ -522,7 +577,7 @@ func Example_validationPlan() {
 
 ### Properties name inference
 
-*DISCLAIMER*: This feature is experimental and is subject to change.
+_DISCLAIMER_: This feature is experimental and is subject to change.
 
 Govy provides a way to automatically infer property names from the code itself.
 This way, there's no need to manually provide properties' names with
@@ -615,7 +670,7 @@ The library was first conceived at
 which is [Nobl9's](https://www.nobl9.com/) Go SDK.
 It was born out of a need for a better validation mechanism,
 which would also allow us to auto-document validation rules.
-At the time, we were using *go-playground/validator*,
+At the time, we were using _go-playground/validator_,
 while it's a great, matured library,
 it is quiet "magical" as it operates entirely on reflection.
 It's default errors are also not very informative.

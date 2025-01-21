@@ -488,6 +488,25 @@ func TestHasErrorCode(t *testing.T) {
 	}
 }
 
+func TestNewRuleErrorTemplate(t *testing.T) {
+	rule := govy.NewRule(func(s string) error {
+		return govy.NewRuleErrorTemplate(govy.TemplateVars{
+			Custom: map[string]string{"This": "that"},
+		})
+	}).
+		WithMessageTemplateString("{{ .Custom.This }} is an error!")
+
+	err := rule.Validate("test")
+	assert.EqualError(t, err, "that is an error!")
+}
+
+func TestRuleErrorTemplate_Error(t *testing.T) {
+	err := govy.NewRuleErrorTemplate(govy.TemplateVars{
+		Examples: []string{"this", "that"},
+	})
+	assert.EqualError(t, err, "govy.RuleErrorTemplate should not be used directly")
+}
+
 func expectedErrorOutput(t *testing.T, name string) string {
 	t.Helper()
 	data, err := errorsTestData.ReadFile(filepath.Join("test_data", name))

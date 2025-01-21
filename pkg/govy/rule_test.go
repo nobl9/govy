@@ -3,6 +3,7 @@ package govy_test
 import (
 	"errors"
 	"testing"
+	"text/template"
 
 	"github.com/nobl9/govy/internal/assert"
 
@@ -162,6 +163,44 @@ func TestRule_WithExamples(t *testing.T) {
 	}, err)
 }
 
+func TestRule_WithMessageTemplate(t *testing.T) {
+	tpl, err := template.New("").Parse("This is an {{ .Error }}")
+	assert.Require(t, assert.NoError(t, err))
+
+	rule := govy.NewRule(func(v string) error {
+		return govy.NewRuleErrorTemplate(govy.TemplateVars{
+			Error: "error",
+		})
+	}).
+		WithErrorCode("my-code").
+		WithExamples("This").
+		WithMessageTemplate(tpl)
+
+	err = rule.Validate("")
+	assert.Require(t, assert.Error(t, err))
+	assert.Equal(t, &govy.RuleError{
+		Message: "This is an error",
+		Code:    "my-code",
+	}, err)
+}
+
+func TestRule_WithMessageTemplateString(t *testing.T) {
+	rule := govy.NewRule(func(v string) error {
+		return govy.NewRuleErrorTemplate(govy.TemplateVars{
+			Error: "error",
+		})
+	}).
+		WithErrorCode("my-code").
+		WithMessageTemplateString("This is an {{ .Error }}")
+
+	err := rule.Validate("")
+	assert.Require(t, assert.Error(t, err))
+	assert.Equal(t, &govy.RuleError{
+		Message: "This is an error",
+		Code:    "my-code",
+	}, err)
+}
+
 func TestRuleToPointer(t *testing.T) {
 	r := govy.NewRule(func(v int) error {
 		if v < 0 {
@@ -178,6 +217,7 @@ func TestRuleToPointer(t *testing.T) {
 	t.Run("fails", func(t *testing.T) {
 		err := rp.Validate(ptr(-1))
 		assert.Require(t, assert.Error(t, err))
+		t.Log(err)
 		assert.Equal(t, govy.RuleError{
 			Message: "must be positive",
 			Code:    "test",

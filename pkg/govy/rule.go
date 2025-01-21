@@ -1,11 +1,14 @@
 package govy
 
 import (
+	"bytes"
 	"fmt"
 	"strings"
+	"text/template"
 
 	"github.com/nobl9/govy/internal"
 	"github.com/nobl9/govy/internal/collections"
+	"github.com/nobl9/govy/internal/messagetemplates"
 )
 
 // NewRule creates a new [Rule] instance.
@@ -25,10 +28,12 @@ func RuleToPointer[T any](rule Rule[T]) Rule[*T] {
 			}
 			return rule.validate(*v)
 		},
-		errorCode:   rule.errorCode,
-		details:     rule.details,
-		message:     rule.message,
-		description: rule.description,
+		errorCode:       rule.errorCode,
+		details:         rule.details,
+		message:         rule.message,
+		messageTemplate: rule.messageTemplate,
+		examples:        rule.examples,
+		description:     rule.description,
 	}
 }
 
@@ -36,20 +41,24 @@ func RuleToPointer[T any](rule Rule[T]) Rule[*T] {
 // It evaluates the provided validation function and enhances it
 // with optional [ErrorCode] and arbitrary details.
 type Rule[T any] struct {
-	validate    func(v T) error
-	errorCode   ErrorCode
-	details     string
-	message     string
-	examples    []string
-	description string
+	validate        func(v T) error
+	errorCode       ErrorCode
+	details         string
+	message         string
+	messageTemplate *template.Template
+	examples        []string
+	description     string
 }
 
 // Validate runs validation function on the provided value.
 // It can handle different types of errors returned by the function:
-//   - *[RuleError], which details and [ErrorCode] are optionally extended with the ones defined by [Rule].
-//   - *[PropertyError], for each of its errors their [ErrorCode] is extended with the one defined by [Rule].
+//   - [*RuleError], which details and [ErrorCode] are optionally extended with the ones defined by [Rule].
+//   - [*PropertyError], for each of its errors their [ErrorCode] is extended with the one defined by [Rule].
+//   - [RuleErrorTemplate], if message template was set with [Rule.WithMessageTemplate] or
+//     [Rule.WithMessageTemplateString] then the [RuleError.Message] is constructed from the provided template
+//     using variables passed inside [RuleErrorTemplate.vars].
 //
-// By default, it will construct a new RuleError.
+// By default, it will construct a new [*RuleError].
 func (r Rule[T]) Validate(v T) error {
 	if err := r.validate(v); err != nil {
 		switch ev := err.(type) {
@@ -64,6 +73,22 @@ func (r Rule[T]) Validate(v T) error {
 				_ = e.AddCode(r.errorCode)
 			}
 			return ev
+		case RuleErrorTemplate:
+			if r.messageTemplate == nil {
+				panic("message template is not set")
+			}
+			ev.vars.PropertyValue = v
+			ev.vars.Details = r.details
+			ev.vars.Examples = r.examples
+			var buf bytes.Buffer
+			if err = r.messageTemplate.Execute(&buf, ev.vars); err != nil {
+				panic(fmt.Sprintf("failed to execute message template: %s", err))
+			}
+			return &RuleError{
+				Message:     buf.String(),
+				Code:        r.errorCode,
+				Description: r.description,
+			}
 		default:
 			msg := ev.Error()
 			if len(r.message) > 0 {
@@ -85,14 +110,32 @@ func (r Rule[T]) WithErrorCode(code ErrorCode) Rule[T] {
 	return r
 }
 
-// WithMessage overrides the returned [RuleError] error message with message.
+// WithMessage overrides the returned [RuleError] error message.
 func (r Rule[T]) WithMessage(format string, a ...any) Rule[T] {
+	r.messageTemplate = nil
 	if len(a) == 0 {
 		r.message = format
 	} else {
 		r.message = fmt.Sprintf(format, a...)
 	}
 	return r
+}
+
+// WithMessageTemplate overrides the returned [RuleError] error message using provided [template.Template].
+func (r Rule[T]) WithMessageTemplate(tpl *template.Template) Rule[T] {
+	r.messageTemplate = messagetemplates.AddFunctions(tpl)
+	return r
+}
+
+// WithMessageTemplateString overrides the returned [RuleError] error message using provided template string.
+// The string is parsed into [template.Template], it panics if any error is encountered during parsing.
+func (r Rule[T]) WithMessageTemplateString(tplStr string) Rule[T] {
+	tpl := messagetemplates.AddFunctions(template.New(""))
+	tpl, err := tpl.Parse(tplStr)
+	if err != nil {
+		panic(fmt.Sprintf("failed to parse message template: %s", err))
+	}
+	return r.WithMessageTemplate(tpl)
 }
 
 // WithDetails adds details to the returned [RuleError] error message.
@@ -134,20 +177,20 @@ func createErrorMessage(message, details string, examples []string) string {
 	if message == "" {
 		return details
 	}
-	message = addExamplesToErrorMessage(message, examples)
+	message += examplesToString(examples)
 	if details == "" {
 		return message
 	}
 	return message + "; " + details
 }
 
-func addExamplesToErrorMessage(message string, examples []string) string {
+func examplesToString(examples []string) string {
 	if len(examples) == 0 {
-		return message
+		return ""
 	}
 	b := strings.Builder{}
 	b.WriteString(" (e.g. ")
 	internal.PrettyStringListBuilder(&b, examples, "'")
 	b.WriteString(")")
-	return message + b.String()
+	return b.String()
 }
