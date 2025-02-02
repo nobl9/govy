@@ -45,7 +45,7 @@ func init() {
 	// in order to keep the number of frames it has to skip consistent.
 	handler := sourceHandler{Handler: jsonHandler}
 	defaultLogger := slog.New(contextHandler{Handler: handler})
-	logger.Swap(defaultLogger)
+	logger.Store(defaultLogger)
 }
 
 type logContextAttrKey struct{}
