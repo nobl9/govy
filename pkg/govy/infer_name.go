@@ -2,8 +2,8 @@ package govy
 
 import (
 	"fmt"
-	"log/slog"
 
+	"github.com/nobl9/govy/internal/logging"
 	"github.com/nobl9/govy/internal/nameinfer"
 	"github.com/nobl9/govy/pkg/govyconfig"
 )
@@ -23,7 +23,7 @@ func inferNameWithMode(mode govyconfig.NameInferMode) string {
 		file, line := nameinfer.Frame(5)
 		return nameinfer.InferName(file, line)
 	default:
-		slog.Error(fmt.Sprintf("unknown %T", mode))
+		logging.Logger().Error(fmt.Sprintf("unknown %T", mode))
 		return ""
 	}
 }

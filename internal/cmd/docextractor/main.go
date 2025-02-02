@@ -15,6 +15,7 @@ import (
 
 	"github.com/nobl9/govy/internal"
 	"github.com/nobl9/govy/internal/collections"
+	"github.com/nobl9/govy/internal/logging"
 )
 
 const (
@@ -121,7 +122,7 @@ func findTemplateFunctionsDocs(root string) [][]string {
 		case *ast.ValueSpec:
 			if len(v.Names) == 1 && v.Names[0].Name == variableName &&
 				len(v.Values) == 1 {
-				slog.Debug(fmt.Sprintf("found variable: %s", v.Names[0].Name))
+				logging.Logger().Debug(fmt.Sprintf("found variable: %s", v.Names[0].Name))
 				templateFunctionsExpr = v.Values[0]
 				return false
 			}
@@ -189,5 +190,5 @@ func logFatal(err error, msg string, a ...interface{}) {
 	if err != nil {
 		attrs = append(attrs, slog.String("error", err.Error()))
 	}
-	slog.LogAttrs(context.Background(), slog.LevelError, fmt.Sprintf(msg, a...), attrs...)
+	logging.Logger().LogAttrs(context.Background(), slog.LevelError, fmt.Sprintf(msg, a...), attrs...)
 }

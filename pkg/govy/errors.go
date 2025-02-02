@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/nobl9/govy/internal"
+	"github.com/nobl9/govy/internal/logging"
 )
 
 const (
@@ -366,7 +367,7 @@ func concatStrings(pre, post, sep string) string {
 }
 
 func logWrongErrorType(expected, actual error) {
-	slog.Error("unexpected error type",
+	logging.Logger().Error("unexpected error type",
 		slog.String("actual_type", fmt.Sprintf("%T", actual)),
 		slog.String("expected_type", fmt.Sprintf("%T", expected)))
 }

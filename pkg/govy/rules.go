@@ -6,7 +6,7 @@ import (
 	"log/slog"
 
 	"github.com/nobl9/govy/internal"
-	_ "github.com/nobl9/govy/internal/logging"
+	"github.com/nobl9/govy/internal/logging"
 )
 
 // For creates a new [PropertyRules] instance for the property
@@ -126,7 +126,7 @@ func (r PropertyRules[T, S]) Validate(st S) error {
 	for _, step := range r.steps {
 		vi, ok := step.(validationInterface[T])
 		if !ok {
-			slog.Error("unexpected type", slog.String("type", fmt.Sprintf("%T", step)))
+			logging.Logger().Error("unexpected type", slog.String("type", fmt.Sprintf("%T", step)))
 			continue
 		}
 		err := vi.Validate(propValue)
