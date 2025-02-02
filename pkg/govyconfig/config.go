@@ -56,7 +56,12 @@ func GetInferredName(file string, line int) string {
 	defer mu.RUnlock()
 	name, ok := inferredNames[getterLocationKey(file, line)]
 	if !ok {
-		slog.Debug("")
+		logging.Logger().Error(
+			"inferred name was not found",
+			slog.String("file", file),
+			slog.Int("line", line),
+		)
+		return ""
 	}
 	return name.Name
 }

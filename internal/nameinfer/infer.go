@@ -5,11 +5,11 @@ import (
 	"go/ast"
 	"go/token"
 	"go/types"
-	"log/slog"
 	"slices"
 
 	"golang.org/x/tools/go/packages"
 
+	"github.com/nobl9/govy/internal/logging"
 	"github.com/nobl9/govy/pkg/govyconfig"
 )
 
@@ -109,14 +109,14 @@ func (n nameFinder) FindName(a any, structType *types.Struct) string {
 	case *ast.BlockStmt:
 		return n.findNameInBlockStmt(v, structType)
 	default:
-		slog.Debug(fmt.Sprintf("unexpected type: %T", v))
+		logging.Logger().Debug(fmt.Sprintf("unexpected type: %T", v))
 	}
 	return ""
 }
 
 func (n nameFinder) findNameInBlockStmt(blockStmt *ast.BlockStmt, structType *types.Struct) string {
 	if blockStmt == nil {
-		slog.Debug("*ast.BlockStmt is nil, failed to locate the getter function parent")
+		logging.Logger().Debug("*ast.BlockStmt is nil, failed to locate the getter function parent")
 		return ""
 	}
 	for _, stmt := range blockStmt.List {
@@ -129,7 +129,7 @@ func (n nameFinder) findNameInBlockStmt(blockStmt *ast.BlockStmt, structType *ty
 
 func (n nameFinder) findNameInIfStmt(ifStmt *ast.IfStmt, structType *types.Struct) string {
 	if ifStmt == nil {
-		slog.Debug("*ast.IfStmt is nil, failed to locate the getter function parent")
+		logging.Logger().Debug("*ast.IfStmt is nil, failed to locate the getter function parent")
 		return ""
 	}
 	return n.FindName(ifStmt.Body, structType)
@@ -140,22 +140,22 @@ func (n nameFinder) findNameInIfStmt(ifStmt *ast.IfStmt, structType *types.Struc
 // until it succeeds or there are no more return statements to inspect.
 func (n nameFinder) findNameInFuncLit(fl *ast.FuncLit) string {
 	if fl == nil {
-		slog.Debug("*ast.FuncLit is nil, failed to locate the getter function parent")
+		logging.Logger().Debug("*ast.FuncLit is nil, failed to locate the getter function parent")
 		return ""
 	}
 	paramsList := fl.Type.Params.List
 	if len(paramsList) != 1 {
-		slog.Debug("*ast.FuncLit must have exactly one parameter")
+		logging.Logger().Debug("*ast.FuncLit must have exactly one parameter")
 		return ""
 	}
 	paramIdent, ok := paramsList[0].Type.(*ast.Ident)
 	if !ok {
-		slog.Debug("parameter must be an identifier")
+		logging.Logger().Debug("parameter must be an identifier")
 		return ""
 	}
 	object := n.pkg.TypesInfo.ObjectOf(paramIdent)
 	if object == nil {
-		slog.Debug("failed to locate the object for the parameter identifier")
+		logging.Logger().Debug("failed to locate the object for the parameter identifier")
 		return ""
 	}
 	var structType *types.Struct
@@ -165,11 +165,11 @@ func (n nameFinder) findNameInFuncLit(fl *ast.FuncLit) string {
 		case *types.Struct:
 			structType = ut
 		default:
-			slog.Debug(fmt.Sprintf("unexpected type: %T", ut))
+			logging.Logger().Debug(fmt.Sprintf("unexpected type: %T", ut))
 			return ""
 		}
 	default:
-		slog.Debug(fmt.Sprintf("unexpected type: %T", ot))
+		logging.Logger().Debug(fmt.Sprintf("unexpected type: %T", ot))
 		return ""
 	}
 	for _, stmt := range fl.Body.List {
@@ -182,11 +182,11 @@ func (n nameFinder) findNameInFuncLit(fl *ast.FuncLit) string {
 
 func (n nameFinder) findNameInReturnStmt(returnStmt *ast.ReturnStmt, structType *types.Struct) string {
 	if returnStmt == nil {
-		slog.Debug("no return statement found in getter function")
+		logging.Logger().Debug("no return statement found in getter function")
 		return ""
 	}
 	if len(returnStmt.Results) != 1 {
-		slog.Debug("return statement must have exactly one result")
+		logging.Logger().Debug("return statement must have exactly one result")
 		return ""
 	}
 	return n.FindName(returnStmt.Results[0], structType)
@@ -194,7 +194,7 @@ func (n nameFinder) findNameInReturnStmt(returnStmt *ast.ReturnStmt, structType 
 
 func (n nameFinder) findNameInIdent(ident *ast.Ident, structType *types.Struct) string {
 	if ident.Obj == nil {
-		slog.Debug("identifier object is nil")
+		logging.Logger().Debug("identifier object is nil")
 		return ""
 	}
 	return n.FindName(ident.Obj.Decl, structType)
@@ -202,7 +202,7 @@ func (n nameFinder) findNameInIdent(ident *ast.Ident, structType *types.Struct) 
 
 func (n nameFinder) findNameInAssignStmt(assignment *ast.AssignStmt, structType *types.Struct) string {
 	if len(assignment.Rhs) != 1 {
-		slog.Debug("assignment statement must have exactly one right-hand side")
+		logging.Logger().Debug("assignment statement must have exactly one right-hand side")
 		return ""
 	}
 	return n.FindName(assignment.Rhs[0], structType)
@@ -219,7 +219,7 @@ func (n nameFinder) findNameInSelectorExpr(
 	case *ast.SelectorExpr:
 		name, structType = n.findNameInSelectorExpr(v, structType)
 	default:
-		slog.Debug(fmt.Sprintf("unexpected type: %T", v))
+		logging.Logger().Debug(fmt.Sprintf("unexpected type: %T", v))
 		return "", nil
 	}
 	if structType == nil {
@@ -241,7 +241,7 @@ func (n nameFinder) findNameInSelectorExpr(
 		}
 		return name + "." + fieldName, structType
 	}
-	slog.Debug(fmt.Sprintf("field matching '%s' name not found in struct type", se.Sel.Name))
+	logging.Logger().Debug(fmt.Sprintf("field matching '%s' name not found in struct type", se.Sel.Name))
 	return "", nil
 }
 

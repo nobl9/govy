@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log/slog"
 	"reflect"
+
+	"github.com/nobl9/govy/internal/logging"
 )
 
 // Format converts any value to a pretty, human-readable string representation.
@@ -17,7 +19,7 @@ func Format(v any) string {
 	case reflect.Struct, reflect.Map:
 		data, err := json.Marshal(v)
 		if err != nil {
-			slog.Error("unexpected error", slog.String("err", err.Error()))
+			logging.Logger().Error("unexpected error", slog.String("err", err.Error()))
 		}
 		return string(data)
 	case reflect.Slice, reflect.Array:

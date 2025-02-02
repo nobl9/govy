@@ -6,11 +6,19 @@ import (
 	"log/slog"
 	"os"
 	"runtime"
+	"sync/atomic"
 )
 
 const defaultLogLevel = slog.LevelError
 
-var logLevel *slog.LevelVar
+var (
+	logger   atomic.Pointer[slog.Logger]
+	logLevel *slog.LevelVar
+)
+
+func Logger() *slog.Logger {
+	return logger.Load()
+}
 
 func SetLogLevel(level slog.Level) {
 	logLevel.Set(level)
@@ -37,7 +45,7 @@ func init() {
 	// in order to keep the number of frames it has to skip consistent.
 	handler := sourceHandler{Handler: jsonHandler}
 	defaultLogger := slog.New(contextHandler{Handler: handler})
-	slog.SetDefault(defaultLogger)
+	logger.Swap(defaultLogger)
 }
 
 type logContextAttrKey struct{}
