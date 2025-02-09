@@ -29,9 +29,10 @@ func TestForbidden(t *testing.T) {
 }
 
 func BenchmarkForbidden(b *testing.B) {
-	for range b.N {
-		for _, tc := range forbiddenTestCases {
-			_ = Forbidden[string]().Validate(tc.in)
+	for _, tc := range forbiddenTestCases {
+		rule := Forbidden[string]()
+		for range b.N {
+			_ = rule.Validate(tc.in)
 		}
 	}
 }

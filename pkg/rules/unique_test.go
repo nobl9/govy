@@ -85,9 +85,10 @@ func TestSliceUnique(t *testing.T) {
 }
 
 func BenchmarkSliceUnique(b *testing.B) {
-	for range b.N {
-		for _, tc := range sliceUniqueTestCases {
-			_ = SliceUnique(tc.hashFunc, tc.constraints...).Validate(tc.slice)
+	for _, tc := range sliceUniqueTestCases {
+		rule := SliceUnique(tc.hashFunc, tc.constraints...)
+		for range b.N {
+			_ = rule.Validate(tc.slice)
 		}
 	}
 }

@@ -37,9 +37,10 @@ type paymentMethod struct {
 }
 
 func BenchmarkOneOf(b *testing.B) {
-	for range b.N {
-		for _, tc := range oneOfTestCases {
-			_ = OneOf(tc.options...).Validate(tc.in)
+	for _, tc := range oneOfTestCases {
+		rule := OneOf(tc.options...)
+		for range b.N {
+			_ = rule.Validate(tc.in)
 		}
 	}
 }
@@ -131,9 +132,10 @@ func TestMutuallyExclusive(t *testing.T) {
 }
 
 func BenchmarkMutuallyExclusive(b *testing.B) {
-	for range b.N {
-		for _, tc := range mutuallyExclusiveTestCases {
-			_ = MutuallyExclusive(tc.required, paymentMethodGetters).Validate(tc.paymentMethod)
+	for _, tc := range mutuallyExclusiveTestCases {
+		rule := MutuallyExclusive(tc.required, paymentMethodGetters)
+		for range b.N {
+			_ = rule.Validate(tc.paymentMethod)
 		}
 	}
 }
@@ -186,9 +188,10 @@ func TestOneOfProperties(t *testing.T) {
 }
 
 func BenchmarkOneOfProperties(b *testing.B) {
-	for range b.N {
-		for _, tc := range oneOfPropertiesTestCases {
-			_ = OneOfProperties(paymentMethodGetters).Validate(tc.paymentMethod)
+	for _, tc := range oneOfPropertiesTestCases {
+		rule := OneOfProperties(paymentMethodGetters)
+		for range b.N {
+			_ = rule.Validate(tc.paymentMethod)
 		}
 	}
 }

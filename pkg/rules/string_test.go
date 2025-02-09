@@ -37,9 +37,10 @@ func TestStringNotEmpty(t *testing.T) {
 }
 
 func BenchmarkStringNotEmpty(b *testing.B) {
-	for range b.N {
-		for _, tc := range stringNotEmptyTestCases {
-			_ = StringNotEmpty().Validate(tc.in)
+	for _, tc := range stringNotEmptyTestCases {
+		rule := StringNotEmpty()
+		for range b.N {
+			_ = rule.Validate(tc.in)
 		}
 	}
 }
@@ -73,9 +74,10 @@ func TestStringMatchRegexp(t *testing.T) {
 }
 
 func BenchmarkStringMatchRegexp(b *testing.B) {
-	for range b.N {
-		for _, tc := range stringMatchRegexpTestCases {
-			_ = StringMatchRegexp(stringMatchRegexpRegexp).Validate(tc.in)
+	for _, tc := range stringMatchRegexpTestCases {
+		rule := StringMatchRegexp(stringMatchRegexpRegexp)
+		for range b.N {
+			_ = rule.Validate(tc.in)
 		}
 	}
 }
@@ -109,9 +111,10 @@ func TestStringDenyRegexp(t *testing.T) {
 }
 
 func BenchmarkStringDenyRegexp(b *testing.B) {
-	for range b.N {
-		for _, tc := range stringDenyRegexpTestCases {
-			_ = StringDenyRegexp(stringDenyRegexpRegexp).Validate(tc.in)
+	for _, tc := range stringDenyRegexpTestCases {
+		rule := StringDenyRegexp(stringDenyRegexpRegexp)
+		for range b.N {
+			_ = rule.Validate(tc.in)
 		}
 	}
 }
@@ -151,9 +154,10 @@ func TestStringDNSLabel(t *testing.T) {
 }
 
 func BenchmarkStringDNSLabel(b *testing.B) {
-	for range b.N {
-		for _, tc := range stringDNSLabelTestCases {
-			_ = StringDNSLabel().Validate(tc.in)
+	for _, tc := range stringDNSLabelTestCases {
+		rule := StringDNSLabel()
+		for range b.N {
+			_ = rule.Validate(tc.in)
 		}
 	}
 }
@@ -190,9 +194,10 @@ func TestStringASCII(t *testing.T) {
 }
 
 func BenchmarkStringASCII(b *testing.B) {
-	for range b.N {
-		for _, tc := range stringASCIITestCases {
-			_ = StringASCII().Validate(tc.in)
+	for _, tc := range stringASCIITestCases {
+		rule := StringASCII()
+		for range b.N {
+			_ = rule.Validate(tc.in)
 		}
 	}
 }
@@ -233,9 +238,10 @@ func TestStringUUID(t *testing.T) {
 }
 
 func BenchmarkStringUUID(b *testing.B) {
-	for range b.N {
-		for _, tc := range stringUUIDTestCases {
-			_ = StringUUID().Validate(tc.in)
+	for _, tc := range stringUUIDTestCases {
+		rule := StringUUID()
+		for range b.N {
+			_ = rule.Validate(tc.in)
 		}
 	}
 }
@@ -277,9 +283,10 @@ func TestStringEmail(t *testing.T) {
 }
 
 func BenchmarkStringEmail(b *testing.B) {
-	for range b.N {
-		for _, tc := range stringEmailTestCases {
-			_ = StringEmail().Validate(tc.in)
+	for _, tc := range stringEmailTestCases {
+		rule := StringEmail()
+		for range b.N {
+			_ = rule.Validate(tc.in)
 		}
 	}
 }
@@ -306,9 +313,10 @@ func TestStringURL(t *testing.T) {
 }
 
 func BenchmarkStringURL(b *testing.B) {
-	for range b.N {
-		for _, tc := range urlTestCases {
-			_ = StringURL().Validate(tc.url)
+	for _, tc := range urlTestCases {
+		rule := StringURL()
+		for range b.N {
+			_ = rule.Validate(tc.url)
 		}
 	}
 }
@@ -341,9 +349,10 @@ func TestStringMAC(t *testing.T) {
 }
 
 func BenchmarkStringMAC(b *testing.B) {
-	for range b.N {
-		for _, tc := range stringMACTestCases {
-			_ = StringMAC().Validate(tc.in)
+	for _, tc := range stringMACTestCases {
+		rule := StringMAC()
+		for range b.N {
+			_ = rule.Validate(tc.in)
 		}
 	}
 }
@@ -380,9 +389,10 @@ func TestStringIP(t *testing.T) {
 }
 
 func BenchmarkStringIP(b *testing.B) {
-	for range b.N {
-		for _, tc := range stringIPTestCases {
-			_ = StringIP().Validate(tc.in)
+	for _, tc := range stringIPTestCases {
+		rule := StringIP()
+		for range b.N {
+			_ = rule.Validate(tc.in)
 		}
 	}
 }
@@ -418,9 +428,10 @@ func TestStringIPv4(t *testing.T) {
 }
 
 func BenchmarkStringIPv4(b *testing.B) {
-	for range b.N {
-		for _, tc := range stringIPv4TestCases {
-			_ = StringIPv4().Validate(tc.in)
+	for _, tc := range stringIPv4TestCases {
+		rule := StringIPv4()
+		for range b.N {
+			_ = rule.Validate(tc.in)
 		}
 	}
 }
@@ -456,9 +467,10 @@ func TestStringIPv6(t *testing.T) {
 }
 
 func BenchmarkStringIPv6(b *testing.B) {
-	for range b.N {
-		for _, tc := range stringIPv6TestCases {
-			_ = StringIPv6().Validate(tc.in)
+	for _, tc := range stringIPv6TestCases {
+		rule := StringIPv6()
+		for range b.N {
+			_ = rule.Validate(tc.in)
 		}
 	}
 }
@@ -497,9 +509,10 @@ func TestStringCIDR(t *testing.T) {
 }
 
 func BenchmarkStringCIDR(b *testing.B) {
-	for range b.N {
-		for _, tc := range stringCIDRTestCases {
-			_ = StringCIDR().Validate(tc.in)
+	for _, tc := range stringCIDRTestCases {
+		rule := StringCIDR()
+		for range b.N {
+			_ = rule.Validate(tc.in)
 		}
 	}
 }
@@ -545,9 +558,10 @@ func TestStringCIDRv4(t *testing.T) {
 }
 
 func BenchmarkStringCIDRv4(b *testing.B) {
-	for range b.N {
-		for _, tc := range stringCIDRv4TestCases {
-			_ = StringCIDRv4().Validate(tc.in)
+	for _, tc := range stringCIDRv4TestCases {
+		rule := StringCIDRv4()
+		for range b.N {
+			_ = rule.Validate(tc.in)
 		}
 	}
 }
@@ -586,9 +600,10 @@ func TestStringCIDRv6(t *testing.T) {
 }
 
 func BenchmarkStringCIDRv6(b *testing.B) {
-	for range b.N {
-		for _, tc := range stringCIDRv6TestCases {
-			_ = StringCIDRv6().Validate(tc.in)
+	for _, tc := range stringCIDRv6TestCases {
+		rule := StringCIDRv6()
+		for range b.N {
+			_ = rule.Validate(tc.in)
 		}
 	}
 }
@@ -618,9 +633,10 @@ func TestStringJSON(t *testing.T) {
 }
 
 func BenchmarkStringJSON(b *testing.B) {
-	for range b.N {
-		for _, tc := range stringJSONTestCases {
-			_ = StringJSON().Validate(tc.in)
+	for _, tc := range stringJSONTestCases {
+		rule := StringJSON()
+		for range b.N {
+			_ = rule.Validate(tc.in)
 		}
 	}
 }
@@ -676,9 +692,10 @@ func TestStringContains(t *testing.T) {
 }
 
 func BenchmarkStringContains(b *testing.B) {
-	for range b.N {
-		for _, tc := range stringContainsTestCases {
-			_ = StringContains(tc.substrings...).Validate(tc.in)
+	for _, tc := range stringContainsTestCases {
+		rule := StringContains(tc.substrings...)
+		for range b.N {
+			_ = rule.Validate(tc.in)
 		}
 	}
 }
@@ -735,9 +752,10 @@ func TestStringExcludes(t *testing.T) {
 }
 
 func BenchmarkStringExcludes(b *testing.B) {
-	for range b.N {
-		for _, tc := range stringExcludesTestCases {
-			_ = StringExcludes(tc.substrings...).Validate(tc.in)
+	for _, tc := range stringExcludesTestCases {
+		rule := StringExcludes(tc.substrings...)
+		for range b.N {
+			_ = rule.Validate(tc.in)
 		}
 	}
 }
@@ -780,9 +798,10 @@ func TestStringStartsWith(t *testing.T) {
 }
 
 func BenchmarkStringStartsWith(b *testing.B) {
-	for range b.N {
-		for _, tc := range stringStartsWithTestCases {
-			_ = StringStartsWith(tc.prefixes...).Validate(tc.in)
+	for _, tc := range stringStartsWithTestCases {
+		rule := StringStartsWith(tc.prefixes...)
+		for range b.N {
+			_ = rule.Validate(tc.in)
 		}
 	}
 }
@@ -825,9 +844,10 @@ func TestStringEndsWith(t *testing.T) {
 }
 
 func BenchmarkStringEndsWith(b *testing.B) {
-	for range b.N {
-		for _, tc := range stringEndsWithTestCases {
-			_ = StringEndsWith(tc.suffixes...).Validate(tc.in)
+	for _, tc := range stringEndsWithTestCases {
+		rule := StringEndsWith(tc.suffixes...)
+		for range b.N {
+			_ = rule.Validate(tc.in)
 		}
 	}
 }
@@ -867,9 +887,10 @@ func TestStringTitle(t *testing.T) {
 }
 
 func BenchmarkStringTitle(b *testing.B) {
-	for range b.N {
-		for _, tc := range stringTitleTestCases {
-			_ = StringTitle().Validate(tc.in)
+	for _, tc := range stringTitleTestCases {
+		rule := StringTitle()
+		for range b.N {
+			_ = rule.Validate(tc.in)
 		}
 	}
 }
@@ -944,9 +965,10 @@ func TestStringGitRef(t *testing.T) {
 }
 
 func BenchmarkStringGitRef(b *testing.B) {
-	for range b.N {
-		for _, tc := range stringGitRefTestCases {
-			_ = StringGitRef().Validate(tc.in)
+	for _, tc := range stringGitRefTestCases {
+		rule := StringGitRef()
+		for range b.N {
+			_ = rule.Validate(tc.in)
 		}
 	}
 }
@@ -1025,9 +1047,10 @@ func TestStringFileSystemPath(t *testing.T) {
 func BenchmarkStringFileSystemPath(b *testing.B) {
 	root := prepareFileSystemTests(b)
 	testCases := getStringFileSystemPathTestCases(root)
-	for range b.N {
-		for _, tc := range testCases {
-			_ = StringFileSystemPath().Validate(tc.in)
+	for _, tc := range testCases {
+		rule := StringFileSystemPath()
+		for range b.N {
+			_ = rule.Validate(tc.in)
 		}
 	}
 }
@@ -1075,9 +1098,10 @@ func TestStringFilePath(t *testing.T) {
 func BenchmarkStringFilePath(b *testing.B) {
 	root := prepareFileSystemTests(b)
 	testCases := getStringFilePathTestCases(root)
-	for range b.N {
-		for _, tc := range testCases {
-			_ = StringFilePath().Validate(tc.in)
+	for _, tc := range testCases {
+		rule := StringFilePath()
+		for range b.N {
+			_ = rule.Validate(tc.in)
 		}
 	}
 }
@@ -1125,9 +1149,10 @@ func TestStringDirPath(t *testing.T) {
 func BenchmarkStringDirPath(b *testing.B) {
 	root := prepareFileSystemTests(b)
 	testCases := getStringDirPathTestCases(root)
-	for range b.N {
-		for _, tc := range testCases {
-			_ = StringDirPath().Validate(tc.in)
+	for _, tc := range testCases {
+		rule := StringDirPath()
+		for range b.N {
+			_ = rule.Validate(tc.in)
 		}
 	}
 }
@@ -1213,9 +1238,10 @@ func TestStringMatchFileSystemPath(t *testing.T) {
 }
 
 func BenchmarkStringMatchFileSystemPath(b *testing.B) {
-	for range b.N {
-		for _, tc := range stringMatchFileSystemPathTestCases {
-			_ = StringMatchFileSystemPath(tc.pattern).Validate(tc.in)
+	for _, tc := range stringMatchFileSystemPathTestCases {
+		rule := StringMatchFileSystemPath(tc.pattern)
+		for range b.N {
+			_ = rule.Validate(tc.in)
 		}
 	}
 }
@@ -1271,9 +1297,10 @@ func TestStringRegexp(t *testing.T) {
 }
 
 func BenchmarkStringRegexp(b *testing.B) {
-	for range b.N {
-		for _, tc := range stringRegexpTestCases {
-			_ = StringRegexp().Validate(tc.in)
+	for _, tc := range stringRegexpTestCases {
+		rule := StringRegexp()
+		for range b.N {
+			_ = rule.Validate(tc.in)
 		}
 	}
 }
@@ -1410,8 +1437,8 @@ func TestStringCrontab(t *testing.T) {
 }
 
 func BenchmarkStringCrontab(b *testing.B) {
-	testCases := getStringCronTestCases()
 	for range b.N {
+		testCases := getStringCronTestCases()
 		for _, tc := range testCases {
 			_ = StringCrontab().Validate(tc.in)
 		}
@@ -1460,9 +1487,10 @@ func TestStringDateTime(t *testing.T) {
 }
 
 func BenchmarkStringDateTime(b *testing.B) {
-	for range b.N {
-		for _, tc := range stringDateTimeTestCases {
-			_ = StringDateTime(tc.layout).Validate(tc.in)
+	for _, tc := range stringDateTimeTestCases {
+		rule := StringDateTime(tc.layout)
+		for range b.N {
+			_ = rule.Validate(tc.in)
 		}
 	}
 }
@@ -1496,9 +1524,10 @@ func TestStringTimeZone(t *testing.T) {
 }
 
 func BenchmarkStringTimeZone(b *testing.B) {
-	for range b.N {
-		for _, tc := range stringDateTimeTestCases {
-			_ = StringTimeZone().Validate(tc.in)
+	for _, tc := range stringDateTimeTestCases {
+		rule := StringTimeZone()
+		for range b.N {
+			_ = rule.Validate(tc.in)
 		}
 	}
 }
@@ -1534,9 +1563,10 @@ func TestStringAlpha(t *testing.T) {
 }
 
 func BenchmarkStringAlpha(b *testing.B) {
-	for range b.N {
-		for _, tc := range stringAlphaTestCases {
-			_ = StringAlpha().Validate(tc.in)
+	for _, tc := range stringAlphaTestCases {
+		rule := StringAlpha()
+		for range b.N {
+			_ = rule.Validate(tc.in)
 		}
 	}
 }
@@ -1576,9 +1606,10 @@ func TestStringAlphanumeric(t *testing.T) {
 }
 
 func BenchmarkStringAlphanumeric(b *testing.B) {
-	for range b.N {
-		for _, tc := range stringAlphanumericTestCases {
-			_ = StringAlphanumeric().Validate(tc.in)
+	for _, tc := range stringAlphanumericTestCases {
+		rule := StringAlphanumeric()
+		for range b.N {
+			_ = rule.Validate(tc.in)
 		}
 	}
 }
@@ -1618,9 +1649,10 @@ func TestStringAlphaUnicode(t *testing.T) {
 }
 
 func BenchmarkStringAlphaUnicode(b *testing.B) {
-	for range b.N {
-		for _, tc := range stringAlphaUnicodeTestCases {
-			_ = StringAlphaUnicode().Validate(tc.in)
+	for _, tc := range stringAlphaUnicodeTestCases {
+		rule := StringAlphaUnicode()
+		for range b.N {
+			_ = rule.Validate(tc.in)
 		}
 	}
 }
@@ -1665,9 +1697,10 @@ func TestStringAlphanumericUnicode(t *testing.T) {
 }
 
 func BenchmarkStringAlphanumericUnicode(b *testing.B) {
-	for range b.N {
-		for _, tc := range stringAlphanumericUnicodeTestCases {
-			_ = StringAlphanumericUnicode().Validate(tc.in)
+	for _, tc := range stringAlphanumericUnicodeTestCases {
+		rule := StringAlphanumericUnicode()
+		for range b.N {
+			_ = rule.Validate(tc.in)
 		}
 	}
 }
