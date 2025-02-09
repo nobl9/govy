@@ -76,9 +76,10 @@ func BenchmarkURL(b *testing.B) {
 	}
 	b.ResetTimer()
 
-	for range b.N {
-		for _, u := range parsedURLs {
-			_ = URL().Validate(u)
+	for _, u := range parsedURLs {
+		for range b.N {
+			rule := URL()
+			_ = rule.Validate(u)
 		}
 	}
 }

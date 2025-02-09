@@ -56,9 +56,10 @@ func TestDurationPrecision(t *testing.T) {
 }
 
 func BenchmarkDurationPrecision(b *testing.B) {
-	for range b.N {
-		for _, tc := range durationPrecisionTestCases {
-			_ = DurationPrecision(tc.precision).Validate(tc.duration)
+	for _, tc := range durationPrecisionTestCases {
+		rule := DurationPrecision(tc.precision)
+		for range b.N {
+			_ = rule.Validate(tc.duration)
 		}
 	}
 }

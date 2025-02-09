@@ -38,9 +38,10 @@ func TestRequired(t *testing.T) {
 }
 
 func BenchmarkRequired(b *testing.B) {
-	for range b.N {
-		for _, tc := range requiredTestCases {
-			_ = Required[any]().Validate(tc.in)
+	for _, tc := range requiredTestCases {
+		rule := Required[any]()
+		for range b.N {
+			_ = rule.Validate(tc.in)
 		}
 	}
 }

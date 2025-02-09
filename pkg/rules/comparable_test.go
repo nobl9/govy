@@ -31,9 +31,10 @@ func TestEQ(t *testing.T) {
 }
 
 func BenchmarkEQ(b *testing.B) {
-	for range b.N {
-		for _, tc := range eqTestCases {
-			_ = EQ(tc.value).Validate(tc.input)
+	for _, tc := range eqTestCases {
+		rule := EQ(tc.value)
+		for range b.N {
+			_ = rule.Validate(tc.input)
 		}
 	}
 }
@@ -61,9 +62,10 @@ func TestNEQ(t *testing.T) {
 }
 
 func BenchmarkNEQ(b *testing.B) {
-	for range b.N {
-		for _, tc := range neqTestCases {
-			_ = NEQ(tc.value).Validate(tc.input)
+	for _, tc := range neqTestCases {
+		rule := NEQ(tc.value)
+		for range b.N {
+			_ = rule.Validate(tc.input)
 		}
 	}
 }
@@ -92,9 +94,10 @@ func TestGT(t *testing.T) {
 }
 
 func BenchmarkGT(b *testing.B) {
-	for range b.N {
-		for _, tc := range gtTestCases {
-			_ = GT(tc.value).Validate(tc.input)
+	for _, tc := range gtTestCases {
+		rule := GT(tc.value)
+		for range b.N {
+			_ = rule.Validate(tc.input)
 		}
 	}
 }
@@ -123,9 +126,10 @@ func TestGTE(t *testing.T) {
 }
 
 func BenchmarkGTE(b *testing.B) {
-	for range b.N {
-		for _, tc := range gteTestCases {
-			_ = GTE(tc.value).Validate(tc.input)
+	for _, tc := range gteTestCases {
+		rule := GTE(tc.value)
+		for range b.N {
+			_ = rule.Validate(tc.input)
 		}
 	}
 }
@@ -154,9 +158,10 @@ func TestLT(t *testing.T) {
 }
 
 func BenchmarkLT(b *testing.B) {
-	for range b.N {
-		for _, tc := range ltTestCases {
-			_ = LT(tc.value).Validate(tc.input)
+	for _, tc := range ltTestCases {
+		rule := LT(tc.value)
+		for range b.N {
+			_ = rule.Validate(tc.input)
 		}
 	}
 }
@@ -185,9 +190,10 @@ func TestLTE(t *testing.T) {
 }
 
 func BenchmarkLTE(b *testing.B) {
-	for range b.N {
-		for _, tc := range lteTestCases {
-			_ = LTE(tc.value).Validate(tc.input)
+	for _, tc := range lteTestCases {
+		rule := LTE(tc.value)
+		for range b.N {
+			_ = rule.Validate(tc.input)
 		}
 	}
 }
@@ -259,9 +265,10 @@ func TestEqualProperties(t *testing.T) {
 }
 
 func BenchmarkEqualProperties(b *testing.B) {
-	for range b.N {
-		for _, tc := range equalPropertiesTestCases {
-			_ = tc.run()
+	for _, tc := range equalPropertiesTestCases {
+		rule := tc.run()
+		for range b.N {
+			_ = rule
 		}
 	}
 }

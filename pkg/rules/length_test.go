@@ -41,9 +41,10 @@ func TestStringLength(t *testing.T) {
 }
 
 func BenchmarkStringLength(b *testing.B) {
-	for range b.N {
-		for _, tc := range stringLengthTestCases {
-			_ = StringLength(tc.minLen, tc.maxLen).Validate(tc.value)
+	for _, tc := range stringLengthTestCases {
+		rule := StringLength(tc.minLen, tc.maxLen)
+		for range b.N {
+			_ = rule.Validate(tc.value)
 		}
 	}
 }
@@ -73,9 +74,10 @@ func TestStringMinLength(t *testing.T) {
 }
 
 func BenchmarkStringMinLength(b *testing.B) {
-	for range b.N {
-		for _, tc := range stringMinLengthTestCases {
-			_ = StringMinLength(tc.minLen).Validate(tc.value)
+	for _, tc := range stringMinLengthTestCases {
+		rule := StringMinLength(tc.minLen)
+		for range b.N {
+			_ = rule.Validate(tc.value)
 		}
 	}
 }
@@ -105,9 +107,10 @@ func TestStringMaxLength(t *testing.T) {
 }
 
 func BenchmarkStringMaxLength(b *testing.B) {
-	for range b.N {
-		for _, tc := range stringMaxLengthTestCases {
-			_ = StringMaxLength(tc.maxLen).Validate(tc.value)
+	for _, tc := range stringMaxLengthTestCases {
+		rule := StringMaxLength(tc.maxLen)
+		for range b.N {
+			_ = rule.Validate(tc.value)
 		}
 	}
 }
@@ -145,9 +148,10 @@ func TestSliceLength(t *testing.T) {
 }
 
 func BenchmarkSliceLength(b *testing.B) {
-	for range b.N {
-		for _, tc := range sliceLengthTestCases {
-			_ = SliceLength[[]string](tc.minLen, tc.maxLen).Validate(tc.value)
+	for _, tc := range sliceLengthTestCases {
+		rule := SliceLength[[]string](tc.minLen, tc.maxLen)
+		for range b.N {
+			_ = rule.Validate(tc.value)
 		}
 	}
 }
@@ -177,9 +181,10 @@ func TestSliceMinLength(t *testing.T) {
 }
 
 func BenchmarkSliceMinLength(b *testing.B) {
-	for range b.N {
-		for _, tc := range sliceMinLengthTestCases {
-			_ = SliceMinLength[[]string](tc.minLen).Validate(tc.value)
+	for _, tc := range sliceMinLengthTestCases {
+		rule := SliceMinLength[[]string](tc.minLen)
+		for range b.N {
+			_ = rule.Validate(tc.value)
 		}
 	}
 }
@@ -209,9 +214,10 @@ func TestSliceMaxLength(t *testing.T) {
 }
 
 func BenchmarkSliceMaxLength(b *testing.B) {
-	for range b.N {
-		for _, tc := range sliceMaxLengthTestCases {
-			_ = SliceMaxLength[[]string](tc.maxLen).Validate(tc.value)
+	for _, tc := range sliceMaxLengthTestCases {
+		rule := SliceMaxLength[[]string](tc.maxLen)
+		for range b.N {
+			_ = rule.Validate(tc.value)
 		}
 	}
 }
@@ -262,9 +268,10 @@ func TestMapLength(t *testing.T) {
 }
 
 func BenchmarkMapLength(b *testing.B) {
-	for range b.N {
-		for _, tc := range mapLengthTestCases {
-			_ = MapLength[map[string]string](tc.minLen, tc.maxLen).Validate(tc.value)
+	for _, tc := range mapLengthTestCases {
+		rule := MapLength[map[string]string](tc.minLen, tc.maxLen)
+		for range b.N {
+			_ = rule.Validate(tc.value)
 		}
 	}
 }
@@ -302,9 +309,10 @@ func TestMapMinLength(t *testing.T) {
 }
 
 func BenchmarkMapMinLength(b *testing.B) {
-	for range b.N {
-		for _, tc := range mapMinLengthTestCases {
-			_ = MapMinLength[map[string]string](tc.minLen).Validate(tc.value)
+	for _, tc := range mapMinLengthTestCases {
+		rule := MapMinLength[map[string]string](tc.minLen)
+		for range b.N {
+			_ = rule.Validate(tc.value)
 		}
 	}
 }
@@ -342,9 +350,10 @@ func TestMapMaxLength(t *testing.T) {
 }
 
 func BenchmarkMapMaxLength(b *testing.B) {
-	for range b.N {
-		for _, tc := range mapMaxLengthTestCases {
-			_ = MapMaxLength[map[string]string](tc.maxLen).Validate(tc.value)
+	for _, tc := range mapMaxLengthTestCases {
+		rule := MapMaxLength[map[string]string](tc.maxLen)
+		for range b.N {
+			_ = rule.Validate(tc.value)
 		}
 	}
 }
