@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"errors"
 	"fmt"
 	"reflect"
 	"strings"
@@ -9,57 +8,128 @@ import (
 	"golang.org/x/exp/constraints"
 
 	"github.com/nobl9/govy/internal/collections"
+	"github.com/nobl9/govy/internal/messagetemplates"
 	"github.com/nobl9/govy/pkg/govy"
 )
 
 // EQ ensures the property's value is equal to the compared value.
 func EQ[T comparable](compared T) govy.Rule[T] {
-	msg := fmt.Sprintf(comparisonFmt, cmpEqualTo, compared)
+	tpl := messagetemplates.Get(messagetemplates.EQTemplate)
+
 	return govy.NewRule(func(v T) error {
 		if v != compared {
-			return errors.New(msg)
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: v,
+				ComparedValue: compared,
+			})
 		}
 		return nil
 	}).
 		WithErrorCode(ErrorCodeEqualTo).
-		WithDescription(msg)
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+			ComparedValue: compared,
+		}))
 }
 
 // NEQ ensures the property's value is not equal to the compared value.
 func NEQ[T comparable](compared T) govy.Rule[T] {
-	msg := fmt.Sprintf(comparisonFmt, cmpNotEqualTo, compared)
+	tpl := messagetemplates.Get(messagetemplates.NEQTemplate)
+
 	return govy.NewRule(func(v T) error {
 		if v == compared {
-			return errors.New(msg)
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: v,
+				ComparedValue: compared,
+			})
 		}
 		return nil
 	}).
 		WithErrorCode(ErrorCodeNotEqualTo).
-		WithDescription(msg)
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+			ComparedValue: compared,
+		}))
 }
 
 // GT ensures the property's value is greater than the compared value.
 func GT[T constraints.Ordered](compared T) govy.Rule[T] {
-	return orderedComparisonRule(cmpGreaterThan, compared).
-		WithErrorCode(ErrorCodeGreaterThan)
+	tpl := messagetemplates.Get(messagetemplates.GTTemplate)
+
+	return govy.NewRule(func(v T) error {
+		if v <= compared {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: v,
+				ComparedValue: compared,
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeGreaterThan).
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+			ComparedValue: compared,
+		}))
 }
 
 // GTE ensures the property's value is greater than or equal to the compared value.
 func GTE[T constraints.Ordered](compared T) govy.Rule[T] {
-	return orderedComparisonRule(cmpGreaterThanOrEqual, compared).
-		WithErrorCode(ErrorCodeGreaterThanOrEqualTo)
+	tpl := messagetemplates.Get(messagetemplates.GTETemplate)
+
+	return govy.NewRule(func(v T) error {
+		if v < compared {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: v,
+				ComparedValue: compared,
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeGreaterThanOrEqualTo).
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+			ComparedValue: compared,
+		}))
 }
 
 // LT ensures the property's value is less than the compared value.
 func LT[T constraints.Ordered](compared T) govy.Rule[T] {
-	return orderedComparisonRule(cmpLessThan, compared).
-		WithErrorCode(ErrorCodeLessThan)
+	tpl := messagetemplates.Get(messagetemplates.LTTemplate)
+
+	return govy.NewRule(func(v T) error {
+		if v >= compared {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: v,
+				ComparedValue: compared,
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeLessThan).
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+			ComparedValue: compared,
+		}))
 }
 
 // LTE ensures the property's value is less than or equal to the compared value.
 func LTE[T constraints.Ordered](compared T) govy.Rule[T] {
-	return orderedComparisonRule(cmpLessThanOrEqual, compared).
-		WithErrorCode(ErrorCodeLessThanOrEqualTo)
+	tpl := messagetemplates.Get(messagetemplates.LTETemplate)
+
+	return govy.NewRule(func(v T) error {
+		if v > compared {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: v,
+				ComparedValue: compared,
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeLessThanOrEqualTo).
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+			ComparedValue: compared,
+		}))
 }
 
 // ComparisonFunc defines a shape for a function that compares two values.
@@ -78,13 +148,13 @@ func CompareDeepEqualFunc[T any](v1, v2 T) bool {
 	return reflect.DeepEqual(v1, v2)
 }
 
-// EqualProperties checks if all of the specified properties are equal.
+// EqualProperties checks if all the specified properties are equal.
 // It uses the provided [ComparisonFunc] to compare the values.
 // The following built-in comparison functions are available:
 //   - [CompareFunc]
 //   - [CompareDeepEqualFunc]
 //
-// If builtin [ComparisonFunc] are not enough, a custom function can be used.
+// If builtin [ComparisonFunc] is not enough, a custom function can be used.
 func EqualProperties[S, T any](compare ComparisonFunc[T], getters map[string]func(s S) T) govy.Rule[S] {
 	sortedKeys := collections.SortedKeys(getters)
 	return govy.NewRule(func(s S) error {
@@ -119,60 +189,4 @@ func EqualProperties[S, T any](compare ComparisonFunc[T], getters map[string]fun
 				strings.Join(collections.SortedKeys(getters), ", "),
 			)
 		}())
-}
-
-var comparisonFmt = "should be %s '%v'"
-
-func orderedComparisonRule[T constraints.Ordered](op comparisonOperator, compared T) govy.Rule[T] {
-	msg := fmt.Sprintf(comparisonFmt, op, compared)
-	return govy.NewRule(func(v T) error {
-		var passed bool
-		switch op {
-		case cmpGreaterThan:
-			passed = v > compared
-		case cmpGreaterThanOrEqual:
-			passed = v >= compared
-		case cmpLessThan:
-			passed = v < compared
-		case cmpLessThanOrEqual:
-			passed = v <= compared
-		default:
-			passed = false
-		}
-		if !passed {
-			return errors.New(msg)
-		}
-		return nil
-	}).WithDescription(msg)
-}
-
-type comparisonOperator uint8
-
-const (
-	cmpEqualTo comparisonOperator = iota
-	cmpNotEqualTo
-	cmpGreaterThan
-	cmpGreaterThanOrEqual
-	cmpLessThan
-	cmpLessThanOrEqual
-)
-
-func (c comparisonOperator) String() string {
-	// exhaustive: enforce
-	switch c {
-	case cmpEqualTo:
-		return "equal to"
-	case cmpNotEqualTo:
-		return "not equal to"
-	case cmpGreaterThan:
-		return "greater than"
-	case cmpGreaterThanOrEqual:
-		return "greater than or equal to"
-	case cmpLessThan:
-		return "less than"
-	case cmpLessThanOrEqual:
-		return "less than or equal to"
-	default:
-		return "unknown"
-	}
 }
