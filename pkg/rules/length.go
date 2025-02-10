@@ -44,8 +44,8 @@ func StringMinLength(limit int) govy.Rule[string] {
 		length := utf8.RuneCountInString(v)
 		if length < limit {
 			return govy.NewRuleErrorTemplate(govy.TemplateVars{
-				PropertyValue: v,
-				ComparedValue: limit,
+				PropertyValue:   v,
+				ComparisonValue: limit,
 			})
 		}
 		return nil
@@ -53,7 +53,7 @@ func StringMinLength(limit int) govy.Rule[string] {
 		WithErrorCode(ErrorCodeStringMinLength).
 		WithMessageTemplate(tpl).
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
-			ComparedValue: limit,
+			ComparisonValue: limit,
 		}))
 }
 
@@ -65,8 +65,8 @@ func StringMaxLength(limit int) govy.Rule[string] {
 		length := utf8.RuneCountInString(v)
 		if length > limit {
 			return govy.NewRuleErrorTemplate(govy.TemplateVars{
-				PropertyValue: v,
-				ComparedValue: limit,
+				PropertyValue:   v,
+				ComparisonValue: limit,
 			})
 		}
 		return nil
@@ -74,7 +74,7 @@ func StringMaxLength(limit int) govy.Rule[string] {
 		WithErrorCode(ErrorCodeStringMaxLength).
 		WithMessageTemplate(tpl).
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
-			ComparedValue: limit,
+			ComparisonValue: limit,
 		}))
 }
 
@@ -114,8 +114,8 @@ func SliceMinLength[S ~[]E, E any](limit int) govy.Rule[S] {
 		length := len(v)
 		if length < limit {
 			return govy.NewRuleErrorTemplate(govy.TemplateVars{
-				PropertyValue: v,
-				ComparedValue: limit,
+				PropertyValue:   v,
+				ComparisonValue: limit,
 			})
 		}
 		return nil
@@ -123,7 +123,7 @@ func SliceMinLength[S ~[]E, E any](limit int) govy.Rule[S] {
 		WithErrorCode(ErrorCodeSliceMinLength).
 		WithMessageTemplate(tpl).
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
-			ComparedValue: limit,
+			ComparisonValue: limit,
 		}))
 }
 
@@ -135,8 +135,8 @@ func SliceMaxLength[S ~[]E, E any](limit int) govy.Rule[S] {
 		length := len(v)
 		if length > limit {
 			return govy.NewRuleErrorTemplate(govy.TemplateVars{
-				PropertyValue: v,
-				ComparedValue: limit,
+				PropertyValue:   v,
+				ComparisonValue: limit,
 			})
 		}
 		return nil
@@ -144,7 +144,7 @@ func SliceMaxLength[S ~[]E, E any](limit int) govy.Rule[S] {
 		WithErrorCode(ErrorCodeSliceMaxLength).
 		WithMessageTemplate(tpl).
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
-			ComparedValue: limit,
+			ComparisonValue: limit,
 		}))
 }
 
@@ -184,8 +184,8 @@ func MapMinLength[M ~map[K]V, K comparable, V any](limit int) govy.Rule[M] {
 		length := len(v)
 		if length < limit {
 			return govy.NewRuleErrorTemplate(govy.TemplateVars{
-				PropertyValue: v,
-				ComparedValue: limit,
+				PropertyValue:   v,
+				ComparisonValue: limit,
 			})
 		}
 		return nil
@@ -193,7 +193,7 @@ func MapMinLength[M ~map[K]V, K comparable, V any](limit int) govy.Rule[M] {
 		WithErrorCode(ErrorCodeMapMinLength).
 		WithMessageTemplate(tpl).
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
-			ComparedValue: limit,
+			ComparisonValue: limit,
 		}))
 }
 
@@ -205,8 +205,8 @@ func MapMaxLength[M ~map[K]V, K comparable, V any](limit int) govy.Rule[M] {
 		length := len(v)
 		if length > limit {
 			return govy.NewRuleErrorTemplate(govy.TemplateVars{
-				PropertyValue: v,
-				ComparedValue: limit,
+				PropertyValue:   v,
+				ComparisonValue: limit,
 			})
 		}
 		return nil
@@ -214,7 +214,7 @@ func MapMaxLength[M ~map[K]V, K comparable, V any](limit int) govy.Rule[M] {
 		WithErrorCode(ErrorCodeMapMaxLength).
 		WithMessageTemplate(tpl).
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
-			ComparedValue: limit,
+			ComparisonValue: limit,
 		}))
 }
 

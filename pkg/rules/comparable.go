@@ -19,8 +19,8 @@ func EQ[T comparable](compared T) govy.Rule[T] {
 	return govy.NewRule(func(v T) error {
 		if v != compared {
 			return govy.NewRuleErrorTemplate(govy.TemplateVars{
-				PropertyValue: v,
-				ComparedValue: compared,
+				PropertyValue:   v,
+				ComparisonValue: compared,
 			})
 		}
 		return nil
@@ -28,7 +28,7 @@ func EQ[T comparable](compared T) govy.Rule[T] {
 		WithErrorCode(ErrorCodeEqualTo).
 		WithMessageTemplate(tpl).
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
-			ComparedValue: compared,
+			ComparisonValue: compared,
 		}))
 }
 
@@ -39,8 +39,8 @@ func NEQ[T comparable](compared T) govy.Rule[T] {
 	return govy.NewRule(func(v T) error {
 		if v == compared {
 			return govy.NewRuleErrorTemplate(govy.TemplateVars{
-				PropertyValue: v,
-				ComparedValue: compared,
+				PropertyValue:   v,
+				ComparisonValue: compared,
 			})
 		}
 		return nil
@@ -48,7 +48,7 @@ func NEQ[T comparable](compared T) govy.Rule[T] {
 		WithErrorCode(ErrorCodeNotEqualTo).
 		WithMessageTemplate(tpl).
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
-			ComparedValue: compared,
+			ComparisonValue: compared,
 		}))
 }
 
@@ -59,8 +59,8 @@ func GT[T constraints.Ordered](compared T) govy.Rule[T] {
 	return govy.NewRule(func(v T) error {
 		if v <= compared {
 			return govy.NewRuleErrorTemplate(govy.TemplateVars{
-				PropertyValue: v,
-				ComparedValue: compared,
+				PropertyValue:   v,
+				ComparisonValue: compared,
 			})
 		}
 		return nil
@@ -68,7 +68,7 @@ func GT[T constraints.Ordered](compared T) govy.Rule[T] {
 		WithErrorCode(ErrorCodeGreaterThan).
 		WithMessageTemplate(tpl).
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
-			ComparedValue: compared,
+			ComparisonValue: compared,
 		}))
 }
 
@@ -79,8 +79,8 @@ func GTE[T constraints.Ordered](compared T) govy.Rule[T] {
 	return govy.NewRule(func(v T) error {
 		if v < compared {
 			return govy.NewRuleErrorTemplate(govy.TemplateVars{
-				PropertyValue: v,
-				ComparedValue: compared,
+				PropertyValue:   v,
+				ComparisonValue: compared,
 			})
 		}
 		return nil
@@ -88,7 +88,7 @@ func GTE[T constraints.Ordered](compared T) govy.Rule[T] {
 		WithErrorCode(ErrorCodeGreaterThanOrEqualTo).
 		WithMessageTemplate(tpl).
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
-			ComparedValue: compared,
+			ComparisonValue: compared,
 		}))
 }
 
@@ -99,8 +99,8 @@ func LT[T constraints.Ordered](compared T) govy.Rule[T] {
 	return govy.NewRule(func(v T) error {
 		if v >= compared {
 			return govy.NewRuleErrorTemplate(govy.TemplateVars{
-				PropertyValue: v,
-				ComparedValue: compared,
+				PropertyValue:   v,
+				ComparisonValue: compared,
 			})
 		}
 		return nil
@@ -108,7 +108,7 @@ func LT[T constraints.Ordered](compared T) govy.Rule[T] {
 		WithErrorCode(ErrorCodeLessThan).
 		WithMessageTemplate(tpl).
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
-			ComparedValue: compared,
+			ComparisonValue: compared,
 		}))
 }
 
@@ -119,8 +119,8 @@ func LTE[T constraints.Ordered](compared T) govy.Rule[T] {
 	return govy.NewRule(func(v T) error {
 		if v > compared {
 			return govy.NewRuleErrorTemplate(govy.TemplateVars{
-				PropertyValue: v,
-				ComparedValue: compared,
+				PropertyValue:   v,
+				ComparisonValue: compared,
 			})
 		}
 		return nil
@@ -128,7 +128,7 @@ func LTE[T constraints.Ordered](compared T) govy.Rule[T] {
 		WithErrorCode(ErrorCodeLessThanOrEqualTo).
 		WithMessageTemplate(tpl).
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
-			ComparedValue: compared,
+			ComparisonValue: compared,
 		}))
 }
 

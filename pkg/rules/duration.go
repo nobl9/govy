@@ -1,22 +1,28 @@
 package rules
 
 import (
-	"errors"
-	"fmt"
 	"time"
 
+	"github.com/nobl9/govy/internal/messagetemplates"
 	"github.com/nobl9/govy/pkg/govy"
 )
 
 // DurationPrecision ensures the duration is defined with the specified precision.
 func DurationPrecision(precision time.Duration) govy.Rule[time.Duration] {
-	msg := fmt.Sprintf("duration must be defined with %s precision", precision)
+	tpl := messagetemplates.Get(messagetemplates.DurationPrecisionTemplate)
+
 	return govy.NewRule(func(v time.Duration) error {
 		if v.Nanoseconds()%int64(precision) != 0 {
-			return errors.New(msg)
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue:   v,
+				ComparisonValue: precision,
+			})
 		}
 		return nil
 	}).
 		WithErrorCode(ErrorCodeDurationPrecision).
-		WithDescription(msg)
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+			PropertyValue: precision,
+		}))
 }

@@ -285,10 +285,12 @@ type TemplateVars struct {
 	Examples      []string
 	Details       string
 	// Builtin variables which are available only for selected rules.
-	Error         string
-	MinLength     int
-	MaxLength     int
-	ComparedValue any
+	Error     string
+	MinLength int
+	MaxLength int
+	// ComparisonValue is the value defined most commonly during rule creation
+	// to which runtime values are compared.
+	ComparisonValue any
 	// Custom variables provided by the user, this can be anything,
 	// e.g. map[string]any or a struct.
 	Custom any
