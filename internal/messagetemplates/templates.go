@@ -14,6 +14,7 @@ const (
 	LTTemplate
 	LTETemplate
 	DurationPrecisionTemplate
+	ForbiddenTemplate
 )
 
 var rawMessageTemplates = map[templateKey]string{
@@ -27,6 +28,7 @@ var rawMessageTemplates = map[templateKey]string{
 	LTTemplate:                "should be less than '{{ .ComparisonValue }}'",
 	LTETemplate:               "should be less than or equal to '{{ .ComparisonValue }}'",
 	DurationPrecisionTemplate: "duration must be defined with {{ .ComparisonValue }} precision",
+	ForbiddenTemplate:         "property is forbidden",
 }
 
 // commonTemplateSuffix is a suffix that is added to all message templates.
