@@ -16,12 +16,12 @@ func TestGet(t *testing.T) {
 	}
 
 	assert.Len(t, messageTemplatesCache.tmpl, 0)
-	tpl := Get(StringLengthTemplate)
+	tpl := Get(LengthTemplate)
 	actual := mustExecuteTemplate(t, tpl, vars)
 	assert.Equal(t, expected, actual)
 
 	assert.Len(t, messageTemplatesCache.tmpl, 1)
-	tpl = Get(StringLengthTemplate)
+	tpl = Get(LengthTemplate)
 	actual = mustExecuteTemplate(t, tpl, vars)
 	assert.Equal(t, expected, actual)
 }

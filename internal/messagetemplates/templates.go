@@ -4,11 +4,15 @@ package messagetemplates
 type templateKey int
 
 const (
-	StringLengthTemplate templateKey = iota + 1
+	LengthTemplate templateKey = iota + 1
+	MinLengthTemplate
+	MaxLengthTemplate
 )
 
 var rawMessageTemplates = map[templateKey]string{
-	StringLengthTemplate: "length must be between {{ .MinLength }} and {{ .MaxLength }}",
+	LengthTemplate:    "length must be between {{ .MinLength }} and {{ .MaxLength }}",
+	MinLengthTemplate: "length must be greater than or equal to {{ .MinLength }}",
+	MaxLengthTemplate: "length must be less than or equal to {{ .MaxLength }}",
 }
 
 // commonTemplateSuffix is a suffix that is added to all message templates.
