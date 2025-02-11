@@ -15,6 +15,9 @@ const (
 	LTETemplate
 	DurationPrecisionTemplate
 	ForbiddenTemplate
+	OneOfTemplate
+	OneOfPropertiesTemplate
+	MutuallyExclusiveTemplate
 )
 
 var rawMessageTemplates = map[templateKey]string{
@@ -29,6 +32,9 @@ var rawMessageTemplates = map[templateKey]string{
 	LTETemplate:               "should be less than or equal to '{{ .ComparisonValue }}'",
 	DurationPrecisionTemplate: "duration must be defined with {{ .ComparisonValue }} precision",
 	ForbiddenTemplate:         "property is forbidden",
+	OneOfTemplate:             `must be one of [{{ joinStringSlice .ComparisonValue "" }}]`,
+	OneOfPropertiesTemplate:   `one of [{{ joinStringSlice .ComparisonValue "" }}] properties must be set, none was provided`,
+	MutuallyExclusiveTemplate: `{{- if .Custom.NoProperties }}one of [{{ joinStringSlice .ComparisonValue "" }}] properties must be set, none was provided{{- else }}[{{ joinStringSlice .ComparisonValue "" }}] properties are mutually exclusive, provide only one of them{{- end }}`,
 }
 
 // commonTemplateSuffix is a suffix that is added to all message templates.

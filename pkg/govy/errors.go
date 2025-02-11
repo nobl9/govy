@@ -284,15 +284,20 @@ type TemplateVars struct {
 	PropertyValue any
 	Examples      []string
 	Details       string
-	// Builtin variables which are available only for selected rules.
-	Error     string
-	MinLength int
-	MaxLength int
+
+	// Builtin, widely used variables which are available only for selected rules.
+
+	// Error is the dynamic error returned by underlying functions evaluated by the rule,
+	// for instance an error returned by [net/url.Parse].
+	Error string
 	// ComparisonValue is the value defined most commonly during rule creation
 	// to which runtime values are compared.
 	ComparisonValue any
-	// Custom variables provided by the user, this can be anything,
-	// e.g. map[string]any or a struct.
+	MinLength       int
+	MaxLength       int
+
+	// Custom variables either provided by the user or case specific,
+	// this can be anything, for instance map[string]any or a struct.
 	Custom any
 }
 
