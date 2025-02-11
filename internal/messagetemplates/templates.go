@@ -1,5 +1,7 @@
 package messagetemplates
 
+import "github.com/nobl9/govy/internal"
+
 // templateKey is a key that uniquely identifies a message template.
 type templateKey int
 
@@ -18,6 +20,7 @@ const (
 	OneOfTemplate
 	OneOfPropertiesTemplate
 	MutuallyExclusiveTemplate
+	RequiredTemplate
 )
 
 var rawMessageTemplates = map[templateKey]string{
@@ -35,6 +38,7 @@ var rawMessageTemplates = map[templateKey]string{
 	OneOfTemplate:             `must be one of [{{ joinStringSlice .ComparisonValue "" }}]`,
 	OneOfPropertiesTemplate:   `one of [{{ joinStringSlice .ComparisonValue "" }}] properties must be set, none was provided`,
 	MutuallyExclusiveTemplate: `{{- if .Custom.NoProperties }}one of [{{ joinStringSlice .ComparisonValue "" }}] properties must be set, none was provided{{- else }}[{{ joinStringSlice .ComparisonValue "" }}] properties are mutually exclusive, provide only one of them{{- end }}`,
+	RequiredTemplate:          internal.RequiredErrorMessage,
 }
 
 // commonTemplateSuffix is a suffix that is added to all message templates.
