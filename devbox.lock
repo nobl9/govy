@@ -2,50 +2,50 @@
   "lockfile_version": "1",
   "packages": {
     "go@1.22": {
-      "last_modified": "2025-01-19T08:16:51Z",
-      "resolved": "github:NixOS/nixpkgs/50165c4f7eb48ce82bd063e1fb8047a0f515f8ce#go_1_22",
+      "last_modified": "2025-02-05T05:41:33Z",
+      "resolved": "github:NixOS/nixpkgs/5b2753b0356d1c951d7a3ef1d086ba5a71fff43c#go_1_22",
       "source": "devbox-search",
-      "version": "1.22.11",
+      "version": "1.22.12",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/n2z6im8iiv9lr59yjfsv44k0fxz7l7j8-go-1.22.11",
+              "path": "/nix/store/ff0qyzh1faxmbzkpzw82x29ajs19il8i-go-1.22.12",
               "default": true
             }
           ],
-          "store_path": "/nix/store/n2z6im8iiv9lr59yjfsv44k0fxz7l7j8-go-1.22.11"
+          "store_path": "/nix/store/ff0qyzh1faxmbzkpzw82x29ajs19il8i-go-1.22.12"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/6d2jvkjgl8kqyf060qc91028h9cn31ic-go-1.22.11",
+              "path": "/nix/store/prg2xh9rpfw1qslxqyvqxz8c7c0g3sb5-go-1.22.12",
               "default": true
             }
           ],
-          "store_path": "/nix/store/6d2jvkjgl8kqyf060qc91028h9cn31ic-go-1.22.11"
+          "store_path": "/nix/store/prg2xh9rpfw1qslxqyvqxz8c7c0g3sb5-go-1.22.12"
         },
         "x86_64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/w8zix38rx053wrvd1vabnha98b16b6ad-go-1.22.11",
+              "path": "/nix/store/lzqrskhfcq6hcsx11brn3q88yzkyj0sz-go-1.22.12",
               "default": true
             }
           ],
-          "store_path": "/nix/store/w8zix38rx053wrvd1vabnha98b16b6ad-go-1.22.11"
+          "store_path": "/nix/store/lzqrskhfcq6hcsx11brn3q88yzkyj0sz-go-1.22.12"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/mycvbw9hbsd122qs1h4dapypkfnmslhw-go-1.22.11",
+              "path": "/nix/store/rm130rzpw39nvb5ig529sa0zl0qlygkl-go-1.22.12",
               "default": true
             }
           ],
-          "store_path": "/nix/store/mycvbw9hbsd122qs1h4dapypkfnmslhw-go-1.22.11"
+          "store_path": "/nix/store/rm130rzpw39nvb5ig529sa0zl0qlygkl-go-1.22.12"
         }
       }
     },
@@ -357,11 +357,11 @@
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/gvmr94wic9z2nq310cf85nr4z39p0y7m-yarn-1.22.22",
+              "path": "/nix/store/r2agp60y6ww9dxglbvdsh4jir722vk9y-yarn-1.22.22",
               "default": true
             }
           ],
-          "store_path": "/nix/store/gvmr94wic9z2nq310cf85nr4z39p0y7m-yarn-1.22.22"
+          "store_path": "/nix/store/r2agp60y6ww9dxglbvdsh4jir722vk9y-yarn-1.22.22"
         },
         "x86_64-darwin": {
           "outputs": [
