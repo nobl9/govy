@@ -52,6 +52,7 @@ const (
 	SliceUniqueTemplate
 )
 
+// nolint: lll
 var rawMessageTemplates = map[templateKey]string{
 	LengthTemplate:            "length must be between {{ .MinLength }} and {{ .MaxLength }}",
 	MinLengthTemplate:         "length must be greater than or equal to {{ .ComparisonValue }}",
@@ -65,7 +66,7 @@ var rawMessageTemplates = map[templateKey]string{
 	EqualPropertiesTemplate:   `all of [{{ joinStringSlice .ComparisonValue "" }}] properties must be equal, but '{{ .Custom.FirstNotEqual }}' is not equal to '{{ .Custom.SecondNotEqual }}'`,
 	DurationPrecisionTemplate: "duration must be defined with {{ .ComparisonValue }} precision",
 	ForbiddenTemplate:         "property is forbidden",
-	OneOfTemplate:             `must be one of [{{ joinStringSlice .ComparisonValue "" }}]`,
+	OneOfTemplate:             `must be one of: {{ joinStringSlice .ComparisonValue "" }}`,
 	OneOfPropertiesTemplate:   `one of [{{ joinStringSlice .ComparisonValue "" }}] properties must be set, none was provided`,
 	MutuallyExclusiveTemplate: `
 {{- if .Custom.NoProperties -}}

@@ -93,7 +93,7 @@ func Example_basicUsage() {
 	// Output:
 	// Validation for John has failed for the following properties:
 	//   - 'name' with value 'John':
-	//     - must be one of [Jake, George]
+	//     - must be one of: Jake, George
 	//   - 'students' with value '[{"index":"918230014"},{"index":"9182300123"},{"index":"918230014"}]':
 	//     - length must be less than or equal to 2
 	//     - elements are not unique, 1st and 3rd elements collide

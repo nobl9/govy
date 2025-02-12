@@ -74,8 +74,11 @@ func (r Rule[T]) Validate(v T) error {
 			}
 			return ev
 		case RuleErrorTemplate:
+			if r.message != "" {
+				break
+			}
 			if r.messageTemplate == nil {
-				panic("message template is not set")
+				panic(fmt.Sprintf("rule returned %T error but message template is not set", ev))
 			}
 			ev.vars.PropertyValue = v
 			ev.vars.Details = r.details
@@ -89,16 +92,15 @@ func (r Rule[T]) Validate(v T) error {
 				Code:        r.errorCode,
 				Description: r.description,
 			}
-		default:
-			msg := ev.Error()
-			if len(r.message) > 0 {
-				msg = r.message
-			}
-			return &RuleError{
-				Message:     createErrorMessage(msg, r.details, r.examples),
-				Code:        r.errorCode,
-				Description: r.description,
-			}
+		}
+		msg := err.Error()
+		if len(r.message) > 0 {
+			msg = r.message
+		}
+		return &RuleError{
+			Message:     createErrorMessage(msg, r.details, r.examples),
+			Code:        r.errorCode,
+			Description: r.description,
 		}
 	}
 	return nil
