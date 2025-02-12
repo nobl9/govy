@@ -662,7 +662,7 @@ func ExampleRule_WithMessage() {
 	//     - unsupported name; Teacher can be either Tom or Jerry :)
 }
 
-// If you want have more control over the resulting error message, but [govy.Rule.WithMessage]
+// If you want to have more control over the resulting error message, but [govy.Rule.WithMessage]
 // is not enough, you can utilize a template string which is parsed by [govy.Rule] into
 // [template.Template] to construct a custom error message.
 //

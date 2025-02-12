@@ -31,11 +31,12 @@ planned features.
     2. [Immutability](#immutability)
     3. [Verbose error messages](#verbose-error-messages)
     4. [Error message templates](#error-message-templates)
-    5. [Predefined rules](#predefined-rules)
-    6. [Custom rules](#custom-rules)
-    7. [Validation plan](#validation-plan)
-    8. [Properties name inference](#properties-name-inference)
-    9. [Testing helpers](#testing-helpers)
+    5. [Error message templates in custom rules](#error-message-templates-in-custom-rules)
+    6. [Predefined rules](#predefined-rules)
+    7. [Custom rules](#custom-rules)
+    8. [Validation plan](#validation-plan)
+    9. [Properties name inference](#properties-name-inference)
+    10. [Testing helpers](#testing-helpers)
 4. [Rationale](#rationale)
     1. [Reflection](#reflection)
     2. [Trivia](#trivia)
@@ -286,8 +287,6 @@ deserialized.
 
 #### Error message templates
 
-_DISCLAIMER_: Coming up in v0.12.0
-
 If you want a more fine-grained control over the error messages,
 you can define custom error message templates for each builtin rule.
 
@@ -335,6 +334,73 @@ func Example_messageTemplates() {
 	// Validation for Teacher has failed for the following properties:
 	//   - 'name' with value 'Tom':
 	//     - name length should be between 5 and 10 (e.g. 'Joanna', 'Jerry')
+}
+```
+
+#### Error message templates in custom rules
+
+If you wish to support templating in your custom rules, you need to make sure
+your rules ALWAYS return `govy.RuleErrorTemplate` and supply the template
+with either `govy.Rule.WithMessageTemplateString` or `govy.Rule.WithMessageTemplate`.
+
+[//]: # (embed: internal/examples/readme_adding_message_templates_support_example_test.go)
+
+```go
+package examples
+
+import (
+	"fmt"
+
+	"github.com/nobl9/govy/pkg/govy"
+	"github.com/nobl9/govy/pkg/rules"
+)
+
+func Example_addingMessageTemplatesSupportToCustomRules() {
+	type Teacher struct {
+		Name string `json:"name"`
+	}
+
+	template := `{{ .PropertyValue }} must be {{ .ComparisonValue }}; {{ .Custom.Foo }} and {{ .Custom.Baz }}`
+
+	customRule := govy.NewRule(func(name string) error {
+		if name != "John" {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue:   name,
+				ComparisonValue: "John",
+				Custom: map[string]any{
+					"Foo": "Bar",
+					"Baz": 42,
+				},
+			})
+		}
+		return nil
+	}).
+		WithErrorCode("custom_rule").
+		WithMessageTemplateString(template).
+		WithDetails("we just don't like anyone but Johns...").
+		WithDescription("must be John")
+
+	teacherValidator := govy.New(
+		govy.For(func(t Teacher) string { return t.Name }).
+			WithName("name").
+			Required().
+			Rules(
+				customRule,
+				rules.StringStartsWith("J"),
+			),
+	).InferName()
+
+	teacher := Teacher{Name: "George"}
+
+	if err := teacherValidator.Validate(teacher); err != nil {
+		fmt.Println(err)
+	}
+
+	// Output:
+	// Validation for Teacher has failed for the following properties:
+	//   - 'name' with value 'George':
+	//     - George must be John; Bar and 42
+	//     - string must start with 'J' prefix
 }
 ```
 
