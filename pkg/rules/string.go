@@ -120,7 +120,13 @@ func StringURL() govy.Rule[string] {
 				Error:         "failed to parse URL: " + err.Error(),
 			})
 		}
-		return validateURL(u)
+		if err = validateURL(u); err != nil {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+				Error:         err.Error(),
+			})
+		}
+		return nil
 	}).
 		WithErrorCode(ErrorCodeStringURL).
 		WithMessageTemplate(tpl).

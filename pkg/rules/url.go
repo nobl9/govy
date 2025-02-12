@@ -1,6 +1,7 @@
 package rules
 
 import (
+	"errors"
 	"net/url"
 
 	"github.com/nobl9/govy/internal/messagetemplates"
@@ -12,7 +13,15 @@ import (
 func URL() govy.Rule[*url.URL] {
 	tpl := messagetemplates.Get(messagetemplates.URLTemplate)
 
-	return govy.NewRule(validateURL).
+	return govy.NewRule(func(v *url.URL) error {
+		if err := validateURL(v); err != nil {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: v,
+				Error:         err.Error(),
+			})
+		}
+		return nil
+	}).
 		WithErrorCode(ErrorCodeURL).
 		WithMessageTemplate(tpl).
 		WithDescription(urlDescription)
@@ -22,16 +31,10 @@ const urlDescription = "valid URL must have a scheme (e.g. https://) and contain
 
 func validateURL(u *url.URL) error {
 	if u.Scheme == "" {
-		return govy.NewRuleErrorTemplate(govy.TemplateVars{
-			PropertyValue: u.String(),
-			Error:         "valid URL must have a scheme (e.g. https://)",
-		})
+		return errors.New("valid URL must have a scheme (e.g. https://)")
 	}
 	if u.Host == "" && u.Fragment == "" && u.Opaque == "" {
-		return govy.NewRuleErrorTemplate(govy.TemplateVars{
-			PropertyValue: u.String(),
-			Error:         "valid URL must contain either host, fragment or opaque data",
-		})
+		return errors.New("valid URL must contain either host, fragment or opaque data")
 	}
 	return nil
 }

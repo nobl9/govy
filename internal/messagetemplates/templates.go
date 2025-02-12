@@ -49,12 +49,13 @@ const (
 	StringDateTimeTemplate
 	StringTimeZoneTemplate
 	URLTemplate
+	SliceUniqueTemplate
 )
 
 var rawMessageTemplates = map[templateKey]string{
 	LengthTemplate:            "length must be between {{ .MinLength }} and {{ .MaxLength }}",
 	MinLengthTemplate:         "length must be greater than or equal to {{ .ComparisonValue }}",
-	MaxLengthTemplate:         "length must be less than or equal to '{{ .ComparisonValue }}'",
+	MaxLengthTemplate:         "length must be less than or equal to {{ .ComparisonValue }}",
 	EQTemplate:                "should be equal to '{{ .ComparisonValue }}'",
 	NEQTemplate:               "should be not equal to '{{ .ComparisonValue }}'",
 	GTTemplate:                "should be greater than '{{ .ComparisonValue }}'",
@@ -127,7 +128,9 @@ string must be a valid git reference
 	StringCrontabTemplate:             "string must be a valid cron schedule expression",
 	StringDateTimeTemplate:            "string must be a valid date and time in '{{ .ComparisonValue }}' format{{- if .Error }}: {{ .Error }}{{- end }}",
 	StringTimeZoneTemplate:            "string must be a valid IANA Time Zone Database code{{- if .Error }}: {{ .Error }}{{- end }}",
-	URLTemplate:                       "{{ .Error }}",
+	SliceUniqueTemplate: `elements are not unique, {{ .Custom.FirstOrdinal }} and {{ .Custom.SecondOrdinal }} elements collide
+{{- if gt (len .Custom.Constraints) 0 }} based on constraints: {{ joinStringSlice .Custom.Constraints "" }}{{- end }}`,
+	URLTemplate: "{{ .Error }}",
 }
 
 // commonTemplateSuffix is a suffix that is added to all message templates.
