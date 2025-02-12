@@ -107,12 +107,3 @@ func MutuallyExclusive[S any](required bool, getters map[string]func(s S) any) g
 				strings.Join(collections.SortedKeys(getters), ", "))
 		}())
 }
-
-func prettyOneOfList[T any](values []T) string {
-	b := strings.Builder{}
-	b.Grow(2 + len(values))
-	b.WriteString("[")
-	internal.PrettyStringListBuilder(&b, values, "")
-	b.WriteString("]")
-	return b.String()
-}

@@ -148,6 +148,11 @@ func CompareDeepEqualFunc[T any](v1, v2 T) bool {
 	return reflect.DeepEqual(v1, v2)
 }
 
+type equalPropertiesTemplateVars struct {
+	FirstNotEqual  string
+	SecondNotEqual string
+}
+
 // EqualProperties checks if all the specified properties are equal.
 // It uses the provided [ComparisonFunc] to compare the values.
 // The following built-in comparison functions are available:
@@ -156,6 +161,8 @@ func CompareDeepEqualFunc[T any](v1, v2 T) bool {
 //
 // If builtin [ComparisonFunc] is not enough, a custom function can be used.
 func EqualProperties[S, T any](compare ComparisonFunc[T], getters map[string]func(s S) T) govy.Rule[S] {
+	tpl := messagetemplates.Get(messagetemplates.EqualPropertiesTemplate)
+
 	sortedKeys := collections.SortedKeys(getters)
 	return govy.NewRule(func(s S) error {
 		if len(getters) < 2 {
@@ -169,12 +176,13 @@ func EqualProperties[S, T any](compare ComparisonFunc[T], getters map[string]fun
 		for _, prop := range sortedKeys {
 			v := getters[prop](s)
 			if i != 0 && !compare(v, lastValue) {
-				return fmt.Errorf(
-					"all of %s properties must be equal, but '%s' is not equal to '%s'",
-					prettyOneOfList(collections.SortedKeys(getters)),
-					lastProp,
-					prop,
-				)
+				return govy.NewRuleErrorTemplate(govy.TemplateVars{
+					ComparisonValue: sortedKeys,
+					Custom: equalPropertiesTemplateVars{
+						FirstNotEqual:  lastProp,
+						SecondNotEqual: prop,
+					},
+				})
 			}
 			lastProp = prop
 			lastValue = v
@@ -183,6 +191,7 @@ func EqualProperties[S, T any](compare ComparisonFunc[T], getters map[string]fun
 		return nil
 	}).
 		WithErrorCode(ErrorCodeEqualProperties).
+		WithMessageTemplate(tpl).
 		WithDescription(func() string {
 			return fmt.Sprintf(
 				"all of the properties must be equal: %s",
