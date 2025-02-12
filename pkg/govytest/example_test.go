@@ -65,7 +65,7 @@ func ExampleAssertNoError() {
 	//       "propertyValue": "John",
 	//       "errors": [
 	//         {
-	//           "error": "must be one of [Jake, George]",
+	//           "error": "must be one of: Jake, George",
 	//           "code": "one_of",
 	//           "description": "must be one of: Jake, George"
 	//         }
@@ -150,7 +150,7 @@ func ExampleAssertError() {
 	//     "propertyValue": "John",
 	//     "errors": [
 	//       {
-	//         "error": "must be one of [Jake, George]",
+	//         "error": "must be one of: Jake, George",
 	//         "code": "one_of",
 	//         "description": "must be one of: Jake, George"
 	//       }
@@ -233,7 +233,7 @@ func ExampleAssertErrorContains() {
 	//     "propertyValue": "John",
 	//     "errors": [
 	//       {
-	//         "error": "must be one of [Jake, George]",
+	//         "error": "must be one of: Jake, George",
 	//         "code": "one_of",
 	//         "description": "must be one of: Jake, George"
 	//       }

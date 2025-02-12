@@ -1,6 +1,7 @@
 package rules
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
 	"os"
@@ -894,6 +895,15 @@ func BenchmarkStringTitle(b *testing.B) {
 		}
 	}
 }
+
+var (
+	errGitRefEmpty           = errors.New("git reference cannot be empty")
+	errGitRefEndsWithDot     = errors.New("git reference must not end with a '.'")
+	errGitRefAtLeastOneSlash = errors.New("git reference must contain at least one '/'")
+	errGitRefEmptyPart       = errors.New("git reference must not have empty parts")
+	errGitRefStartsWithDash  = errors.New("git branch and tag references must not start with '-'")
+	errGitRefForbiddenChars  = errors.New("git reference contains forbidden characters")
+)
 
 var stringGitRefTestCases = []*struct {
 	in          string

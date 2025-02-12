@@ -1,10 +1,9 @@
 package rules
 
 import (
-	"errors"
-	"fmt"
 	"strings"
 
+	"github.com/nobl9/govy/internal/messagetemplates"
 	"github.com/nobl9/govy/pkg/govy"
 )
 
@@ -17,27 +16,38 @@ func HashFuncSelf[H comparable]() HashFunction[H, H] {
 	return func(v H) H { return v }
 }
 
+type sliceUniqueTemplateVars struct {
+	Constraints   []string
+	FirstOrdinal  string
+	SecondOrdinal string
+}
+
 // SliceUnique ensures that a slice contains unique elements based on a provided HashFunction.
 // You can optionally specify constraints which will be included in the error message to further
 // clarify the reason for breaking uniqueness.
 func SliceUnique[S []V, V any, H comparable](hashFunc HashFunction[V, H], constraints ...string) govy.Rule[S] {
+	tpl := messagetemplates.Get(messagetemplates.SliceUniqueTemplate)
+
 	return govy.NewRule(func(slice S) error {
 		unique := make(map[H]int)
 		for i := range slice {
 			hash := hashFunc(slice[i])
 			if j, ok := unique[hash]; ok {
-				errMsg := fmt.Sprintf("elements are not unique, %s and %s elements collide",
-					ordinalString(j+1), ordinalString(i+1))
-				if len(constraints) > 0 {
-					errMsg += " based on constraints: " + strings.Join(constraints, ", ")
-				}
-				return errors.New(errMsg)
+				return govy.NewRuleErrorTemplate(govy.TemplateVars{
+					PropertyValue: slice,
+					Custom: sliceUniqueTemplateVars{
+						Constraints:   constraints,
+						FirstOrdinal:  ordinalString(j + 1),
+						SecondOrdinal: ordinalString(i + 1),
+					},
+				})
 			}
 			unique[hash] = i
 		}
 		return nil
 	}).
 		WithErrorCode(ErrorCodeSliceUnique).
+		WithMessageTemplate(tpl).
 		WithDescription(func() string {
 			msg := "elements must be unique"
 			if len(constraints) > 0 {

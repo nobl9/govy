@@ -14,50 +14,68 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/nobl9/govy/internal"
+	"github.com/nobl9/govy/internal/messagetemplates"
 	"github.com/nobl9/govy/pkg/govy"
 )
 
 // StringNotEmpty ensures the property's value is not empty.
 // The string is considered empty if it contains only whitespace characters.
 func StringNotEmpty() govy.Rule[string] {
-	msg := "string cannot be empty"
+	tpl := messagetemplates.Get(messagetemplates.StringNonEmptyTemplate)
+
 	return govy.NewRule(func(s string) error {
 		if len(strings.TrimSpace(s)) == 0 {
-			return errors.New(msg)
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+			})
 		}
 		return nil
 	}).
 		WithErrorCode(ErrorCodeStringNotEmpty).
-		WithDescription(msg)
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
 }
 
 // StringMatchRegexp ensures the property's value matches the regular expression.
 // The error message can be enhanced with examples of valid values.
 func StringMatchRegexp(re *regexp.Regexp) govy.Rule[string] {
-	msg := fmt.Sprintf("string must match regular expression: '%s'", re.String())
+	tpl := messagetemplates.Get(messagetemplates.StringMatchRegexpTemplate)
+
 	return govy.NewRule(func(s string) error {
 		if !re.MatchString(s) {
-			return errors.New(msg)
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue:   s,
+				ComparisonValue: re.String(),
+			})
 		}
 		return nil
 	}).
 		WithErrorCode(ErrorCodeStringMatchRegexp).
-		WithDescription(msg)
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+			ComparisonValue: re.String(),
+		}))
 }
 
 // StringDenyRegexp ensures the property's value does not match the regular expression.
 // The error message can be enhanced with examples of invalid values.
 func StringDenyRegexp(re *regexp.Regexp) govy.Rule[string] {
-	msg := fmt.Sprintf("string must not match regular expression: '%s'", re.String())
+	tpl := messagetemplates.Get(messagetemplates.StringDenyRegexpTemplate)
+
 	return govy.NewRule(func(s string) error {
 		if re.MatchString(s) {
-			return errors.New(msg)
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue:   s,
+				ComparisonValue: re.String(),
+			})
 		}
 		return nil
 	}).
 		WithErrorCode(ErrorCodeStringDenyRegexp).
-		WithDescription(msg)
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+			ComparisonValue: re.String(),
+		}))
 }
 
 // StringDNSLabel ensures the property's value is a valid DNS label as defined by RFC 1123.
@@ -73,120 +91,166 @@ func StringDNSLabel() govy.Rule[string] {
 // It follows RFC 5322 specification which is more permissive in regards to domain names.
 // Ref: https://www.ietf.org/rfc/rfc5322.txt
 func StringEmail() govy.Rule[string] {
-	msg := "string must be a valid email address"
+	tpl := messagetemplates.Get(messagetemplates.StringEmailTemplate)
+
 	return govy.NewRule(func(s string) error {
 		if _, err := mail.ParseAddress(s); err != nil {
-			return fmt.Errorf("%s: %w", msg, err)
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+				Error:         err.Error(),
+			})
 		}
 		return nil
 	}).
 		WithErrorCode(ErrorCodeStringEmail).
-		WithDescription(msg)
+		WithMessageTemplate(tpl).
+		WithDescription("string must be a valid email address")
 }
 
 // StringURL ensures property's value is a valid URL as defined by [url.Parse] function.
 // Unlike [URL] it does not impose any additional rules upon parsed [url.URL].
 func StringURL() govy.Rule[string] {
+	tpl := messagetemplates.Get(messagetemplates.URLTemplate)
+
 	return govy.NewRule(func(s string) error {
 		u, err := url.Parse(s)
 		if err != nil {
-			return fmt.Errorf("failed to parse URL: %w", err)
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+				Error:         "failed to parse URL: " + err.Error(),
+			})
 		}
-		return validateURL(u)
+		if err = validateURL(u); err != nil {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+				Error:         err.Error(),
+			})
+		}
+		return nil
 	}).
 		WithErrorCode(ErrorCodeStringURL).
+		WithMessageTemplate(tpl).
 		WithDescription(urlDescription)
 }
 
 // StringMAC ensures property's value is a valid MAC address.
 func StringMAC() govy.Rule[string] {
-	msg := "string must be a valid MAC address"
+	tpl := messagetemplates.Get(messagetemplates.StringMACTemplate)
+
 	return govy.NewRule(func(s string) error {
 		if _, err := net.ParseMAC(s); err != nil {
-			return errors.New(msg)
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+				Error:         err.Error(),
+			})
 		}
 		return nil
 	}).
 		WithErrorCode(ErrorCodeStringMAC).
-		WithDescription(msg)
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
 }
 
 // StringIP ensures property's value is a valid IP address.
 func StringIP() govy.Rule[string] {
-	msg := "string must be a valid IP address"
+	tpl := messagetemplates.Get(messagetemplates.StringIPTemplate)
+
 	return govy.NewRule(func(s string) error {
 		if ip := net.ParseIP(s); ip == nil {
-			return errors.New(msg)
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+			})
 		}
 		return nil
 	}).
 		WithErrorCode(ErrorCodeStringIP).
-		WithDescription(msg)
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
 }
 
 // StringIPv4 ensures property's value is a valid IPv4 address.
 func StringIPv4() govy.Rule[string] {
-	msg := "string must be a valid IPv4 address"
+	tpl := messagetemplates.Get(messagetemplates.StringIPv4Template)
+
 	return govy.NewRule(func(s string) error {
 		if ip := net.ParseIP(s); ip == nil || ip.To4() == nil {
-			return errors.New(msg)
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+			})
 		}
 		return nil
 	}).
 		WithErrorCode(ErrorCodeStringIPv4).
-		WithDescription(msg)
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
 }
 
 // StringIPv6 ensures property's value is a valid IPv6 address.
 func StringIPv6() govy.Rule[string] {
-	msg := "string must be a valid IPv6 address"
+	tpl := messagetemplates.Get(messagetemplates.StringIPv6Template)
+
 	return govy.NewRule(func(s string) error {
 		if ip := net.ParseIP(s); ip == nil || ip.To4() != nil || len(ip) != net.IPv6len {
-			return errors.New(msg)
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+			})
 		}
 		return nil
 	}).
 		WithErrorCode(ErrorCodeStringIPv6).
-		WithDescription(msg)
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
 }
 
 // StringCIDR ensures property's value is a valid CIDR notation IP address.
 func StringCIDR() govy.Rule[string] {
-	msg := "string must be a valid CIDR notation IP address"
+	tpl := messagetemplates.Get(messagetemplates.StringCIDRTemplate)
+
 	return govy.NewRule(func(s string) error {
 		if _, _, err := net.ParseCIDR(s); err != nil {
-			return errors.New(msg)
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+			})
 		}
 		return nil
 	}).
 		WithErrorCode(ErrorCodeStringCIDR).
-		WithDescription(msg)
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
 }
 
 // StringCIDRv4 ensures property's value is a valid CIDR notation IPv4 address.
 func StringCIDRv4() govy.Rule[string] {
-	msg := "string must be a valid CIDR notation IPv4 address"
+	tpl := messagetemplates.Get(messagetemplates.StringCIDRv4Template)
+
 	return govy.NewRule(func(s string) error {
 		if ip, ipNet, err := net.ParseCIDR(s); err != nil || ip.To4() == nil || !ipNet.IP.Equal(ip) {
-			return errors.New(msg)
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+			})
 		}
 		return nil
 	}).
 		WithErrorCode(ErrorCodeStringCIDRv4).
-		WithDescription(msg)
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
 }
 
 // StringCIDRv6 ensures property's value is a valid CIDR notation IPv6 address.
 func StringCIDRv6() govy.Rule[string] {
-	msg := "string must be a valid CIDR notation IPv6 address"
+	tpl := messagetemplates.Get(messagetemplates.StringCIDRv6Template)
+
 	return govy.NewRule(func(s string) error {
 		if ip, _, err := net.ParseCIDR(s); err != nil || ip.To4() != nil || len(ip) != net.IPv6len {
-			return errors.New(msg)
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+			})
 		}
 		return nil
 	}).
 		WithErrorCode(ErrorCodeStringCIDRv6).
-		WithDescription(msg)
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
 }
 
 // StringUUID ensures property's value is a valid UUID string as defined by RFC 4122.
@@ -210,20 +274,25 @@ func StringASCII() govy.Rule[string] {
 
 // StringJSON ensures property's value is a valid JSON literal.
 func StringJSON() govy.Rule[string] {
-	msg := "string must be a valid JSON"
+	tpl := messagetemplates.Get(messagetemplates.StringJSONTemplate)
+
 	return govy.NewRule(func(s string) error {
 		if !json.Valid([]byte(s)) {
-			return errors.New(msg)
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+			})
 		}
 		return nil
 	}).
 		WithErrorCode(ErrorCodeStringJSON).
-		WithDescription(msg)
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
 }
 
 // StringContains ensures the property's value contains all the provided substrings.
 func StringContains(substrings ...string) govy.Rule[string] {
-	msg := "string must contain the following substrings: " + prettyStringList(substrings)
+	tpl := messagetemplates.Get(messagetemplates.StringContainsTemplate)
+
 	return govy.NewRule(func(s string) error {
 		matched := true
 		for _, substr := range substrings {
@@ -233,37 +302,46 @@ func StringContains(substrings ...string) govy.Rule[string] {
 			}
 		}
 		if !matched {
-			return errors.New(msg)
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue:   s,
+				ComparisonValue: substrings,
+			})
 		}
 		return nil
 	}).
 		WithErrorCode(ErrorCodeStringContains).
-		WithDescription(msg)
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+			ComparisonValue: substrings,
+		}))
 }
 
 // StringExcludes ensures the property's value does not contain any of the provided substrings.
 func StringExcludes(substrings ...string) govy.Rule[string] {
-	msg := "string must not contain any of the following substrings: " + prettyStringList(substrings)
+	tpl := messagetemplates.Get(messagetemplates.StringExcludesTemplate)
+
 	return govy.NewRule(func(s string) error {
 		for _, substr := range substrings {
 			if strings.Contains(s, substr) {
-				return errors.New(msg)
+				return govy.NewRuleErrorTemplate(govy.TemplateVars{
+					PropertyValue:   s,
+					ComparisonValue: substrings,
+				})
 			}
 		}
 		return nil
 	}).
 		WithErrorCode(ErrorCodeStringExcludes).
-		WithDescription(msg)
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+			ComparisonValue: substrings,
+		}))
 }
 
 // StringStartsWith ensures the property's value starts with one of the provided prefixes.
 func StringStartsWith(prefixes ...string) govy.Rule[string] {
-	var msg string
-	if len(prefixes) == 1 {
-		msg = fmt.Sprintf("string must start with '%s' prefix", prefixes[0])
-	} else {
-		msg = "string must start with one of the following prefixes: " + prettyStringList(prefixes)
-	}
+	tpl := messagetemplates.Get(messagetemplates.StringStartsWithTemplate)
+
 	return govy.NewRule(func(s string) error {
 		matched := false
 		for _, prefix := range prefixes {
@@ -273,22 +351,24 @@ func StringStartsWith(prefixes ...string) govy.Rule[string] {
 			}
 		}
 		if !matched {
-			return errors.New(msg)
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue:   s,
+				ComparisonValue: prefixes,
+			})
 		}
 		return nil
 	}).
 		WithErrorCode(ErrorCodeStringStartsWith).
-		WithDescription(msg)
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+			ComparisonValue: prefixes,
+		}))
 }
 
 // StringEndsWith ensures the property's value ends with one of the provided suffixes.
 func StringEndsWith(suffixes ...string) govy.Rule[string] {
-	var msg string
-	if len(suffixes) == 1 {
-		msg = fmt.Sprintf("string must end with '%s' suffix", suffixes[0])
-	} else {
-		msg = "string must end with one of the following suffixes: " + prettyStringList(suffixes)
-	}
+	tpl := messagetemplates.Get(messagetemplates.StringEndsWithTemplate)
+
 	return govy.NewRule(func(s string) error {
 		matched := false
 		for _, suffix := range suffixes {
@@ -298,26 +378,37 @@ func StringEndsWith(suffixes ...string) govy.Rule[string] {
 			}
 		}
 		if !matched {
-			return errors.New(msg)
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue:   s,
+				ComparisonValue: suffixes,
+			})
 		}
 		return nil
 	}).
 		WithErrorCode(ErrorCodeStringEndsWith).
-		WithDescription(msg)
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+			ComparisonValue: suffixes,
+		}))
 }
 
 // StringTitle ensures each word in a string starts with a capital letter.
 func StringTitle() govy.Rule[string] {
-	msg := "each word in a string must start with a capital letter"
+	tpl := messagetemplates.Get(messagetemplates.StringTitleTemplate)
+
 	return govy.NewRule(func(s string) error {
 		if len(s) == 0 {
-			return errors.New(msg)
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+			})
 		}
 		prev := ' '
 		for _, r := range s {
 			if isStringSeparator(prev) {
 				if !unicode.IsUpper(r) && !isStringSeparator(r) {
-					return errors.New(msg)
+					return govy.NewRuleErrorTemplate(govy.TemplateVars{
+						PropertyValue: s,
+					})
 				}
 			}
 			prev = r
@@ -325,18 +416,18 @@ func StringTitle() govy.Rule[string] {
 		return nil
 	}).
 		WithErrorCode(ErrorCodeStringTitle).
-		WithDescription(msg)
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
 }
 
-// StringGitRef errors.
-var (
-	errGitRefEmpty           = errors.New("git reference cannot be empty")
-	errGitRefEndsWithDot     = errors.New("git reference must not end with a '.'")
-	errGitRefAtLeastOneSlash = errors.New("git reference must contain at least one '/'")
-	errGitRefEmptyPart       = errors.New("git reference must not have empty parts")
-	errGitRefStartsWithDash  = errors.New("git branch and tag references must not start with '-'")
-	errGitRefForbiddenChars  = errors.New("git reference contains forbidden characters")
-)
+type stringGitRefTemplateVars struct {
+	GitRefEmpty           bool
+	GitRefEndsWithDot     bool
+	GitRefAtLeastOneSlash bool
+	GitRefEmptyPart       bool
+	GitRefStartsWithDash  bool
+	GitRefForbiddenChars  bool
+}
 
 // StringGitRef ensures a git reference name follows the [git-check-ref-format] rules.
 //
@@ -364,64 +455,93 @@ var (
 // [git-check-ref-format] :https://git-scm.com/docs/git-check-ref-format
 // [go-git]: https://github.com/go-git/go-git/blob/95afe7e1cdf71c59ee8a71971fac71880020a744/plumbing/reference.go#L167
 func StringGitRef() govy.Rule[string] {
-	msg := "string must be a valid git reference"
+	tpl := messagetemplates.Get(messagetemplates.StringGitRefTemplate)
+
 	return govy.NewRule(func(s string) error {
 		if len(s) == 0 {
-			return errGitRefEmpty
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+				Custom:        stringGitRefTemplateVars{GitRefEmpty: true},
+			})
 		}
 		if s == "HEAD" {
 			return nil
 		}
 		if strings.HasSuffix(s, ".") {
-			return errGitRefEndsWithDot
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+				Custom:        stringGitRefTemplateVars{GitRefEndsWithDot: true},
+			})
 		}
 		parts := strings.Split(s, "/")
 		if len(parts) < 2 {
-			return errGitRefAtLeastOneSlash
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+				Custom:        stringGitRefTemplateVars{GitRefAtLeastOneSlash: true},
+			})
 		}
 		isBranch := strings.HasPrefix(s, "refs/heads/")
 		isTag := strings.HasPrefix(s, "refs/tags/")
 		for _, part := range parts {
 			if len(part) == 0 {
-				return errGitRefEmptyPart
+				return govy.NewRuleErrorTemplate(govy.TemplateVars{
+					PropertyValue: s,
+					Custom:        stringGitRefTemplateVars{GitRefEmptyPart: true},
+				})
 			}
 			if (isBranch || isTag) && strings.HasPrefix(part, "-") {
-				return errGitRefStartsWithDash
+				return govy.NewRuleErrorTemplate(govy.TemplateVars{
+					PropertyValue: s,
+					Custom:        stringGitRefTemplateVars{GitRefStartsWithDash: true},
+				})
 			}
 			if part == "@" ||
 				strings.HasPrefix(part, ".") ||
 				strings.HasSuffix(part, ".lock") ||
 				stringContainsGitRefForbiddenChars(part) {
-				return errGitRefForbiddenChars
+				return govy.NewRuleErrorTemplate(govy.TemplateVars{
+					PropertyValue: s,
+					Custom:        stringGitRefTemplateVars{GitRefForbiddenChars: true},
+				})
 			}
 		}
 		return nil
 	}).
 		WithErrorCode(ErrorCodeStringGitRef).
+		WithMessageTemplate(tpl).
 		WithDetails("see https://git-scm.com/docs/git-check-ref-format for more information on Git reference naming rules").
-		WithDescription(msg)
+		WithDescription("string must be a valid git reference")
 }
 
 // StringFileSystemPath ensures the property's value is an existing file system path.
 func StringFileSystemPath() govy.Rule[string] {
-	msg := "string must be an existing file system path"
+	tpl := messagetemplates.Get(messagetemplates.StringFileSystemPathTemplate)
+
 	return govy.NewRule(func(s string) error {
 		if _, err := osStatFile(s); err != nil {
-			return handleFilePathError(err, msg)
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+				Error:         handleFilePathError(err).Error(),
+			})
 		}
 		return nil
 	}).
 		WithErrorCode(ErrorCodeStringFileSystemPath).
-		WithDescription(msg)
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
 }
 
 // StringFilePath ensures the property's value is a file system path pointing to an existing file.
 func StringFilePath() govy.Rule[string] {
-	msg := "string must be a file system path to an existing file"
+	tpl := messagetemplates.Get(messagetemplates.StringFilePathTemplate)
+
 	return govy.NewRule(func(s string) error {
 		info, err := osStatFile(s)
 		if err != nil {
-			return handleFilePathError(err, msg)
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+				Error:         handleFilePathError(err).Error(),
+			})
 		}
 		if info.IsDir() {
 			return errFilePathNotFile
@@ -429,16 +549,21 @@ func StringFilePath() govy.Rule[string] {
 		return nil
 	}).
 		WithErrorCode(ErrorCodeStringFilePath).
-		WithDescription(msg)
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
 }
 
 // StringDirPath ensures the property's value is a file system path pointing to an existing directory.
 func StringDirPath() govy.Rule[string] {
-	msg := "string must be a file system path to an existing directory"
+	tpl := messagetemplates.Get(messagetemplates.StringDirPathTemplate)
+
 	return govy.NewRule(func(s string) error {
 		info, err := osStatFile(s)
 		if err != nil {
-			return handleFilePathError(err, msg)
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+				Error:         handleFilePathError(err).Error(),
+			})
 		}
 		if !info.IsDir() {
 			return errFilePathNotDir
@@ -446,7 +571,8 @@ func StringDirPath() govy.Rule[string] {
 		return nil
 	}).
 		WithErrorCode(ErrorCodeStringDirPath).
-		WithDescription(msg)
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
 }
 
 // StringMatchFileSystemPath ensures the property's value matches the provided file path pattern.
@@ -454,19 +580,30 @@ func StringDirPath() govy.Rule[string] {
 // most notably it does not support '**' recursive expansion.
 // It does not check if the file path exists on the file system.
 func StringMatchFileSystemPath(pattern string) govy.Rule[string] {
-	msg := fmt.Sprintf("string must match file path pattern: '%s'", pattern)
+	tpl := messagetemplates.Get(messagetemplates.StringMatchFileSystemPathTemplate)
+
 	return govy.NewRule(func(s string) error {
 		ok, err := filepath.Match(pattern, s)
 		if err != nil {
-			return err
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue:   s,
+				ComparisonValue: pattern,
+				Error:           err.Error(),
+			})
 		}
 		if !ok {
-			return errors.New(msg)
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue:   s,
+				ComparisonValue: pattern,
+			})
 		}
 		return nil
 	}).
 		WithErrorCode(ErrorCodeStringMatchFileSystemPath).
-		WithDescription(msg)
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+			ComparisonValue: pattern,
+		}))
 }
 
 // StringRegexp ensures the property's value is a valid regular expression.
@@ -476,17 +613,22 @@ func StringMatchFileSystemPath(pattern string) govy.Rule[string] {
 //
 // [regexp/syntax]: https://pkg.go.dev/regexp/syntax
 func StringRegexp() govy.Rule[string] {
-	msg := "string must be a valid regular expression"
+	tpl := messagetemplates.Get(messagetemplates.StringRegexpTemplate)
+
 	return govy.NewRule(func(s string) error {
 		if _, err := regexp.Compile(s); err != nil {
-			return fmt.Errorf("%s: %w", msg, err)
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+				Error:         err.Error(),
+			})
 		}
 		return nil
 	}).
 		WithErrorCode(ErrorCodeStringRegexp).
+		WithMessageTemplate(tpl).
 		// nolint: lll
 		WithDetails(`the regular expression syntax must comply to RE2, it is described at https://golang.org/s/re2syntax, except for \C; for an overview of the syntax, see https://pkg.go.dev/regexp/syntax`).
-		WithDescription(msg)
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
 }
 
 // StringCrontab ensures the property's value is a valid crontab schedule expression.
@@ -495,10 +637,20 @@ func StringRegexp() govy.Rule[string] {
 // [crontab manual]: https://www.man7.org/linux/man-pages/man5/crontab.5.html
 // [crontab.guru]: https://crontab.guru
 func StringCrontab() govy.Rule[string] {
-	msg := "string must be a valid cron schedule expression"
-	return govy.NewRule(parseCrontab).
-		WithMessage(msg).
-		WithErrorCode(ErrorCodeStringCrontab)
+	tpl := messagetemplates.Get(messagetemplates.StringCrontabTemplate)
+
+	return govy.NewRule(func(s string) error {
+		if err := parseCrontab(s); err != nil {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+				Error:         err.Error(),
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringCrontab).
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
 }
 
 // StringDateTime ensures the property's value is a valid date and time in the specified layout.
@@ -506,16 +658,24 @@ func StringCrontab() govy.Rule[string] {
 // The layout must be a valid time format string as defined by [time.Parse],
 // an example of which is [time.RFC3339].
 func StringDateTime(layout string) govy.Rule[string] {
-	msg := fmt.Sprintf("string must be a valid date and time in '%s' format", layout)
+	tpl := messagetemplates.Get(messagetemplates.StringDateTimeTemplate)
+
 	return govy.NewRule(func(s string) error {
 		if _, err := time.Parse(layout, s); err != nil {
-			return fmt.Errorf("%s: %w", msg, err)
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue:   s,
+				Error:           err.Error(),
+				ComparisonValue: layout,
+			})
 		}
 		return nil
 	}).
 		WithErrorCode(ErrorCodeStringDateTime).
+		WithMessageTemplate(tpl).
 		WithDetails("date and time format follows Go's time layout, see https://pkg.go.dev/time#Layout for more details").
-		WithDescription(msg)
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+			ComparisonValue: layout,
+		}))
 }
 
 // StringTimeZone ensures the property's value is a valid time zone name which
@@ -530,19 +690,26 @@ func StringDateTime(layout string) govy.Rule[string] {
 // [time.LoadLocation] looks for the IANA Time Zone database in specific places,
 // please refer to its documentation for more information.
 func StringTimeZone() govy.Rule[string] {
-	msg := "string must be a valid IANA Time Zone Database code"
+	tpl := messagetemplates.Get(messagetemplates.StringTimeZoneTemplate)
+
 	return govy.NewRule(func(s string) error {
 		if s == "" || s == "Local" {
-			return errors.New(msg)
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+			})
 		}
 		if _, err := time.LoadLocation(s); err != nil {
-			return fmt.Errorf("%s: %w", msg, err)
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+				Error:         err.Error(),
+			})
 		}
 		return nil
 	}).
 		WithErrorCode(ErrorCodeStringTimeZone).
+		WithMessageTemplate(tpl).
 		WithExamples("UTC", "America/New_York", "Europe/Warsaw").
-		WithDescription(msg)
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
 }
 
 // StringAlpha ensures the property's value consists only of ASCII letters.
@@ -645,22 +812,16 @@ var (
 	errFilePathNotDir    = errors.New("path must point to a directory and not to a file")
 )
 
-func handleFilePathError(err error, msg string) error {
+func handleFilePathError(err error) error {
 	var pathErr *os.PathError
 	if !errors.As(err, &pathErr) {
 		return err
 	}
 	if errors.Is(err, os.ErrNotExist) {
-		return fmt.Errorf("%s: %w", msg, errFilePathNotExists)
+		return errFilePathNotExists
 	}
 	if errors.Is(err, os.ErrPermission) {
-		return fmt.Errorf("%s: %w", msg, errFilePathNoPerm)
+		return errFilePathNoPerm
 	}
-	return fmt.Errorf("%s: %w", msg, err)
-}
-
-func prettyStringList[T any](values []T) string {
-	b := new(strings.Builder)
-	internal.PrettyStringListBuilder(b, values, "'")
-	return b.String()
+	return err
 }

@@ -14,7 +14,7 @@ var oneOfTestCases = []*struct {
 	expectedError string
 }{
 	{"that", []string{"this", "that"}, ""},
-	{"those", []string{"this", "that"}, "must be one of [this, that]"},
+	{"those", []string{"this", "that"}, "must be one of: this, that"},
 }
 
 func TestOneOf(t *testing.T) {
