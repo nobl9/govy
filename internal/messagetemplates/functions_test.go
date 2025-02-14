@@ -14,6 +14,7 @@ import (
 
 type templateVariables struct {
 	Examples  []string
+	Values    any
 	Details   string
 	MinLength int
 	MaxLength int
@@ -47,26 +48,31 @@ func TestAddFunctions(t *testing.T) {
 				Expected: "(e.g. 'foo', 'bar', 'baz')",
 			},
 		},
-		"joinStringSlice": {
+		"joinSlice": {
 			{
-				Text:     `{{ joinStringSlice .Examples "'" }}`,
+				Text:     `{{ joinSlice .Examples "'" }}`,
 				Vars:     templateVariables{Examples: nil},
 				Expected: "",
 			},
 			{
-				Text:     `{{ joinStringSlice .Examples "'" }}`,
+				Text:     `{{ joinSlice .Examples "'" }}`,
 				Vars:     templateVariables{Examples: []string{}},
 				Expected: "",
 			},
 			{
-				Text:     `{{ joinStringSlice .Examples "'" }}`,
+				Text:     `{{ joinSlice .Examples "'" }}`,
 				Vars:     templateVariables{Examples: []string{"foo"}},
 				Expected: "'foo'",
 			},
 			{
-				Text:     `{{ joinStringSlice .Examples "'" }}`,
+				Text:     `{{ joinSlice .Examples "'" }}`,
 				Vars:     templateVariables{Examples: []string{"foo", "bar", "baz"}},
 				Expected: "'foo', 'bar', 'baz'",
+			},
+			{
+				Text:     `{{ joinSlice .Values "'" }}`,
+				Vars:     templateVariables{Values: []int{1, 2, 3}},
+				Expected: "'1', '2', '3'",
 			},
 		},
 	}

@@ -15,9 +15,9 @@ import (
 //     as a single string representation.
 //     Example: `{{ formatExamples ["foo", "bar"] }}` -> "(e.g. 'foo', 'bar')"
 //
-//   - 'joinStringSlice' joins a list of strings into a comma separated list of values.
-//     Its second argument determines a surrounding string for each value.
-//     Example: `{{ joinStringSlice ["foo", "bar"] "'" }}` -> "'foo', 'bar'"
+//   - 'joinSlice' joins a list of values into a comma separated list of strings.
+//     Its second argument determines the surrounding string for each value.
+//     Example: `{{ joinSlice ["foo", "bar"] "'" }}` -> "'foo', 'bar'"
 //
 // Refer to the testable examples of [AddTemplateFunctions] for more details
 // on each builtin function.

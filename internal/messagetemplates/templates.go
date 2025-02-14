@@ -63,16 +63,16 @@ var rawMessageTemplates = map[templateKey]string{
 	GTETemplate:               "should be greater than or equal to '{{ .ComparisonValue }}'",
 	LTTemplate:                "should be less than '{{ .ComparisonValue }}'",
 	LTETemplate:               "should be less than or equal to '{{ .ComparisonValue }}'",
-	EqualPropertiesTemplate:   `all of [{{ joinStringSlice .ComparisonValue "" }}] properties must be equal, but '{{ .Custom.FirstNotEqual }}' is not equal to '{{ .Custom.SecondNotEqual }}'`,
+	EqualPropertiesTemplate:   `all of [{{ joinSlice .ComparisonValue "" }}] properties must be equal, but '{{ .Custom.FirstNotEqual }}' is not equal to '{{ .Custom.SecondNotEqual }}'`,
 	DurationPrecisionTemplate: "duration must be defined with {{ .ComparisonValue }} precision",
 	ForbiddenTemplate:         "property is forbidden",
-	OneOfTemplate:             `must be one of: {{ joinStringSlice .ComparisonValue "" }}`,
-	OneOfPropertiesTemplate:   `one of [{{ joinStringSlice .ComparisonValue "" }}] properties must be set, none was provided`,
+	OneOfTemplate:             `must be one of: {{ joinSlice .ComparisonValue "" }}`,
+	OneOfPropertiesTemplate:   `one of [{{ joinSlice .ComparisonValue "" }}] properties must be set, none was provided`,
 	MutuallyExclusiveTemplate: `
 {{- if .Custom.NoProperties -}}
-one of [{{ joinStringSlice .ComparisonValue "" }}] properties must be set, none was provided
+one of [{{ joinSlice .ComparisonValue "" }}] properties must be set, none was provided
 {{- else -}}
-[{{ joinStringSlice .ComparisonValue "" }}] properties are mutually exclusive, provide only one of them
+[{{ joinSlice .ComparisonValue "" }}] properties are mutually exclusive, provide only one of them
 {{- end }}`,
 	RequiredTemplate:          internal.RequiredErrorMessage,
 	StringNonEmptyTemplate:    "string cannot be empty",
@@ -87,20 +87,20 @@ one of [{{ joinStringSlice .ComparisonValue "" }}] properties must be set, none 
 	StringCIDRv4Template:      "string must be a valid CIDR notation IPv4 address",
 	StringCIDRv6Template:      "string must be a valid CIDR notation IPv6 address",
 	StringJSONTemplate:        "string must be a valid JSON",
-	StringContainsTemplate:    `string must contain the following substrings: {{ joinStringSlice .ComparisonValue "'" }}`,
-	StringExcludesTemplate:    `string must not contain any of the following substrings: {{ joinStringSlice .ComparisonValue "'" }}`,
+	StringContainsTemplate:    `string must contain the following substrings: {{ joinSlice .ComparisonValue "'" }}`,
+	StringExcludesTemplate:    `string must not contain any of the following substrings: {{ joinSlice .ComparisonValue "'" }}`,
 	StringStartsWithTemplate: `
 {{- if eq (len .ComparisonValue) 1 -}}
 string must start with '{{ index .ComparisonValue 0 }}' prefix
 {{- else -}}
-string must start with one of the following prefixes: {{ joinStringSlice .ComparisonValue "'" }}
+string must start with one of the following prefixes: {{ joinSlice .ComparisonValue "'" }}
 {{- end }}
 `,
 	StringEndsWithTemplate: `
 {{- if eq (len .ComparisonValue) 1 -}}
 string must end with '{{ index .ComparisonValue 0 }}' suffix
 {{- else -}}
-string must end with one of the following suffixes: {{ joinStringSlice .ComparisonValue "'" }}
+string must end with one of the following suffixes: {{ joinSlice .ComparisonValue "'" }}
 {{- end }}
 `,
 	StringTitleTemplate: "each word in a string must start with a capital letter",
@@ -130,7 +130,7 @@ string must be a valid git reference
 	StringDateTimeTemplate:            "string must be a valid date and time in '{{ .ComparisonValue }}' format{{- if .Error }}: {{ .Error }}{{- end }}",
 	StringTimeZoneTemplate:            "string must be a valid IANA Time Zone Database code{{- if .Error }}: {{ .Error }}{{- end }}",
 	SliceUniqueTemplate: `elements are not unique, {{ .Custom.FirstOrdinal }} and {{ .Custom.SecondOrdinal }} elements collide
-{{- if gt (len .Custom.Constraints) 0 }} based on constraints: {{ joinStringSlice .Custom.Constraints "" }}{{- end }}`,
+{{- if gt (len .Custom.Constraints) 0 }} based on constraints: {{ joinSlice .Custom.Constraints "" }}{{- end }}`,
 	URLTemplate: "{{ .Error }}",
 }
 
