@@ -1,6 +1,7 @@
 package messagetemplates
 
 import (
+	"reflect"
 	"strings"
 	"text/template"
 
@@ -14,8 +15,8 @@ func AddFunctions(tpl *template.Template) *template.Template {
 }
 
 var templateFunctions = template.FuncMap{
-	"formatExamples":  formatExamplesTplFunc,
-	"joinStringSlice": joinStringSliceTplFunc,
+	"formatExamples": formatExamplesTplFunc,
+	"joinSlice":      joinSliceTplFunc,
 }
 
 // formatExamplesTplFunc formats a list of strings which are example valid values
@@ -32,12 +33,21 @@ func formatExamplesTplFunc(examples []string) string {
 	return b.String()
 }
 
-// joinStringSliceTplFunc joins a list of strings into a comma separated list of values.
-// Its second argument determines a surrounding string for each value.
-// Example: `{{ joinStringSlice ["foo", "bar"] "'" }}` -> "'foo', 'bar'"
-func joinStringSliceTplFunc(values []string, surroundingStr string) string {
-	if len(values) == 0 {
+// joinSliceTplFunc joins a list of values into a comma separated list of strings.
+// Its second argument determines the surrounding string for each value.
+// Example: `{{ joinSlice ["foo", "bar"] "'" }}` -> "'foo', 'bar'"
+func joinSliceTplFunc(input any, surroundingStr string) string {
+	rv := reflect.ValueOf(input)
+	if rv.Kind() != reflect.Slice {
+		panic("first argument must be a slice")
+	}
+	if rv.Len() == 0 {
 		return ""
+	}
+
+	values := make([]any, 0, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		values = append(values, rv.Index(i).Interface())
 	}
 	b := strings.Builder{}
 	internal.PrettyStringListBuilder(&b, values, surroundingStr)

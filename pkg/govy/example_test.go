@@ -794,8 +794,8 @@ func ExampleAddTemplateFunctions_formatExamples() {
 	// (e.g. 'Joanna', 'Angeline')
 }
 
-func ExampleAddTemplateFunctions_joinStringSlice() {
-	tplString := `{{ joinStringSlice .Slice "'" }}`
+func ExampleAddTemplateFunctions_joinSlice() {
+	tplString := `{{ joinSlice .Slice "'" }}`
 	tpl := template.New("")
 	tpl = govy.AddTemplateFunctions(tpl)
 	tpl = template.Must(tpl.Parse(tplString))
