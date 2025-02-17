@@ -6,7 +6,7 @@
     "govulncheck@latest",
     "gofumpt@0.7",
     "golangci-lint@1.61",
-    "gosec@latest",
+    "gosec@2.22.1",
     "go@1.22",
     "gotools@0.25"
   ],
