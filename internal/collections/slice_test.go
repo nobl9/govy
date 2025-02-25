@@ -61,3 +61,38 @@ func TestMapSlice(t *testing.T) {
 		assert.Equal(t, tc.expected, tc.f())
 	}
 }
+
+func TestIntersection(t *testing.T) {
+	for _, tc := range []struct {
+		in       [][]string
+		expected []string
+	}{
+		{
+			in:       nil,
+			expected: nil,
+		},
+		{
+			in:       [][]string{},
+			expected: nil,
+		},
+		{
+			in:       [][]string{{"a", "b", "c"}},
+			expected: []string{"a", "b", "c"},
+		},
+		{
+			in:       [][]string{{"a", "b", "c"}, {}, {"b"}},
+			expected: nil,
+		},
+		{
+			in:       [][]string{{"a", "b", "c"}, {"b"}, {"b", "c"}},
+			expected: []string{"b"},
+		},
+		{
+			in:       [][]string{{"x", "b", "c", "a"}, {"a", "b", "c"}, {"b", "a", "c", "d"}},
+			expected: []string{"a", "b", "c"},
+		},
+	} {
+		acutal := Intersection(tc.in...)
+		assert.Equal(t, tc.expected, acutal)
+	}
+}

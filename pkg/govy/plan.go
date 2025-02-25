@@ -5,12 +5,15 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/nobl9/govy/internal/collections"
 	"golang.org/x/exp/maps"
 )
 
 // ValidatorPlan is a validation plan for a single [Validator].
 type ValidatorPlan struct {
-	Name       string         `json:"name,omitempty"`
+	// Name is the value provided to [Validator.WithName].
+	Name string `json:"name,omitempty"`
+	// Properties which this [Validator] defines.
 	Properties []PropertyPlan `json:"properties"`
 }
 
@@ -25,20 +28,36 @@ type PropertyPlan struct {
 	// IsOptional indicates if the property was marked with [PropertyRules.OmitEmpty].
 	IsOptional bool `json:"isOptional,omitempty"`
 	// IsHidden indicates if the property was marked with [PropertyRules.HideValue].
-	IsHidden bool       `json:"isHidden,omitempty"`
-	Examples []string   `json:"examples,omitempty"`
-	Rules    []RulePlan `json:"rules,omitempty"`
+	IsHidden bool `json:"isHidden,omitempty"`
+	// Examples lists example, valid values for this property.
+	// These values are not exhaustive, for an exhaustive list of valid values see [ValidValues].
+	Examples []string `json:"examples,omitempty"`
+	// ValidValues unlike [Examples] should list ALL valid values for this property.
+	// These values are constructed as an intersection of all [RulePlan.ValidValues]
+	// for this property.
+	ValidValues []string `json:"values,omitempty"`
+	// Rules which apply to this property.
+	Rules []RulePlan `json:"rules,omitempty"`
 }
 
 // RulePlan is a validation plan for a single [Rule].
 type RulePlan struct {
-	Description string    `json:"description"`
-	Details     string    `json:"details,omitempty"`
-	ErrorCode   ErrorCode `json:"errorCode,omitempty"`
+	// Description is the value provided to [Rule.WithDescription].
+	Description string `json:"description"`
+	// Details is the value provided to [Rule.WithDetails].
+	Details string `json:"details,omitempty"`
+	// ErrorCode is the value provided to [Rule.WithErrorCode].
+	ErrorCode ErrorCode `json:"errorCode,omitempty"`
 	// Conditions are all the predicates set through [PropertyRules.When] and [Validator.When]
 	// which had [WhenDescription] added to the [WhenOptions].
 	Conditions []string `json:"conditions,omitempty"`
-	Examples   []string `json:"examples,omitempty"`
+	// Examples is the value provided to [Rule.WithExamples].
+	// These values are not exhaustive, for an exhaustive list of valid values see [ValidValues].
+	Examples []string `json:"examples,omitempty"`
+
+	// validValues unlike [Examples] should list ALL valid values which meet this rule.
+	// It is not exported as it is only here to contribute to the [PropertyPlan.ValidValues].
+	validValues []string
 }
 
 func (r RulePlan) isEmpty() bool {
@@ -74,6 +93,17 @@ func Plan[S any](v Validator[S]) *ValidatorPlan {
 	}
 	properties := maps.Values(propertiesMap)
 	sort.Slice(properties, func(i, j int) bool { return properties[i].Path < properties[j].Path })
+
+	for i, prop := range properties {
+		validValuesSlices := make([]string, 0)
+		for _, rule := range prop.Rules {
+			validValuesSlices = append(validValuesSlices, rule.validValues...)
+		}
+		// TODO: If there are indeed conflicting elements, we might want to drop an error!
+		prop.ValidValues = collections.Intersection(validValuesSlices)
+		properties[i] = prop
+	}
+
 	return &ValidatorPlan{
 		Name:       v.name,
 		Properties: properties,
