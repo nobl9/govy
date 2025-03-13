@@ -51,6 +51,7 @@ const (
 	ErrorCodeStringAlphanumeric        govy.ErrorCode = "string_alphanumeric"
 	ErrorCodeStringAlphaUnicode        govy.ErrorCode = "string_alpha_unicode"
 	ErrorCodeStringAlphanumericUnicode govy.ErrorCode = "string_alphanumeric_unicode"
+	ErrorCodeStringFQDN                govy.ErrorCode = "string_fqdn"
 	ErrorCodeSliceLength               govy.ErrorCode = "slice_length"
 	ErrorCodeSliceMinLength            govy.ErrorCode = "slice_min_length"
 	ErrorCodeSliceMaxLength            govy.ErrorCode = "slice_max_length"
