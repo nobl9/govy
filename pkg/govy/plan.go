@@ -32,10 +32,10 @@ type PropertyPlan struct {
 	// Examples lists example, valid values for this property.
 	// These values are not exhaustive, for an exhaustive list of valid values see [ValidValues].
 	Examples []string `json:"examples,omitempty"`
-	// ValidValues unlike [Examples] should list ALL valid values for this property.
-	// These values are constructed as an intersection of all [RulePlan.ValidValues]
+	// Values unlike [Examples] should list ALL valid values for this property.
+	// These values are constructed as an intersection of all [RulePlan.Values]
 	// for this property.
-	ValidValues []string `json:"values,omitempty"`
+	Values []string `json:"values,omitempty"`
 	// Rules which apply to this property.
 	Rules []RulePlan `json:"rules,omitempty"`
 }
@@ -55,9 +55,9 @@ type RulePlan struct {
 	// These values are not exhaustive, for an exhaustive list of valid values see [ValidValues].
 	Examples []string `json:"examples,omitempty"`
 
-	// validValues unlike [Examples] should list ALL valid values which meet this rule.
+	// values unlike [Examples] should list ALL valid values which meet this rule.
 	// It is not exported as it is only here to contribute to the [PropertyPlan.ValidValues].
-	validValues []string
+	values []string
 }
 
 func (r RulePlan) isEmpty() bool {
@@ -97,10 +97,10 @@ func Plan[S any](v Validator[S]) *ValidatorPlan {
 	for i, prop := range properties {
 		validValuesSlices := make([]string, 0)
 		for _, rule := range prop.Rules {
-			validValuesSlices = append(validValuesSlices, rule.validValues...)
+			validValuesSlices = append(validValuesSlices, rule.values...)
 		}
 		// TODO: If there are indeed conflicting elements, we might want to drop an error!
-		prop.ValidValues = collections.Intersection(validValuesSlices)
+		prop.Values = collections.Intersection(validValuesSlices)
 		properties[i] = prop
 	}
 

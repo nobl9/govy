@@ -34,6 +34,7 @@ func RuleToPointer[T any](rule Rule[T]) Rule[*T] {
 		messageTemplate: rule.messageTemplate,
 		examples:        rule.examples,
 		description:     rule.description,
+		planModifiers:   rule.planModifiers,
 	}
 }
 
@@ -176,7 +177,7 @@ func RulePlanModifierDescription(description string) RulePlanModifier {
 
 func RulePlanModifierValidValues[T any](values ...T) RulePlanModifier {
 	return func(plan RulePlan) RulePlan {
-		plan.validValues = collections.ToStringSlice(values)
+		plan.values = collections.ToStringSlice(values)
 		return plan
 	}
 }
