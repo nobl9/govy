@@ -17,6 +17,9 @@ var (
 	alphanumericRegexp        = lazyRegexCompile("^[a-zA-Z0-9]*$")
 	alphaUnicodeRegexp        = lazyRegexCompile("^[\\p{L}]*$")
 	alphanumericUnicodeRegexp = lazyRegexCompile("^[\\p{L}\\p{N}]+$")
+	fqdnRegexp                = lazyRegexCompile(
+		`^([a-zA-Z0-9]{1}[a-zA-Z0-9-]{0,62})(\.[a-zA-Z0-9]{1}[a-zA-Z0-9-]{0,62})*?(\.[a-zA-Z]{1}[a-zA-Z0-9]{0,62})\.?$`,
+	)
 )
 
 // lazyRegexCompile returns a function that compiles the regular expression

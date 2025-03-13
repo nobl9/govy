@@ -736,6 +736,12 @@ func StringAlphanumericUnicode() govy.Rule[string] {
 		WithErrorCode(ErrorCodeStringAlphanumericUnicode)
 }
 
+// StringFQDN ensures the property's value is a fully qualified domain name (FQDN).
+func StringFQDN() govy.Rule[string] {
+	return StringMatchRegexp(fqdnRegexp()).
+		WithErrorCode(ErrorCodeStringFQDN)
+}
+
 // isStringSeparator is directly copied from [strings] package.
 func isStringSeparator(r rune) bool {
 	// ASCII alphanumerics and underscore are not separators

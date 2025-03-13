@@ -1714,3 +1714,52 @@ func BenchmarkStringAlphanumericUnicode(b *testing.B) {
 		}
 	}
 }
+
+var stringFQDNTestCases = []*struct {
+	in         string
+	shouldFail bool
+}{
+	// cspell:disable
+	{"test.example.com", false},
+	{"example.com", false},
+	{"example24.com", false},
+	{"test.example24.com", false},
+	{"test24.example24.com", false},
+	{"test.example.com.", false},
+	{"example.com.", false},
+	{"example24.com.", false},
+	{"test.example24.com.", false},
+	{"test24.example24.com.", false},
+	{"24.example24.com", false},
+	{"test.24.example.com", false},
+	{"test24.example24.com..", true},
+	{"example", true},
+	{"192.168.0.1", true},
+	{"email@example.com", true},
+	{"2001:cdba:0000:0000:0000:0000:3257:9652", true},
+	{"2001:cdba:0:0:0:0:3257:9652", true},
+	{"2001:cdba::3257:9652", true},
+	{"", true},
+	// cspell:enable
+}
+
+func TestStringFQDN(t *testing.T) {
+	for _, tc := range stringFQDNTestCases {
+		err := StringFQDN().Validate(tc.in)
+		if tc.shouldFail {
+			assert.Error(t, err)
+			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringFQDN))
+		} else {
+			assert.NoError(t, err)
+		}
+	}
+}
+
+func BenchmarkStringFQDN(b *testing.B) {
+	for _, tc := range stringFQDNTestCases {
+		rule := StringFQDN()
+		for range b.N {
+			_ = rule.Validate(tc.in)
+		}
+	}
+}
