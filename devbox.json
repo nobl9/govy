@@ -7,7 +7,7 @@
     "gofumpt@0.7",
     "golangci-lint@1.61",
     "gosec@latest",
-    "go@1.22",
+    "go@1.24.1",
     "gotools@0.25"
   ],
   "shell": {
