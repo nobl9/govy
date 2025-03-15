@@ -37,5 +37,4 @@ jobs:
           fail-on-alert: false
           auto-push: true
           gh-pages-branch: gh-pages
-          skip-fetch-gh-pages: false
           github-token: ${{ secrets.GO_BENCHMARK_TOKEN }}
