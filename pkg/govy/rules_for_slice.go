@@ -126,7 +126,7 @@ func (r PropertyRulesForSlice[T, S]) plan(builder planBuilder) {
 	}
 	r.sliceRules.plan(builder.setExamples(r.sliceRules.examples...))
 	builder = builder.appendPath(r.sliceRules.name)
-	if len(r.forEachRules.steps) > 0 {
+	if len(r.forEachRules.rules) > 0 {
 		r.forEachRules.plan(builder.appendPath("[*]"))
 	}
 }

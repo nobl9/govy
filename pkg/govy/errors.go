@@ -3,6 +3,7 @@ package govy
 import (
 	"fmt"
 	"log/slog"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -128,7 +129,7 @@ outer:
 	return agg
 }
 
-func NewPropertyError(propertyName string, propertyValue interface{}, errs ...error) *PropertyError {
+func NewPropertyError(propertyName string, propertyValue any, errs ...error) *PropertyError {
 	return &PropertyError{
 		PropertyName:  propertyName,
 		PropertyValue: internal.PropertyValueString(propertyValue),
@@ -334,10 +335,8 @@ func HasErrorCode(err error, code ErrorCode) bool {
 		}
 	case *RuleError:
 		codes := strings.Split(v.Code, ErrorCodeSeparator)
-		for i := range codes {
-			if code == codes[i] {
-				return true
-			}
+		if slices.Contains(codes, code) {
+			return true
 		}
 	case RuleSetError:
 		for _, e := range v {
