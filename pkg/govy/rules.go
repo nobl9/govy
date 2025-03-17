@@ -2,11 +2,8 @@ package govy
 
 import (
 	"errors"
-	"fmt"
-	"log/slog"
 
 	"github.com/nobl9/govy/internal"
-	"github.com/nobl9/govy/internal/logging"
 )
 
 // For creates a new [PropertyRules] instance for the property
@@ -92,7 +89,7 @@ type PropertyRules[T, S any] struct {
 	name            string
 	getter          internalPropertyGetter[T, S]
 	transformGetter internalTransformPropertyGetter[T, S]
-	steps           []interface{}
+	rules           []validationInterface[T]
 	required        bool
 	omitEmpty       bool
 	hideValue       bool
@@ -123,13 +120,8 @@ func (r PropertyRules[T, S]) Validate(st S) error {
 	if skip {
 		return nil
 	}
-	for _, step := range r.steps {
-		vi, ok := step.(validationInterface[T])
-		if !ok {
-			logging.Logger().Error("unexpected type", slog.String("type", fmt.Sprintf("%T", step)))
-			continue
-		}
-		err := vi.Validate(propValue)
+	for i := range r.rules {
+		err := r.rules[i].Validate(propValue)
 		if err == nil {
 			continue
 		}
@@ -175,13 +167,15 @@ func (r PropertyRules[T, S]) WithExamples(examples ...string) PropertyRules[T, S
 
 // Rules associates provided [Rule] with the property.
 func (r PropertyRules[T, S]) Rules(rules ...validationInterface[T]) PropertyRules[T, S] {
-	r.steps = appendSteps(r.steps, rules)
+	r.rules = append(r.rules, rules...)
 	return r
 }
 
 // Include embeds specified [Validator] and its [PropertyRules] into the property.
 func (r PropertyRules[T, S]) Include(rules ...Validator[T]) PropertyRules[T, S] {
-	r.steps = appendSteps(r.steps, rules)
+	for _, rule := range rules {
+		r.rules = append(r.rules, rule)
+	}
 	return r
 }
 
@@ -246,23 +240,16 @@ func (r PropertyRules[T, S]) plan(builder planBuilder) {
 		builder.propertyPlan.Package = typInfo.Package
 	}
 	builder = builder.appendPath(r.name).setExamples(r.examples...)
-	for _, step := range r.steps {
+	for _, step := range r.rules {
 		if p, ok := step.(planner); ok {
 			p.plan(builder)
 		}
 	}
 	// If we don't have any rules defined for this property, append it nonetheless.
 	// It can be useful when we have things like [WithExamples] or [Required] set.
-	if len(r.steps) == 0 {
+	if len(r.rules) == 0 {
 		*builder.children = append(*builder.children, builder)
 	}
-}
-
-func appendSteps[T any](slice []interface{}, steps []T) []interface{} {
-	for _, step := range steps {
-		slice = append(slice, step)
-	}
-	return slice
 }
 
 // getValue extracts the property value from the provided property.
@@ -281,7 +268,7 @@ func (r PropertyRules[T, S]) getValue(st S) (v T, skip bool, propErr *PropertyEr
 	isEmptyError := errors.Is(err, emptyErr{})
 	// Any error other than [emptyErr] is considered critical, we don't proceed with validation.
 	if err != nil && !isEmptyError {
-		var propValue interface{}
+		var propValue any
 		// If the value was transformed, we need to set the property value to the original, pre-transformed one.
 		if HasErrorCode(err, ErrorCodeTransform) {
 			propValue = originalValue
