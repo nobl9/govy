@@ -240,8 +240,8 @@ func (r PropertyRules[T, S]) plan(builder planBuilder) {
 		builder.propertyPlan.Package = typInfo.Package
 	}
 	builder = builder.appendPath(r.name).setExamples(r.examples...)
-	for _, step := range r.rules {
-		if p, ok := step.(planner); ok {
+	for _, rule := range r.rules {
+		if p, ok := rule.(planner); ok {
 			p.plan(builder)
 		}
 	}
