@@ -88,3 +88,50 @@ func TestRuleSetToPointer(t *testing.T) {
 		assert.Equal(t, "my-code:string_starts_with", errs[0].(*govy.RuleError).Code)
 	})
 }
+
+func TestRuleSetCascade(t *testing.T) {
+	r := govy.NewRuleSet(
+		rules.StringStartsWith("foo"),
+		rules.StringEndsWith("bar"),
+	)
+
+	prefixErr := &govy.RuleError{
+		Message:     "string must start with 'foo' prefix",
+		Code:        "string_starts_with",
+		Description: "string must start with 'foo' prefix",
+	}
+	suffixErr := &govy.RuleError{
+		Message:     "string must end with 'bar' suffix",
+		Code:        "string_ends_with",
+		Description: "string must end with 'bar' suffix",
+	}
+
+	tests := map[string]struct {
+		ruleSet     govy.RuleSet[string]
+		expectedErr govy.RuleSetError
+	}{
+		"default continue": {
+			ruleSet:     r,
+			expectedErr: govy.RuleSetError{prefixErr, suffixErr},
+		},
+		"continue mode": {
+			ruleSet:     r.Cascade(govy.CascadeModeContinue),
+			expectedErr: govy.RuleSetError{prefixErr, suffixErr},
+		},
+		"stop mode": {
+			ruleSet:     r.Cascade(govy.CascadeModeStop),
+			expectedErr: govy.RuleSetError{prefixErr},
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			err := test.ruleSet.Validate("baz_baz")
+
+			assert.Require(t, assert.Error(t, err))
+			errs := err.(govy.RuleSetError)
+			assert.Require(t, assert.Len(t, errs, len(test.expectedErr)))
+			assert.Equal(t, test.expectedErr, errs)
+		})
+	}
+}
