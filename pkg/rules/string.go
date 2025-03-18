@@ -78,7 +78,9 @@ func StringDenyRegexp(re *regexp.Regexp) govy.Rule[string] {
 		}))
 }
 
-// StringDNSLabel ensures the property's value is a valid DNS label as defined by RFC 1123.
+// StringDNSLabel ensures the property's value is a valid DNS label as defined by [RFC 1123].
+//
+// [RFC 1123]: https://www.ietf.org/rfc/rfc1123.txt
 func StringDNSLabel() govy.Rule[string] {
 	return StringMatchRegexp(rfc1123DnsLabelRegexp()).
 		WithDetails("an RFC-1123 compliant label name must consist of lower case alphanumeric characters or '-',"+
@@ -87,9 +89,21 @@ func StringDNSLabel() govy.Rule[string] {
 		WithErrorCode(ErrorCodeStringDNSLabel)
 }
 
+// StringDNSLabel ensures the property's value is a valid DNS subdomain as defined by [RFC 1123].
+//
+// [RFC 1123]: https://www.ietf.org/rfc/rfc1123.txt
+func StringDNSSubdomain() govy.Rule[string] {
+	return StringMatchRegexp(rfc1123DnsSubdomainRegexp()).
+		WithDetails("an RFC-1123 compliant subdomain name must consist of lower case alphanumeric characters or '-'" +
+			" or '.', and must start and end with an alphanumeric character").
+		WithExamples("example.com").
+		WithErrorCode(ErrorCodeStringDNSSubdomain)
+}
+
 // StringEmail ensures the property's value is a valid email address.
-// It follows RFC 5322 specification which is more permissive in regards to domain names.
-// Ref: https://www.ietf.org/rfc/rfc5322.txt
+// It follows [RFC 5322] specification which is more permissive in regards to domain names.
+//
+// [RFC 5322]: https://www.ietf.org/rfc/rfc5322.txt
 func StringEmail() govy.Rule[string] {
 	tpl := messagetemplates.Get(messagetemplates.StringEmailTemplate)
 
@@ -253,9 +267,10 @@ func StringCIDRv6() govy.Rule[string] {
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
 }
 
-// StringUUID ensures property's value is a valid UUID string as defined by RFC 4122.
+// StringUUID ensures property's value is a valid UUID string as defined by [RFC 4122].
 // It does not enforce a specific UUID version.
-// Ref: https://www.ietf.org/rfc/rfc4122.txt
+//
+// [RFC 4122]: https://www.ietf.org/rfc/rfc4122.txt
 func StringUUID() govy.Rule[string] {
 	return StringMatchRegexp(uuidRegexp()).
 		WithDetails("expected RFC-4122 compliant UUID string").
@@ -740,6 +755,53 @@ func StringAlphanumericUnicode() govy.Rule[string] {
 func StringFQDN() govy.Rule[string] {
 	return StringMatchRegexp(fqdnRegexp()).
 		WithErrorCode(ErrorCodeStringFQDN)
+}
+
+// StringKubernetesQualifiedName ensures the property's value is a valid "qualified name"
+// as defined by [Kubernetes validation].
+// The qualified name is used in various parts of the Kubernetes system, examples:
+//   - annotation names
+//   - label names
+//
+// [Kubernetes validation]: https://github.com/kubernetes/kubernetes/blob/55573a0739785292e62b32a748c0b0735ff963ba/staging/src/k8s.io/apimachinery/pkg/util/validation/validation.go#L41
+func StringKubernetesQualifiedName() govy.Rule[string] {
+	tpl := messagetemplates.Get(messagetemplates.StringEmailTemplate)
+
+	return govy.NewRule(func(s string) error {
+		parts := strings.Split(s, "/")
+		var name string
+		switch len(parts) {
+		case 1:
+			name = parts[0]
+		case 2:
+			var prefix string
+			prefix, name = parts[0], parts[1]
+			if len(prefix) == 0 {
+				return errors.New("prefix part must not be empty")
+			} else if msgs := IsDNS1123Subdomain(prefix); len(msgs) != 0 {
+				return errors.New("prefix part must not be empty")
+			}
+		default:
+			return append(errs, "a qualified name "+RegexError(qualifiedNameErrMsg, qualifiedNameFmt, "MyName", "my.name", "123-abc")+
+				" with an optional DNS subdomain prefix and '/' (e.g. 'example.com/MyName')")
+		}
+
+		if len(name) == 0 {
+			return errors.New("name part must not be empty")
+		} else if len(name) > 63 {
+			return errors.New("name part is too long")
+		}
+		if !qualifiedNameRegexp.MatchString(name) {
+			errs = append(errs, "name part "+RegexError(qualifiedNameErrMsg, qualifiedNameFmt, "MyName", "my.name", "123-abc"))
+		}
+		return errs
+	}).
+		WithErrorCode(ErrorCodeStringEmail).
+		WithMessageTemplate(tpl).
+		WithDetails("Kubernetes Qualified Name must consist of alphanumeric characters, '-', '_' or '.', "+
+			"and must start and end with an alphanumeric character with an optional DNS subdomain prefix and '/'").
+		WithExamples("my.domain/MyName", "MyName", "my.name", "123-abc").
+		WithDescription("string must be a Kubernetes Qualified Name")
 }
 
 // isStringSeparator is directly copied from [strings] package.
