@@ -7,3 +7,7 @@ type ErrorCode = string
 const (
 	ErrorCodeTransform ErrorCode = "transform"
 )
+
+func addErrorCode(c1, c2 ErrorCode) ErrorCode {
+	return concatStrings(c1, c2, ErrorCodeSeparator)
+}

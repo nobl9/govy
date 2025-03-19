@@ -230,7 +230,7 @@ func (r *RuleError) Error() string {
 //
 // This will result in 'last:another:code' [ErrorCode].
 func (r *RuleError) AddCode(code ErrorCode) *RuleError {
-	r.Code = concatStrings(code, r.Code, ErrorCodeSeparator)
+	r.Code = addErrorCode(code, r.Code)
 	return r
 }
 
