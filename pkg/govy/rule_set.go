@@ -15,16 +15,14 @@ func RuleSetToPointer[T any](ruleSet RuleSet[T]) RuleSet[*T] {
 		rules = append(rules, RuleToPointer(rule))
 	}
 	return RuleSet[*T]{
-		rules:     rules,
-		errorCode: ruleSet.errorCode,
+		rules: rules,
 	}
 }
 
 // RuleSet allows defining a [Rule] which aggregates multiple sub-rules.
 type RuleSet[T any] struct {
-	rules     []Rule[T]
-	errorCode ErrorCode
-	mode      CascadeMode
+	rules []Rule[T]
+	mode  CascadeMode
 }
 
 // Validate works the same way as [Rule.Validate],
@@ -39,17 +37,11 @@ func (r RuleSet[T]) Validate(v T) error {
 			continue
 		}
 		switch ev := err.(type) {
-		case *RuleError:
-			errs = append(errs, ev.AddCode(r.errorCode))
-		case *PropertyError:
-			for _, e := range ev.Errors {
-				_ = e.AddCode(r.errorCode)
-			}
+		case *RuleError, *PropertyError:
 			errs = append(errs, ev)
 		default:
 			errs = append(errs, &RuleError{
 				Message: ev.Error(),
-				Code:    r.errorCode,
 			})
 		}
 		if r.mode == CascadeModeStop {
@@ -64,7 +56,9 @@ func (r RuleSet[T]) Validate(v T) error {
 
 // WithErrorCode sets the error code for each returned [RuleError].
 func (r RuleSet[T]) WithErrorCode(code ErrorCode) RuleSet[T] {
-	r.errorCode = code
+	for i := range r.rules {
+		r.rules[i].errorCode = r.rules[i].errorCode.Add(code)
+	}
 	return r
 }
 

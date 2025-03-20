@@ -16,7 +16,7 @@ var (
 	uuidRegexp  = lazyRegexCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
 	asciiRegexp = lazyRegexCompile(`^[\x00-\x7F]*$`)
 	// Ref: https://www.ietf.org/rfc/rfc1123.txt
-	rfc1123DnsLabelRegexp     = lazyRegexCompile("^[a-z0-9]([-a-z0-9]{0,61}[a-z0-9])?$")
+	rfc1123DnsLabelRegexp     = lazyRegexCompile("^[a-z0-9]([-a-z0-9]*[a-z0-9])?$")
 	rfc1123DnsSubdomainRegexp = lazyRegexCompile("^" + rfc1123DnsSubdomainRegexpStr + "$")
 	k8sQualifiedNameRegexp    = lazyRegexCompile("^(" + rfc1123DnsSubdomainRegexpStr + "/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9]){1,63}")
 	alphaRegexp               = lazyRegexCompile("^[a-zA-Z]*$")

@@ -36,7 +36,7 @@ func TestRule_WithErrorCode(t *testing.T) {
 	assert.NoError(t, err)
 	err = r.Validate(-1)
 	assert.EqualError(t, err, "must be positive")
-	assert.Equal(t, "test", err.(*govy.RuleError).Code)
+	assert.Equal(t, govy.ErrorCode("test"), err.(*govy.RuleError).Code)
 }
 
 func TestRule_WithMessage(t *testing.T) {
@@ -79,7 +79,7 @@ func TestRule_WithMessage(t *testing.T) {
 		assert.NoError(t, err)
 		err = r.Validate(-1)
 		assert.EqualError(t, err, test.ExpectedError)
-		assert.Equal(t, "test", err.(*govy.RuleError).Code)
+		assert.Equal(t, govy.ErrorCode("test"), err.(*govy.RuleError).Code)
 	}
 }
 
@@ -118,7 +118,7 @@ func TestRule_WithDetails(t *testing.T) {
 		assert.NoError(t, err)
 		err = r.Validate(-1)
 		assert.EqualError(t, err, test.ExpectedError)
-		assert.Equal(t, "test", err.(*govy.RuleError).Code)
+		assert.Equal(t, govy.ErrorCode("test"), err.(*govy.RuleError).Code)
 	}
 }
 

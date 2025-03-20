@@ -3,7 +3,6 @@ package govy
 import (
 	"fmt"
 	"log/slog"
-	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -13,9 +12,10 @@ import (
 )
 
 const (
-	ErrorCodeSeparator    = ":"
-	propertyNameSeparator = "."
-	hiddenValue           = "[hidden]"
+	ErrorCodeSeparator     = string(errorCodeSeparatorRune)
+	errorCodeSeparatorRune = ':'
+	propertyNameSeparator  = "."
+	hiddenValue            = "[hidden]"
 )
 
 func NewValidatorError(errs PropertyErrors) *ValidatorError {
@@ -223,14 +223,9 @@ func (r *RuleError) Error() string {
 }
 
 // AddCode extends the [RuleError] with the given error code.
-// Codes are prepended, the last code in chain is always the first one set.
-// Example:
-//
-//	ruleError.AddCode("code").AddCode("another").AddCode("last")
-//
-// This will result in 'last:another:code' [ErrorCode].
+// See [ErrorCode.Add] for more details.
 func (r *RuleError) AddCode(code ErrorCode) *RuleError {
-	r.Code = concatStrings(code, r.Code, ErrorCodeSeparator)
+	r.Code = r.Code.Add(code)
 	return r
 }
 
@@ -334,10 +329,7 @@ func HasErrorCode(err error, code ErrorCode) bool {
 			}
 		}
 	case *RuleError:
-		codes := strings.Split(v.Code, ErrorCodeSeparator)
-		if slices.Contains(codes, code) {
-			return true
-		}
+		return v.Code.Has(code)
 	case RuleSetError:
 		for _, e := range v {
 			if HasErrorCode(e, code) {
