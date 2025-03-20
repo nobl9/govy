@@ -14,8 +14,7 @@ const (
 // Codes are prepended, the last code in chain is always the first one set.
 // Example:
 //
-//	ErrorCode("first").Add("another").Add("last") -->
-//	--> ErrorCode("last:another:first")
+//	ErrorCode("first").Add("another").Add("last") --> ErrorCode("last:another:first")
 func (e ErrorCode) Add(code ErrorCode) ErrorCode {
 	switch {
 	case e == "":
