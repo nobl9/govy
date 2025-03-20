@@ -85,7 +85,7 @@ func TestRuleSetToPointer(t *testing.T) {
 		errs := err.(govy.RuleSetError)
 		assert.Require(t, assert.Len(t, errs, 1))
 		assert.EqualError(t, errs[0], "string must start with 'foo' prefix")
-		assert.Equal(t, "my-code:string_starts_with", errs[0].(*govy.RuleError).Code)
+		assert.Equal(t, govy.ErrorCode("my-code:string_starts_with"), errs[0].(*govy.RuleError).Code)
 	})
 }
 

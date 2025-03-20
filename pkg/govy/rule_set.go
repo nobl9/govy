@@ -57,7 +57,7 @@ func (r RuleSet[T]) Validate(v T) error {
 // WithErrorCode sets the error code for each returned [RuleError].
 func (r RuleSet[T]) WithErrorCode(code ErrorCode) RuleSet[T] {
 	for i := range r.rules {
-		r.rules[i].errorCode = addErrorCode(code, r.rules[i].errorCode)
+		r.rules[i].errorCode = r.rules[i].errorCode.Add(code)
 	}
 	return r
 }
