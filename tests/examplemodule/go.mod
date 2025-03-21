@@ -2,7 +2,7 @@ module examplemodule
 
 go 1.22
 
-require github.com/nobl9/govy v0.1.1
+require github.com/nobl9/govy v0.13.0
 
 require (
 	golang.org/x/exp v0.0.0-20240808152545-0cdaa3abc0fa // indirect
