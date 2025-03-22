@@ -9,10 +9,13 @@ import (
 
 // DurationPrecision ensures the duration is defined with the specified precision.
 func DurationPrecision(precision time.Duration) govy.Rule[time.Duration] {
+	if precision <= 0 {
+		panic("precision must be greater than 0")
+	}
 	tpl := messagetemplates.Get(messagetemplates.DurationPrecisionTemplate)
 
 	return govy.NewRule(func(v time.Duration) error {
-		if v.Nanoseconds()%int64(precision) != 0 {
+		if v%precision != 0 {
 			return govy.NewRuleErrorTemplate(govy.TemplateVars{
 				PropertyValue:   v,
 				ComparisonValue: precision,

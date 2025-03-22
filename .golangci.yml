@@ -22,6 +22,12 @@ issues:
     - linters:
         - revive
       text: "error-strings: error strings should not be capitalized or end with punctuation or a newline"
+    - linters:
+        - lll
+      source: "^//go:generate "
+    - linters:
+        - lll
+      source: "^// \\[.*\\]: \\w+"
   # Value 0 means show all.
   max-issues-per-linter: 0
   max-same-issues: 0
