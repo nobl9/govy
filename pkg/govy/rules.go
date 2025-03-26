@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/nobl9/govy/internal"
+	"github.com/nobl9/govy/internal/typeinfo"
 )
 
 // For creates a new [PropertyRules] instance for the property
@@ -43,7 +44,7 @@ func ForPointer[T, S any](getter PropertyGetter[*T, S]) PropertyRules[T, S] {
 // If [Transformer] returns an error, the validation will not proceed and transformation error will be reported.
 // [Transformer] is only called if [PropertyGetter] returns a non-zero value.
 func Transform[T, N, S any](getter PropertyGetter[T, S], transform Transformer[T, N]) PropertyRules[N, S] {
-	typInfo := getTypeInfo[T]()
+	typInfo := typeinfo.Get[T]()
 	return PropertyRules[N, S]{
 		name: inferName(),
 		transformGetter: func(s S) (transformed N, original any, err error) {
@@ -96,7 +97,7 @@ type PropertyRules[T, S any] struct {
 	isPointer       bool
 	mode            CascadeMode
 	examples        []string
-	originalType    *typeInfo
+	originalType    *typeinfo.TypeInfo
 
 	predicateMatcher[S]
 }
@@ -233,10 +234,12 @@ func (r PropertyRules[T, S]) plan(builder planBuilder) {
 	}
 	if r.originalType != nil {
 		builder.propertyPlan.Type = r.originalType.Name
+		builder.propertyPlan.Kind = r.originalType.Kind
 		builder.propertyPlan.Package = r.originalType.Package
 	} else {
-		typInfo := getTypeInfo[T]()
+		typInfo := typeinfo.Get[T]()
 		builder.propertyPlan.Type = typInfo.Name
+		builder.propertyPlan.Kind = typInfo.Kind
 		builder.propertyPlan.Package = typInfo.Package
 	}
 	builder = builder.appendPath(r.name).setExamples(r.examples...)

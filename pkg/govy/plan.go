@@ -1,7 +1,6 @@
 package govy
 
 import (
-	"reflect"
 	"sort"
 	"strings"
 
@@ -20,6 +19,9 @@ type PropertyPlan struct {
 	Path string `json:"path"`
 	// Type is a Go type name of the property.
 	Type string `json:"type"`
+	// Kind is a Go type kind of the property.
+	// Example: "string", "int", "bool", "struct", "slice", etc.
+	Kind string `json:"kind"`
 	// Package is the full package path of the Type.
 	Package string `json:"package,omitempty"`
 	// IsOptional indicates if the property was marked with [PropertyRules.OmitEmpty].
@@ -61,6 +63,7 @@ func Plan[S any](v Validator[S]) *ValidatorPlan {
 			entry = PropertyPlan{
 				Path:       p.path,
 				Type:       p.propertyPlan.Type,
+				Kind:       p.propertyPlan.Kind,
 				Package:    p.propertyPlan.Package,
 				Examples:   p.propertyPlan.Examples,
 				IsOptional: p.propertyPlan.IsOptional,
@@ -119,36 +122,4 @@ func (p planBuilder) appendPath(path string) planBuilder {
 func (p planBuilder) setExamples(examples ...string) planBuilder {
 	p.propertyPlan.Examples = examples
 	return p
-}
-
-// typeInfo stores the type name and its package if it's available.
-type typeInfo struct {
-	Name    string
-	Package string
-}
-
-// getTypeInfo returns the information for the type T.
-// It returns the type name without package path or name.
-// It strips the pointer '*' from the type name.
-// Package is only available if the type is not a built-in type.
-func getTypeInfo[T any]() typeInfo {
-	typ := reflect.TypeOf(*new(T))
-	if typ == nil {
-		return typeInfo{}
-	}
-	var result typeInfo
-	if typ.Kind() == reflect.Ptr {
-		typ = typ.Elem()
-	}
-	if typ.Kind() == reflect.Slice {
-		typ = typ.Elem()
-		result.Name = "[]"
-	}
-	if typ.PkgPath() == "" {
-		result.Name += typ.String()
-	} else {
-		result.Name += typ.Name()
-		result.Package = typ.PkgPath()
-	}
-	return result
 }
