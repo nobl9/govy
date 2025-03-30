@@ -233,14 +233,9 @@ func (r PropertyRules[T, S]) plan(builder planBuilder) {
 		builder.rulePlan.Conditions = append(builder.rulePlan.Conditions, predicate.description)
 	}
 	if r.originalType != nil {
-		builder.propertyPlan.Type = r.originalType.Name
-		builder.propertyPlan.Kind = r.originalType.Kind
-		builder.propertyPlan.Package = r.originalType.Package
+		builder.propertyPlan.TypeInfo = TypeInfo(*r.originalType)
 	} else {
-		typInfo := typeinfo.Get[T]()
-		builder.propertyPlan.Type = typInfo.Name
-		builder.propertyPlan.Kind = typInfo.Kind
-		builder.propertyPlan.Package = typInfo.Package
+		builder.propertyPlan.TypeInfo = TypeInfo(typeinfo.Get[T]())
 	}
 	builder = builder.appendPath(r.name).setExamples(r.examples...)
 	for _, rule := range r.rules {

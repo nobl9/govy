@@ -5,11 +5,11 @@ import (
 	"reflect"
 )
 
-// TypeInfo stores the type information.
+// TypeInfo stores the Go type information.
 type TypeInfo struct {
 	Name    string
-	Package string
 	Kind    string
+	Package string
 }
 
 // Get returns the information for the type T.
@@ -18,7 +18,7 @@ type TypeInfo struct {
 // Package is only available if the type is not a built-in type.
 //
 // It has a special treatment for slices of type definitions.
-// Istead of having:
+// Instead of having:
 //
 //	TypeInfo{Name: "[]mypkg.Bar"}
 //

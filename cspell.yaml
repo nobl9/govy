@@ -47,6 +47,7 @@ words:
   - govyconfig
   - govytest
   - ldflags
+  - mypkg
   - nobl
   - pkgs
   - println

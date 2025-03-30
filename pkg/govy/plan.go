@@ -17,19 +17,28 @@ type ValidatorPlan struct {
 type PropertyPlan struct {
 	// Path is a JSON path to the property.
 	Path string `json:"path"`
-	// Type is a Go type name of the property.
-	Type string `json:"type"`
-	// Kind is a Go type kind of the property.
-	// Example: "string", "int", "bool", "struct", "slice", etc.
-	Kind string `json:"kind"`
-	// Package is the full package path of the Type.
-	Package string `json:"package,omitempty"`
+	// TypeInfo contains the type information of the property.
+	TypeInfo TypeInfo `json:"typeInfo"`
 	// IsOptional indicates if the property was marked with [PropertyRules.OmitEmpty].
 	IsOptional bool `json:"isOptional,omitempty"`
 	// IsHidden indicates if the property was marked with [PropertyRules.HideValue].
 	IsHidden bool       `json:"isHidden,omitempty"`
 	Examples []string   `json:"examples,omitempty"`
 	Rules    []RulePlan `json:"rules,omitempty"`
+}
+
+// TypeInfo contains the type information of a property.
+type TypeInfo struct {
+	// Name is a Go type name.
+	// Example: "Pod", "string", "int", "bool", etc.
+	Name string `json:"name"`
+	// Kind is a Go type kind.
+	// Example: "string", "int", "bool", "struct", "slice", etc.
+	Kind string `json:"kind"`
+	// Package is the full package path of the type.
+	// It's empty for builtin types.
+	// Example: "github.com/nobl9/govy/pkg/govy", "time", etc.
+	Package string `json:"package,omitempty"`
 }
 
 // RulePlan is a validation plan for a single [Rule].
@@ -62,9 +71,7 @@ func Plan[S any](v Validator[S]) *ValidatorPlan {
 		} else {
 			entry = PropertyPlan{
 				Path:       p.path,
-				Type:       p.propertyPlan.Type,
-				Kind:       p.propertyPlan.Kind,
-				Package:    p.propertyPlan.Package,
+				TypeInfo:   p.propertyPlan.TypeInfo,
 				Examples:   p.propertyPlan.Examples,
 				IsOptional: p.propertyPlan.IsOptional,
 				IsHidden:   p.propertyPlan.IsHidden,
