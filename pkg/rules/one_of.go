@@ -31,7 +31,8 @@ func OneOf[T comparable](values ...T) govy.Rule[T] {
 		WithMessageTemplate(tpl).
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: values,
-		}))
+		})).
+		WithPlanModifiers(govy.RulePlanModifierValidValues(values...))
 }
 
 // OneOfProperties checks if at least one of the properties is set.

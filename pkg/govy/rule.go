@@ -34,6 +34,7 @@ func RuleToPointer[T any](rule Rule[T]) Rule[*T] {
 		messageTemplate: rule.messageTemplate,
 		examples:        rule.examples,
 		description:     rule.description,
+		planModifiers:   rule.planModifiers,
 	}
 }
 
@@ -48,6 +49,7 @@ type Rule[T any] struct {
 	messageTemplate *template.Template
 	examples        []string
 	description     string
+	planModifiers   []RulePlanModifier
 }
 
 // Validate runs validation function on the provided value.
@@ -164,14 +166,41 @@ func (r Rule[T]) WithDescription(description string) Rule[T] {
 	return r
 }
 
+type RulePlanModifier func(plan RulePlan) RulePlan
+
+func RulePlanModifierDescription(description string) RulePlanModifier {
+	return func(plan RulePlan) RulePlan {
+		plan.Description = description
+		return plan
+	}
+}
+
+func RulePlanModifierValidValues[T any](values ...T) RulePlanModifier {
+	return func(plan RulePlan) RulePlan {
+		plan.values = collections.ToStringSlice(values)
+		return plan
+	}
+}
+
+// WithExamples adds examples to the returned [RuleError].
+// Each example is converted to a string.
+func (r Rule[T]) WithPlanModifiers(mods ...RulePlanModifier) Rule[T] {
+	r.planModifiers = append(r.planModifiers, mods...)
+	return r
+}
+
 func (r Rule[T]) plan(builder planBuilder) {
-	builder.rulePlan = RulePlan{
+	rulePlan := RulePlan{
 		ErrorCode:   r.errorCode,
 		Details:     r.details,
 		Description: r.description,
 		Conditions:  builder.rulePlan.Conditions,
 		Examples:    r.examples,
 	}
+	for _, mod := range r.planModifiers {
+		rulePlan = mod(rulePlan)
+	}
+	builder.rulePlan = rulePlan
 	*builder.children = append(*builder.children, builder)
 }
 
