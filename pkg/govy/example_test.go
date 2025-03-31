@@ -1710,7 +1710,10 @@ func ExamplePlan() {
 	//   "properties": [
 	//     {
 	//       "path": "$.name",
-	//       "type": "string",
+	//       "typeInfo": {
+	//         "name": "string",
+	//         "kind": "string"
+	//       },
 	//       "examples": [
 	//         "Jake",
 	//         "John"
