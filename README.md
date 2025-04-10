@@ -16,8 +16,9 @@ It also allows writing self-documenting validation rules through a
 
 **DISCLAIMER**: govy is in active development, while the core API is unlikely
 to change, breaking changes may be introduced with new versions until v1
-is released. Checkout [roadmap](./docs/ROADMAP.md) for upcoming,
-planned features.
+is released.
+Checkout [roadmap](https://github.com/orgs/nobl9/projects/5/views/2?pane=info)
+for upcoming, planned features.
 
 ## Legend
 
