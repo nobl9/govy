@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"text/template"
 
 	"golang.org/x/exp/constraints"
 
@@ -198,4 +199,69 @@ func EqualProperties[S, T any](compare ComparisonFunc[T], getters map[string]fun
 				strings.Join(collections.SortedKeys(getters), ", "),
 			)
 		}())
+}
+
+type (
+	comparePropertiesTemplateVars struct {
+		FirstProperty  comparePropertiesTemplatePropertyVar
+		SecondProperty comparePropertiesTemplatePropertyVar
+	}
+	comparePropertiesTemplatePropertyVar struct {
+		Name  string
+		Value any
+	}
+)
+
+// PropertyAndGetter is a tuple of property name and its [govy.PropertyGetter] function.
+type PropertyAndGetter[T, S any] struct {
+	Name   string
+	Getter govy.PropertyGetter[T, S]
+}
+
+func CompareProperties[T, S any](
+	m string,
+	compare ComparisonFunc[T],
+	properties ...PropertyAndGetter[T, S],
+) govy.Rule[S] {
+	tpl := govy.AddTemplateFunctions(template.New(""))
+	tpl = template.Must(tpl.Parse(m))
+	propertyNames := collections.MapSlice(properties, func(p PropertyAndGetter[T, S]) string { return p.Name })
+
+	return govy.NewRule(func(s S) error {
+		if len(properties) < 2 {
+			return nil
+		}
+		var (
+			i             int
+			previousName  string
+			previousValue T
+		)
+		for _, property := range properties {
+			currentValue := properties[i].Getter(s)
+			if i != 0 && !compare(currentValue, previousValue) {
+				return govy.NewRuleErrorTemplate(govy.TemplateVars{
+					ComparisonValue: propertyNames,
+					Custom: comparePropertiesTemplateVars{
+						FirstProperty: comparePropertiesTemplatePropertyVar{
+							Name:  previousName,
+							Value: previousValue,
+						},
+						SecondProperty: comparePropertiesTemplatePropertyVar{
+							Name:  property.Name,
+							Value: currentValue,
+						},
+					},
+				})
+			}
+			previousName = property.Name
+			previousValue = currentValue
+			i++
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeCompareProperties).
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+			ComparisonValue: propertyNames,
+		}))
 }

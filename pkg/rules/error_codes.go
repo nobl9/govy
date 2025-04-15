@@ -64,6 +64,7 @@ const (
 	ErrorCodeOneOfProperties               govy.ErrorCode = "one_of_properties"
 	ErrorCodeMutuallyExclusive             govy.ErrorCode = "mutually_exclusive"
 	ErrorCodeEqualProperties               govy.ErrorCode = "equal_properties"
+	ErrorCodeCompareProperties             govy.ErrorCode = "compare_properties"
 	ErrorCodeSliceUnique                   govy.ErrorCode = "slice_unique"
 	ErrorCodeURL                           govy.ErrorCode = "url"
 	ErrorCodeDurationPrecision             govy.ErrorCode = "duration_precision"

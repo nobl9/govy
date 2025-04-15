@@ -37,12 +37,12 @@ func TestMapSlice(t *testing.T) {
 		expected any
 	}{
 		{
-			f:        func() any { return mapSlice([]int{1, 2, 4}, strconv.Itoa) },
+			f:        func() any { return MapSlice([]int{1, 2, 4}, strconv.Itoa) },
 			expected: []string{"1", "2", "4"},
 		},
 		{
 			f: func() any {
-				return mapSlice([]string{"1", "2", "4"}, func(s string) int {
+				return MapSlice([]string{"1", "2", "4"}, func(s string) int {
 					i, _ := strconv.Atoi(s)
 					return i
 				})
@@ -51,7 +51,7 @@ func TestMapSlice(t *testing.T) {
 		},
 		{
 			f: func() any {
-				return mapSlice([]any{1, "2", []float64{0.64}}, func(v any) string { return fmt.Sprint(v) })
+				return MapSlice([]any{1, "2", []float64{0.64}}, func(v any) string { return fmt.Sprint(v) })
 			},
 			expected: []string{"1", "2", "[0.64]"},
 		},
