@@ -173,7 +173,11 @@ func assertValidatorError(t testingT, err error) (*govy.ValidatorError, bool) {
 	}
 	validatorErr, ok := err.(*govy.ValidatorError)
 	if !ok {
-    t.Errorf("Input error should be of type %[1]T, but was of type %[2]T.\nError: %[2]v", &govy.ValidatorError{}, err)
+		t.Errorf(
+			"Input error should be of type %[1]T, but was of type %[2]T.\nError: %[2]v",
+			&govy.ValidatorError{},
+			err,
+		)
 	}
 	return validatorErr, ok
 }

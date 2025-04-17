@@ -61,7 +61,8 @@ func TestAssertError(t *testing.T) {
 			ok:             false,
 			inputError:     errors.New("foo!"),
 			expectedErrors: []govytest.ExpectedRuleError{{PropertyName: "this", Message: "test"}},
-      out:            "Input error should be of type *govy.ValidatorError, but was of type *errors.errorString.\nError: foo!",
+			out: "Input error should be of type *govy.ValidatorError," +
+				" but was of type *errors.errorString.\nError: foo!",
 		},
 		"errors count mismatch": {
 			ok: false,
@@ -368,9 +369,10 @@ func TestAssertErrorContains(t *testing.T) {
 		},
 		"wrong type of error": {
 			ok:            false,
-			inputError:    errors.New(""),
+			inputError:    errors.New("foo!"),
 			expectedError: govytest.ExpectedRuleError{PropertyName: "this", Message: "test"},
-			out:           "Input error should be of type *govy.ValidatorError.",
+			out: "Input error should be of type *govy.ValidatorError," +
+				" but was of type *errors.errorString.\nError: foo!",
 		},
 		"no matches": {
 			ok: false,
