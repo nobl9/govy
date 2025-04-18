@@ -812,6 +812,25 @@ func ExampleAddTemplateFunctions_joinSlice() {
 	// 'Joanna', 'Angeline'
 }
 
+func ExampleAddTemplateFunctions_indent() {
+	tplString := "{{ indent 2 .Details }}"
+	tpl := template.New("")
+	tpl = govy.AddTemplateFunctions(tpl)
+	tpl = template.Must(tpl.Parse(tplString))
+
+	err := tpl.Execute(
+		os.Stdout,
+		map[string]any{"Details": "foo\nbar"},
+	)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	// Output:
+	//   foo
+	//   bar
+}
+
 // [govy.Rule] error might be static, i.e. a single [govy.Rule] always returns
 // the same exact error message, but they don't have to.
 // For instance, consider a rule which parses a URL using [net/url] package.
