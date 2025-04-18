@@ -168,6 +168,100 @@ func ExampleAssertError() {
 	// ]
 }
 
+// [govytest.AssertError] can handle not only [govy.ValidatorError] but also a slice of these
+// wrapped into [govy.ValidatorErrors].
+//
+// For instance, [govy.ValidatorErrors] is returned from [govy.Validator.ValidateSlice],
+// you can also choose to construct this slice type yourself.
+// In any case, in order to match [govytest.ExpectedRuleError] the assertion function needs
+// to first match it with the right [govy.ValidatorError].
+//
+// In order to achieve that you need to set the following fields:
+//   - [govytest.ExpectedRuleError.ValidatorName] which matches [govy.ValidatorError.Name]
+//   - [govytest.ExpectedRuleError.ValidatorIndex] which matches [govy.ValidatorError.SliceIndex]
+//
+// You can set them both, but you need to provide at least one of them.
+//
+// Every [govytest.ExpectedRuleError] is aggregated per matched [govy.ValidatorError]
+// and the function runs recursively for every [govy.ValidatorError] and epxected errors pair.
+func ExampleAssertError_validatorErrors() {
+	teacherValidator := govy.New(
+		govy.For(func(t Teacher) string { return t.Name }).
+			WithName("name").
+			Required().
+			Rules(
+				rules.StringNotEmpty(),
+				rules.OneOf("Eve", "George")),
+		govy.For(func(t Teacher) University { return t.University }).
+			WithName("university").
+			Include(govy.New(
+				govy.For(func(u University) string { return u.Address }).
+					WithName("address").
+					Required(),
+			)),
+	)
+
+	teacherEve := Teacher{
+		Name: "Eve",
+		University: University{
+			Name:    "Poznan University of Technology",
+			Address: "",
+		},
+	}
+	teacherJohn := Teacher{
+		Name: "John",
+		University: University{
+			Name:    "Poznan University of Technology",
+			Address: "",
+		},
+	}
+	teachers := []Teacher{teacherEve, teacherJohn}
+
+	// We're using a mock testing.T to capture the error produced by the assertion.
+	mt := new(mockTestingT)
+
+	err := teacherValidator.WithNameFunc(func(s Teacher) string { return s.Name }).ValidateSlice(teachers)
+	govytest.AssertError(mt, err,
+		govytest.ExpectedRuleError{
+			PropertyName:   "university.address",
+			Code:           "greater_than",
+			ValidatorName:  "Eve",
+			ValidatorIndex: ptr(0),
+		},
+		govytest.ExpectedRuleError{
+			PropertyName:    "name",
+			ContainsMessage: "one of",
+			ValidatorName:   "John",
+			ValidatorIndex:  ptr(1),
+		},
+	)
+
+	// This will print the error produced by the assertion.
+	fmt.Println(mt.recordedError)
+
+	// Output:
+	// Expected error was not found.
+  // EXPECTED:
+  // {
+  //   "propertyName": "university.address",
+  //   "code": "greater_than",
+  //   "validatorName": "Eve",
+  //   "validatorIndex": 0
+  // }
+  // ACTUAL:
+  // [
+  //   {
+  //     "propertyName": "university.address",
+  //     "errors": [
+  //       {
+  //         "error": "property is required but was empty",
+  //         "code": "required"
+  //       }
+  //     ]
+  //   }
+  // ]
+}
+
 // If you don't want to verify all the errors returned by [govy.Validator],
 // but ensure a single, expected error is produced use [govytest.AssertErrorContains]
 // instead of [govytest.AssertError].

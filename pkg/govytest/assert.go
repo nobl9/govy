@@ -105,6 +105,13 @@ func AssertNoError(t testingT, err error) bool {
 // If [ExpectedRuleError.IsKeyError] is provided it will be required to match
 // the actual [govy.PropertyError.IsKeyError].
 //
+// If the actual error is of type [govy.ValidatorErrors] the following two fields are also matched:
+//   - [ExpectedRuleError.ValidatorName] is equal to [govy.ValidatorError.Name]
+//   - [ExpectedRuleError.ValidatorIndex] is equal to [govy.ValidatorError.SliceIndex]
+//
+// In the above case, all [ExpectedRuleError] are aggregated per matching [*govy.ValidatorError]
+// and the function runs for every aggregated validator recursively.
+//
 // It returns true if the error matches the expectations, false otherwise.
 func AssertError(
 	t testingT,
@@ -132,6 +139,10 @@ func AssertError(
 //
 // If [ExpectedRuleError.IsKeyError] is provided it will be required to match
 // the actual [govy.PropertyError.IsKeyError].
+//
+// If the actual error is of type [govy.ValidatorErrors] the following two fields are also matched:
+//   - [ExpectedRuleError.ValidatorName] is equal to [govy.ValidatorError.Name]
+//   - [ExpectedRuleError.ValidatorIndex] is equal to [govy.ValidatorError.SliceIndex]
 //
 // It returns true if the error matches the expectations, false otherwise.
 func AssertErrorContains(
