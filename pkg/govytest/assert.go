@@ -1,11 +1,14 @@
 package govytest
 
 import (
+	"cmp"
 	"encoding/json"
 	"fmt"
+	"slices"
+	"strconv"
 	"strings"
-	"sync"
-	"sync/atomic"
+
+	"golang.org/x/exp/maps"
 
 	"github.com/nobl9/govy/pkg/govy"
 	"github.com/nobl9/govy/pkg/rules"
@@ -213,6 +216,10 @@ type validatorKey struct {
 	Index int
 }
 
+func (v validatorKey) Compare(v2 validatorKey) int {
+	return cmp.Compare(v.Name+strconv.Itoa(v.Index), v2.Name+strconv.Itoa(v2.Index))
+}
+
 func validatorKeyFunc(name string, indexPtr *int) validatorKey {
 	index := -1
 	if indexPtr != nil {
@@ -277,23 +284,17 @@ func assertValidatorErrors(
 		}
 	}
 
-	passed := atomic.Bool{}
-	passed.Store(true)
-
-	wg := sync.WaitGroup{}
-	wg.Add(len(validators))
-	for k, v := range expectedErrorsPerValidator {
-		go func() {
-			defer wg.Done()
-			ok := assertError(t, countErrors, validators[k], v...)
-			if !ok {
-				passed.Store(false)
-			}
-		}()
+	passed := true
+	keys := maps.Keys(expectedErrorsPerValidator)
+	slices.SortFunc(keys, func(a, b validatorKey) int { return a.Compare(b) })
+	for _, k := range keys {
+		ok := assertError(t, countErrors, validators[k], expectedErrorsPerValidator[k]...)
+		if !ok {
+			passed = false
+		}
 	}
-	wg.Wait()
 
-	return passed.Load()
+	return passed
 }
 
 func assertValidatorError(

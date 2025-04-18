@@ -183,7 +183,7 @@ func ExampleAssertError() {
 // You can set them both, but you need to provide at least one of them.
 //
 // Every [govytest.ExpectedRuleError] is aggregated per matched [govy.ValidatorError]
-// and the function runs recursively for every [govy.ValidatorError] and epxected errors pair.
+// and the function runs recursively for every [govy.ValidatorError] and expected errors pair.
 func ExampleAssertError_validatorErrors() {
 	teacherValidator := govy.New(
 		govy.For(func(t Teacher) string { return t.Name }).
@@ -212,7 +212,7 @@ func ExampleAssertError_validatorErrors() {
 		Name: "John",
 		University: University{
 			Name:    "Poznan University of Technology",
-			Address: "",
+			Address: "Some address",
 		},
 	}
 	teachers := []Teacher{teacherEve, teacherJohn}
@@ -241,25 +241,25 @@ func ExampleAssertError_validatorErrors() {
 
 	// Output:
 	// Expected error was not found.
-  // EXPECTED:
-  // {
-  //   "propertyName": "university.address",
-  //   "code": "greater_than",
-  //   "validatorName": "Eve",
-  //   "validatorIndex": 0
-  // }
-  // ACTUAL:
-  // [
-  //   {
-  //     "propertyName": "university.address",
-  //     "errors": [
-  //       {
-  //         "error": "property is required but was empty",
-  //         "code": "required"
-  //       }
-  //     ]
-  //   }
-  // ]
+	// EXPECTED:
+	// {
+	//   "propertyName": "university.address",
+	//   "code": "greater_than",
+	//   "validatorName": "Eve",
+	//   "validatorIndex": 0
+	// }
+	// ACTUAL:
+	// [
+	//   {
+	//     "propertyName": "university.address",
+	//     "errors": [
+	//       {
+	//         "error": "property is required but was empty",
+	//         "code": "required"
+	//       }
+	//     ]
+	//   }
+	// ]
 }
 
 // If you don't want to verify all the errors returned by [govy.Validator],
