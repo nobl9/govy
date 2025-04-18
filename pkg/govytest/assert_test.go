@@ -1,3 +1,4 @@
+// nolint: lll
 package govytest_test
 
 import (
@@ -374,9 +375,8 @@ func TestAssertError_ValidatorErrors(t *testing.T) {
 			inputError:     govy.ValidatorErrors{{}},
 			expectedErrors: []govytest.ExpectedRuleError{{Message: "foo"}},
 			out: `Validation for ExpectedRuleError has failed for the following properties:
-  - one of [validatorIndex, validatorName] properties must be set, none was provided; 
-    The actual error was of type govy.ValidatorErrors.
-    in order to match expected error with an actual error produced by a specific govy.Validator instance,
+  - one of [validatorIndex, validatorName] properties must be set, none was provided; The actual error was of type govy.ValidatorErrors.
+    In order to match expected error with an actual error produced by a specific govy.Validator instance,
     either the name of the validator, its index (when using ValidateSlice method) or both must be provided.
     Otherwise the tests might produce ambiguous results.`,
 		},

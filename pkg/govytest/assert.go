@@ -59,8 +59,8 @@ var expectedRuleErrorValidationForValidatorErrors = govy.New(
 			"validatorIndex": func(e ExpectedRuleError) any { return e.ValidatorIndex },
 		}).
 			WithDetails(fmt.Sprintf(
-				"\n  The actual error was of type %T."+
-					"\n  in order to match expected error with an actual error"+
+				"The actual error was of type %T."+
+					"\n  In order to match expected error with an actual error"+
 					" produced by a specific govy.Validator instance,"+
 					"\n  either the name of the validator, its index (when using ValidateSlice method) or both must be provided."+
 					"\n  Otherwise the tests might produce ambiguous results.",
@@ -249,7 +249,7 @@ func assertValidatorErrors(
 		key := validatorKeyFunc(err.ValidatorName, err.ValidatorIndex)
 		if _, ok := validators[key]; !ok {
 			t.Errorf("%[1]T did not match any of the %[2]T."+
-        "\n%[1]T must match one of the %[2]T by either (or both, if both were provided):"+
+				"\n%[1]T must match one of the %[2]T by either (or both, if both were provided):"+
 				"\n- %[1]T.ValidatorName == %[2]T.Name"+
 				"\n- %[1]T.ValidatorIndex == %[2]T.SliceIndex"+
 				"\nEXPECTED:\n%[3]s"+
