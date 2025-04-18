@@ -380,6 +380,171 @@ func TestAssertError_ValidatorErrors(t *testing.T) {
     either the name of the validator, its index (when using ValidateSlice method) or both must be provided.
     Otherwise the tests might produce ambiguous results.`,
 		},
+		"conflicting errors (names)": {
+			ok:             false,
+			inputError:     govy.ValidatorErrors{{Name: "foo"}, {Name: "bar"}, {Name: "foo"}},
+			expectedErrors: []govytest.ExpectedRuleError{{Message: "foo", ValidatorName: "this"}},
+			out: `Multiple govy.ValidatorErrors errors seem to originate from the same govy.Validator instance.
+This will lead to ambiguous test results, as govytest.ExpectedRuleError may be checked multiple times.
+FIRST:
+{
+  "errors": null,
+  "name": "foo"
+}
+SECOND:
+{
+  "errors": null,
+  "name": "foo"
+}`,
+		},
+		"conflicting errors (indexes)": {
+			ok:             false,
+			inputError:     govy.ValidatorErrors{{SliceIndex: ptr(1)}, {SliceIndex: ptr(1)}, {Name: "foo"}},
+			expectedErrors: []govytest.ExpectedRuleError{{Message: "foo", ValidatorName: "this"}},
+			out: `Multiple govy.ValidatorErrors errors seem to originate from the same govy.Validator instance.
+This will lead to ambiguous test results, as govytest.ExpectedRuleError may be checked multiple times.
+FIRST:
+{
+  "errors": null,
+  "sliceIndex": 1
+}
+SECOND:
+{
+  "errors": null,
+  "sliceIndex": 1
+}`,
+		},
+		"conflicting errors (names and indexes)": {
+			ok: false,
+			inputError: govy.ValidatorErrors{
+				{Name: "foo", SliceIndex: ptr(1)},
+				{Name: "bar"},
+				{Name: "foo", SliceIndex: ptr(1)},
+			},
+			expectedErrors: []govytest.ExpectedRuleError{{Message: "foo", ValidatorName: "this"}},
+			out: `Multiple govy.ValidatorErrors errors seem to originate from the same govy.Validator instance.
+This will lead to ambiguous test results, as govytest.ExpectedRuleError may be checked multiple times.
+FIRST:
+{
+  "errors": null,
+  "name": "foo",
+  "sliceIndex": 1
+}
+SECOND:
+{
+  "errors": null,
+  "name": "foo",
+  "sliceIndex": 1
+}`,
+		},
+		"conflicting errors (empty errors)": {
+			ok:             false,
+			inputError:     govy.ValidatorErrors{{}, {}},
+			expectedErrors: []govytest.ExpectedRuleError{{Message: "foo", ValidatorName: "this"}},
+			out: `Multiple govy.ValidatorErrors errors seem to originate from the same govy.Validator instance.
+This will lead to ambiguous test results, as govytest.ExpectedRuleError may be checked multiple times.
+FIRST:
+{
+  "errors": null
+}
+SECOND:
+{
+  "errors": null
+}`,
+		},
+		"expected error does not match any ValidatorErrors": {
+			ok:             false,
+			inputError:     govy.ValidatorErrors{{Name: "foo"}, {Name: "bar"}},
+			expectedErrors: []govytest.ExpectedRuleError{{Message: "foo", ValidatorName: "baz"}},
+			out: `govytest.ExpectedRuleError did not match any of the govy.ValidatorError.
+govytest.ExpectedRuleError must match one of the govy.ValidatorError by either (or both, if both were provided):
+- govytest.ExpectedRuleError.ValidatorName == govy.ValidatorError.Name
+- govytest.ExpectedRuleError.ValidatorIndex == govy.ValidatorError.SliceIndex
+EXPECTED:
+{
+  "propertyName": "",
+  "message": "foo",
+  "validatorName": "baz"
+}
+ACTUAL:
+[
+  {
+    "errors": null,
+    "name": "foo"
+  },
+  {
+    "errors": null,
+    "name": "bar"
+  }
+]`,
+		},
+		"match by name": {
+			ok: true,
+			inputError: govy.ValidatorErrors{
+				{Name: "foo"},
+				{Name: "bar", Errors: []*govy.PropertyError{
+					{
+						PropertyName: "that",
+						Errors:       []*govy.RuleError{{Message: "test"}},
+					},
+				}},
+			},
+			expectedErrors: []govytest.ExpectedRuleError{
+				{PropertyName: "that", Message: "test", ValidatorName: "bar"},
+			},
+		},
+		"match by index": {
+			ok: true,
+			inputError: govy.ValidatorErrors{
+				{SliceIndex: ptr(0)},
+				{SliceIndex: ptr(1), Errors: []*govy.PropertyError{
+					{
+						PropertyName: "that",
+						Errors:       []*govy.RuleError{{Message: "test"}},
+					},
+				}},
+			},
+			expectedErrors: []govytest.ExpectedRuleError{
+				{PropertyName: "that", Message: "test", ValidatorIndex: ptr(1)},
+			},
+		},
+		"match by name and index": {
+			ok: true,
+			inputError: govy.ValidatorErrors{
+				{Name: "foo", SliceIndex: ptr(0)},
+				{Name: "bar", SliceIndex: ptr(1), Errors: []*govy.PropertyError{
+					{
+						PropertyName: "this",
+						Errors:       []*govy.RuleError{{Message: "test"}},
+					},
+				}},
+				{Name: "baz", SliceIndex: ptr(1), Errors: []*govy.PropertyError{
+					{
+						PropertyName: "that",
+						Errors:       []*govy.RuleError{{Message: "test"}},
+					},
+				}},
+			},
+			expectedErrors: []govytest.ExpectedRuleError{
+				{PropertyName: "that", Message: "test", ValidatorName: "baz", ValidatorIndex: ptr(1)},
+			},
+		},
+		"match by name - fail to match property error": {
+			ok: false,
+			inputError: govy.ValidatorErrors{
+				{Name: "foo"},
+				{Name: "bar", Errors: []*govy.PropertyError{
+					{
+						PropertyName: "that",
+						Errors:       []*govy.RuleError{{Message: "test"}},
+					},
+				}},
+			},
+			expectedErrors: []govytest.ExpectedRuleError{
+				{PropertyName: "that", Message: "test", ValidatorName: "foo"},
+			},
+			out: `*govy.ValidatorError contains different number of errors than expected, expected: 1, actual: 0.`,
+		},
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
@@ -664,3 +829,5 @@ func (m *mockTestingT) Error(args ...any) {
 }
 
 func (m *mockTestingT) Helper() {}
+
+func ptr[T any](v T) *T { return &v }

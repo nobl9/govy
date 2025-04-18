@@ -197,6 +197,19 @@ func validateExpectedErrors(t testingT, countErrors bool, expectedErrors ...Expe
 	return true
 }
 
+type validatorKey struct {
+	Name  string
+	Index int
+}
+
+func validatorKeyFunc(name string, indexPtr *int) validatorKey {
+	index := -1
+	if indexPtr != nil {
+		index = *indexPtr
+	}
+	return validatorKey{name, index}
+}
+
 func assertValidatorErrors(
 	t testingT,
 	countErrors bool,
@@ -217,25 +230,15 @@ func assertValidatorErrors(
 		}
 	}
 
-	type validatorKey struct {
-		Name  string
-		Index int
-	}
-	validatorKeyFunc := func(name string, indexPtr *int) validatorKey {
-		index := -1
-		if indexPtr != nil {
-			index = *indexPtr
-		}
-		return validatorKey{name, index}
-	}
-
 	validators := make(map[validatorKey]*govy.ValidatorError, len(validatorErrors))
 	for _, err := range validatorErrors {
 		key := validatorKeyFunc(err.Name, err.SliceIndex)
-		if _, ok := validators[key]; ok {
-			t.Errorf("Multiple %T errors seem to originate from the same govy.Validator instance (%v).\n"+
-				"This will lead to ambiguous test results, as %T may be checked multiple times.",
-				govy.ValidatorErrors{}, key, ExpectedRuleError{})
+		if previous, ok := validators[key]; ok {
+			t.Errorf("Multiple %T errors seem to originate from the same govy.Validator instance."+
+				"\nThis will lead to ambiguous test results, as %T may be checked multiple times."+
+				"\nFIRST:\n%s"+
+				"\nSECOND:\n%s",
+				govy.ValidatorErrors{}, ExpectedRuleError{}, mustEncodeJSON(previous), mustEncodeJSON(err))
 			return false
 		}
 		validators[key] = err
@@ -245,7 +248,13 @@ func assertValidatorErrors(
 	for _, err := range expectedErrors {
 		key := validatorKeyFunc(err.ValidatorName, err.ValidatorIndex)
 		if _, ok := validators[key]; !ok {
-			t.Errorf("%T error was not matched")
+			t.Errorf("%[1]T did not match any of the %[2]T."+
+        "\n%[1]T must match one of the %[2]T by either (or both, if both were provided):"+
+				"\n- %[1]T.ValidatorName == %[2]T.Name"+
+				"\n- %[1]T.ValidatorIndex == %[2]T.SliceIndex"+
+				"\nEXPECTED:\n%[3]s"+
+				"\nACTUAL:\n%[4]s",
+				err, *validatorErrors[0], mustEncodeJSON(err), mustEncodeJSON(validatorErrors))
 			return false
 		}
 		expectedErrorsPerValidator[key] = append(expectedErrorsPerValidator[key], err)
@@ -373,9 +382,14 @@ func assertErrorMatches(
 		t.Errorf("Actual error was matched multiple times. Provide a more specific %T list.", expected)
 		return false
 	}
-	encExpected, _ := json.MarshalIndent(expected, "", "  ")
-	encActual, _ := json.MarshalIndent(validatorErr.Errors, "", "  ")
-	t.Errorf("Expected error was not found.\nEXPECTED:\n%s\nACTUAL:\n%s",
-		string(encExpected), string(encActual))
+	t.Errorf("Expected error was not found."+
+		"\nEXPECTED:\n%s"+
+		"\nACTUAL:\n%s",
+		mustEncodeJSON(expected), mustEncodeJSON(validatorErr.Errors))
 	return false
+}
+
+func mustEncodeJSON(v any) string {
+	data, _ := json.MarshalIndent(v, "", "  ")
+	return string(data)
 }
