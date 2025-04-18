@@ -17,10 +17,8 @@ func OneOf[T comparable](values ...T) govy.Rule[T] {
 	tpl := messagetemplates.Get(messagetemplates.OneOfTemplate)
 
 	return govy.NewRule(func(v T) error {
-		for i := range values {
-			if v == values[i] {
-				return nil
-			}
+		if slices.Contains(values, v) {
+			return nil
 		}
 		return govy.NewRuleErrorTemplate(govy.TemplateVars{
 			PropertyValue:   v,
