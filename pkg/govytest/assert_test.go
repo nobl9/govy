@@ -41,27 +41,35 @@ func TestAssertError(t *testing.T) {
 		expectedErrors []govytest.ExpectedRuleError
 		out            string
 	}{
-		"no expected errors": {
+		"nil error": {
 			ok:  false,
-			out: "[]govytest.ExpectedRuleError must not be empty.",
+			out: "Input error should not be nil.",
 		},
 		"invalid input": {
 			ok:             false,
+			inputError:     &govy.ValidatorError{},
 			expectedErrors: []govytest.ExpectedRuleError{{}},
-			out: `Validation for ExpectedRuleError has failed for the following properties:
+			out: `Validation for ExpectedRuleError at index 0 has failed for the following properties:
   - one of [code, containsMessage, message] properties must be set, none was provided`,
 		},
-		"nil error": {
+		"invalid input - second error": {
 			ok:             false,
-			inputError:     nil,
-			expectedErrors: []govytest.ExpectedRuleError{{PropertyName: "this", Message: "test"}},
-			out:            "Input error should not be nil.",
+			inputError:     &govy.ValidatorError{},
+			expectedErrors: []govytest.ExpectedRuleError{{Message: "foo"}, {}},
+			out: `Validation for ExpectedRuleError at index 1 has failed for the following properties:
+  - one of [code, containsMessage, message] properties must be set, none was provided`,
+		},
+		"no expected errors": {
+			ok:             false,
+			inputError:     &govy.ValidatorError{},
+			expectedErrors: []govytest.ExpectedRuleError{},
+			out:            "[]govytest.ExpectedRuleError must not be empty.",
 		},
 		"wrong type of error": {
 			ok:             false,
 			inputError:     errors.New("foo!"),
 			expectedErrors: []govytest.ExpectedRuleError{{PropertyName: "this", Message: "test"}},
-			out: "Input error should be of type *govy.ValidatorError," +
+			out: "Input error should be of type *govy.ValidatorError or govy.ValidatorErrors," +
 				" but was of type *errors.errorString.\nError: foo!",
 		},
 		"errors count mismatch": {
@@ -266,7 +274,7 @@ ACTUAL:
 				{PropertyName: "this", ContainsMessage: "test"},
 				{PropertyName: "this", ContainsMessage: "test"},
 			},
-			out: "Actual error was matched multiple times. Consider providing a more specific govytest.ExpectedRuleError list.",
+			out: "Actual error was matched multiple times. Provide a more specific govytest.ExpectedRuleError list.",
 		},
 		"matched key error": {
 			ok: true,
@@ -348,6 +356,45 @@ ACTUAL:
 	}
 }
 
+func TestAssertError_ValidatorErrors(t *testing.T) {
+	tests := map[string]struct {
+		ok             bool
+		inputError     error
+		expectedErrors []govytest.ExpectedRuleError
+		out            string
+	}{
+		"empty errors": {
+			ok:             false,
+			inputError:     govy.ValidatorErrors{},
+			expectedErrors: []govytest.ExpectedRuleError{{Message: "foo"}},
+			out:            `govy.ValidatorErrors must not be empty.`,
+		},
+		"no index or name": {
+			ok:             false,
+			inputError:     govy.ValidatorErrors{{}},
+			expectedErrors: []govytest.ExpectedRuleError{{Message: "foo"}},
+			out: `Validation for ExpectedRuleError has failed for the following properties:
+  - one of [validatorIndex, validatorName] properties must be set, none was provided; 
+    The actual error was of type govy.ValidatorErrors.
+    in order to match expected error with an actual error produced by a specific govy.Validator instance,
+    either the name of the validator, its index (when using ValidateSlice method) or both must be provided.
+    Otherwise the tests might produce ambiguous results.`,
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			mt := new(mockTestingT)
+			ok := govytest.AssertError(mt, tc.inputError, tc.expectedErrors...)
+			if tc.ok {
+				assert.True(t, ok)
+			} else {
+				assert.Require(t, assert.False(t, ok))
+				assert.Equal(t, tc.out, mt.recordedError)
+			}
+		})
+	}
+}
+
 func TestAssertErrorContains(t *testing.T) {
 	tests := map[string]struct {
 		ok            bool
@@ -355,23 +402,22 @@ func TestAssertErrorContains(t *testing.T) {
 		expectedError govytest.ExpectedRuleError
 		out           string
 	}{
+		"nil error": {
+			ok:  false,
+			out: "Input error should not be nil.",
+		},
 		"invalid input": {
 			ok:            false,
+			inputError:    &govy.ValidatorError{},
 			expectedError: govytest.ExpectedRuleError{},
 			out: `Validation for ExpectedRuleError has failed for the following properties:
   - one of [code, containsMessage, message] properties must be set, none was provided`,
-		},
-		"nil error": {
-			ok:            false,
-			inputError:    nil,
-			expectedError: govytest.ExpectedRuleError{PropertyName: "this", Message: "test"},
-			out:           "Input error should not be nil.",
 		},
 		"wrong type of error": {
 			ok:            false,
 			inputError:    errors.New("foo!"),
 			expectedError: govytest.ExpectedRuleError{PropertyName: "this", Message: "test"},
-			out: "Input error should be of type *govy.ValidatorError," +
+			out: "Input error should be of type *govy.ValidatorError or govy.ValidatorErrors," +
 				" but was of type *errors.errorString.\nError: foo!",
 		},
 		"no matches": {
