@@ -75,6 +75,38 @@ func TestAddFunctions(t *testing.T) {
 				Expected: "'1', '2', '3'",
 			},
 		},
+		"indnet": {
+			{
+				Text:     `{{ indent 0 .Details }}`,
+				Vars:     templateVariables{Details: "foo"},
+				Expected: "foo",
+			},
+			{
+				Text:     `{{ indent 0 .Details }}`,
+				Vars:     templateVariables{},
+				Expected: "",
+			},
+			{
+				Text:     `{{ indent 4 .Details }}`,
+				Vars:     templateVariables{},
+				Expected: "    ",
+			},
+			{
+				Text:     `{{ indent 4 .Details }}`,
+				Vars:     templateVariables{Details: "foo"},
+				Expected: "    foo",
+			},
+			{
+				Text:     `{{ indent 1 .Details }}`,
+				Vars:     templateVariables{Details: "foo\nbar"},
+				Expected: " foo\n bar",
+			},
+			{
+				Text:     `{{ indent 2 .Details }}`,
+				Vars:     templateVariables{Details: "foo\nbar"},
+				Expected: "  foo\n  bar",
+			},
+		},
 	}
 
 	for funcName, testCases := range tests {

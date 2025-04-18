@@ -17,6 +17,7 @@ func AddFunctions(tpl *template.Template) *template.Template {
 var templateFunctions = template.FuncMap{
 	"formatExamples": formatExamplesTplFunc,
 	"joinSlice":      joinSliceTplFunc,
+	"indent":         indentTplFunc,
 }
 
 // formatExamplesTplFunc formats a list of strings which are example valid values
@@ -46,10 +47,17 @@ func joinSliceTplFunc(input any, surroundingStr string) string {
 	}
 
 	values := make([]any, 0, rv.Len())
-	for i := 0; i < rv.Len(); i++ {
+	for i := range rv.Len() {
 		values = append(values, rv.Index(i).Interface())
 	}
 	b := strings.Builder{}
 	internal.PrettyStringListBuilder(&b, values, surroundingStr)
 	return b.String()
+}
+
+// indentTplFunc indents every line in a given string to the specified indent width.
+// Example: `{{ indent 2 "foo\nbar" }}` -> "  foo\n  bar"
+func indentTplFunc(spaces int, v string) string {
+	pad := strings.Repeat(" ", spaces)
+	return pad + strings.ReplaceAll(v, "\n", "\n"+pad)
 }
