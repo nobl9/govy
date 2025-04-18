@@ -75,7 +75,7 @@ func TestAddFunctions(t *testing.T) {
 				Expected: "'1', '2', '3'",
 			},
 		},
-		"indnet": {
+		"indent": {
 			{
 				Text:     `{{ indent 0 .Details }}`,
 				Vars:     templateVariables{Details: "foo"},
