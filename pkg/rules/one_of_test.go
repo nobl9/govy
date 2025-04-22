@@ -30,12 +30,6 @@ func TestOneOf(t *testing.T) {
 	}
 }
 
-type paymentMethod struct {
-	Cash     *string
-	Card     *string
-	Transfer *string
-}
-
 func BenchmarkOneOf(b *testing.B) {
 	for _, tc := range oneOfTestCases {
 		rule := OneOf(tc.options...)
@@ -43,6 +37,43 @@ func BenchmarkOneOf(b *testing.B) {
 			_ = rule.Validate(tc.in)
 		}
 	}
+}
+
+var notOneOfTestCases = []*struct {
+	in            string
+	options       []string
+	expectedError string
+}{
+	{"that", []string{"this", "that"}, "must not be one of: this, that"},
+	{"those", []string{"this", "that"}, ""},
+}
+
+func TestNotOneOf(t *testing.T) {
+	for _, tc := range notOneOfTestCases {
+		err := NotOneOf(tc.options...).Validate(tc.in)
+		if tc.expectedError != "" {
+			assert.Require(t, assert.Error(t, err))
+			assert.EqualError(t, err, tc.expectedError)
+			assert.True(t, govy.HasErrorCode(err, ErrorCodeNotOneOf))
+		} else {
+			assert.NoError(t, err)
+		}
+	}
+}
+
+func BenchmarkNotOneOf(b *testing.B) {
+	for _, tc := range notOneOfTestCases {
+		rule := NotOneOf(tc.options...)
+		for range b.N {
+			_ = rule.Validate(tc.in)
+		}
+	}
+}
+
+type paymentMethod struct {
+	Cash     *string
+	Card     *string
+	Transfer *string
 }
 
 var mutuallyExclusiveTestCases = []*struct {

@@ -26,6 +26,7 @@ const (
 	DurationPrecisionTemplate
 	ForbiddenTemplate
 	OneOfTemplate
+	NotOneOfTemplate
 	OneOfPropertiesTemplate
 	MutuallyExclusiveTemplate
 	RequiredTemplate
@@ -75,6 +76,7 @@ var rawMessageTemplates = map[templateKey]string{
 	DurationPrecisionTemplate: "duration must be defined with {{ .ComparisonValue }} precision",
 	ForbiddenTemplate:         "property is forbidden",
 	OneOfTemplate:             `must be one of: {{ joinSlice .ComparisonValue "" }}`,
+	NotOneOfTemplate:          `must not be one of: {{ joinSlice .ComparisonValue "" }}`,
 	OneOfPropertiesTemplate:   `one of [{{ joinSlice .ComparisonValue "" }}] properties must be set, none was provided`,
 	MutuallyExclusiveTemplate: `
 {{- if .Custom.NoProperties -}}
