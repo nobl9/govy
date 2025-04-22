@@ -13,6 +13,8 @@ import (
 
 // OneOf checks if the property's value matches one of the provided values.
 // The values must be comparable.
+//
+// For reversed rule see [NotOneOf].
 func OneOf[T comparable](values ...T) govy.Rule[T] {
 	tpl := messagetemplates.Get(messagetemplates.OneOfTemplate)
 
@@ -26,6 +28,29 @@ func OneOf[T comparable](values ...T) govy.Rule[T] {
 		})
 	}).
 		WithErrorCode(ErrorCodeOneOf).
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+			ComparisonValue: values,
+		}))
+}
+
+// NotOneOf checks if the property's value does not match any of the provided values.
+// The values must be comparable.
+//
+// For reversed rule see [OneOf].
+func NotOneOf[T comparable](values ...T) govy.Rule[T] {
+	tpl := messagetemplates.Get(messagetemplates.NotOneOfTemplate)
+
+	return govy.NewRule(func(v T) error {
+		if slices.Contains(values, v) {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue:   v,
+				ComparisonValue: values,
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeNotOneOf).
 		WithMessageTemplate(tpl).
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: values,
