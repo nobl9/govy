@@ -2,7 +2,6 @@ package govy_test
 
 import (
 	"errors"
-	"fmt"
 	"testing"
 
 	"github.com/nobl9/govy/internal/assert"
@@ -133,7 +132,6 @@ func TestPropertyRulesForMap(t *testing.T) {
 			"key 2": "value2",
 		}}))
 		assert.Require(t, assert.Len(t, errs, 12))
-		fmt.Println(errs)
 		assert.ElementsMatch(t, []*govy.PropertyError{
 			{
 				PropertyName:  "test.path",
