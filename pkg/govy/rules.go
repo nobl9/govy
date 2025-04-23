@@ -129,10 +129,10 @@ func (r PropertyRules[T, S]) Validate(st S) error {
 		switch errValue := err.(type) {
 		// Same as Rule[S] as for GetSelf we'd get the same type on T and S.
 		case *PropertyError:
-			allErrors = append(allErrors, errValue.PrependParentPropertyName(r.name))
+			allErrors = append(allErrors, errValue.prependParentPropertyName(r.name))
 		case *ValidatorError:
 			for _, e := range errValue.Errors {
-				allErrors = append(allErrors, e.PrependParentPropertyName(r.name))
+				allErrors = append(allErrors, e.prependParentPropertyName(r.name))
 			}
 		default:
 			ruleErrors = append(ruleErrors, err)

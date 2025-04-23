@@ -229,6 +229,6 @@ func Example_govy() {
 	//     - string must match regular expression: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?$' (e.g. 'my-name', '123-abc'); an RFC-1123 compliant label name must consist of lower case alphanumeric characters or '-', and must start and end with an alphanumeric character
 	//   - 'metadata.project' with value 'default project':
 	//     - string must match regular expression: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?$' (e.g. 'my-name', '123-abc'); an RFC-1123 compliant label name must consist of lower case alphanumeric characters or '-', and must start and end with an alphanumeric character
-	//   - 'metadata.labels.ke y' with key 'ke y':
+	//   - 'metadata.labels.['ke y']' with key 'ke y':
 	//     - string must match regular expression: '^\p{Ll}([_\-0-9\p{Ll}]*[0-9\p{Ll}])?$'
 }

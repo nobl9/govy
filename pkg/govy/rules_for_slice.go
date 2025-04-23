@@ -1,7 +1,7 @@
 package govy
 
 import (
-	"fmt"
+	"github.com/nobl9/govy/internal/jsonpath"
 )
 
 // ForSlice creates a new [PropertyRulesForSlice] instance for a slice property
@@ -56,7 +56,8 @@ func (r PropertyRulesForSlice[T, S]) Validate(st S) error {
 		}
 		for _, e := range forEachErrors {
 			e.IsSliceElementError = true
-			propErrs = append(propErrs, e.PrependParentPropertyName(SliceElementName(r.sliceRules.name, i)))
+			path := r.getJSONPathForIndex(i)
+			propErrs = append(propErrs, e.prependParentPropertyName(path))
 		}
 	}
 	if len(propErrs) > 0 {
@@ -131,10 +132,7 @@ func (r PropertyRulesForSlice[T, S]) plan(builder planBuilder) {
 	}
 }
 
-// SliceElementName generates a name for a slice element.
-func SliceElementName(sliceName string, index int) string {
-	if sliceName == "" {
-		return fmt.Sprintf("[%d]", index)
-	}
-	return fmt.Sprintf("%s[%d]", sliceName, index)
+// getJSONPathForIndex returns a JSONPath for the given index.
+func (r PropertyRulesForSlice[T, S]) getJSONPathForIndex(index int) string {
+	return jsonpath.JoinArray(r.sliceRules.name, jsonpath.NewArrayIndex(index))
 }

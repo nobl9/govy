@@ -8,13 +8,13 @@ import (
 	"strings"
 
 	"github.com/nobl9/govy/internal"
+	"github.com/nobl9/govy/internal/jsonpath"
 	"github.com/nobl9/govy/internal/logging"
 )
 
 const (
 	ErrorCodeSeparator     = string(errorCodeSeparatorRune)
 	errorCodeSeparatorRune = ':'
-	propertyNameSeparator  = "."
 	hiddenValue            = "[hidden]"
 )
 
@@ -129,6 +129,8 @@ outer:
 	return agg
 }
 
+// NewPropertyError constructs new [*PropertyError] instance.
+// Property name is assumed to be a valid, escaped JSONPath.
 func NewPropertyError(propertyName string, propertyValue any, errs ...error) *PropertyError {
 	return &PropertyError{
 		PropertyName:  propertyName,
@@ -140,14 +142,22 @@ func NewPropertyError(propertyName string, propertyValue any, errs ...error) *Pr
 // PropertyError is the error returned by [PropertyRules.Validate].
 // It contains property level details along with all the [RuleError] encountered for that property.
 type PropertyError struct {
-	PropertyName  string `json:"propertyName"`
+	// PropertyName is a string which should uniquely identify the property within a [Validator] instance.
+	// Typically, it is in the form of a JSONPath, constructed from the root of the validated object.
+	PropertyName string `json:"propertyName"`
+	// PropertyValue is a string representation of the property's value.
 	PropertyValue string `json:"propertyValue,omitempty"`
 	// IsKeyError is set to true if the error was created through map key validation.
 	// PropertyValue in this scenario will be the key value, equal to the last element of PropertyName path.
 	IsKeyError bool `json:"isKeyError,omitempty"`
 	// IsSliceElementError is set to true if the error was created through slice element validation.
-	IsSliceElementError bool         `json:"isSliceElementError,omitempty"`
-	Errors              []*RuleError `json:"errors"`
+	IsSliceElementError bool `json:"isSliceElementError,omitempty"`
+	// Errors are all rule errors reported for this property.
+	//
+	// Note: You can have multiple [PropertyRules] with the same name and value,
+	// in this scenario, all these instances will be aggregated into a single [PropertyError].
+	// See [PropertyError.Equal] for details on the equality conditions for [PropertyError].
+	Errors []*RuleError `json:"errors"`
 }
 
 // Error implements the error interface.
@@ -178,22 +188,24 @@ func (e *PropertyError) Equal(cmp *PropertyError) bool {
 		e.IsSliceElementError == cmp.IsSliceElementError
 }
 
-// PrependParentPropertyName prepends a given name to the [PropertyError.PropertyName].
-func (e *PropertyError) PrependParentPropertyName(name string) *PropertyError {
-	sep := propertyNameSeparator
-	if e.IsSliceElementError && strings.HasPrefix(e.PropertyName, "[") {
-		sep = ""
-	}
-	e.PropertyName = concatStrings(name, e.PropertyName, sep)
-	return e
-}
-
 // HideValue hides the property value from each of the [PropertyError.Errors].
 func (e *PropertyError) HideValue() *PropertyError {
 	sv := internal.PropertyValueString(e.PropertyValue)
 	e.PropertyValue = ""
 	for _, err := range e.Errors {
 		_ = err.HideValue(sv)
+	}
+	return e
+}
+
+// prependParentPropertyName prepends a given name to the [PropertyError.PropertyName].
+// If the name prepended name is a JSONPath, it is assumed to be escaped.
+func (e *PropertyError) prependParentPropertyName(name string) *PropertyError {
+	switch {
+	case e.IsSliceElementError && strings.HasPrefix(e.PropertyName, "["):
+		e.PropertyName = jsonpath.JoinArray(name, e.PropertyName)
+	default:
+		e.PropertyName = jsonpath.Join(name, e.PropertyName)
 	}
 	return e
 }
@@ -353,16 +365,6 @@ func unpackRuleErrors(errs []error, ruleErrors []*RuleError) []*RuleError {
 		}
 	}
 	return ruleErrors
-}
-
-func concatStrings(pre, post, sep string) string {
-	if pre == "" {
-		return post
-	}
-	if post == "" {
-		return pre
-	}
-	return pre + sep + post
 }
 
 func logWrongErrorType(expected, actual error) {
