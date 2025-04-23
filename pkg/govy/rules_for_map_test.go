@@ -129,11 +129,11 @@ func TestPropertyRulesForMap(t *testing.T) {
 			}))
 
 		errs := mustPropertyErrors(t, r.Validate(mockStruct{StringMap: map[string]string{
-			"key1": "value1",
+			"key1":  "value1",
 			"key 2": "value2",
 		}}))
 		assert.Require(t, assert.Len(t, errs, 12))
-    fmt.Println(errs)
+		fmt.Println(errs)
 		assert.ElementsMatch(t, []*govy.PropertyError{
 			{
 				PropertyName:  "test.path",
