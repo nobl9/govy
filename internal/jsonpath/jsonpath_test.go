@@ -2,6 +2,7 @@ package jsonpath_test
 
 import (
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/nobl9/govy/internal/assert"
@@ -29,6 +30,8 @@ func TestEscapeSegment(t *testing.T) {
 		"multiple whitespaces":      {"  foo.bar ", "['  foo.bar ']"},
 		"tab":                       {"\tfoo", "['\\tfoo']"},
 		"newline":                   {"\nfoo", "['\\nfoo']"},
+		"carriage return":           {"\rfoo", "['\\rfoo']"},
+		"large string with escape":  {"\n" + strings.Repeat("l", 1000), "['\\n" + strings.Repeat("l", 1000) + "']"},
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {

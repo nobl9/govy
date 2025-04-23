@@ -7,7 +7,7 @@ import (
 
 const (
 	jsonPathSeparator = "."
-	escapedChars      = jsonPathSeparator + "[] \t\n"
+	escapedChars      = jsonPathSeparator + "[] \t\n\r"
 	slashEscapedChars = ""
 )
 
