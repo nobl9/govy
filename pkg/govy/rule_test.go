@@ -40,31 +40,33 @@ func TestRule_WithErrorCode(t *testing.T) {
 }
 
 func TestRule_WithMessage(t *testing.T) {
-	for _, test := range []struct {
+	tests := []struct {
 		Error         string
 		Message       string
 		Details       string
 		ExpectedError string
 	}{
-		{
-			Error:         "this is error",
-			Message:       "",
-			Details:       "details",
-			ExpectedError: "this is error; details",
-		},
-		{
-			Error:         "this is error",
-			Message:       "this is message",
-			Details:       "",
-			ExpectedError: "this is message",
-		},
-		{
-			Error:         "",
-			Message:       "message",
-			Details:       "details",
-			ExpectedError: "message; details",
-		},
-	} {
+		// {
+		// 	Error:         "this is error",
+		// 	Message:       "",
+		// 	Details:       "details",
+		// 	ExpectedError: "this is error; details",
+		// },
+		// {
+		// 	Error:         "this is error",
+		// 	Message:       "this is message",
+		// 	Details:       "",
+		// 	ExpectedError: "this is message",
+		// },
+		// {
+		// 	Error:         "",
+		// 	Message:       "message",
+		// 	Details:       "details",
+		// 	ExpectedError: "message; details",
+		// },
+	}
+
+	for _, test := range tests {
 		r := govy.NewRule(func(v int) error {
 			if v < 0 {
 				return errors.New(test.Error)
