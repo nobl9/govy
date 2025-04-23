@@ -46,24 +46,24 @@ func TestRule_WithMessage(t *testing.T) {
 		Details       string
 		ExpectedError string
 	}{
-		// {
-		// 	Error:         "this is error",
-		// 	Message:       "",
-		// 	Details:       "details",
-		// 	ExpectedError: "this is error; details",
-		// },
-		// {
-		// 	Error:         "this is error",
-		// 	Message:       "this is message",
-		// 	Details:       "",
-		// 	ExpectedError: "this is message",
-		// },
-		// {
-		// 	Error:         "",
-		// 	Message:       "message",
-		// 	Details:       "details",
-		// 	ExpectedError: "message; details",
-		// },
+		{
+			Error:         "this is error",
+			Message:       "",
+			Details:       "details",
+			ExpectedError: "this is error; details",
+		},
+		{
+			Error:         "this is error",
+			Message:       "this is message",
+			Details:       "",
+			ExpectedError: "this is message",
+		},
+		{
+			Error:         "",
+			Message:       "message",
+			Details:       "details",
+			ExpectedError: "message; details",
+		},
 	}
 
 	for _, test := range tests {
