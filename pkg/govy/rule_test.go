@@ -11,17 +11,31 @@ import (
 )
 
 func TestRule(t *testing.T) {
-	r := govy.NewRule(func(v int) error {
-		if v < 0 {
-			return errors.New("must be positive")
-		}
-		return nil
-	})
+	t.Run("simple", func(t *testing.T) {
+		r := govy.NewRule(func(v int) error {
+			if v < 0 {
+				return errors.New("must be positive")
+			}
+			return nil
+		})
 
-	err := r.Validate(0)
-	assert.NoError(t, err)
-	err = r.Validate(-1)
-	assert.EqualError(t, err, "must be positive")
+		err := r.Validate(0)
+		assert.NoError(t, err)
+		err = r.Validate(-1)
+		assert.EqualError(t, err, "must be positive")
+	})
+	t.Run("full", func(t *testing.T) {
+		r := govy.NewRule(func(v string) error {
+			return errors.New("error")
+		}).
+			WithMessage("my message %s", "foo").
+			WithDetails("some details %d", 1).
+			WithExamples("foo", "bar")
+
+		err := r.Validate("baz")
+		assert.Require(t, assert.Error(t, err))
+		assert.Equal(t, "my message foo (e.g. 'foo', 'bar'); some details 1", err.Error())
+	})
 }
 
 func TestRule_WithErrorCode(t *testing.T) {
@@ -43,26 +57,29 @@ func TestRule_WithMessage(t *testing.T) {
 	tests := []struct {
 		Error         string
 		Message       string
-		Details       string
+		MessageArgs   []any
 		ExpectedError string
 	}{
 		{
 			Error:         "this is error",
 			Message:       "",
-			Details:       "details",
-			ExpectedError: "this is error; details",
+			ExpectedError: "this is error",
 		},
 		{
 			Error:         "this is error",
 			Message:       "this is message",
-			Details:       "",
 			ExpectedError: "this is message",
 		},
 		{
 			Error:         "",
 			Message:       "message",
-			Details:       "details",
-			ExpectedError: "message; details",
+			ExpectedError: "message",
+		},
+		{
+			Error:         "",
+			Message:       "message %s %d",
+			MessageArgs:   []any{"foo", 1},
+			ExpectedError: "message foo 1",
 		},
 	}
 
@@ -74,8 +91,7 @@ func TestRule_WithMessage(t *testing.T) {
 			return nil
 		}).
 			WithErrorCode("test").
-			WithMessage(test.Message).
-			WithDetails(test.Details)
+			WithMessage(test.Message, test.MessageArgs...)
 
 		err := r.Validate(0)
 		assert.NoError(t, err)
@@ -86,9 +102,10 @@ func TestRule_WithMessage(t *testing.T) {
 }
 
 func TestRule_WithDetails(t *testing.T) {
-	for _, test := range []struct {
+	tests := []struct {
 		Error         string
 		Details       string
+		DetailsArgs   []any
 		ExpectedError string
 	}{
 		{
@@ -106,7 +123,15 @@ func TestRule_WithDetails(t *testing.T) {
 			Details:       "details",
 			ExpectedError: "details",
 		},
-	} {
+		{
+			Error:         "",
+			Details:       "details %s %d",
+			DetailsArgs:   []any{"foo", 1},
+			ExpectedError: "details foo 1",
+		},
+	}
+
+	for _, test := range tests {
 		r := govy.NewRule(func(v int) error {
 			if v < 0 {
 				return errors.New(test.Error)
@@ -114,7 +139,7 @@ func TestRule_WithDetails(t *testing.T) {
 			return nil
 		}).
 			WithErrorCode("test").
-			WithDetails(test.Details)
+			WithDetails(test.Details, test.DetailsArgs...)
 
 		err := r.Validate(0)
 		assert.NoError(t, err)
