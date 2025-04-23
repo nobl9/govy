@@ -7,8 +7,8 @@
     "gofumpt@0.7",
     "golangci-lint@1.64",
     "gosec@latest",
-    "go@1.22",
-    "gotools@0.25"
+    "go@1.24",
+    "gotools@0.30"
   ],
   "shell": {
     "init_hook": [

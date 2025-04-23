@@ -3,12 +3,10 @@ package govytest
 import (
 	"cmp"
 	"encoding/json"
-	"fmt"
+	"maps"
 	"slices"
 	"strconv"
 	"strings"
-
-	"golang.org/x/exp/maps"
 
 	"github.com/nobl9/govy/pkg/govy"
 	"github.com/nobl9/govy/pkg/rules"
@@ -61,14 +59,14 @@ var expectedRuleErrorValidationForValidatorErrors = govy.New(
 			"validatorName":  func(e ExpectedRuleError) any { return e.ValidatorName },
 			"validatorIndex": func(e ExpectedRuleError) any { return e.ValidatorIndex },
 		}).
-			WithDetails(fmt.Sprintf(
+			WithDetails(
 				"The actual error was of type %T."+
 					"\n  In order to match expected error with an actual error"+
 					" produced by a specific govy.Validator instance,"+
 					"\n  either the name of the validator, its index (when using ValidateSlice method) or both must be provided."+
 					"\n  Otherwise the tests might produce ambiguous results.",
 				govy.ValidatorErrors{},
-			))),
+			)),
 	govy.ForPointer(func(e ExpectedRuleError) *int { return e.ValidatorIndex }).
 		Rules(rules.GTE(0)),
 ).InferName()
@@ -285,8 +283,10 @@ func assertValidatorErrors(
 	}
 
 	passed := true
-	keys := maps.Keys(expectedErrorsPerValidator)
-	slices.SortFunc(keys, func(a, b validatorKey) int { return a.Compare(b) })
+	keys := slices.SortedFunc(
+		maps.Keys(expectedErrorsPerValidator),
+		func(a, b validatorKey) int { return a.Compare(b) },
+	)
 	for _, k := range keys {
 		ok := assertError(t, countErrors, validators[k], expectedErrorsPerValidator[k]...)
 		if !ok {
