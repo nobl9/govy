@@ -2,6 +2,7 @@ package govy_test
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/nobl9/govy/internal/assert"
@@ -129,13 +130,14 @@ func TestPropertyRulesForMap(t *testing.T) {
 
 		errs := mustPropertyErrors(t, r.Validate(mockStruct{StringMap: map[string]string{
 			"key1": "value1",
-			"key2": "value2",
+			"key 2": "value2",
 		}}))
 		assert.Require(t, assert.Len(t, errs, 12))
+    fmt.Println(errs)
 		assert.ElementsMatch(t, []*govy.PropertyError{
 			{
 				PropertyName:  "test.path",
-				PropertyValue: `{"key1":"value1","key2":"value2"}`,
+				PropertyValue: `{"key 2":"value2","key1":"value1"}`,
 				Errors:        []*govy.RuleError{{Message: errRule.Error()}},
 			},
 			{
@@ -145,8 +147,8 @@ func TestPropertyRulesForMap(t *testing.T) {
 				Errors:        []*govy.RuleError{{Message: errKey.Error()}},
 			},
 			{
-				PropertyName:  "test.path.key2",
-				PropertyValue: "key2",
+				PropertyName:  "test.path.['key 2']",
+				PropertyValue: "key 2",
 				IsKeyError:    true,
 				Errors:        []*govy.RuleError{{Message: errKey.Error()}},
 			},
@@ -157,7 +159,7 @@ func TestPropertyRulesForMap(t *testing.T) {
 				Errors:        []*govy.RuleError{{Message: errNestedKey.Error()}},
 			},
 			{
-				PropertyName:  "test.path.key2.nested",
+				PropertyName:  "test.path.['key 2'].nested",
 				PropertyValue: "nestedKey",
 				IsKeyError:    true,
 				Errors:        []*govy.RuleError{{Message: errNestedKey.Error()}},
@@ -171,7 +173,7 @@ func TestPropertyRulesForMap(t *testing.T) {
 				},
 			},
 			{
-				PropertyName:  "test.path.key2",
+				PropertyName:  "test.path.['key 2']",
 				PropertyValue: "value2",
 				Errors: []*govy.RuleError{
 					{Message: errValue.Error()},
@@ -184,7 +186,7 @@ func TestPropertyRulesForMap(t *testing.T) {
 				Errors:        []*govy.RuleError{{Message: errNestedValue.Error()}},
 			},
 			{
-				PropertyName:  "test.path.key2.nested",
+				PropertyName:  "test.path.['key 2'].nested",
 				PropertyValue: "nestedValue",
 				Errors:        []*govy.RuleError{{Message: errNestedValue.Error()}},
 			},
@@ -194,7 +196,7 @@ func TestPropertyRulesForMap(t *testing.T) {
 				Errors:        []*govy.RuleError{{Message: errNestedItem.Error()}},
 			},
 			{
-				PropertyName:  "test.path.key2.nested",
+				PropertyName:  "test.path.['key 2'].nested",
 				PropertyValue: "value2",
 				Errors:        []*govy.RuleError{{Message: errNestedItem.Error()}},
 			},

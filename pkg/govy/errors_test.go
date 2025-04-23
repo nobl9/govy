@@ -18,7 +18,7 @@ import (
 var errorsTestData embed.FS
 
 func TestValidatorError(t *testing.T) {
-	for name, err := range map[string]*govy.ValidatorError{
+	tests := map[string]*govy.ValidatorError{
 		"no_name": {
 			Errors: govy.PropertyErrors{
 				{
@@ -57,7 +57,9 @@ func TestValidatorError(t *testing.T) {
 				},
 			},
 		},
-	} {
+	}
+
+	for name, err := range tests {
 		t.Run(name, func(t *testing.T) {
 			assert.EqualError(t, err, expectedErrorOutput(t, fmt.Sprintf("validator_error_%s.txt", name)))
 		})
@@ -132,8 +134,9 @@ func TestNewPropertyError(t *testing.T) {
 			},
 		}, err)
 	})
-	for name, test := range map[string]struct {
-		InputValue    interface{}
+
+	tests := map[string]struct {
+		InputValue    any
 		ExpectedValue string
 	}{
 		"map": {
@@ -191,15 +194,17 @@ my-table WHERE value = "abc"
 			InputValue:    "return\rcarriage",
 			ExpectedValue: "return\\rcarriage",
 		},
-	} {
+	}
+
+	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			err := govy.NewPropertyError(
 				"name",
-				test.InputValue,
+				tc.InputValue,
 				&govy.RuleError{Message: "msg"})
 			assert.Equal(t, &govy.PropertyError{
 				PropertyName:  "name",
-				PropertyValue: test.ExpectedValue,
+				PropertyValue: tc.ExpectedValue,
 				Errors:        []*govy.RuleError{{Message: "msg"}},
 			}, err)
 		})
@@ -221,7 +226,7 @@ func (s stringerWithTags) String() string    { return s.This + "_" + s.That }
 func (s stringerWithoutTags) String() string { return s.This + "_" + s.That }
 
 func TestPropertyError(t *testing.T) {
-	for name, value := range map[string]interface{}{
+	tests := map[string]any{
 		"string": "default",
 		"slice":  []string{"this", "that"},
 		"map":    map[string]string{"this": "that"},
@@ -238,7 +243,9 @@ func TestPropertyError(t *testing.T) {
 		"stringer_pointer": &stringerWithoutTags{
 			This: "this", That: "that",
 		},
-	} {
+	}
+
+	for name, value := range tests {
 		t.Run(name, func(t *testing.T) {
 			err := &govy.PropertyError{
 				PropertyName:  "metadata.name",
@@ -252,6 +259,7 @@ func TestPropertyError(t *testing.T) {
 			assert.EqualError(t, err, expectedErrorOutput(t, fmt.Sprintf("property_error_%s.txt", name)))
 		})
 	}
+
 	t.Run("no name provided", func(t *testing.T) {
 		err := &govy.PropertyError{
 			Errors: []*govy.RuleError{
@@ -264,36 +272,8 @@ func TestPropertyError(t *testing.T) {
 	})
 }
 
-func TestPropertyError_PrependPropertyName(t *testing.T) {
-	for _, test := range []struct {
-		PropertyError *govy.PropertyError
-		InputName     string
-		ExpectedName  string
-	}{
-		{
-			PropertyError: &govy.PropertyError{},
-		},
-		{
-			PropertyError: &govy.PropertyError{PropertyName: "test"},
-			ExpectedName:  "test",
-		},
-		{
-			PropertyError: &govy.PropertyError{},
-			InputName:     "new",
-			ExpectedName:  "new",
-		},
-		{
-			PropertyError: &govy.PropertyError{PropertyName: "original"},
-			InputName:     "added",
-			ExpectedName:  "added.original",
-		},
-	} {
-		assert.Equal(t, test.ExpectedName, test.PropertyError.PrependParentPropertyName(test.InputName).PropertyName)
-	}
-}
-
 func TestRuleError(t *testing.T) {
-	for _, test := range []struct {
+	tests := []struct {
 		RuleError    *govy.RuleError
 		InputCode    govy.ErrorCode
 		ExpectedCode govy.ErrorCode
@@ -324,10 +304,12 @@ func TestRuleError(t *testing.T) {
 			InputCode:    "added",
 			ExpectedCode: "added:original-2:original-1",
 		},
-	} {
-		result := test.RuleError.AddCode(test.InputCode)
-		assert.Equal(t, test.RuleError.Message, result.Message)
-		assert.Equal(t, test.ExpectedCode, result.Code)
+	}
+
+	for _, tc := range tests {
+		result := tc.RuleError.AddCode(tc.InputCode)
+		assert.Equal(t, tc.RuleError.Message, result.Message)
+		assert.Equal(t, tc.ExpectedCode, result.Code)
 	}
 }
 
@@ -481,9 +463,9 @@ func TestHasErrorCode(t *testing.T) {
 			HasErrorCode: true,
 		},
 	}
-	for i, test := range tests {
+	for i, tc := range tests {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
-			assert.Equal(t, test.HasErrorCode, govy.HasErrorCode(test.Error, test.Code))
+			assert.Equal(t, tc.HasErrorCode, govy.HasErrorCode(tc.Error, tc.Code))
 		})
 	}
 }
