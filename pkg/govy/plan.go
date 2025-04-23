@@ -1,10 +1,10 @@
 package govy
 
 import (
-	"sort"
+	"cmp"
+	"maps"
+	"slices"
 	"strings"
-
-	"golang.org/x/exp/maps"
 )
 
 // ValidatorPlan is a validation plan for a single [Validator].
@@ -82,8 +82,10 @@ func Plan[S any](v Validator[S]) *ValidatorPlan {
 			propertiesMap[p.path] = entry
 		}
 	}
-	properties := maps.Values(propertiesMap)
-	sort.Slice(properties, func(i, j int) bool { return properties[i].Path < properties[j].Path })
+	properties := slices.SortedFunc(
+		maps.Values(propertiesMap),
+		func(a, b PropertyPlan) int { return cmp.Compare(a.Path, b.Path) },
+	)
 	return &ValidatorPlan{
 		Name:       v.name,
 		Properties: properties,

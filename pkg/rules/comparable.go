@@ -1,11 +1,10 @@
 package rules
 
 import (
+	"cmp"
 	"fmt"
 	"reflect"
 	"strings"
-
-	"golang.org/x/exp/constraints"
 
 	"github.com/nobl9/govy/internal/collections"
 	"github.com/nobl9/govy/internal/messagetemplates"
@@ -53,7 +52,7 @@ func NEQ[T comparable](compared T) govy.Rule[T] {
 }
 
 // GT ensures the property's value is greater than the compared value.
-func GT[T constraints.Ordered](compared T) govy.Rule[T] {
+func GT[T cmp.Ordered](compared T) govy.Rule[T] {
 	tpl := messagetemplates.Get(messagetemplates.GTTemplate)
 
 	return govy.NewRule(func(v T) error {
@@ -73,7 +72,7 @@ func GT[T constraints.Ordered](compared T) govy.Rule[T] {
 }
 
 // GTE ensures the property's value is greater than or equal to the compared value.
-func GTE[T constraints.Ordered](compared T) govy.Rule[T] {
+func GTE[T cmp.Ordered](compared T) govy.Rule[T] {
 	tpl := messagetemplates.Get(messagetemplates.GTETemplate)
 
 	return govy.NewRule(func(v T) error {
@@ -93,7 +92,7 @@ func GTE[T constraints.Ordered](compared T) govy.Rule[T] {
 }
 
 // LT ensures the property's value is less than the compared value.
-func LT[T constraints.Ordered](compared T) govy.Rule[T] {
+func LT[T cmp.Ordered](compared T) govy.Rule[T] {
 	tpl := messagetemplates.Get(messagetemplates.LTTemplate)
 
 	return govy.NewRule(func(v T) error {
@@ -113,7 +112,7 @@ func LT[T constraints.Ordered](compared T) govy.Rule[T] {
 }
 
 // LTE ensures the property's value is less than or equal to the compared value.
-func LTE[T constraints.Ordered](compared T) govy.Rule[T] {
+func LTE[T cmp.Ordered](compared T) govy.Rule[T] {
 	tpl := messagetemplates.Get(messagetemplates.LTETemplate)
 
 	return govy.NewRule(func(v T) error {

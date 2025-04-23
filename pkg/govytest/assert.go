@@ -4,11 +4,10 @@ import (
 	"cmp"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"slices"
 	"strconv"
 	"strings"
-
-	"golang.org/x/exp/maps"
 
 	"github.com/nobl9/govy/pkg/govy"
 	"github.com/nobl9/govy/pkg/rules"
@@ -285,8 +284,10 @@ func assertValidatorErrors(
 	}
 
 	passed := true
-	keys := maps.Keys(expectedErrorsPerValidator)
-	slices.SortFunc(keys, func(a, b validatorKey) int { return a.Compare(b) })
+	keys := slices.SortedFunc(
+		maps.Keys(expectedErrorsPerValidator),
+		func(a, b validatorKey) int { return a.Compare(b) },
+	)
 	for _, k := range keys {
 		ok := assertError(t, countErrors, validators[k], expectedErrorsPerValidator[k]...)
 		if !ok {
