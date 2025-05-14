@@ -135,11 +135,34 @@ func TestPlan(t *testing.T) {
 
 	plan := govy.Plan(validator)
 
+	actual := requireJSON(t, plan)
+	assert.Equal(t, expectedPlanJSON, actual)
+}
+
+//go:embed test_data/expected_values_intersection.json
+var expectedValuesIntersection string
+
+func TestPlan_validValuesIntersection(t *testing.T) {
+	validator := govy.New(
+		govy.For(func(p PodMetadata) string { return p.Name }).
+			Rules(rules.OneOf("foo", "bar")),
+		govy.For(func(p PodMetadata) string { return p.Name }).
+			Rules(rules.EQ("foo")),
+		govy.For(func(p PodMetadata) string { return p.Name }).
+			Rules(rules.OneOf("bar", "baz", "foo")),
+	)
+
+	plan := govy.Plan(validator)
+
+	actual := requireJSON(t, plan)
+	assert.Equal(t, expectedValuesIntersection, actual)
+}
+
+func requireJSON(t *testing.T, plan *govy.ValidatorPlan) string {
 	buf := bytes.Buffer{}
 	enc := json.NewEncoder(&buf)
 	enc.SetIndent("", "  ")
 	err := enc.Encode(plan)
 	assert.Require(t, assert.NoError(t, err))
-
-	assert.Equal(t, expectedPlanJSON, buf.String())
+	return buf.String()
 }

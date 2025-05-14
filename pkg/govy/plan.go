@@ -121,12 +121,12 @@ func aggregatePropertyPlans(builders []planBuilder) []*PropertyPlan {
 }
 
 func (p *PropertyPlan) collectValidValuesFromRules() {
-	validValuesSlices := make([]string, 0)
+	validValuesSlices := make([][]string, 0)
 	for _, rule := range p.Rules {
-		validValuesSlices = append(validValuesSlices, rule.values...)
+		validValuesSlices = append(validValuesSlices, rule.values)
 	}
 	// TODO: If there are indeed conflicting elements, we might want to drop an error?
-	p.Values = collections.Intersection(validValuesSlices)
+	p.Values = collections.Intersection(validValuesSlices...)
 }
 
 // planner is an interface for types that can create a [PropertyPlan] or [RulePlan].
