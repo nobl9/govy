@@ -7,6 +7,10 @@
         "name": "string",
         "kind": "string"
       },
+      "values": [
+        "v1",
+        "v2"
+      ],
       "rules": [
         {
           "description": "must be one of: v1, v2",
@@ -20,6 +24,9 @@
         "name": "string",
         "kind": "string"
       },
+      "values": [
+        "Pod"
+      ],
       "rules": [
         {
           "description": "should be equal to 'Pod'",
@@ -209,6 +216,10 @@
         "name": "string",
         "kind": "string"
       },
+      "values": [
+        "ClusterFirst",
+        "Default"
+      ],
       "rules": [
         {
           "description": "must be one of: ClusterFirst, Default",

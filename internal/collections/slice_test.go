@@ -92,7 +92,7 @@ func TestIntersection(t *testing.T) {
 			expected: []string{"a", "b", "c"},
 		},
 	} {
-		acutal := Intersection(tc.in...)
-		assert.Equal(t, tc.expected, acutal)
+		actual := Intersection(tc.in...)
+		assert.Equal(t, tc.expected, actual)
 	}
 }
