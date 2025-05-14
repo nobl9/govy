@@ -1,12 +1,12 @@
 package govy
 
 import (
-	"reflect"
-	"sort"
+	"cmp"
+	"maps"
+	"slices"
 	"strings"
 
 	"github.com/nobl9/govy/internal/collections"
-	"golang.org/x/exp/maps"
 )
 
 // ValidatorPlan is a validation plan for a single [Validator].
@@ -14,17 +14,15 @@ type ValidatorPlan struct {
 	// Name is the value provided to [Validator.WithName].
 	Name string `json:"name,omitempty"`
 	// Properties which this [Validator] defines.
-	Properties []PropertyPlan `json:"properties"`
+	Properties []*PropertyPlan `json:"properties"`
 }
 
 // PropertyPlan is a validation plan for a single [PropertyRules].
 type PropertyPlan struct {
 	// Path is a JSON path to the property.
 	Path string `json:"path"`
-	// Type is a Go type name of the property.
-	Type string `json:"type"`
-	// Package is the full package path of the Type.
-	Package string `json:"package,omitempty"`
+	// TypeInfo contains the type information of the property.
+	TypeInfo TypeInfo `json:"typeInfo"`
 	// IsOptional indicates if the property was marked with [PropertyRules.OmitEmpty].
 	IsOptional bool `json:"isOptional,omitempty"`
 	// IsHidden indicates if the property was marked with [PropertyRules.HideValue].
@@ -38,6 +36,20 @@ type PropertyPlan struct {
 	Values []string `json:"values,omitempty"`
 	// Rules which apply to this property.
 	Rules []RulePlan `json:"rules,omitempty"`
+}
+
+// TypeInfo contains the type information of a property.
+type TypeInfo struct {
+	// Name is a Go type name.
+	// Example: "Pod", "string", "int", "bool", etc.
+	Name string `json:"name"`
+	// Kind is a Go type kind.
+	// Example: "string", "int", "bool", "struct", "slice", etc.
+	Kind string `json:"kind"`
+	// Package is the full package path of the type.
+	// It's empty for builtin types.
+	// Example: "github.com/nobl9/govy/pkg/govy", "time", etc.
+	Package string `json:"package,omitempty"`
 }
 
 // RulePlan is a validation plan for a single [Rule].
@@ -68,46 +80,53 @@ func (r RulePlan) isEmpty() bool {
 // Each property is represented by a [PropertyPlan] which aggregates its every [RulePlan].
 // If a property does not have any rules, it won't be included in the result.
 func Plan[S any](v Validator[S]) *ValidatorPlan {
-	all := make([]planBuilder, 0)
-	v.plan(planBuilder{path: "$", children: &all})
-	propertiesMap := make(map[string]PropertyPlan)
-	for _, p := range all {
-		entry, ok := propertiesMap[p.path]
-		if ok {
-			entry.Rules = append(entry.Rules, p.rulePlan)
-			propertiesMap[p.path] = entry
-		} else {
-			entry = PropertyPlan{
-				Path:       p.path,
-				Type:       p.propertyPlan.Type,
-				Package:    p.propertyPlan.Package,
-				Examples:   p.propertyPlan.Examples,
-				IsOptional: p.propertyPlan.IsOptional,
-				IsHidden:   p.propertyPlan.IsHidden,
-			}
-			if !p.rulePlan.isEmpty() {
-				entry.Rules = append(entry.Rules, p.rulePlan)
-			}
-			propertiesMap[p.path] = entry
-		}
+	builders := make([]planBuilder, 0)
+	v.plan(planBuilder{path: "$", children: &builders})
+	properties := aggregatePropertyPlans(builders)
+	// Post-processing after the properties have been aggregated.
+	for _, prop := range properties {
+		prop.collectValidValuesFromRules()
 	}
-	properties := maps.Values(propertiesMap)
-	sort.Slice(properties, func(i, j int) bool { return properties[i].Path < properties[j].Path })
-
-	for i, prop := range properties {
-		validValuesSlices := make([]string, 0)
-		for _, rule := range prop.Rules {
-			validValuesSlices = append(validValuesSlices, rule.values...)
-		}
-		// TODO: If there are indeed conflicting elements, we might want to drop an error!
-		prop.Values = collections.Intersection(validValuesSlices)
-		properties[i] = prop
-	}
-
 	return &ValidatorPlan{
 		Name:       v.name,
 		Properties: properties,
 	}
+}
+
+func aggregatePropertyPlans(builders []planBuilder) []*PropertyPlan {
+	propertiesMap := make(map[string]*PropertyPlan)
+	for _, b := range builders {
+		entry, ok := propertiesMap[b.path]
+		if ok {
+			entry.Rules = append(entry.Rules, b.rulePlan)
+			propertiesMap[b.path] = entry
+		} else {
+			entry = &PropertyPlan{
+				Path:       b.path,
+				TypeInfo:   b.propertyPlan.TypeInfo,
+				Examples:   b.propertyPlan.Examples,
+				IsOptional: b.propertyPlan.IsOptional,
+				IsHidden:   b.propertyPlan.IsHidden,
+			}
+			if !b.rulePlan.isEmpty() {
+				entry.Rules = append(entry.Rules, b.rulePlan)
+			}
+			propertiesMap[b.path] = entry
+		}
+	}
+	return slices.SortedFunc(
+		maps.Values(propertiesMap),
+		func(a, b *PropertyPlan) int { return cmp.Compare(a.Path, b.Path) },
+	)
+}
+
+func (p *PropertyPlan) collectValidValuesFromRules() {
+	validValuesSlices := make([]string, 0)
+	for _, rule := range p.Rules {
+		validValuesSlices = append(validValuesSlices, rule.values...)
+	}
+	// TODO: If there are indeed conflicting elements, we might want to drop an error?
+	p.Values = collections.Intersection(validValuesSlices)
 }
 
 // planner is an interface for types that can create a [PropertyPlan] or [RulePlan].
@@ -149,36 +168,4 @@ func (p planBuilder) appendPath(path string) planBuilder {
 func (p planBuilder) setExamples(examples ...string) planBuilder {
 	p.propertyPlan.Examples = examples
 	return p
-}
-
-// typeInfo stores the type name and its package if it's available.
-type typeInfo struct {
-	Name    string
-	Package string
-}
-
-// getTypeInfo returns the information for the type T.
-// It returns the type name without package path or name.
-// It strips the pointer '*' from the type name.
-// Package is only available if the type is not a built-in type.
-func getTypeInfo[T any]() typeInfo {
-	typ := reflect.TypeOf(*new(T))
-	if typ == nil {
-		return typeInfo{}
-	}
-	var result typeInfo
-	if typ.Kind() == reflect.Ptr {
-		typ = typ.Elem()
-	}
-	if typ.Kind() == reflect.Slice {
-		typ = typ.Elem()
-		result.Name = "[]"
-	}
-	if typ.PkgPath() == "" {
-		result.Name += typ.String()
-	} else {
-		result.Name += typ.Name()
-		result.Package = typ.PkgPath()
-	}
-	return result
 }

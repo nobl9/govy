@@ -15,38 +15,37 @@ func RuleSetToPointer[T any](ruleSet RuleSet[T]) RuleSet[*T] {
 		rules = append(rules, RuleToPointer(rule))
 	}
 	return RuleSet[*T]{
-		rules:     rules,
-		errorCode: ruleSet.errorCode,
+		rules: rules,
 	}
 }
 
 // RuleSet allows defining a [Rule] which aggregates multiple sub-rules.
 type RuleSet[T any] struct {
-	rules     []Rule[T]
-	errorCode ErrorCode
+	rules []Rule[T]
+	mode  CascadeMode
 }
 
 // Validate works the same way as [Rule.Validate],
 // except each aggregated rule is validated individually.
-// The errors are aggregated and returned as a single error which serves as a container for them.
+// The errors are aggregated and returned as a single [RuleSetError]
+// which serves as a container for them.
 func (r RuleSet[T]) Validate(v T) error {
 	var errs RuleSetError
 	for i := range r.rules {
-		if err := r.rules[i].Validate(v); err != nil {
-			switch ev := err.(type) {
-			case *RuleError:
-				errs = append(errs, ev.AddCode(r.errorCode))
-			case *PropertyError:
-				for _, e := range ev.Errors {
-					_ = e.AddCode(r.errorCode)
-				}
-				errs = append(errs, ev)
-			default:
-				errs = append(errs, &RuleError{
-					Message: ev.Error(),
-					Code:    r.errorCode,
-				})
-			}
+		err := r.rules[i].Validate(v)
+		if err == nil {
+			continue
+		}
+		switch ev := err.(type) {
+		case *RuleError, *PropertyError:
+			errs = append(errs, ev)
+		default:
+			errs = append(errs, &RuleError{
+				Message: ev.Error(),
+			})
+		}
+		if r.mode == CascadeModeStop {
+			break
 		}
 	}
 	if len(errs) > 0 {
@@ -57,7 +56,16 @@ func (r RuleSet[T]) Validate(v T) error {
 
 // WithErrorCode sets the error code for each returned [RuleError].
 func (r RuleSet[T]) WithErrorCode(code ErrorCode) RuleSet[T] {
-	r.errorCode = code
+	for i := range r.rules {
+		r.rules[i].errorCode = r.rules[i].errorCode.Add(code)
+	}
+	return r
+}
+
+// Cascade sets the [CascadeMode] for the rule set,
+// which controls the flow of evaluating the validation rules.
+func (r RuleSet[T]) Cascade(mode CascadeMode) RuleSet[T] {
+	r.mode = mode
 	return r
 }
 

@@ -144,11 +144,7 @@ func (r Rule[T]) WithMessageTemplateString(tplStr string) Rule[T] {
 
 // WithDetails adds details to the returned [RuleError] error message.
 func (r Rule[T]) WithDetails(format string, a ...any) Rule[T] {
-	if len(a) == 0 {
-		r.details = format
-	} else {
-		r.details = fmt.Sprintf(format, a...)
-	}
+	r.details = fmt.Sprintf(format, a...)
 	return r
 }
 

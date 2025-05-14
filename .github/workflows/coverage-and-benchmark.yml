@@ -17,6 +17,7 @@ jobs:
         uses: jetpack-io/devbox-install-action@v0.12.0
         with:
           enable-cache: true
+          devbox-version: ${{ vars.DEVBOX_VERSION }}
       - name: Update coverage report
         uses: ncruces/go-coverage-report@v0
         with:
@@ -37,5 +38,4 @@ jobs:
           fail-on-alert: false
           auto-push: true
           gh-pages-branch: gh-pages
-          skip-fetch-gh-pages: false
           github-token: ${{ secrets.GO_BENCHMARK_TOKEN }}

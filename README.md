@@ -16,8 +16,9 @@ It also allows writing self-documenting validation rules through a
 
 **DISCLAIMER**: govy is in active development, while the core API is unlikely
 to change, breaking changes may be introduced with new versions until v1
-is released. Checkout [roadmap](./docs/ROADMAP.md) for upcoming,
-planned features.
+is released.
+Checkout [roadmap](https://github.com/orgs/nobl9/projects/5/views/2?pane=info)
+for upcoming, planned features.
 
 ## Legend
 
@@ -558,7 +559,10 @@ func Example_validationPlan() {
 	//   "properties": [
 	//     {
 	//       "path": "$.middleName",
-	//       "type": "string",
+	//       "typeInfo": {
+	//         "name": "string",
+	//         "kind": "string"
+	//       },
 	//       "isOptional": true,
 	//       "rules": [
 	//         {
@@ -569,7 +573,10 @@ func Example_validationPlan() {
 	//     },
 	//     {
 	//       "path": "$.name",
-	//       "type": "string",
+	//       "typeInfo": {
+	//         "name": "string",
+	//         "kind": "string"
+	//       },
 	//       "rules": [
 	//         {
 	//           "description": "string cannot be empty",
@@ -583,8 +590,11 @@ func Example_validationPlan() {
 	//     },
 	//     {
 	//       "path": "$.students",
-	//       "type": "[]Student",
-	//       "package": "github.com/nobl9/govy/internal/examples",
+	//       "typeInfo": {
+	//         "name": "[]Student",
+	//         "kind": "[]struct",
+	//         "package": "github.com/nobl9/govy/internal/examples"
+	//       },
 	//       "rules": [
 	//         {
 	//           "description": "length must be less than or equal to 2",
@@ -598,7 +608,10 @@ func Example_validationPlan() {
 	//     },
 	//     {
 	//       "path": "$.students[*].index",
-	//       "type": "string",
+	//       "typeInfo": {
+	//         "name": "string",
+	//         "kind": "string"
+	//       },
 	//       "rules": [
 	//         {
 	//           "description": "length must be between 9 and 9",
@@ -608,7 +621,10 @@ func Example_validationPlan() {
 	//     },
 	//     {
 	//       "path": "$.university.address",
-	//       "type": "string",
+	//       "typeInfo": {
+	//         "name": "string",
+	//         "kind": "string"
+	//       },
 	//       "rules": [
 	//         {
 	//           "description": "string must match regular expression: '[\\w\\s.]+, [0-9]{2}-[0-9]{3} \\w+'",
@@ -626,7 +642,10 @@ func Example_validationPlan() {
 	//     },
 	//     {
 	//       "path": "$.university.name",
-	//       "type": "string",
+	//       "typeInfo": {
+	//         "name": "string",
+	//         "kind": "string"
+	//       },
 	//       "rules": [
 	//         {
 	//           "description": "",

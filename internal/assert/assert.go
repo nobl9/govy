@@ -7,7 +7,7 @@ import (
 )
 
 // Fail fails the test with the provided message.
-func Fail(t testing.TB, msg string, a ...interface{}) bool {
+func Fail(t testing.TB, msg string, a ...any) bool {
 	t.Helper()
 	t.Errorf(msg, a...)
 	return false
@@ -26,7 +26,7 @@ func Require(t testing.TB, isPassing bool) {
 }
 
 // Equal fails the test if the expected and actual values are not equal.
-func Equal(t testing.TB, expected, actual interface{}) bool {
+func Equal(t testing.TB, expected, actual any) bool {
 	t.Helper()
 	if !areEqual(expected, actual) {
 		return Fail(t, "Expected: %v\nActual: %v", expected, actual)
@@ -53,7 +53,7 @@ func False(t testing.TB, actual bool) bool {
 }
 
 // Len fails the test if the object is not of the expected length.
-func Len(t testing.TB, object interface{}, length int) bool {
+func Len(t testing.TB, object any, length int) bool {
 	t.Helper()
 	if actual := getLen(object); actual != length {
 		return Fail(t, "Expected length: %d\nActual: %d", length, actual)
@@ -63,7 +63,7 @@ func Len(t testing.TB, object interface{}, length int) bool {
 
 // IsType fails the test if the object is not of the expected type.
 // The expected type is specified using a type parameter.
-func IsType[T any](t testing.TB, object interface{}) bool {
+func IsType[T any](t testing.TB, object any) bool {
 	t.Helper()
 	switch object.(type) {
 	case T:
@@ -164,7 +164,7 @@ func Panic(t testing.TB, f func(), expected string) (result bool) {
 	return false
 }
 
-func areEqual(expected, actual interface{}) bool {
+func areEqual(expected, actual any) bool {
 	if expected == nil || actual == nil {
 		return expected == actual
 	}
@@ -174,7 +174,7 @@ func areEqual(expected, actual interface{}) bool {
 	return true
 }
 
-func getLen(v interface{}) int {
+func getLen(v any) int {
 	rv := reflect.ValueOf(v)
 	switch rv.Kind() {
 	case reflect.Slice, reflect.Map, reflect.String:

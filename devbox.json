@@ -3,12 +3,12 @@
   "packages": [
     "yarn@1.22",
     "golines@0.12",
-    "govulncheck@latest",
-    "gofumpt@0.7",
-    "golangci-lint@1.61",
+    "govulncheck@1.1.4",
+    "gofumpt@0.8.0",
+    "golangci-lint@1.64.8",
     "gosec@latest",
-    "go@1.22",
-    "gotools@0.25"
+    "go@1.24.2",
+    "gotools@0.30"
   ],
   "shell": {
     "init_hook": [

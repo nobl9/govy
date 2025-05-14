@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/nobl9/govy/internal"
+	"github.com/nobl9/govy/internal/jsonpath"
 )
 
 // ForMap creates a new [PropertyRulesForMap] instance for a map property
@@ -60,7 +61,7 @@ func (r PropertyRulesForMap[M, K, V, S]) Validate(st S) error {
 			if keyErrors, ok := err.(PropertyErrors); ok {
 				for _, e := range keyErrors {
 					e.IsKeyError = true
-					propErrs = append(propErrs, e.PrependParentPropertyName(MapElementName(r.mapRules.name, k)))
+					propErrs = append(propErrs, e.prependParentPropertyName(r.getJSONPathForKey(k)))
 				}
 			} else {
 				logWrongErrorType(PropertyErrors{}, err)
@@ -69,7 +70,7 @@ func (r PropertyRulesForMap[M, K, V, S]) Validate(st S) error {
 		if err = r.forValueRules.Validate(v); err != nil {
 			if valueErrors, ok := err.(PropertyErrors); ok {
 				for _, e := range valueErrors {
-					propErrs = append(propErrs, e.PrependParentPropertyName(MapElementName(r.mapRules.name, k)))
+					propErrs = append(propErrs, e.prependParentPropertyName(r.getJSONPathForKey(k)))
 				}
 			} else {
 				logWrongErrorType(PropertyErrors{}, err)
@@ -81,7 +82,7 @@ func (r PropertyRulesForMap[M, K, V, S]) Validate(st S) error {
 					// TODO: Figure out how to handle custom PropertyErrors.
 					// Custom errors' value for nested item will be overridden by the actual value.
 					e.PropertyValue = internal.PropertyValueString(v)
-					propErrs = append(propErrs, e.PrependParentPropertyName(MapElementName(r.mapRules.name, k)))
+					propErrs = append(propErrs, e.prependParentPropertyName(r.getJSONPathForKey(k)))
 				}
 			} else {
 				logWrongErrorType(PropertyErrors{}, err)
@@ -195,21 +196,18 @@ func (r PropertyRulesForMap[M, K, V, S]) plan(builder planBuilder) {
 	r.mapRules.plan(builder.setExamples(r.mapRules.examples...))
 	builder = builder.appendPath(r.mapRules.name)
 	// JSON/YAML path for keys uses '~' to extract the keys.
-	if len(r.forKeyRules.steps) > 0 {
+	if len(r.forKeyRules.rules) > 0 {
 		r.forKeyRules.plan(builder.appendPath("~"))
 	}
-	if len(r.forValueRules.steps) > 0 {
+	if len(r.forValueRules.rules) > 0 {
 		r.forValueRules.plan(builder.appendPath("*"))
 	}
-	if len(r.forItemRules.steps) > 0 {
+	if len(r.forItemRules.rules) > 0 {
 		r.forItemRules.plan(builder.appendPath("*"))
 	}
 }
 
-// MapElementName generates a name for a map element denoted by its key.
-func MapElementName(mapName, key any) string {
-	if mapName == "" {
-		return fmt.Sprintf("%v", key)
-	}
-	return fmt.Sprintf("%s.%v", mapName, key)
+// getJSONPathForKey returns a JSONPath for the given key.
+func (r PropertyRulesForMap[M, K, V, S]) getJSONPathForKey(key any) string {
+	return jsonpath.Join(r.mapRules.name, jsonpath.EscapeSegment(fmt.Sprint(key)))
 }

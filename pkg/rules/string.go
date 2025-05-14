@@ -78,18 +78,40 @@ func StringDenyRegexp(re *regexp.Regexp) govy.Rule[string] {
 		}))
 }
 
-// StringDNSLabel ensures the property's value is a valid DNS label as defined by RFC 1123.
-func StringDNSLabel() govy.Rule[string] {
-	return StringMatchRegexp(rfc1123DnsLabelRegexp()).
-		WithDetails("an RFC-1123 compliant label name must consist of lower case alphanumeric characters or '-',"+
-			" and must start and end with an alphanumeric character").
-		WithExamples("my-name", "123-abc").
-		WithErrorCode(ErrorCodeStringDNSLabel)
+// StringDNSLabel ensures the property's value is a valid DNS label as defined by [RFC 1123].
+//
+// [RFC 1123]: https://www.ietf.org/rfc/rfc1123.txt
+func StringDNSLabel() govy.RuleSet[string] {
+	return govy.NewRuleSet(
+		StringLength(1, 63),
+		StringMatchRegexp(rfc1123DnsLabelRegexp()).
+			WithDetails("an RFC-1123 compliant label name must consist of lower case alphanumeric characters or '-',"+
+				" and must start and end with an alphanumeric character").
+			WithExamples("my-name", "123-abc"),
+	).
+		WithErrorCode(ErrorCodeStringDNSLabel).
+		Cascade(govy.CascadeModeStop)
+}
+
+// StringDNSSubdomain ensures the property's value is a valid DNS subdomain as defined by [RFC 1123].
+//
+// [RFC 1123]: https://www.ietf.org/rfc/rfc1123.txt
+func StringDNSSubdomain() govy.RuleSet[string] {
+	return govy.NewRuleSet(
+		StringLength(1, 253),
+		StringMatchRegexp(rfc1123DnsSubdomainRegexp()).
+			WithDetails("an RFC-1123 compliant subdomain must consist of lower case alphanumeric characters, '-'"+
+				" or '.', and must start and end with an alphanumeric character").
+			WithExamples("example.com"),
+	).
+		WithErrorCode(ErrorCodeStringDNSSubdomain).
+		Cascade(govy.CascadeModeStop)
 }
 
 // StringEmail ensures the property's value is a valid email address.
-// It follows RFC 5322 specification which is more permissive in regards to domain names.
-// Ref: https://www.ietf.org/rfc/rfc5322.txt
+// It follows [RFC 5322] specification which is more permissive in regards to domain names.
+//
+// [RFC 5322]: https://www.ietf.org/rfc/rfc5322.txt
 func StringEmail() govy.Rule[string] {
 	tpl := messagetemplates.Get(messagetemplates.StringEmailTemplate)
 
@@ -253,9 +275,10 @@ func StringCIDRv6() govy.Rule[string] {
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
 }
 
-// StringUUID ensures property's value is a valid UUID string as defined by RFC 4122.
+// StringUUID ensures property's value is a valid UUID string as defined by [RFC 4122].
 // It does not enforce a specific UUID version.
-// Ref: https://www.ietf.org/rfc/rfc4122.txt
+//
+// [RFC 4122]: https://www.ietf.org/rfc/rfc4122.txt
 func StringUUID() govy.Rule[string] {
 	return StringMatchRegexp(uuidRegexp()).
 		WithDetails("expected RFC-4122 compliant UUID string").
@@ -455,13 +478,14 @@ type stringGitRefTemplateVars struct {
 // [git-check-ref-format] :https://git-scm.com/docs/git-check-ref-format
 // [go-git]: https://github.com/go-git/go-git/blob/95afe7e1cdf71c59ee8a71971fac71880020a744/plumbing/reference.go#L167
 func StringGitRef() govy.Rule[string] {
+	type tplVars = stringGitRefTemplateVars
 	tpl := messagetemplates.Get(messagetemplates.StringGitRefTemplate)
 
 	return govy.NewRule(func(s string) error {
 		if len(s) == 0 {
 			return govy.NewRuleErrorTemplate(govy.TemplateVars{
 				PropertyValue: s,
-				Custom:        stringGitRefTemplateVars{GitRefEmpty: true},
+				Custom:        tplVars{GitRefEmpty: true},
 			})
 		}
 		if s == "HEAD" {
@@ -470,14 +494,14 @@ func StringGitRef() govy.Rule[string] {
 		if strings.HasSuffix(s, ".") {
 			return govy.NewRuleErrorTemplate(govy.TemplateVars{
 				PropertyValue: s,
-				Custom:        stringGitRefTemplateVars{GitRefEndsWithDot: true},
+				Custom:        tplVars{GitRefEndsWithDot: true},
 			})
 		}
 		parts := strings.Split(s, "/")
 		if len(parts) < 2 {
 			return govy.NewRuleErrorTemplate(govy.TemplateVars{
 				PropertyValue: s,
-				Custom:        stringGitRefTemplateVars{GitRefAtLeastOneSlash: true},
+				Custom:        tplVars{GitRefAtLeastOneSlash: true},
 			})
 		}
 		isBranch := strings.HasPrefix(s, "refs/heads/")
@@ -486,13 +510,13 @@ func StringGitRef() govy.Rule[string] {
 			if len(part) == 0 {
 				return govy.NewRuleErrorTemplate(govy.TemplateVars{
 					PropertyValue: s,
-					Custom:        stringGitRefTemplateVars{GitRefEmptyPart: true},
+					Custom:        tplVars{GitRefEmptyPart: true},
 				})
 			}
 			if (isBranch || isTag) && strings.HasPrefix(part, "-") {
 				return govy.NewRuleErrorTemplate(govy.TemplateVars{
 					PropertyValue: s,
-					Custom:        stringGitRefTemplateVars{GitRefStartsWithDash: true},
+					Custom:        tplVars{GitRefStartsWithDash: true},
 				})
 			}
 			if part == "@" ||
@@ -501,7 +525,7 @@ func StringGitRef() govy.Rule[string] {
 				stringContainsGitRefForbiddenChars(part) {
 				return govy.NewRuleErrorTemplate(govy.TemplateVars{
 					PropertyValue: s,
-					Custom:        stringGitRefTemplateVars{GitRefForbiddenChars: true},
+					Custom:        tplVars{GitRefForbiddenChars: true},
 				})
 			}
 		}
@@ -734,6 +758,110 @@ func StringAlphaUnicode() govy.Rule[string] {
 func StringAlphanumericUnicode() govy.Rule[string] {
 	return StringMatchRegexp(alphanumericUnicodeRegexp()).
 		WithErrorCode(ErrorCodeStringAlphanumericUnicode)
+}
+
+// StringFQDN ensures the property's value is a fully qualified domain name (FQDN).
+func StringFQDN() govy.Rule[string] {
+	return StringMatchRegexp(fqdnRegexp()).
+		WithErrorCode(ErrorCodeStringFQDN)
+}
+
+type stringKubernetesQualifiedNameTemplateVars struct {
+	EmptyPrefixPart bool
+	PrefixLength    bool
+	PrefixRegexp    bool
+	TooManyParts    bool
+	EmptyNamePart   bool
+	NamePartLength  bool
+	NamePartRegexp  bool
+}
+
+const (
+	maxK8sSubdomainPrefixPartLength = 253
+	maxK8sQualifiedNamePartLength   = 63
+)
+
+// StringKubernetesQualifiedName ensures the property's value is a valid "qualified name"
+// as defined by [Kubernetes validation].
+// The qualified name is used in various parts of the Kubernetes system, examples:
+//   - annotation names
+//   - label names
+//
+// [Kubernetes validation]: https://github.com/kubernetes/kubernetes/blob/55573a0739785292e62b32a748c0b0735ff963ba/staging/src/k8s.io/apimachinery/pkg/util/validation/validation.go#L41
+func StringKubernetesQualifiedName() govy.RuleSet[string] {
+	return govy.NewRuleSet(
+		StringLength(1, maxK8sSubdomainPrefixPartLength+1+maxK8sQualifiedNamePartLength),
+		stringKubernetesQualifiedNameRule(),
+	).
+		Cascade(govy.CascadeModeStop).
+		WithErrorCode(ErrorCodeStringKubernetesQualifiedName)
+}
+
+func stringKubernetesQualifiedNameRule() govy.Rule[string] {
+	type tplVars = stringKubernetesQualifiedNameTemplateVars
+	tpl := messagetemplates.Get(messagetemplates.StringKubernetesQualifiedNameTemplate)
+
+	return govy.NewRule(func(s string) error {
+		parts := strings.Split(s, "/")
+		var name string
+		switch len(parts) {
+		case 1:
+			name = parts[0]
+		case 2:
+			var prefix string
+			prefix, name = parts[0], parts[1]
+			switch {
+			case len(prefix) == 0:
+				return govy.NewRuleErrorTemplate(govy.TemplateVars{
+					PropertyValue: s,
+					Custom:        tplVars{EmptyPrefixPart: true},
+				})
+			case len(prefix) > maxK8sSubdomainPrefixPartLength:
+				return govy.NewRuleErrorTemplate(govy.TemplateVars{
+					PropertyValue:   s,
+					ComparisonValue: maxK8sSubdomainPrefixPartLength,
+					Custom:          tplVars{PrefixLength: true},
+				})
+			case !rfc1123DnsSubdomainRegexp().MatchString(prefix):
+				return govy.NewRuleErrorTemplate(govy.TemplateVars{
+					PropertyValue:   s,
+					ComparisonValue: rfc1123DnsSubdomainRegexp().String(),
+					Custom:          tplVars{PrefixRegexp: true},
+				})
+			}
+		default:
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+				Custom:        tplVars{TooManyParts: true},
+			})
+		}
+
+		switch {
+		case len(name) == 0:
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+				Custom:        tplVars{EmptyNamePart: true},
+			})
+		case len(name) > maxK8sQualifiedNamePartLength:
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue:   s,
+				ComparisonValue: maxK8sQualifiedNamePartLength,
+				Custom:          tplVars{NamePartLength: true},
+			})
+		case !k8sQualifiedNamePartRegexp().MatchString(name):
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue:   s,
+				ComparisonValue: k8sQualifiedNamePartRegexp().String(),
+				Custom:          tplVars{NamePartRegexp: true},
+			})
+		}
+		return nil
+	}).
+		WithMessageTemplate(tpl).
+		WithDetails("Kubernetes Qualified Name must consist of alphanumeric characters, '-', '_' or '.', "+
+			"and must start and end with an alphanumeric character with an optional DNS subdomain prefix and '/'").
+		WithExamples("my.domain/MyName", "MyName", "my.name", "123-abc").
+		WithDescription("string must be a Kubernetes Qualified Name")
 }
 
 // isStringSeparator is directly copied from [strings] package.

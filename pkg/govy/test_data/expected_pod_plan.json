@@ -3,7 +3,10 @@
   "properties": [
     {
       "path": "$.apiVersion",
-      "type": "string",
+      "typeInfo": {
+        "name": "string",
+        "kind": "string"
+      },
       "rules": [
         {
           "description": "must be one of: v1, v2",
@@ -13,7 +16,10 @@
     },
     {
       "path": "$.kind",
-      "type": "string",
+      "typeInfo": {
+        "name": "string",
+        "kind": "string"
+      },
       "rules": [
         {
           "description": "should be equal to 'Pod'",
@@ -23,8 +29,11 @@
     },
     {
       "path": "$.metadata.annotations",
-      "type": "Annotations",
-      "package": "github.com/nobl9/govy/pkg/govy_test",
+      "typeInfo": {
+        "name": "Annotations",
+        "kind": "map[string]string",
+        "package": "github.com/nobl9/govy/pkg/govy_test"
+      },
       "rules": [
         {
           "description": "length must be less than or equal to 10",
@@ -34,8 +43,11 @@
     },
     {
       "path": "$.metadata.annotations.*",
-      "type": "MapItem[string,string]",
-      "package": "github.com/nobl9/govy/pkg/govy",
+      "typeInfo": {
+        "name": "MapItem[string,string]",
+        "kind": "struct",
+        "package": "github.com/nobl9/govy/pkg/govy"
+      },
       "rules": [
         {
           "description": "key and value must not be equal"
@@ -44,8 +56,11 @@
     },
     {
       "path": "$.metadata.labels",
-      "type": "Labels",
-      "package": "github.com/nobl9/govy/pkg/govy_test",
+      "typeInfo": {
+        "name": "Labels",
+        "kind": "map[string]string",
+        "package": "github.com/nobl9/govy/pkg/govy_test"
+      },
       "rules": [
         {
           "description": "length must be less than or equal to 10",
@@ -55,7 +70,10 @@
     },
     {
       "path": "$.metadata.labels.*",
-      "type": "string",
+      "typeInfo": {
+        "name": "string",
+        "kind": "string"
+      },
       "rules": [
         {
           "description": "length must be less than or equal to 120",
@@ -65,12 +83,19 @@
     },
     {
       "path": "$.metadata.labels.~",
-      "type": "string",
+      "typeInfo": {
+        "name": "string",
+        "kind": "string"
+      },
       "rules": [
         {
-          "description": "string must match regular expression: '^[a-z0-9]([-a-z0-9]{0,61}[a-z0-9])?$'",
+          "description": "length must be between 1 and 63",
+          "errorCode": "string_dns_label:string_length"
+        },
+        {
+          "description": "string must match regular expression: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?$'",
           "details": "an RFC-1123 compliant label name must consist of lower case alphanumeric characters or '-', and must start and end with an alphanumeric character",
-          "errorCode": "string_dns_label",
+          "errorCode": "string_dns_label:string_match_regexp",
           "examples": [
             "my-name",
             "123-abc"
@@ -80,7 +105,10 @@
     },
     {
       "path": "$.metadata.name",
-      "type": "string",
+      "typeInfo": {
+        "name": "string",
+        "kind": "string"
+      },
       "rules": [
         {
           "description": "string cannot be empty",
@@ -90,7 +118,10 @@
     },
     {
       "path": "$.metadata.namespace",
-      "type": "string",
+      "typeInfo": {
+        "name": "string",
+        "kind": "string"
+      },
       "rules": [
         {
           "description": "string cannot be empty",
@@ -100,8 +131,11 @@
     },
     {
       "path": "$.spec.containers",
-      "type": "[]Container",
-      "package": "github.com/nobl9/govy/pkg/govy_test",
+      "typeInfo": {
+        "name": "[]Container",
+        "kind": "[]struct",
+        "package": "github.com/nobl9/govy/pkg/govy_test"
+      },
       "rules": [
         {
           "description": "length must be less than or equal to 10",
@@ -115,13 +149,19 @@
     },
     {
       "path": "$.spec.containers[*].env",
-      "type": "[]EnvVar",
-      "package": "github.com/nobl9/govy/pkg/govy_test"
+      "typeInfo": {
+        "name": "[]EnvVar",
+        "kind": "[]struct",
+        "package": "github.com/nobl9/govy/pkg/govy_test"
+      }
     },
     {
       "path": "$.spec.containers[*].env[*]",
-      "type": "EnvVar",
-      "package": "github.com/nobl9/govy/pkg/govy_test",
+      "typeInfo": {
+        "name": "EnvVar",
+        "kind": "struct",
+        "package": "github.com/nobl9/govy/pkg/govy_test"
+      },
       "rules": [
         {
           "description": "custom error!"
@@ -130,7 +170,10 @@
     },
     {
       "path": "$.spec.containers[*].image",
-      "type": "string",
+      "typeInfo": {
+        "name": "string",
+        "kind": "string"
+      },
       "rules": [
         {
           "description": "string cannot be empty",
@@ -140,12 +183,19 @@
     },
     {
       "path": "$.spec.containers[*].name",
-      "type": "string",
+      "typeInfo": {
+        "name": "string",
+        "kind": "string"
+      },
       "rules": [
         {
-          "description": "string must match regular expression: '^[a-z0-9]([-a-z0-9]{0,61}[a-z0-9])?$'",
+          "description": "length must be between 1 and 63",
+          "errorCode": "string_dns_label:string_length"
+        },
+        {
+          "description": "string must match regular expression: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?$'",
           "details": "an RFC-1123 compliant label name must consist of lower case alphanumeric characters or '-', and must start and end with an alphanumeric character",
-          "errorCode": "string_dns_label",
+          "errorCode": "string_dns_label:string_match_regexp",
           "examples": [
             "my-name",
             "123-abc"
@@ -155,7 +205,10 @@
     },
     {
       "path": "$.spec.dnsPolicy",
-      "type": "string",
+      "typeInfo": {
+        "name": "string",
+        "kind": "string"
+      },
       "rules": [
         {
           "description": "must be one of: ClusterFirst, Default",

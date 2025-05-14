@@ -163,6 +163,70 @@ func BenchmarkStringDNSLabel(b *testing.B) {
 	}
 }
 
+var stringDNSSubdomainTestCases = []*struct {
+	in         string
+	shouldFail bool
+}{
+	// cspell:disable
+	{"s", false},
+	{"sa", false},
+	{"a-1", false},
+	{"a--2", false},
+	{"a-b-c", false},
+	{"a--b--c", false},
+	{"0", false},
+	{"a.1", false},
+	{"a.b", false},
+	{"1.b", false},
+	{"a.b.c", false},
+	{"a.1.c", false},
+	{"aa.bb", false},
+	{"1.2.3.4", false},
+	{"1a.2b.3c.4d", false},
+	{"a--b--c.123", false},
+	{strings.Repeat("l", 253), false},
+	{"", true},
+	{" ", true},
+	{strings.Repeat("l", 254), true},
+	{"tesT", true},
+	{"test?", true},
+	{"test this", true},
+	{"1_2", true},
+	{"L", true},
+	{"a@b", true},
+	{"-", true},
+	{"a-", true},
+	{"0-", true},
+	{"-b", true},
+	{"-1", true},
+	{"A.1", true},
+	{".2.3.4", true},
+	{"1a.2B.3c.4d", true},
+	{"a--b--c.", true},
+	// cspell:enable
+}
+
+func TestStringDNSSubdomain(t *testing.T) {
+	for _, tc := range stringDNSSubdomainTestCases {
+		err := StringDNSSubdomain().Validate(tc.in)
+		if tc.shouldFail {
+			assert.Error(t, err)
+			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringDNSSubdomain))
+		} else {
+			assert.NoError(t, err)
+		}
+	}
+}
+
+func BenchmarkStringDNSSubdomain(b *testing.B) {
+	for _, tc := range stringDNSSubdomainTestCases {
+		rule := StringDNSSubdomain()
+		for range b.N {
+			_ = rule.Validate(tc.in)
+		}
+	}
+}
+
 var stringASCIITestCases = []*struct {
 	in         string
 	shouldFail bool
@@ -1709,6 +1773,133 @@ func TestStringAlphanumericUnicode(t *testing.T) {
 func BenchmarkStringAlphanumericUnicode(b *testing.B) {
 	for _, tc := range stringAlphanumericUnicodeTestCases {
 		rule := StringAlphanumericUnicode()
+		for range b.N {
+			_ = rule.Validate(tc.in)
+		}
+	}
+}
+
+var stringFQDNTestCases = []*struct {
+	in         string
+	shouldFail bool
+}{
+	// cspell:disable
+	{"test.example.com", false},
+	{"example.com", false},
+	{"example24.com", false},
+	{"test.example24.com", false},
+	{"test24.example24.com", false},
+	{"test.example.com.", false},
+	{"example.com.", false},
+	{"example24.com.", false},
+	{"test.example24.com.", false},
+	{"test24.example24.com.", false},
+	{"24.example24.com", false},
+	{"test.24.example.com", false},
+	{"test24.example24.com..", true},
+	{"example", true},
+	{"192.168.0.1", true},
+	{"email@example.com", true},
+	{"2001:cdba:0000:0000:0000:0000:3257:9652", true},
+	{"2001:cdba:0:0:0:0:3257:9652", true},
+	{"2001:cdba::3257:9652", true},
+	{"", true},
+	// cspell:enable
+}
+
+func TestStringFQDN(t *testing.T) {
+	for _, tc := range stringFQDNTestCases {
+		err := StringFQDN().Validate(tc.in)
+		if tc.shouldFail {
+			assert.Error(t, err)
+			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringFQDN))
+		} else {
+			assert.NoError(t, err)
+		}
+	}
+}
+
+func BenchmarkStringFQDN(b *testing.B) {
+	for _, tc := range stringFQDNTestCases {
+		rule := StringFQDN()
+		for range b.N {
+			_ = rule.Validate(tc.in)
+		}
+	}
+}
+
+// nolint: lll
+var (
+	errK8sQualifiedNameEmptyPrefixPart = errors.New("prefix part must not be empty")
+	errK8sQualifiedNamePrefixLength    = errors.New("prefix part length must be less than or equal to 253")
+	errK8sQualifiedNamePrefixRegexp    = errors.New(
+		`prefix part string must match regular expression: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$'`,
+	)
+	errK8sQualifiedNameTooManyParts   = errors.New("qualified name must have at most 2 parts separated by a '/'")
+	errK8sQualifiedNameEmptyNamePart  = errors.New("name part must not be empty")
+	errK8sQualifiedNameNamePartLength = errors.New("name part length must be less than or equal to 63")
+	errK8sQualifiedNameNamePartRegexp = errors.New(
+		"name part string must match regular expression: '^([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9]$'",
+	)
+)
+
+var stringK8sQualifiedNameTestCases = []*struct {
+	in          string
+	expectedErr error
+}{
+	// cspell:disable
+	{"simple", nil},
+	{"now-with-dashes", nil},
+	{"1-starts-with-num", nil},
+	{"1234", nil},
+	{"simple/simple", nil},
+	{"now-with-dashes/simple", nil},
+	{"now-with-dashes/now-with-dashes", nil},
+	{"now.with.dots/simple", nil},
+	{"now-with.dashes-and.dots/simple", nil},
+	{"1-num.2-num/3-num", nil},
+	{"1234/5678", nil},
+	{"1.2.3.4/5678", nil},
+	{"Uppercase_Is_OK_123", nil},
+	{"example.com/Uppercase_Is_OK_123", nil},
+	{"requests.storage-foo", nil},
+	{strings.Repeat("a", 63), nil},
+	{strings.Repeat("a", 253) + "/" + strings.Repeat("b", 63), nil},
+	// BAD
+	{"/", errK8sQualifiedNameEmptyPrefixPart},
+	{"nospecialchars%^=@", errK8sQualifiedNameNamePartRegexp},
+	{"cantendwithadash-", errK8sQualifiedNameNamePartRegexp},
+	{"-cantstartwithadash-", errK8sQualifiedNameNamePartRegexp},
+	{"example.com/abc$", errK8sQualifiedNameNamePartRegexp},
+	{"only/one/slash", errK8sQualifiedNameTooManyParts},
+	{"Example.com/abc", errK8sQualifiedNamePrefixRegexp},
+	{"example_com/abc", errK8sQualifiedNamePrefixRegexp},
+	{"example.com/", errK8sQualifiedNameEmptyNamePart},
+	{"/simple", errK8sQualifiedNameEmptyPrefixPart},
+	{"not.Valid/simple", errK8sQualifiedNamePrefixRegexp},
+	{strings.Repeat("a", 64), errK8sQualifiedNameNamePartLength},
+	{strings.Repeat("a", 254) + "/abc", errK8sQualifiedNamePrefixLength},
+	{strings.Repeat("a", 253) + "/" + strings.Repeat("b", 64), errors.New("length must be between 1 and 317")},
+	// cspell:enable
+}
+
+func TestStringKubernetesQualifiedName(t *testing.T) {
+	for _, tc := range stringK8sQualifiedNameTestCases {
+		t.Run(tc.in, func(t *testing.T) {
+			err := StringKubernetesQualifiedName().Validate(tc.in)
+			if tc.expectedErr != nil {
+				assert.ErrorContains(t, err, tc.expectedErr.Error())
+				assert.True(t, govy.HasErrorCode(err, ErrorCodeStringKubernetesQualifiedName))
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func BenchmarkStringKubernetesQualifiedName(b *testing.B) {
+	for _, tc := range stringK8sQualifiedNameTestCases {
+		rule := StringKubernetesQualifiedName()
 		for range b.N {
 			_ = rule.Validate(tc.in)
 		}

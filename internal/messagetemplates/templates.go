@@ -2,6 +2,13 @@ package messagetemplates
 
 import "github.com/nobl9/govy/internal"
 
+//go:generate stringer -type=templateKey
+
+// commonTemplateSuffix is a suffix that is added to all message templates.
+// It includes examples and details and handles their absence.
+const commonTemplateSuffix = "{{- if .Examples }} {{ formatExamples .Examples }}{{- end }}" +
+	"{{- if .Details }}; {{ .Details }}{{- end }}"
+
 // templateKey is a key that uniquely identifies a message template.
 type templateKey int
 
@@ -19,6 +26,7 @@ const (
 	DurationPrecisionTemplate
 	ForbiddenTemplate
 	OneOfTemplate
+	NotOneOfTemplate
 	OneOfPropertiesTemplate
 	MutuallyExclusiveTemplate
 	RequiredTemplate
@@ -48,6 +56,7 @@ const (
 	StringCrontabTemplate
 	StringDateTimeTemplate
 	StringTimeZoneTemplate
+	StringKubernetesQualifiedNameTemplate
 	URLTemplate
 	SliceUniqueTemplate
 )
@@ -67,12 +76,13 @@ var rawMessageTemplates = map[templateKey]string{
 	DurationPrecisionTemplate: "duration must be defined with {{ .ComparisonValue }} precision",
 	ForbiddenTemplate:         "property is forbidden",
 	OneOfTemplate:             `must be one of: {{ joinSlice .ComparisonValue "" }}`,
+	NotOneOfTemplate:          `must not be one of: {{ joinSlice .ComparisonValue "" }}`,
 	OneOfPropertiesTemplate:   `one of [{{ joinSlice .ComparisonValue "" }}] properties must be set, none was provided`,
 	MutuallyExclusiveTemplate: `
 {{- if .Custom.NoProperties -}}
-one of [{{ joinSlice .ComparisonValue "" }}] properties must be set, none was provided
+	one of [{{ joinSlice .ComparisonValue "" }}] properties must be set, none was provided
 {{- else -}}
-[{{ joinSlice .ComparisonValue "" }}] properties are mutually exclusive, provide only one of them
+	[{{ joinSlice .ComparisonValue "" }}] properties are mutually exclusive, provide only one of them
 {{- end }}`,
 	RequiredTemplate:          internal.RequiredErrorMessage,
 	StringNonEmptyTemplate:    "string cannot be empty",
@@ -91,34 +101,34 @@ one of [{{ joinSlice .ComparisonValue "" }}] properties must be set, none was pr
 	StringExcludesTemplate:    `string must not contain any of the following substrings: {{ joinSlice .ComparisonValue "'" }}`,
 	StringStartsWithTemplate: `
 {{- if eq (len .ComparisonValue) 1 -}}
-string must start with '{{ index .ComparisonValue 0 }}' prefix
+	string must start with '{{ index .ComparisonValue 0 }}' prefix
 {{- else -}}
-string must start with one of the following prefixes: {{ joinSlice .ComparisonValue "'" }}
+	string must start with one of the following prefixes: {{ joinSlice .ComparisonValue "'" }}
 {{- end }}
 `,
 	StringEndsWithTemplate: `
 {{- if eq (len .ComparisonValue) 1 -}}
-string must end with '{{ index .ComparisonValue 0 }}' suffix
+	string must end with '{{ index .ComparisonValue 0 }}' suffix
 {{- else -}}
-string must end with one of the following suffixes: {{ joinSlice .ComparisonValue "'" }}
+	string must end with one of the following suffixes: {{ joinSlice .ComparisonValue "'" }}
 {{- end }}
 `,
 	StringTitleTemplate: "each word in a string must start with a capital letter",
 	StringGitRefTemplate: `
 {{- if eq .Custom.GitRefEmpty true -}}
-git reference cannot be empty
+	git reference cannot be empty
 {{- else if eq .Custom.GitRefEndsWithDot true -}}
-git reference must not end with a '.'
+	git reference must not end with a '.'
 {{- else if eq .Custom.GitRefAtLeastOneSlash true -}}
-git reference must contain at least one '/'
+	git reference must contain at least one '/'
 {{- else if eq .Custom.GitRefEmptyPart true -}}
-git reference must not have empty parts
+	git reference must not have empty parts
 {{- else if eq .Custom.GitRefStartsWithDash true -}}
-git branch and tag references must not start with '-'
+	git branch and tag references must not start with '-'
 {{- else if eq .Custom.GitRefForbiddenChars true -}}
-git reference contains forbidden characters
+	git reference contains forbidden characters
 {{- else -}}
-string must be a valid git reference
+	string must be a valid git reference
 {{- end }}
 `,
 	StringFileSystemPathTemplate:      "string must be an existing file system path{{- if .Error }}: {{ .Error }}{{- end }}",
@@ -129,12 +139,35 @@ string must be a valid git reference
 	StringCrontabTemplate:             "string must be a valid cron schedule expression",
 	StringDateTimeTemplate:            "string must be a valid date and time in '{{ .ComparisonValue }}' format{{- if .Error }}: {{ .Error }}{{- end }}",
 	StringTimeZoneTemplate:            "string must be a valid IANA Time Zone Database code{{- if .Error }}: {{ .Error }}{{- end }}",
+	StringKubernetesQualifiedNameTemplate: `
+{{- if eq .Custom.EmptyPrefixPart true -}}
+	prefix part must not be empty
+{{- else if eq .Custom.PrefixLength true -}}
+	prefix part {{ template "MaxLengthTemplate" . }}
+{{- else if eq .Custom.PrefixRegexp true -}}
+	prefix part {{ template "StringMatchRegexpTemplate" . }}
+{{- else if eq .Custom.TooManyParts true -}}
+	qualified name must have at most 2 parts separated by a '/'
+{{- else if eq .Custom.EmptyNamePart true -}}
+	name part must not be empty
+{{- else if eq .Custom.NamePartLength true -}}
+	name part {{ template "MaxLengthTemplate" . }}
+{{- else if eq .Custom.NamePartRegexp true -}}
+	name part {{ template "StringMatchRegexpTemplate" . }}
+{{- else -}}
+	string must be a valid Kubernetes Qualified Name
+{{- end }}
+`,
 	SliceUniqueTemplate: `elements are not unique, {{ .Custom.FirstOrdinal }} and {{ .Custom.SecondOrdinal }} elements collide
 {{- if gt (len .Custom.Constraints) 0 }} based on constraints: {{ joinSlice .Custom.Constraints "" }}{{- end }}`,
 	URLTemplate: "{{ .Error }}",
 }
 
-// commonTemplateSuffix is a suffix that is added to all message templates.
-// It includes examples and details and handles their absence.
-const commonTemplateSuffix = "{{- if .Examples }} {{ formatExamples .Examples }}{{- end }}" +
-	"{{- if .Details }}; {{ .Details }}{{- end }}"
+// templateDependencies defines dependency templates for a given template.
+// This way the template can utilize other templates in its execution.
+var templateDependencies = map[templateKey][]templateKey{
+	StringKubernetesQualifiedNameTemplate: {
+		StringMatchRegexpTemplate,
+		MaxLengthTemplate,
+	},
+}

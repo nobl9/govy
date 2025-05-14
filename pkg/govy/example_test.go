@@ -812,6 +812,25 @@ func ExampleAddTemplateFunctions_joinSlice() {
 	// 'Joanna', 'Angeline'
 }
 
+func ExampleAddTemplateFunctions_indent() {
+	tplString := "{{ indent 2 .Details }}"
+	tpl := template.New("")
+	tpl = govy.AddTemplateFunctions(tpl)
+	tpl = template.Must(tpl.Parse(tplString))
+
+	err := tpl.Execute(
+		os.Stdout,
+		map[string]any{"Details": "foo\nbar"},
+	)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	// Output:
+	//   foo
+	//   bar
+}
+
 // [govy.Rule] error might be static, i.e. a single [govy.Rule] always returns
 // the same exact error message, but they don't have to.
 // For instance, consider a rule which parses a URL using [net/url] package.
@@ -955,6 +974,42 @@ func ExampleRuleSetToPointer() {
 	//   - 'pointer' with value 'bar':
 	//     - string must start with 'f' prefix
 	//     - string must end with 'o' suffix
+}
+
+// If you wish to control how rules aggregated by [govy.RuleSet] evaluate
+// you can use [govy.RuleSet.Cascade] to set a [govy.CascadeMode].
+//
+// Similar to how the cascade mode works when evaluating [govy.PropertyRules],
+// the [govy.CascadeModeStop] will stop validation after the first encountered error.
+//
+// In the example below we can see that although both rules should fail,
+// only the first one (order of definitions matters here!) returns an error.
+func ExampleRuleSet_Cascade() {
+	teacherNameRule := govy.NewRuleSet(
+		rules.StringLength(1, 5),
+		rules.StringMatchRegexp(regexp.MustCompile("^(Tom|Jerry)$")),
+	).
+		Cascade(govy.CascadeModeStop)
+
+	v := govy.New(
+		govy.For(func(t Teacher) string { return t.Name }).
+			WithName("name").
+			Rules(teacherNameRule),
+	).WithName("Teacher")
+
+	teacher := Teacher{
+		Name: "Jonathan",
+	}
+
+	err := v.Validate(teacher)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	// Output:
+	// Validation for Teacher has failed for the following properties:
+	//   - 'name' with value 'Jonathan':
+	//     - length must be between 1 and 5
 }
 
 // To inspect if an error contains a given [govy.ErrorCode], use [govy.HasErrorCode] function.
@@ -1674,7 +1729,10 @@ func ExamplePlan() {
 	//   "properties": [
 	//     {
 	//       "path": "$.name",
-	//       "type": "string",
+	//       "typeInfo": {
+	//         "name": "string",
+	//         "kind": "string"
+	//       },
 	//       "examples": [
 	//         "Jake",
 	//         "John"
