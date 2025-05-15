@@ -181,7 +181,7 @@ func RulePlanModifierDescription(description string) RulePlanModifier {
 	}
 }
 
-// RulePlanModifierDescription adds valid values associated with the given [RulePlan].
+// RulePlanModifierValidValues adds valid values associated with the given [RulePlan].
 // These values are not directly availabile through [RulePlan], rather
 // they are aggregated and an intersection is calculated for [PropertyPlan].
 func RulePlanModifierValidValues[T any](values ...T) RulePlanModifier {
