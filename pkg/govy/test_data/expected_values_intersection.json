@@ -1,0 +1,32 @@
+{
+  "properties": [
+    {
+      "path": "$",
+      "typeInfo": {
+        "name": "string",
+        "kind": "string"
+      },
+      "values": [
+        "foo"
+      ],
+      "rules": [
+        {
+          "description": "should be not equal to 'baz'",
+          "errorCode": "not_equal_to"
+        },
+        {
+          "description": "must be one of: foo, bar",
+          "errorCode": "one_of"
+        },
+        {
+          "description": "should be equal to 'foo'",
+          "errorCode": "equal_to"
+        },
+        {
+          "description": "must be one of: bar, baz, foo",
+          "errorCode": "one_of"
+        }
+      ]
+    }
+  ]
+}

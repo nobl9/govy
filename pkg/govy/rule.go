@@ -34,6 +34,7 @@ func RuleToPointer[T any](rule Rule[T]) Rule[*T] {
 		messageTemplate: rule.messageTemplate,
 		examples:        rule.examples,
 		description:     rule.description,
+		planModifiers:   rule.planModifiers,
 	}
 }
 
@@ -48,6 +49,7 @@ type Rule[T any] struct {
 	messageTemplate *template.Template
 	examples        []string
 	description     string
+	planModifiers   []RulePlanModifier
 }
 
 // Validate runs validation function on the provided value.
@@ -153,6 +155,12 @@ func (r Rule[T]) WithExamples(examples ...T) Rule[T] {
 	return r
 }
 
+// WithPlanModifiers adds [RulePlanModifier] which allow modifying [RulePlan] calculated for this [Rule].
+func (r Rule[T]) WithPlanModifiers(mods ...RulePlanModifier) Rule[T] {
+	r.planModifiers = append(r.planModifiers, mods...)
+	return r
+}
+
 // WithDescription adds a custom description to the rule.
 // It is used to enhance the [RulePlan], but otherwise does not appear in standard [RuleError.Error] output.
 func (r Rule[T]) WithDescription(description string) Rule[T] {
@@ -160,14 +168,31 @@ func (r Rule[T]) WithDescription(description string) Rule[T] {
 	return r
 }
 
+// RulePlanModifier allows modifying [RulePlan] calculated when calling [Plan].
+type RulePlanModifier func(plan RulePlan) RulePlan
+
+// RulePlanModifierValidValues adds valid values associated with the given [RulePlan].
+// These values are not directly availabile through [RulePlan], rather
+// they are aggregated and an intersection is calculated for [PropertyPlan].
+func RulePlanModifierValidValues[T any](values ...T) RulePlanModifier {
+	return func(plan RulePlan) RulePlan {
+		plan.values = collections.ToStringSlice(values)
+		return plan
+	}
+}
+
 func (r Rule[T]) plan(builder planBuilder) {
-	builder.rulePlan = RulePlan{
+	rulePlan := RulePlan{
 		ErrorCode:   r.errorCode,
 		Details:     r.details,
 		Description: r.description,
 		Conditions:  builder.rulePlan.Conditions,
 		Examples:    r.examples,
 	}
+	for _, mod := range r.planModifiers {
+		rulePlan = mod(rulePlan)
+	}
+	builder.rulePlan = rulePlan
 	*builder.children = append(*builder.children, builder)
 }
 

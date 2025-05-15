@@ -5,12 +5,16 @@ import (
 	"maps"
 	"slices"
 	"strings"
+
+	"github.com/nobl9/govy/internal/collections"
 )
 
 // ValidatorPlan is a validation plan for a single [Validator].
 type ValidatorPlan struct {
-	Name       string         `json:"name,omitempty"`
-	Properties []PropertyPlan `json:"properties"`
+	// Name is the value provided to [Validator.WithName].
+	Name string `json:"name,omitempty"`
+	// Properties which this [Validator] defines.
+	Properties []*PropertyPlan `json:"properties"`
 }
 
 // PropertyPlan is a validation plan for a single [PropertyRules].
@@ -22,9 +26,16 @@ type PropertyPlan struct {
 	// IsOptional indicates if the property was marked with [PropertyRules.OmitEmpty].
 	IsOptional bool `json:"isOptional,omitempty"`
 	// IsHidden indicates if the property was marked with [PropertyRules.HideValue].
-	IsHidden bool       `json:"isHidden,omitempty"`
-	Examples []string   `json:"examples,omitempty"`
-	Rules    []RulePlan `json:"rules,omitempty"`
+	IsHidden bool `json:"isHidden,omitempty"`
+	// Examples lists example, valid values for this property.
+	// These values are not exhaustive, for an exhaustive list of valid values see [ValidValues].
+	Examples []string `json:"examples,omitempty"`
+	// Values unlike [Examples] should list ALL valid values for this property.
+	// These values are constructed as an intersection of all [RulePlan.Values]
+	// for this property.
+	Values []string `json:"values,omitempty"`
+	// Rules which apply to this property.
+	Rules []RulePlan `json:"rules,omitempty"`
 }
 
 // TypeInfo contains the type information of a property.
@@ -43,13 +54,22 @@ type TypeInfo struct {
 
 // RulePlan is a validation plan for a single [Rule].
 type RulePlan struct {
-	Description string    `json:"description"`
-	Details     string    `json:"details,omitempty"`
-	ErrorCode   ErrorCode `json:"errorCode,omitempty"`
+	// Description is the value provided to [Rule.WithDescription].
+	Description string `json:"description"`
+	// Details is the value provided to [Rule.WithDetails].
+	Details string `json:"details,omitempty"`
+	// ErrorCode is the value provided to [Rule.WithErrorCode].
+	ErrorCode ErrorCode `json:"errorCode,omitempty"`
 	// Conditions are all the predicates set through [PropertyRules.When] and [Validator.When]
 	// which had [WhenDescription] added to the [WhenOptions].
 	Conditions []string `json:"conditions,omitempty"`
-	Examples   []string `json:"examples,omitempty"`
+	// Examples is the value provided to [Rule.WithExamples].
+	// These values are not exhaustive, for an exhaustive list of valid values see [ValidValues].
+	Examples []string `json:"examples,omitempty"`
+
+	// values unlike [Examples] should list ALL valid values which meet this rule.
+	// It is not exported as it is only here to contribute to the [PropertyPlan.ValidValues].
+	values []string
 }
 
 func (r RulePlan) isEmpty() bool {
@@ -60,36 +80,55 @@ func (r RulePlan) isEmpty() bool {
 // Each property is represented by a [PropertyPlan] which aggregates its every [RulePlan].
 // If a property does not have any rules, it won't be included in the result.
 func Plan[S any](v Validator[S]) *ValidatorPlan {
-	all := make([]planBuilder, 0)
-	v.plan(planBuilder{path: "$", children: &all})
-	propertiesMap := make(map[string]PropertyPlan)
-	for _, p := range all {
-		entry, ok := propertiesMap[p.path]
-		if ok {
-			entry.Rules = append(entry.Rules, p.rulePlan)
-			propertiesMap[p.path] = entry
-		} else {
-			entry = PropertyPlan{
-				Path:       p.path,
-				TypeInfo:   p.propertyPlan.TypeInfo,
-				Examples:   p.propertyPlan.Examples,
-				IsOptional: p.propertyPlan.IsOptional,
-				IsHidden:   p.propertyPlan.IsHidden,
-			}
-			if !p.rulePlan.isEmpty() {
-				entry.Rules = append(entry.Rules, p.rulePlan)
-			}
-			propertiesMap[p.path] = entry
-		}
+	builders := make([]planBuilder, 0)
+	v.plan(planBuilder{path: "$", children: &builders})
+	properties := aggregatePropertyPlans(builders)
+	// Post-processing after the properties have been aggregated.
+	for _, prop := range properties {
+		prop.collectValidValuesFromRules()
 	}
-	properties := slices.SortedFunc(
-		maps.Values(propertiesMap),
-		func(a, b PropertyPlan) int { return cmp.Compare(a.Path, b.Path) },
-	)
 	return &ValidatorPlan{
 		Name:       v.name,
 		Properties: properties,
 	}
+}
+
+func aggregatePropertyPlans(builders []planBuilder) []*PropertyPlan {
+	propertiesMap := make(map[string]*PropertyPlan)
+	for _, b := range builders {
+		entry, ok := propertiesMap[b.path]
+		if ok {
+			entry.Rules = append(entry.Rules, b.rulePlan)
+			propertiesMap[b.path] = entry
+		} else {
+			entry = &PropertyPlan{
+				Path:       b.path,
+				TypeInfo:   b.propertyPlan.TypeInfo,
+				Examples:   b.propertyPlan.Examples,
+				IsOptional: b.propertyPlan.IsOptional,
+				IsHidden:   b.propertyPlan.IsHidden,
+			}
+			if !b.rulePlan.isEmpty() {
+				entry.Rules = append(entry.Rules, b.rulePlan)
+			}
+			propertiesMap[b.path] = entry
+		}
+	}
+	return slices.SortedFunc(
+		maps.Values(propertiesMap),
+		func(a, b *PropertyPlan) int { return cmp.Compare(a.Path, b.Path) },
+	)
+}
+
+func (p *PropertyPlan) collectValidValuesFromRules() {
+	validValuesSlices := make([][]string, 0)
+	for _, rule := range p.Rules {
+		if len(rule.values) > 0 {
+			validValuesSlices = append(validValuesSlices, rule.values)
+		}
+	}
+	// TODO: If there are indeed conflicting elements, we might want to drop an error?
+	p.Values = collections.Intersection(validValuesSlices...)
 }
 
 // planner is an interface for types that can create a [PropertyPlan] or [RulePlan].

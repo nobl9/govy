@@ -28,7 +28,8 @@ func EQ[T comparable](compared T) govy.Rule[T] {
 		WithMessageTemplate(tpl).
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: compared,
-		}))
+		})).
+		WithPlanModifiers(govy.RulePlanModifierValidValues(compared))
 }
 
 // NEQ ensures the property's value is not equal to the compared value.
