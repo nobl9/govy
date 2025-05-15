@@ -577,10 +577,10 @@ func Example_validationPlan() {
 	//         "name": "string",
 	//         "kind": "string"
 	//       },
-  //       "values": [
-  //         "Jake",
-  //         "George"
-  //       ],
+	//       "values": [
+	//         "Jake",
+	//         "George"
+	//       ],
 	//       "rules": [
 	//         {
 	//           "description": "string cannot be empty",
