@@ -5,7 +5,7 @@
   "devDependencies": {
     "cspell": "9.0.1",
     "markdownlint-cli": "0.44.0",
-    "yaml": "2.7.1"
+    "yaml": "2.8.0"
   },
   "scripts": {
     "check-trailing-whitespaces": "node ./scripts/check-trailing-whitespaces.js",
