@@ -163,8 +163,6 @@ func (r Rule[T]) WithPlanModifiers(mods ...RulePlanModifier) Rule[T] {
 
 // WithDescription adds a custom description to the rule.
 // It is used to enhance the [RulePlan], but otherwise does not appear in standard [RuleError.Error] output.
-//
-// Deprecated: Use [Rule.WithPlanModifiers] with [RulePlanModifierDescription] instead.
 func (r Rule[T]) WithDescription(description string) Rule[T] {
 	r.description = description
 	return r
@@ -172,14 +170,6 @@ func (r Rule[T]) WithDescription(description string) Rule[T] {
 
 // RulePlanModifier allows modifying [RulePlan] calculated when calling [Plan].
 type RulePlanModifier func(plan RulePlan) RulePlan
-
-// RulePlanModifierDescription adds a custom description to the [RulePlan].
-func RulePlanModifierDescription(description string) RulePlanModifier {
-	return func(plan RulePlan) RulePlan {
-		plan.Description = description
-		return plan
-	}
-}
 
 // RulePlanModifierValidValues adds valid values associated with the given [RulePlan].
 // These values are not directly availabile through [RulePlan], rather
