@@ -145,6 +145,8 @@ var expectedValuesIntersection string
 func TestPlan_validValuesIntersection(t *testing.T) {
 	validator := govy.New(
 		govy.For(func(p PodMetadata) string { return p.Name }).
+			Rules(rules.NEQ("baz")),
+		govy.For(func(p PodMetadata) string { return p.Name }).
 			Rules(rules.OneOf("foo", "bar")),
 		govy.For(func(p PodMetadata) string { return p.Name }).
 			Rules(rules.EQ("foo")),

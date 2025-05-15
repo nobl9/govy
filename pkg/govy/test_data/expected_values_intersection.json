@@ -11,6 +11,10 @@
       ],
       "rules": [
         {
+          "description": "should be not equal to 'baz'",
+          "errorCode": "not_equal_to"
+        },
+        {
           "description": "must be one of: foo, bar",
           "errorCode": "one_of"
         },

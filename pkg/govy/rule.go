@@ -155,15 +155,25 @@ func (r Rule[T]) WithExamples(examples ...T) Rule[T] {
 	return r
 }
 
+// WithPlanModifiers adds [RulePlanModifier] which allow modifying [RulePlan] calculated for this [Rule].
+func (r Rule[T]) WithPlanModifiers(mods ...RulePlanModifier) Rule[T] {
+	r.planModifiers = append(r.planModifiers, mods...)
+	return r
+}
+
 // WithDescription adds a custom description to the rule.
 // It is used to enhance the [RulePlan], but otherwise does not appear in standard [RuleError.Error] output.
+//
+// Deprecated: Use [Rule.WithPlanModifiers] with [RulePlanModifierDescription] instead.
 func (r Rule[T]) WithDescription(description string) Rule[T] {
 	r.description = description
 	return r
 }
 
+// RulePlanModifier allows modifying [RulePlan] calculated when calling [Plan].
 type RulePlanModifier func(plan RulePlan) RulePlan
 
+// RulePlanModifierDescription adds a custom description to the [RulePlan].
 func RulePlanModifierDescription(description string) RulePlanModifier {
 	return func(plan RulePlan) RulePlan {
 		plan.Description = description
@@ -171,18 +181,14 @@ func RulePlanModifierDescription(description string) RulePlanModifier {
 	}
 }
 
+// RulePlanModifierDescription adds valid values associated with the given [RulePlan].
+// These values are not directly availabile through [RulePlan], rather
+// they are aggregated and an intersection is calculated for [PropertyPlan].
 func RulePlanModifierValidValues[T any](values ...T) RulePlanModifier {
 	return func(plan RulePlan) RulePlan {
 		plan.values = collections.ToStringSlice(values)
 		return plan
 	}
-}
-
-// WithExamples adds examples to the returned [RuleError].
-// Each example is converted to a string.
-func (r Rule[T]) WithPlanModifiers(mods ...RulePlanModifier) Rule[T] {
-	r.planModifiers = append(r.planModifiers, mods...)
-	return r
 }
 
 func (r Rule[T]) plan(builder planBuilder) {

@@ -123,7 +123,9 @@ func aggregatePropertyPlans(builders []planBuilder) []*PropertyPlan {
 func (p *PropertyPlan) collectValidValuesFromRules() {
 	validValuesSlices := make([][]string, 0)
 	for _, rule := range p.Rules {
-		validValuesSlices = append(validValuesSlices, rule.values)
+		if len(rule.values) > 0 {
+			validValuesSlices = append(validValuesSlices, rule.values)
+		}
 	}
 	// TODO: If there are indeed conflicting elements, we might want to drop an error?
 	p.Values = collections.Intersection(validValuesSlices...)
