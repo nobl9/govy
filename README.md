@@ -182,19 +182,19 @@ func Example_basicUsage() {
 
 ### Use cases
 
-1. [Nobl9 Go SDK](https://github.com/nobl9/nobl9-go). \
+1. [Nobl9 Go SDK](https://github.com/nobl9/nobl9-go) \
    This is where `govy` was born,
    it's used for validating complex k8s-like schema, it contains both simple
    and very advanced validation rules and is a great place to draw some
    inspiration from.
-2. [OpenSLO](https://github.com/OpenSLO/OpenSLO). \
+2. [OpenSLO](https://github.com/OpenSLO/OpenSLO) \
    It's used for validating open specification for defining SLOs.
    The specification is a complex, YAML-based and k8s compatible schema,
    similar to Nobl9's configuration.
 
 ### Comparison with other libraries
 
-1. [go-playground/validator](https://github.com/go-playground/validator). \
+1. [go-playground/validator](https://github.com/go-playground/validator) \
    Visit [runnable example](./docs/validator-comparison/example_test.go) for a
    comprehensive, live code comparison between `govy` and
    `go-playground/validator`.
