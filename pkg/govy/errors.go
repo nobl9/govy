@@ -51,9 +51,22 @@ func (e *ValidatorError) Error() string {
 		b.WriteString(" at index ")
 		b.WriteString(strconv.Itoa(*e.SliceIndex))
 	}
-	b.WriteString(" has failed for the following properties:\n")
+	b.WriteString(" has failed")
+	if e.hasAtLeastOnePropertyName() {
+		b.WriteString(" for the following properties")
+	}
+	b.WriteString(":\n")
 	internal.JoinErrors(&b, e.Errors, strings.Repeat(" ", 2))
 	return b.String()
+}
+
+func (e *ValidatorError) hasAtLeastOnePropertyName() bool {
+	for _, e := range e.Errors {
+		if e.PropertyName != "" {
+			return true
+		}
+	}
+	return false
 }
 
 // ValidatorErrors is a slice of [ValidatorError].
