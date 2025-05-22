@@ -50,14 +50,14 @@ func TestAssertError(t *testing.T) {
 			ok:             false,
 			inputError:     &govy.ValidatorError{},
 			expectedErrors: []govytest.ExpectedRuleError{{}},
-			out: `Validation for ExpectedRuleError at index 0 has failed for the following properties:
+			out: `Validation for ExpectedRuleError at index 0 has failed:
   - one of [code, containsMessage, message] properties must be set, none was provided`,
 		},
 		"invalid input - second error": {
 			ok:             false,
 			inputError:     &govy.ValidatorError{},
 			expectedErrors: []govytest.ExpectedRuleError{{Message: "foo"}, {}},
-			out: `Validation for ExpectedRuleError at index 1 has failed for the following properties:
+			out: `Validation for ExpectedRuleError at index 1 has failed:
   - one of [code, containsMessage, message] properties must be set, none was provided`,
 		},
 		"no expected errors": {
@@ -374,7 +374,7 @@ func TestAssertError_ValidatorErrors(t *testing.T) {
 			ok:             false,
 			inputError:     govy.ValidatorErrors{{}},
 			expectedErrors: []govytest.ExpectedRuleError{{Message: "foo"}},
-			out: `Validation for ExpectedRuleError has failed for the following properties:
+			out: `Validation for ExpectedRuleError has failed:
   - one of [validatorIndex, validatorName] properties must be set, none was provided; The actual error was of type govy.ValidatorErrors.
     In order to match expected error with an actual error produced by a specific govy.Validator instance,
     either the name of the validator, its index (when using ValidateSlice method) or both must be provided.
@@ -575,7 +575,7 @@ func TestAssertErrorContains(t *testing.T) {
 			ok:            false,
 			inputError:    &govy.ValidatorError{},
 			expectedError: govytest.ExpectedRuleError{},
-			out: `Validation for ExpectedRuleError has failed for the following properties:
+			out: `Validation for ExpectedRuleError has failed:
   - one of [code, containsMessage, message] properties must be set, none was provided`,
 		},
 		"wrong type of error": {
