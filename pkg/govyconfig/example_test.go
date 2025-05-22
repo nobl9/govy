@@ -106,7 +106,7 @@ func ExampleNameInferModeGenerate() {
 	}
 
 	// Output:
-	// Validation for Teacher has failed for the following properties:
+	// Validation for Teacher has failed:
 	//   - should be equal to 'Jerry'
 	// Validation for NotTeacher has failed for the following properties:
 	//   - 'name' with value 'Tom':
@@ -135,7 +135,7 @@ func ExampleSetNameInferMode_invalidUsage() {
 	}
 
 	// Output:
-	// Validation for Teacher has failed for the following properties:
+	// Validation for Teacher has failed:
 	//   - should be equal to 'Jerry'
 }
 

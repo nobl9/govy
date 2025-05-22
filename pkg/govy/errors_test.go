@@ -67,6 +67,29 @@ func TestValidatorError(t *testing.T) {
 				},
 			},
 		},
+		"no_prop_names_and_validator_name": {
+			Name: "Teacher",
+			Errors: govy.PropertyErrors{
+				{
+					Errors: []*govy.RuleError{{Message: "no name"}},
+				},
+				{
+					Errors: []*govy.RuleError{{Message: "that is an error"}},
+				},
+			},
+		},
+		"no_prop_names_and_index": {
+			Name:       "Teacher",
+			SliceIndex: ptr(0),
+			Errors: govy.PropertyErrors{
+				{
+					Errors: []*govy.RuleError{{Message: "no name"}},
+				},
+				{
+					Errors: []*govy.RuleError{{Message: "that is an error"}},
+				},
+			},
+		},
 	}
 
 	for name, err := range tests {

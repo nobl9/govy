@@ -52,7 +52,7 @@ func ExampleNew() {
 	}
 
 	// Output:
-	// Validation has failed for the following properties:
+	// Validation has failed:
 	//   - always fails
 }
 
@@ -70,7 +70,7 @@ func ExampleValidator_WithName() {
 	}
 
 	// Output:
-	// Validation for Teacher has failed for the following properties:
+	// Validation for Teacher has failed:
 	//   - always fails
 }
 
@@ -89,7 +89,7 @@ func ExampleValidator_WithNameFunc() {
 	}
 
 	// Output:
-	// Validation for Teacher John has failed for the following properties:
+	// Validation for Teacher John has failed:
 	//   - always fails
 }
 
@@ -118,7 +118,7 @@ func ExampleValidatorError_WithName() {
 	}
 
 	// Output:
-	// Validation for Jake has failed for the following properties:
+	// Validation for Jake has failed:
 	//   - always fails
 }
 
@@ -154,7 +154,7 @@ func ExampleValidator_When() {
 	}
 
 	// Output:
-	// Validation for Jerry has failed for the following properties:
+	// Validation for Jerry has failed:
 	//   - always fails
 }
 
@@ -506,7 +506,7 @@ func ExampleGetSelf() {
 	}
 
 	// Output:
-	// Validation for Teacher has failed for the following properties:
+	// Validation for Teacher has failed:
 	//   - now I have access to the whole teacher
 }
 
