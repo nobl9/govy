@@ -16,9 +16,11 @@ import (
 //go:embed test_data/expected_pod_plan.json
 var expectedPlanJSON string
 
+type Kind string
+
 type Pod struct {
 	APIVersion string      `json:"apiVersion"`
-	Kind       string      `json:"kind"`
+	Kind       Kind        `json:"kind"`
 	Metadata   PodMetadata `json:"metadata"`
 	Spec       PodSpec     `json:"spec"`
 	Status     *PodStatus  `json:"status,omitempty"`
@@ -118,10 +120,10 @@ func TestPlan(t *testing.T) {
 			WithName("apiVersion").
 			Required().
 			Rules(rules.OneOf("v1", "v2")),
-		govy.For(func(p Pod) string { return p.Kind }).
+		govy.For(func(p Pod) Kind { return p.Kind }).
 			WithName("kind").
 			Required().
-			Rules(rules.EQ("Pod")),
+			Rules(rules.EQ[Kind]("Pod")),
 		govy.For(func(p Pod) PodMetadata { return p.Metadata }).
 			WithName("metadata").
 			Required().
@@ -139,8 +141,8 @@ func TestPlan(t *testing.T) {
 	assert.Equal(t, expectedPlanJSON, actual)
 }
 
-//go:embed test_data/expected_values_intersection.json
-var expectedValuesIntersection string
+//go:embed test_data/expected_values_intersection_plan.json
+var expectedValuesIntersectionPlan string
 
 func TestPlan_validValuesIntersection(t *testing.T) {
 	validator := govy.New(
@@ -157,7 +159,27 @@ func TestPlan_validValuesIntersection(t *testing.T) {
 	plan := govy.Plan(validator)
 
 	actual := requireJSON(t, plan)
-	assert.Equal(t, expectedValuesIntersection, actual)
+	assert.Equal(t, expectedValuesIntersectionPlan, actual)
+}
+
+//go:embed test_data/expected_custom_slice_type_plan.json
+var expectedCustomSliceTypePlan string
+
+func TestPlan_customSliceType(t *testing.T) {
+	type Slice []string
+	type Foo struct {
+		Slice Slice
+	}
+
+	validator := govy.New(
+		govy.For(func(f Foo) Slice { return f.Slice }).
+			Rules(rules.SliceMaxLength[Slice](1)),
+	)
+
+	plan := govy.Plan(validator)
+
+	actual := requireJSON(t, plan)
+	assert.Equal(t, expectedCustomSliceTypePlan, actual)
 }
 
 func requireJSON(t *testing.T, plan *govy.ValidatorPlan) string {
