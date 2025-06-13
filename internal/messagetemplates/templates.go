@@ -59,6 +59,7 @@ const (
 	StringKubernetesQualifiedNameTemplate
 	URLTemplate
 	SliceUniqueTemplate
+	UniquePropertiesTemplate
 )
 
 // nolint: lll
@@ -159,6 +160,8 @@ var rawMessageTemplates = map[templateKey]string{
 {{- end }}
 `,
 	SliceUniqueTemplate: `elements are not unique, {{ .Custom.FirstOrdinal }} and {{ .Custom.SecondOrdinal }} elements collide
+{{- if gt (len .Custom.Constraints) 0 }} based on constraints: {{ joinSlice .Custom.Constraints "" }}{{- end }}`,
+	UniquePropertiesTemplate: `properties are not unique, {{ .Custom.FirstProperty }} and {{ .Custom.SecondProperty }} properties collide
 {{- if gt (len .Custom.Constraints) 0 }} based on constraints: {{ joinSlice .Custom.Constraints "" }}{{- end }}`,
 	URLTemplate: "{{ .Error }}",
 }
