@@ -170,7 +170,8 @@ var uniquePropertiesTestCases = []*struct {
 				Pound:  "unique",
 			})
 		},
-		expectedError: "properties are not unique, Dollar and Euro properties collide based on constraints: each currency must be unique",
+		expectedError: "properties are not unique, Dollar and Euro properties collide based on constraints:" +
+			" each currency must be unique",
 	},
 }
 
