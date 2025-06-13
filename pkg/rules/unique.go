@@ -1,6 +1,7 @@
 package rules
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/nobl9/govy/internal/collections"
@@ -88,7 +89,7 @@ func UniqueProperties[S, V any, H comparable](
 			hash := hashFunc(value)
 			if previousProperty, ok := unique[hash]; ok {
 				return govy.NewRuleErrorTemplate(govy.TemplateVars{
-					PropertyValue: value,
+					ComparisonValue: sortedKeys,
 					Custom: uniquePropertiesTemplateVars{
 						Constraints:    constraints,
 						FirstProperty:  previousProperty,
@@ -103,9 +104,12 @@ func UniqueProperties[S, V any, H comparable](
 		WithErrorCode(ErrorCodeSliceUnique).
 		WithMessageTemplate(tpl).
 		WithDescription(func() string {
-			msg := "properties must be unique"
+			msg := fmt.Sprintf(
+				"all of the properties must be unique: %s",
+				strings.Join(collections.SortedKeys(getters), ", "),
+			)
 			if len(constraints) > 0 {
-				msg += " according to the following constraints: " + strings.Join(constraints, ", ")
+				msg += ", according to the following constraints: " + strings.Join(constraints, ", ")
 			}
 			return msg
 		}())

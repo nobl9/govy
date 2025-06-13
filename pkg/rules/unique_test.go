@@ -126,7 +126,7 @@ var uniquePropertiesTestCases = []*struct {
 				Pound:  "",
 			})
 		},
-		expectedError: "properties are not unique, Dollar and Euro properties collide",
+		expectedError: "all of [Dollar, Euro, Pound] properties must be unique, but 'Dollar' collides with 'Euro'",
 	},
 	{
 		run: func() error {
@@ -136,7 +136,7 @@ var uniquePropertiesTestCases = []*struct {
 				Pound:  "unique",
 			})
 		},
-		expectedError: "properties are not unique, Dollar and Euro properties collide",
+		expectedError: "all of [Dollar, Euro, Pound] properties must be unique, but 'Dollar' collides with 'Euro'",
 	},
 	{
 		run: func() error {
@@ -146,7 +146,7 @@ var uniquePropertiesTestCases = []*struct {
 				Pound:  "same",
 			})
 		},
-		expectedError: "properties are not unique, Dollar and Pound properties collide",
+		expectedError: "all of [Dollar, Euro, Pound] properties must be unique, but 'Dollar' collides with 'Pound'",
 	},
 	{
 		run: func() error {
@@ -156,7 +156,7 @@ var uniquePropertiesTestCases = []*struct {
 				Pound:  "same",
 			})
 		},
-		expectedError: "properties are not unique, Euro and Pound properties collide",
+		expectedError: "all of [Dollar, Euro, Pound] properties must be unique, but 'Euro' collides with 'Pound'",
 	},
 	{
 		run: func() error {
@@ -170,8 +170,23 @@ var uniquePropertiesTestCases = []*struct {
 				Pound:  "unique",
 			})
 		},
-		expectedError: "properties are not unique, Dollar and Euro properties collide based on constraints:" +
-			" each currency must be unique",
+		expectedError: "all of [Dollar, Euro, Pound] properties must be unique, but 'Dollar' collides with 'Euro'" +
+			", based on constraints: each currency must be unique",
+	},
+	{
+		run: func() error {
+			return UniqueProperties(
+				HashFuncSelf[string](),
+				uniquePropertiesGetters,
+				"each currency must be unique", "another constraint",
+			).Validate(currency{
+				Dollar: "same",
+				Euro:   "same",
+				Pound:  "unique",
+			})
+		},
+		expectedError: "all of [Dollar, Euro, Pound] properties must be unique, but 'Dollar' collides with 'Euro'" +
+			", based on constraints: each currency must be unique, another constraint",
 	},
 }
 
