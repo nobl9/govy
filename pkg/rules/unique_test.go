@@ -196,7 +196,7 @@ func TestUniqueProperties(t *testing.T) {
 		if tc.expectedError != "" {
 			assert.Require(t, assert.Error(t, err))
 			assert.EqualError(t, err, tc.expectedError)
-			assert.True(t, govy.HasErrorCode(err, ErrorCodeSliceUnique))
+			assert.True(t, govy.HasErrorCode(err, ErrorCodeUniqueProperties))
 		} else {
 			assert.NoError(t, err)
 		}

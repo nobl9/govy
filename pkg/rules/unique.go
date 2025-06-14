@@ -101,12 +101,12 @@ func UniqueProperties[S, V any, H comparable](
 		}
 		return nil
 	}).
-		WithErrorCode(ErrorCodeSliceUnique).
+		WithErrorCode(ErrorCodeUniqueProperties).
 		WithMessageTemplate(tpl).
 		WithDescription(func() string {
 			msg := fmt.Sprintf(
 				"all of the properties must be unique: %s",
-				strings.Join(collections.SortedKeys(getters), ", "),
+				strings.Join(sortedKeys, ", "),
 			)
 			if len(constraints) > 0 {
 				msg += ", according to the following constraints: " + strings.Join(constraints, ", ")

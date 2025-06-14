@@ -66,6 +66,7 @@ const (
 	ErrorCodeMutuallyExclusive             govy.ErrorCode = "mutually_exclusive"
 	ErrorCodeEqualProperties               govy.ErrorCode = "equal_properties"
 	ErrorCodeSliceUnique                   govy.ErrorCode = "slice_unique"
+	ErrorCodeUniqueProperties              govy.ErrorCode = "unique_properties"
 	ErrorCodeURL                           govy.ErrorCode = "url"
 	ErrorCodeDurationPrecision             govy.ErrorCode = "duration_precision"
 )
