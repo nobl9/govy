@@ -1,0 +1,18 @@
+{
+  "properties": [
+    {
+      "path": "$",
+      "typeInfo": {
+        "name": "Slice",
+        "kind": "[]string",
+        "package": "github.com/nobl9/govy/pkg/govy_test"
+      },
+      "rules": [
+        {
+          "description": "length must be less than or equal to 1",
+          "errorCode": "slice_max_length"
+        }
+      ]
+    }
+  ]
+}

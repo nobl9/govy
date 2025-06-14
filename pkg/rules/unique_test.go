@@ -92,3 +92,121 @@ func BenchmarkSliceUnique(b *testing.B) {
 		}
 	}
 }
+
+type currency struct {
+	Dollar string
+	Euro   string
+	Pound  string
+}
+
+var uniquePropertiesGetters = map[string]func(c currency) string{
+	"Dollar": func(c currency) string { return c.Dollar },
+	"Euro":   func(c currency) string { return c.Euro },
+	"Pound":  func(c currency) string { return c.Pound },
+}
+
+var uniquePropertiesTestCases = []*struct {
+	run           func() error
+	expectedError string
+}{
+	{
+		run: func() error {
+			return UniqueProperties(HashFuncSelf[string](), uniquePropertiesGetters).Validate(currency{
+				Dollar: "unique1",
+				Euro:   "unique2",
+				Pound:  "unique3",
+			})
+		},
+	},
+	{
+		run: func() error {
+			return UniqueProperties(HashFuncSelf[string](), uniquePropertiesGetters).Validate(currency{
+				Dollar: "",
+				Euro:   "",
+				Pound:  "",
+			})
+		},
+		expectedError: "all of [Dollar, Euro, Pound] properties must be unique, but 'Dollar' collides with 'Euro'",
+	},
+	{
+		run: func() error {
+			return UniqueProperties(HashFuncSelf[string](), uniquePropertiesGetters).Validate(currency{
+				Dollar: "same",
+				Euro:   "same",
+				Pound:  "unique",
+			})
+		},
+		expectedError: "all of [Dollar, Euro, Pound] properties must be unique, but 'Dollar' collides with 'Euro'",
+	},
+	{
+		run: func() error {
+			return UniqueProperties(HashFuncSelf[string](), uniquePropertiesGetters).Validate(currency{
+				Dollar: "same",
+				Euro:   "unique",
+				Pound:  "same",
+			})
+		},
+		expectedError: "all of [Dollar, Euro, Pound] properties must be unique, but 'Dollar' collides with 'Pound'",
+	},
+	{
+		run: func() error {
+			return UniqueProperties(HashFuncSelf[string](), uniquePropertiesGetters).Validate(currency{
+				Dollar: "unique",
+				Euro:   "same",
+				Pound:  "same",
+			})
+		},
+		expectedError: "all of [Dollar, Euro, Pound] properties must be unique, but 'Euro' collides with 'Pound'",
+	},
+	{
+		run: func() error {
+			return UniqueProperties(
+				HashFuncSelf[string](),
+				uniquePropertiesGetters,
+				"each currency must be unique",
+			).Validate(currency{
+				Dollar: "same",
+				Euro:   "same",
+				Pound:  "unique",
+			})
+		},
+		expectedError: "all of [Dollar, Euro, Pound] properties must be unique, but 'Dollar' collides with 'Euro'" +
+			", based on constraints: each currency must be unique",
+	},
+	{
+		run: func() error {
+			return UniqueProperties(
+				HashFuncSelf[string](),
+				uniquePropertiesGetters,
+				"each currency must be unique", "another constraint",
+			).Validate(currency{
+				Dollar: "same",
+				Euro:   "same",
+				Pound:  "unique",
+			})
+		},
+		expectedError: "all of [Dollar, Euro, Pound] properties must be unique, but 'Dollar' collides with 'Euro'" +
+			", based on constraints: each currency must be unique, another constraint",
+	},
+}
+
+func TestUniqueProperties(t *testing.T) {
+	for _, tc := range uniquePropertiesTestCases {
+		err := tc.run()
+		if tc.expectedError != "" {
+			assert.Require(t, assert.Error(t, err))
+			assert.EqualError(t, err, tc.expectedError)
+			assert.True(t, govy.HasErrorCode(err, ErrorCodeUniqueProperties))
+		} else {
+			assert.NoError(t, err)
+		}
+	}
+}
+
+func BenchmarkUniqueProperties(b *testing.B) {
+	for _, tc := range uniquePropertiesTestCases {
+		for range b.N {
+			_ = tc.run()
+		}
+	}
+}

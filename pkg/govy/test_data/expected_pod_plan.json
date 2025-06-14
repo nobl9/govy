@@ -21,8 +21,9 @@
     {
       "path": "$.kind",
       "typeInfo": {
-        "name": "string",
-        "kind": "string"
+        "name": "Kind",
+        "kind": "string",
+        "package": "github.com/nobl9/govy/pkg/govy_test"
       },
       "values": [
         "Pod"
