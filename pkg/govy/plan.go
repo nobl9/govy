@@ -28,10 +28,10 @@ type PropertyPlan struct {
 	// IsHidden indicates if the property was marked with [PropertyRules.HideValue].
 	IsHidden bool `json:"isHidden,omitempty"`
 	// Examples lists example, valid values for this property.
-	// These values are not exhaustive, for an exhaustive list of valid values see [ValidValues].
+	// These values are not exhaustive, for an exhaustive list of valid values see [Values].
 	Examples []string `json:"examples,omitempty"`
 	// Values unlike [Examples] should list ALL valid values for this property.
-	// These values are constructed as an intersection of all [RulePlan.Values]
+	// These values are constructed as an intersection of all [RulePlan] values
 	// for this property.
 	Values []string `json:"values,omitempty"`
 	// Rules which apply to this property.
@@ -64,7 +64,7 @@ type RulePlan struct {
 	// which had [WhenDescription] added to the [WhenOptions].
 	Conditions []string `json:"conditions,omitempty"`
 	// Examples is the value provided to [Rule.WithExamples].
-	// These values are not exhaustive, for an exhaustive list of valid values see [ValidValues].
+	// These values are not exhaustive, for an exhaustive list of valid values see [PropertyPlan.ValidValues].
 	Examples []string `json:"examples,omitempty"`
 
 	// values unlike [Examples] should list ALL valid values which meet this rule.
