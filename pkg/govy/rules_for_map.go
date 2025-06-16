@@ -190,9 +190,7 @@ func (r PropertyRulesForMap[M, K, V, S]) cascadeInternal(mode CascadeMode) prope
 
 // plan constructs a validation plan for the property rules.
 func (r PropertyRulesForMap[M, K, V, S]) plan(builder planBuilder) {
-	for _, predicate := range r.predicates {
-		builder.rulePlan.Conditions = append(builder.rulePlan.Conditions, predicate.description)
-	}
+	builder = appendPredicatesToPlanBuilder(builder, r.predicates)
 	r.mapRules.plan(builder.setExamples(r.mapRules.examples...))
 	builder = builder.appendPath(r.mapRules.name)
 	// JSON/YAML path for keys uses '~' to extract the keys.

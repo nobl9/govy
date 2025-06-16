@@ -229,9 +229,7 @@ func (r PropertyRules[T, S]) cascadeInternal(mode CascadeMode) propertyRulesInte
 func (r PropertyRules[T, S]) plan(builder planBuilder) {
 	builder.propertyPlan.IsOptional = (r.omitEmpty || r.isPointer) && !r.required
 	builder.propertyPlan.IsHidden = r.hideValue
-	for _, predicate := range r.predicates {
-		builder.rulePlan.Conditions = append(builder.rulePlan.Conditions, predicate.description)
-	}
+	builder = appendPredicatesToPlanBuilder(builder, r.predicates)
 	if r.originalType != nil {
 		builder.propertyPlan.TypeInfo = TypeInfo(*r.originalType)
 	} else {

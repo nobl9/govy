@@ -73,7 +73,7 @@ type RulePlan struct {
 }
 
 func (r RulePlan) isEmpty() bool {
-	return r.Description == "" && r.Details == "" && r.ErrorCode == "" && len(r.Conditions) == 0
+	return r.Description == "" && r.Details == "" && r.ErrorCode == ""
 }
 
 // Plan creates a validation plan for the provided [Validator].
@@ -87,8 +87,13 @@ func Plan[S any](v Validator[S]) *ValidatorPlan {
 	for _, prop := range properties {
 		prop.collectValidValuesFromRules()
 	}
+	name := v.name
+	// Best effort name function setting.
+	if v.nameFunc != nil {
+		name = v.nameFunc(*new(S))
+	}
 	return &ValidatorPlan{
-		Name:       v.name,
+		Name:       name,
 		Properties: properties,
 	}
 }
@@ -97,10 +102,7 @@ func aggregatePropertyPlans(builders []planBuilder) []*PropertyPlan {
 	propertiesMap := make(map[string]*PropertyPlan)
 	for _, b := range builders {
 		entry, ok := propertiesMap[b.path]
-		if ok {
-			entry.Rules = append(entry.Rules, b.rulePlan)
-			propertiesMap[b.path] = entry
-		} else {
+		if !ok {
 			entry = &PropertyPlan{
 				Path:       b.path,
 				TypeInfo:   b.propertyPlan.TypeInfo,
@@ -108,11 +110,11 @@ func aggregatePropertyPlans(builders []planBuilder) []*PropertyPlan {
 				IsOptional: b.propertyPlan.IsOptional,
 				IsHidden:   b.propertyPlan.IsHidden,
 			}
-			if !b.rulePlan.isEmpty() {
-				entry.Rules = append(entry.Rules, b.rulePlan)
-			}
-			propertiesMap[b.path] = entry
 		}
+		if !b.rulePlan.isEmpty() {
+			entry.Rules = append(entry.Rules, b.rulePlan)
+		}
+		propertiesMap[b.path] = entry
 	}
 	return slices.SortedFunc(
 		maps.Values(propertiesMap),
@@ -170,4 +172,14 @@ func (p planBuilder) appendPath(path string) planBuilder {
 func (p planBuilder) setExamples(examples ...string) planBuilder {
 	p.propertyPlan.Examples = examples
 	return p
+}
+
+func appendPredicatesToPlanBuilder[T any](builder planBuilder, predicates []predicateContainer[T]) planBuilder {
+	for _, predicate := range predicates {
+		if predicate.description == "" {
+			continue
+		}
+		builder.rulePlan.Conditions = append(builder.rulePlan.Conditions, predicate.description)
+	}
+	return builder
 }

@@ -182,6 +182,44 @@ func TestPlan_customSliceType(t *testing.T) {
 	assert.Equal(t, expectedCustomSliceTypePlan, actual)
 }
 
+//go:embed test_data/expected_conditions_without_rules_plan.json
+var expectedConditionsWithoutRulesPlan string
+
+func TestPlan_conditionsWithoutRules(t *testing.T) {
+	type Slice []string
+	type Foo struct {
+		Slice Slice
+	}
+
+	validator := govy.New(
+		govy.For(func(f Foo) Slice { return f.Slice }).
+			WithName("Slice").
+			Include(govy.New(
+				govy.For(govy.GetSelf[Slice]()).
+					Rules(rules.SliceMinLength[Slice](2)),
+			)).
+			When(func(f Foo) bool { return true }, govy.WhenDescription("when true")),
+		govy.For(func(f Foo) Slice { return f.Slice }).
+			WithName("Slice").
+			Include(govy.New(
+				govy.For(govy.GetSelf[Slice]()).
+					Rules(rules.SliceMaxLength[Slice](1)),
+			)).
+			When(func(f Foo) bool { return true }),
+		govy.For(func(f Foo) Slice { return f.Slice }).
+			WithName("Slice").
+			When(func(f Foo) bool { return true }, govy.WhenDescription("when true")),
+		govy.For(func(f Foo) Slice { return f.Slice }).
+			WithName("Slice").
+			When(func(f Foo) bool { return true }),
+	)
+
+	plan := govy.Plan(validator)
+
+	actual := requireJSON(t, plan)
+	assert.Equal(t, expectedConditionsWithoutRulesPlan, actual)
+}
+
 func requireJSON(t *testing.T, plan *govy.ValidatorPlan) string {
 	buf := bytes.Buffer{}
 	enc := json.NewEncoder(&buf)
