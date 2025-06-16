@@ -171,15 +171,7 @@ func Example_validationPlan() {
 	//       "typeInfo": {
 	//         "name": "string",
 	//         "kind": "string"
-	//       },
-	//       "rules": [
-	//         {
-	//           "description": "",
-	//           "conditions": [
-	//             "Teacher name is John"
-	//           ]
-	//         }
-	//       ]
+	//       }
 	//     }
 	//   ]
 	// }

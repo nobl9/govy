@@ -122,9 +122,7 @@ func (r PropertyRulesForSlice[T, S]) cascadeInternal(mode CascadeMode) propertyR
 
 // plan generates a validation plan for the property rules.
 func (r PropertyRulesForSlice[T, S]) plan(builder planBuilder) {
-	for _, predicate := range r.predicates {
-		builder.rulePlan.Conditions = append(builder.rulePlan.Conditions, predicate.description)
-	}
+	builder = appendPredicatesToPlanBuilder(builder, r.predicates)
 	r.sliceRules.plan(builder.setExamples(r.sliceRules.examples...))
 	builder = builder.appendPath(r.sliceRules.name)
 	if len(r.forEachRules.rules) > 0 {

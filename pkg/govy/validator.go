@@ -148,9 +148,7 @@ func (v Validator[S]) ValidateSlice(s []S) error {
 
 // plan constructs a validation plan for all the properties of the [Validator].
 func (v Validator[S]) plan(builder planBuilder) {
-	for _, predicate := range v.predicates {
-		builder.rulePlan.Conditions = append(builder.rulePlan.Conditions, predicate.description)
-	}
+	builder = appendPredicatesToPlanBuilder(builder, v.predicates)
 	for _, rules := range v.props {
 		if p, ok := rules.(planner); ok {
 			p.plan(builder)
