@@ -236,6 +236,13 @@ func (r PropertyRules[T, S]) plan(builder planBuilder) {
 		builder.propertyPlan.TypeInfo = TypeInfo(typeinfo.Get[T]())
 	}
 	builder = builder.appendPath(r.name).setExamples(r.examples...)
+	if r.required {
+		// Dummy rule to register the property as required.
+		NewRule(func(v T) error { return nil }).
+			WithErrorCode(internal.RequiredErrorCodeString).
+			WithDescription(internal.RequiredDescription).
+			plan(builder)
+	}
 	for _, rule := range r.rules {
 		if p, ok := rule.(planner); ok {
 			p.plan(builder)
