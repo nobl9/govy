@@ -510,7 +510,6 @@ func Example_validationPlan() {
 			Required(),
 		govy.For(func(u University) string { return u.Address }).
 			WithName("address").
-			Required().
 			Rules(rules.StringMatchRegexp(
 				regexp.MustCompile(`[\w\s.]+, [0-9]{2}-[0-9]{3} \w+`),
 			).
@@ -527,7 +526,6 @@ func Example_validationPlan() {
 	teacherValidator := govy.New(
 		govy.For(func(t Teacher) string { return t.Name }).
 			WithName("name").
-			Required().
 			Rules(
 				rules.StringNotEmpty(),
 				rules.OneOf("Jake", "George")),
@@ -649,7 +647,16 @@ func Example_validationPlan() {
 	//       "typeInfo": {
 	//         "name": "string",
 	//         "kind": "string"
-	//       }
+	//       },
+	//       "rules": [
+	//         {
+	//           "description": "property is required",
+	//           "errorCode": "required",
+	//           "conditions": [
+	//             "Teacher name is John"
+	//           ]
+	//         }
+	//       ]
 	//     }
 	//   ]
 	// }

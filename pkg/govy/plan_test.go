@@ -65,8 +65,7 @@ func TestPlan(t *testing.T) {
 			Rules(rules.StringNotEmpty()),
 		govy.For(func(p PodMetadata) string { return p.Namespace }).
 			WithName("namespace").
-			Required().
-			Rules(rules.StringNotEmpty()),
+			Required(),
 		govy.ForMap(func(p PodMetadata) Labels { return p.Labels }).
 			WithName("labels").
 			Rules(rules.MapMaxLength[Labels](10)).
