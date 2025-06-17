@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/nobl9/govy/internal/collections"
-	"github.com/nobl9/govy/internal/compare"
 )
 
 // ValidatorPlan is a validation plan for a single [Validator].
@@ -75,6 +74,14 @@ func (r RulePlan) isEmpty() bool {
 	return r.Description == "" && r.Details == "" && r.ErrorCode == ""
 }
 
+func (r RulePlan) equal(r2 RulePlan) bool {
+	return r.Description == r2.Description &&
+		r.Details == r2.Details &&
+		r.ErrorCode == r2.ErrorCode &&
+		collections.EqualSlices(r.Conditions, r2.Conditions) &&
+		collections.EqualSlices(r.Examples, r2.Examples)
+}
+
 // Plan creates a validation plan for the provided [Validator].
 // Each property is represented by a [PropertyPlan] which aggregates its every [RulePlan].
 // If a property does not have any rules, it won't be included in the result.
@@ -139,13 +146,7 @@ func (p *PropertyPlan) removeDeduplicatedRules() {
 	}
 	uniqueRules := make([]RulePlan, 0, len(p.Rules))
 	for _, rule := range p.Rules {
-		isDuplicate := false
-		for _, uniqueRule := range uniqueRules {
-			if compare.EqualExportedFields(rule, uniqueRule) {
-				isDuplicate = true
-				break
-			}
-		}
+		isDuplicate := slices.ContainsFunc(uniqueRules, rule.equal)
 		if !isDuplicate {
 			uniqueRules = append(uniqueRules, rule)
 		}

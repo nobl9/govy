@@ -87,7 +87,7 @@ func TestPlan(t *testing.T) {
 	specValidator := govy.New(
 		govy.For(func(p PodSpec) string { return p.DNSPolicy }).
 			WithName("dnsPolicy").
-			Required().
+			OmitEmpty().
 			Rules(rules.OneOf("ClusterFirst", "Default")),
 		govy.ForSlice(func(p PodSpec) []Container { return p.Containers }).
 			WithName("containers").
@@ -225,6 +225,23 @@ func TestPlan_removeDuplicateRules(t *testing.T) {
 
 	actual := requireJSON(t, plan)
 	assert.Equal(t, readExpectedPlan(t, "expected_remove_duplicate_rules_plan.json"), actual)
+}
+
+func TestPlan_optionalProperties(t *testing.T) {
+	validator := govy.New(
+		govy.For(func(s string) string { return s }).
+			OmitEmpty().
+			Rules(rules.StringASCII()).
+			WithName("String2"),
+		govy.ForPointer(func(s string) *string { return &s }).
+			WithName("String1").
+			When(func(s string) bool { return true }, govy.WhenDescription("when true")),
+	)
+
+	plan := govy.Plan(validator)
+
+	actual := requireJSON(t, plan)
+	assert.Equal(t, readExpectedPlan(t, "expected_optional_properties_plan.json"), actual)
 }
 
 func requireJSON(t *testing.T, plan *govy.ValidatorPlan) string {

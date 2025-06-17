@@ -1,0 +1,37 @@
+{
+  "properties": [
+    {
+      "path": "$.String1",
+      "typeInfo": {
+        "name": "string",
+        "kind": "string"
+      },
+      "rules": [
+        {
+          "description": "property is optional",
+          "errorCode": "optional",
+          "conditions": [
+            "when true"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "$.String2",
+      "typeInfo": {
+        "name": "string",
+        "kind": "string"
+      },
+      "rules": [
+        {
+          "description": "property is optional",
+          "errorCode": "optional"
+        },
+        {
+          "description": "string must match regular expression: '^[\\x00-\\x7F]*$'",
+          "errorCode": "string_ascii"
+        }
+      ]
+    }
+  ]
+}

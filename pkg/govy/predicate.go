@@ -8,7 +8,7 @@ type WhenOptions struct {
 }
 
 // WhenDescription sets the description for the When condition.
-func WhenDescription(format string, a ...interface{}) WhenOptions {
+func WhenDescription(format string, a ...any) WhenOptions {
 	return WhenOptions{description: fmt.Sprintf(format, a...)}
 }
 

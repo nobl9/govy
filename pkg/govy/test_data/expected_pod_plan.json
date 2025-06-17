@@ -271,8 +271,8 @@
       ],
       "rules": [
         {
-          "description": "property is required",
-          "errorCode": "required"
+          "description": "property is optional",
+          "errorCode": "optional"
         },
         {
           "description": "must be one of: ClusterFirst, Default",

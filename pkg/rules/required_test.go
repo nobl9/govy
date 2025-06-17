@@ -9,7 +9,7 @@ import (
 )
 
 var requiredTestCases = []*struct {
-	in         interface{}
+	in         any
 	shouldFail bool
 }{
 	{1, false},

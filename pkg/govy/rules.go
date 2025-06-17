@@ -238,14 +238,14 @@ func (r PropertyRules[T, S]) plan(builder planBuilder) {
 	if r.required {
 		// Dummy rule to register the property as required.
 		NewRule(func(v T) error { return nil }).
-			WithErrorCode(internal.RequiredErrorCodeString).
 			WithDescription(internal.RequiredDescription).
+			WithErrorCode(internal.RequiredErrorCode).
 			plan(builder)
 	} else if r.omitEmpty || r.isPointer {
 		// Dummy rule to register the property as optional.
 		NewRule(func(v T) error { return nil }).
-			WithErrorCode("property is optional").
-			WithDescription("optional").
+			WithDescription(internal.OptionalDescription).
+			WithErrorCode(internal.OptionalErrorCode).
 			plan(builder)
 	}
 	for _, rule := range r.rules {
@@ -303,7 +303,7 @@ func (r PropertyRules[T, S]) getValue(st S) (v T, skip bool, propErr *PropertyEr
 
 func newRequiredError() *RuleError {
 	return NewRuleError(
-		internal.RequiredErrorMessage,
-		internal.RequiredErrorCodeString,
+		internal.RequiredMessage,
+		internal.RequiredErrorCode,
 	)
 }

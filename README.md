@@ -561,8 +561,11 @@ func Example_validationPlan() {
 	//         "name": "string",
 	//         "kind": "string"
 	//       },
-	//       "isOptional": true,
 	//       "rules": [
+	//         {
+	//           "description": "property is optional",
+	//           "errorCode": "optional"
+	//         },
 	//         {
 	//           "description": "each word in a string must start with a capital letter",
 	//           "errorCode": "string_title"
