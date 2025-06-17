@@ -14,15 +14,17 @@ type customStruct struct{}
 
 type customMap map[string]int
 
-type customList []customMap
+type customSlice []customMap
 
-type customNestedMap map[customString]customList
+type customNestedMap map[customString]customSlice
 
 type testCase struct {
 	name     string
 	typeFunc func() TypeInfo
 	expected TypeInfo
 }
+
+type customStringSlice []string
 
 func TestGet(t *testing.T) {
 	tests := []testCase{
@@ -77,9 +79,14 @@ func TestGet(t *testing.T) {
 			expected: TypeInfo{Name: "customNestedMap", Package: packageName, Kind: "map[string][]map[string]int"},
 		},
 		{
-			name:     "custom list",
-			typeFunc: func() TypeInfo { return Get[customList]() },
-			expected: TypeInfo{Name: "customList", Package: packageName, Kind: "[]map[string]int"},
+			name:     "custom slice",
+			typeFunc: func() TypeInfo { return Get[customSlice]() },
+			expected: TypeInfo{Name: "customSlice", Package: packageName, Kind: "[]map[string]int"},
+		},
+		{
+			name:     "custom string slice",
+			typeFunc: func() TypeInfo { return Get[customStringSlice]() },
+			expected: TypeInfo{Name: "customStringSlice", Package: packageName, Kind: "[]string"},
 		},
 	}
 
