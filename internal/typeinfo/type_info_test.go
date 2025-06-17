@@ -18,13 +18,13 @@ type customSlice []customMap
 
 type customNestedMap map[customString]customSlice
 
+type customStringSlice []string
+
 type testCase struct {
 	name     string
 	typeFunc func() TypeInfo
 	expected TypeInfo
 }
-
-type customStringSlice []string
 
 func TestGet(t *testing.T) {
 	tests := []testCase{
