@@ -85,7 +85,7 @@ var rawMessageTemplates = map[templateKey]string{
 {{- else -}}
 	[{{ joinSlice .ComparisonValue "" }}] properties are mutually exclusive, provide only one of them
 {{- end }}`,
-	RequiredTemplate:          internal.RequiredErrorMessage,
+	RequiredTemplate:          internal.RequiredMessage,
 	StringNonEmptyTemplate:    "string cannot be empty",
 	StringMatchRegexpTemplate: "string must match regular expression: '{{ .ComparisonValue }}'",
 	StringDenyRegexpTemplate:  "string must not match regular expression: '{{ .ComparisonValue }}'",

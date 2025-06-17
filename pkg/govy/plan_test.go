@@ -5,16 +5,16 @@ import (
 	_ "embed"
 	"encoding/json"
 	"errors"
+	"os"
+	"path/filepath"
 	"testing"
 
+	"github.com/nobl9/govy/internal"
 	"github.com/nobl9/govy/internal/assert"
 
 	"github.com/nobl9/govy/pkg/govy"
 	"github.com/nobl9/govy/pkg/rules"
 )
-
-//go:embed test_data/expected_pod_plan.json
-var expectedPlanJSON string
 
 type Kind string
 
@@ -87,7 +87,7 @@ func TestPlan(t *testing.T) {
 	specValidator := govy.New(
 		govy.For(func(p PodSpec) string { return p.DNSPolicy }).
 			WithName("dnsPolicy").
-			Required().
+			OmitEmpty().
 			Rules(rules.OneOf("ClusterFirst", "Default")),
 		govy.ForSlice(func(p PodSpec) []Container { return p.Containers }).
 			WithName("containers").
@@ -137,11 +137,8 @@ func TestPlan(t *testing.T) {
 	plan := govy.Plan(validator)
 
 	actual := requireJSON(t, plan)
-	assert.Equal(t, expectedPlanJSON, actual)
+	assert.Equal(t, readExpectedPlan(t, "expected_pod_plan.json"), actual)
 }
-
-//go:embed test_data/expected_values_intersection_plan.json
-var expectedValuesIntersectionPlan string
 
 func TestPlan_validValuesIntersection(t *testing.T) {
 	validator := govy.New(
@@ -158,11 +155,8 @@ func TestPlan_validValuesIntersection(t *testing.T) {
 	plan := govy.Plan(validator)
 
 	actual := requireJSON(t, plan)
-	assert.Equal(t, expectedValuesIntersectionPlan, actual)
+	assert.Equal(t, readExpectedPlan(t, "expected_values_intersection_plan.json"), actual)
 }
-
-//go:embed test_data/expected_custom_slice_type_plan.json
-var expectedCustomSliceTypePlan string
 
 func TestPlan_customSliceType(t *testing.T) {
 	type Slice []string
@@ -178,11 +172,8 @@ func TestPlan_customSliceType(t *testing.T) {
 	plan := govy.Plan(validator)
 
 	actual := requireJSON(t, plan)
-	assert.Equal(t, expectedCustomSliceTypePlan, actual)
+	assert.Equal(t, readExpectedPlan(t, "expected_custom_slice_type_plan.json"), actual)
 }
-
-//go:embed test_data/expected_conditions_without_rules_plan.json
-var expectedConditionsWithoutRulesPlan string
 
 func TestPlan_conditionsWithoutRules(t *testing.T) {
 	type Slice []string
@@ -216,7 +207,41 @@ func TestPlan_conditionsWithoutRules(t *testing.T) {
 	plan := govy.Plan(validator)
 
 	actual := requireJSON(t, plan)
-	assert.Equal(t, expectedConditionsWithoutRulesPlan, actual)
+	assert.Equal(t, readExpectedPlan(t, "expected_conditions_without_rules_plan.json"), actual)
+}
+
+func TestPlan_removeDuplicateRules(t *testing.T) {
+	validator := govy.New(
+		govy.For(func(s string) string { return s }).
+			Required().
+			Rules(rules.StringASCII()).
+			WithName("String"),
+		govy.For(func(s string) string { return s }).
+			Required().
+			WithName("String"),
+	)
+
+	plan := govy.Plan(validator)
+
+	actual := requireJSON(t, plan)
+	assert.Equal(t, readExpectedPlan(t, "expected_remove_duplicate_rules_plan.json"), actual)
+}
+
+func TestPlan_optionalProperties(t *testing.T) {
+	validator := govy.New(
+		govy.For(func(s string) string { return s }).
+			OmitEmpty().
+			Rules(rules.StringASCII()).
+			WithName("String2"),
+		govy.ForPointer(func(s string) *string { return &s }).
+			WithName("String1").
+			When(func(s string) bool { return true }, govy.WhenDescription("when true")),
+	)
+
+	plan := govy.Plan(validator)
+
+	actual := requireJSON(t, plan)
+	assert.Equal(t, readExpectedPlan(t, "expected_optional_properties_plan.json"), actual)
 }
 
 func requireJSON(t *testing.T, plan *govy.ValidatorPlan) string {
@@ -226,4 +251,11 @@ func requireJSON(t *testing.T, plan *govy.ValidatorPlan) string {
 	err := enc.Encode(plan)
 	assert.Require(t, assert.NoError(t, err))
 	return buf.String()
+}
+
+func readExpectedPlan(t *testing.T, name string) string {
+	filename := filepath.Join(internal.FindModuleRoot(), "pkg", "govy", "test_data", name)
+	data, err := os.ReadFile(filename)
+	assert.Require(t, assert.NoError(t, err))
+	return string(data)
 }

@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	ErrorCodeRequired                      govy.ErrorCode = internal.RequiredErrorCodeString
+	ErrorCodeRequired                      govy.ErrorCode = internal.RequiredErrorCode
 	ErrorCodeForbidden                     govy.ErrorCode = "forbidden"
 	ErrorCodeEqualTo                       govy.ErrorCode = "equal_to"
 	ErrorCodeNotEqualTo                    govy.ErrorCode = "not_equal_to"

@@ -185,7 +185,7 @@ func findTemplateFunctionsDocs(root string) [][]string {
 	return docsList
 }
 
-func logFatal(err error, msg string, a ...interface{}) {
+func logFatal(err error, msg string, a ...any) {
 	var attrs []slog.Attr
 	if err != nil {
 		attrs = append(attrs, slog.String("error", err.Error()))

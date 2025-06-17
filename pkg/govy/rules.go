@@ -227,7 +227,6 @@ func (r PropertyRules[T, S]) cascadeInternal(mode CascadeMode) propertyRulesInte
 
 // plan constructs a validation plan for the property.
 func (r PropertyRules[T, S]) plan(builder planBuilder) {
-	builder.propertyPlan.IsOptional = (r.omitEmpty || r.isPointer) && !r.required
 	builder.propertyPlan.IsHidden = r.hideValue
 	builder = appendPredicatesToPlanBuilder(builder, r.predicates)
 	if r.originalType != nil {
@@ -239,8 +238,14 @@ func (r PropertyRules[T, S]) plan(builder planBuilder) {
 	if r.required {
 		// Dummy rule to register the property as required.
 		NewRule(func(v T) error { return nil }).
-			WithErrorCode(internal.RequiredErrorCodeString).
 			WithDescription(internal.RequiredDescription).
+			WithErrorCode(internal.RequiredErrorCode).
+			plan(builder)
+	} else if r.omitEmpty || r.isPointer {
+		// Dummy rule to register the property as optional.
+		NewRule(func(v T) error { return nil }).
+			WithDescription(internal.OptionalDescription).
+			WithErrorCode(internal.OptionalErrorCode).
 			plan(builder)
 	}
 	for _, rule := range r.rules {
@@ -298,7 +303,7 @@ func (r PropertyRules[T, S]) getValue(st S) (v T, skip bool, propErr *PropertyEr
 
 func newRequiredError() *RuleError {
 	return NewRuleError(
-		internal.RequiredErrorMessage,
-		internal.RequiredErrorCodeString,
+		internal.RequiredMessage,
+		internal.RequiredErrorCode,
 	)
 }

@@ -23,8 +23,6 @@ type PropertyPlan struct {
 	Path string `json:"path"`
 	// TypeInfo contains the type information of the property.
 	TypeInfo TypeInfo `json:"typeInfo"`
-	// IsOptional indicates if the property was marked with [PropertyRules.OmitEmpty].
-	IsOptional bool `json:"isOptional,omitempty"`
 	// IsHidden indicates if the property was marked with [PropertyRules.HideValue].
 	IsHidden bool `json:"isHidden,omitempty"`
 	// Examples lists example, valid values for this property.
@@ -76,6 +74,14 @@ func (r RulePlan) isEmpty() bool {
 	return r.Description == "" && r.Details == "" && r.ErrorCode == ""
 }
 
+func (r RulePlan) equal(r2 RulePlan) bool {
+	return r.Description == r2.Description &&
+		r.Details == r2.Details &&
+		r.ErrorCode == r2.ErrorCode &&
+		collections.EqualSlices(r.Conditions, r2.Conditions) &&
+		collections.EqualSlices(r.Examples, r2.Examples)
+}
+
 // Plan creates a validation plan for the provided [Validator].
 // Each property is represented by a [PropertyPlan] which aggregates its every [RulePlan].
 // If a property does not have any rules, it won't be included in the result.
@@ -86,6 +92,7 @@ func Plan[S any](v Validator[S]) *ValidatorPlan {
 	// Post-processing after the properties have been aggregated.
 	for _, prop := range properties {
 		prop.collectValidValuesFromRules()
+		prop.removeDeduplicatedRules()
 	}
 	name := v.name
 	// Best effort name function setting.
@@ -104,11 +111,10 @@ func aggregatePropertyPlans(builders []planBuilder) []*PropertyPlan {
 		entry, ok := propertiesMap[b.path]
 		if !ok {
 			entry = &PropertyPlan{
-				Path:       b.path,
-				TypeInfo:   b.propertyPlan.TypeInfo,
-				Examples:   b.propertyPlan.Examples,
-				IsOptional: b.propertyPlan.IsOptional,
-				IsHidden:   b.propertyPlan.IsHidden,
+				Path:     b.path,
+				TypeInfo: b.propertyPlan.TypeInfo,
+				Examples: b.propertyPlan.Examples,
+				IsHidden: b.propertyPlan.IsHidden,
 			}
 		}
 		if !b.rulePlan.isEmpty() {
@@ -131,6 +137,21 @@ func (p *PropertyPlan) collectValidValuesFromRules() {
 	}
 	// TODO: If there are indeed conflicting elements, we might want to drop an error?
 	p.Values = collections.Intersection(validValuesSlices...)
+}
+
+// removeDeduplicatedRules removes duplicate rules from the [PropertyPlan].
+func (p *PropertyPlan) removeDeduplicatedRules() {
+	if len(p.Rules) == 0 {
+		return
+	}
+	uniqueRules := make([]RulePlan, 0, len(p.Rules))
+	for _, rule := range p.Rules {
+		isDuplicate := slices.ContainsFunc(uniqueRules, rule.equal)
+		if !isDuplicate {
+			uniqueRules = append(uniqueRules, rule)
+		}
+	}
+	p.Rules = uniqueRules
 }
 
 // planner is an interface for types that can create a [PropertyPlan] or [RulePlan].
