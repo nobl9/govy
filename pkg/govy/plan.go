@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/nobl9/govy/internal/collections"
+	"github.com/nobl9/govy/internal/compare"
 )
 
 // ValidatorPlan is a validation plan for a single [Validator].
@@ -23,8 +24,6 @@ type PropertyPlan struct {
 	Path string `json:"path"`
 	// TypeInfo contains the type information of the property.
 	TypeInfo TypeInfo `json:"typeInfo"`
-	// IsOptional indicates if the property was marked with [PropertyRules.OmitEmpty].
-	IsOptional bool `json:"isOptional,omitempty"`
 	// IsHidden indicates if the property was marked with [PropertyRules.HideValue].
 	IsHidden bool `json:"isHidden,omitempty"`
 	// Examples lists example, valid values for this property.
@@ -86,6 +85,7 @@ func Plan[S any](v Validator[S]) *ValidatorPlan {
 	// Post-processing after the properties have been aggregated.
 	for _, prop := range properties {
 		prop.collectValidValuesFromRules()
+		prop.removeDeduplicatedRules()
 	}
 	name := v.name
 	// Best effort name function setting.
@@ -104,11 +104,10 @@ func aggregatePropertyPlans(builders []planBuilder) []*PropertyPlan {
 		entry, ok := propertiesMap[b.path]
 		if !ok {
 			entry = &PropertyPlan{
-				Path:       b.path,
-				TypeInfo:   b.propertyPlan.TypeInfo,
-				Examples:   b.propertyPlan.Examples,
-				IsOptional: b.propertyPlan.IsOptional,
-				IsHidden:   b.propertyPlan.IsHidden,
+				Path:     b.path,
+				TypeInfo: b.propertyPlan.TypeInfo,
+				Examples: b.propertyPlan.Examples,
+				IsHidden: b.propertyPlan.IsHidden,
 			}
 		}
 		if !b.rulePlan.isEmpty() {
@@ -131,6 +130,27 @@ func (p *PropertyPlan) collectValidValuesFromRules() {
 	}
 	// TODO: If there are indeed conflicting elements, we might want to drop an error?
 	p.Values = collections.Intersection(validValuesSlices...)
+}
+
+// removeDeduplicatedRules removes duplicate rules from the [PropertyPlan].
+func (p *PropertyPlan) removeDeduplicatedRules() {
+	if len(p.Rules) == 0 {
+		return
+	}
+	uniqueRules := make([]RulePlan, 0, len(p.Rules))
+	for _, rule := range p.Rules {
+		isDuplicate := false
+		for _, uniqueRule := range uniqueRules {
+			if compare.EqualExportedFields(rule, uniqueRule) {
+				isDuplicate = true
+				break
+			}
+		}
+		if !isDuplicate {
+			uniqueRules = append(uniqueRules, rule)
+		}
+	}
+	p.Rules = uniqueRules
 }
 
 // planner is an interface for types that can create a [PropertyPlan] or [RulePlan].
