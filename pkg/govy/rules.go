@@ -167,13 +167,15 @@ func (r PropertyRules[T, S]) WithExamples(examples ...string) PropertyRules[T, S
 }
 
 // Rules associates provided [Rule] with the property.
-func (r PropertyRules[T, S]) Rules(rules ...validationInterface[T]) PropertyRules[T, S] {
-	r.rules = append(r.rules, rules...)
+func (r PropertyRules[T, S]) Rules(rules ...rulesInterface[T]) PropertyRules[T, S] {
+	for _, rule := range rules {
+		r.rules = append(r.rules, rule)
+	}
 	return r
 }
 
 // Include embeds specified [Validator] and its [PropertyRules] into the property.
-func (r PropertyRules[T, S]) Include(rules ...Validator[T]) PropertyRules[T, S] {
+func (r PropertyRules[T, S]) Include(rules ...validatorInterface[T]) PropertyRules[T, S] {
 	for _, rule := range rules {
 		r.rules = append(r.rules, rule)
 	}
@@ -307,3 +309,6 @@ func newRequiredError() *RuleError {
 		internal.RequiredErrorCode,
 	)
 }
+
+// isPropertyRules implements [propertyRulesInterface].
+func (r PropertyRules[T, S]) isPropertyRules() {}

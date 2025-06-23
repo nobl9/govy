@@ -74,3 +74,6 @@ func (r RuleSet[T]) plan(builder planBuilder) {
 		rule.plan(builder)
 	}
 }
+
+// isRules implements [rulesInterface].
+func (r RuleSet[T]) isRules() {}
