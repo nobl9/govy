@@ -79,13 +79,13 @@ func (r PropertyRulesForSlice[T, S]) WithExamples(examples ...string) PropertyRu
 }
 
 // RulesForEach adds [Rule] for each element of the slice.
-func (r PropertyRulesForSlice[T, S]) RulesForEach(rules ...validationInterface[T]) PropertyRulesForSlice[T, S] {
+func (r PropertyRulesForSlice[T, S]) RulesForEach(rules ...rulesInterface[T]) PropertyRulesForSlice[T, S] {
 	r.forEachRules = r.forEachRules.Rules(rules...)
 	return r
 }
 
 // Rules adds [Rule] for the whole slice.
-func (r PropertyRulesForSlice[T, S]) Rules(rules ...validationInterface[[]T]) PropertyRulesForSlice[T, S] {
+func (r PropertyRulesForSlice[T, S]) Rules(rules ...rulesInterface[[]T]) PropertyRulesForSlice[T, S] {
 	r.sliceRules = r.sliceRules.Rules(rules...)
 	return r
 }
@@ -97,7 +97,7 @@ func (r PropertyRulesForSlice[T, S]) When(predicate Predicate[S], opts ...WhenOp
 }
 
 // IncludeForEach associates specified [Validator] and its [PropertyRules] with each element of the slice.
-func (r PropertyRulesForSlice[T, S]) IncludeForEach(rules ...Validator[T]) PropertyRulesForSlice[T, S] {
+func (r PropertyRulesForSlice[T, S]) IncludeForEach(rules ...validatorInterface[T]) PropertyRulesForSlice[T, S] {
 	r.forEachRules = r.forEachRules.Include(rules...)
 	return r
 }
@@ -122,9 +122,7 @@ func (r PropertyRulesForSlice[T, S]) cascadeInternal(mode CascadeMode) propertyR
 
 // plan generates a validation plan for the property rules.
 func (r PropertyRulesForSlice[T, S]) plan(builder planBuilder) {
-	for _, predicate := range r.predicates {
-		builder.rulePlan.Conditions = append(builder.rulePlan.Conditions, predicate.description)
-	}
+	builder = appendPredicatesToPlanBuilder(builder, r.predicates)
 	r.sliceRules.plan(builder.setExamples(r.sliceRules.examples...))
 	builder = builder.appendPath(r.sliceRules.name)
 	if len(r.forEachRules.rules) > 0 {
@@ -136,3 +134,6 @@ func (r PropertyRulesForSlice[T, S]) plan(builder planBuilder) {
 func (r PropertyRulesForSlice[T, S]) getJSONPathForIndex(index int) string {
 	return jsonpath.JoinArray(r.sliceRules.name, jsonpath.NewArrayIndex(index))
 }
+
+// isPropertyRules implements [propertyRulesInterface].
+func (r PropertyRulesForSlice[T, S]) isPropertyRules() {}

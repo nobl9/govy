@@ -23,15 +23,13 @@ type PropertyPlan struct {
 	Path string `json:"path"`
 	// TypeInfo contains the type information of the property.
 	TypeInfo TypeInfo `json:"typeInfo"`
-	// IsOptional indicates if the property was marked with [PropertyRules.OmitEmpty].
-	IsOptional bool `json:"isOptional,omitempty"`
 	// IsHidden indicates if the property was marked with [PropertyRules.HideValue].
 	IsHidden bool `json:"isHidden,omitempty"`
 	// Examples lists example, valid values for this property.
-	// These values are not exhaustive, for an exhaustive list of valid values see [ValidValues].
+	// These values are not exhaustive, for an exhaustive list of valid values see [Values].
 	Examples []string `json:"examples,omitempty"`
 	// Values unlike [Examples] should list ALL valid values for this property.
-	// These values are constructed as an intersection of all [RulePlan.Values]
+	// These values are constructed as an intersection of all [RulePlan] values
 	// for this property.
 	Values []string `json:"values,omitempty"`
 	// Rules which apply to this property.
@@ -64,7 +62,7 @@ type RulePlan struct {
 	// which had [WhenDescription] added to the [WhenOptions].
 	Conditions []string `json:"conditions,omitempty"`
 	// Examples is the value provided to [Rule.WithExamples].
-	// These values are not exhaustive, for an exhaustive list of valid values see [ValidValues].
+	// These values are not exhaustive, for an exhaustive list of valid values see [PropertyPlan.ValidValues].
 	Examples []string `json:"examples,omitempty"`
 
 	// values unlike [Examples] should list ALL valid values which meet this rule.
@@ -73,7 +71,15 @@ type RulePlan struct {
 }
 
 func (r RulePlan) isEmpty() bool {
-	return r.Description == "" && r.Details == "" && r.ErrorCode == "" && len(r.Conditions) == 0
+	return r.Description == "" && r.Details == "" && r.ErrorCode == ""
+}
+
+func (r RulePlan) equal(r2 RulePlan) bool {
+	return r.Description == r2.Description &&
+		r.Details == r2.Details &&
+		r.ErrorCode == r2.ErrorCode &&
+		collections.EqualSlices(r.Conditions, r2.Conditions) &&
+		collections.EqualSlices(r.Examples, r2.Examples)
 }
 
 // Plan creates a validation plan for the provided [Validator].
@@ -86,9 +92,15 @@ func Plan[S any](v Validator[S]) *ValidatorPlan {
 	// Post-processing after the properties have been aggregated.
 	for _, prop := range properties {
 		prop.collectValidValuesFromRules()
+		prop.removeDeduplicatedRules()
+	}
+	name := v.name
+	// Best effort name function setting.
+	if v.nameFunc != nil {
+		name = v.nameFunc(*new(S))
 	}
 	return &ValidatorPlan{
-		Name:       v.name,
+		Name:       name,
 		Properties: properties,
 	}
 }
@@ -97,22 +109,18 @@ func aggregatePropertyPlans(builders []planBuilder) []*PropertyPlan {
 	propertiesMap := make(map[string]*PropertyPlan)
 	for _, b := range builders {
 		entry, ok := propertiesMap[b.path]
-		if ok {
-			entry.Rules = append(entry.Rules, b.rulePlan)
-			propertiesMap[b.path] = entry
-		} else {
+		if !ok {
 			entry = &PropertyPlan{
-				Path:       b.path,
-				TypeInfo:   b.propertyPlan.TypeInfo,
-				Examples:   b.propertyPlan.Examples,
-				IsOptional: b.propertyPlan.IsOptional,
-				IsHidden:   b.propertyPlan.IsHidden,
+				Path:     b.path,
+				TypeInfo: b.propertyPlan.TypeInfo,
+				Examples: b.propertyPlan.Examples,
+				IsHidden: b.propertyPlan.IsHidden,
 			}
-			if !b.rulePlan.isEmpty() {
-				entry.Rules = append(entry.Rules, b.rulePlan)
-			}
-			propertiesMap[b.path] = entry
 		}
+		if !b.rulePlan.isEmpty() {
+			entry.Rules = append(entry.Rules, b.rulePlan)
+		}
+		propertiesMap[b.path] = entry
 	}
 	return slices.SortedFunc(
 		maps.Values(propertiesMap),
@@ -129,6 +137,21 @@ func (p *PropertyPlan) collectValidValuesFromRules() {
 	}
 	// TODO: If there are indeed conflicting elements, we might want to drop an error?
 	p.Values = collections.Intersection(validValuesSlices...)
+}
+
+// removeDeduplicatedRules removes duplicate rules from the [PropertyPlan].
+func (p *PropertyPlan) removeDeduplicatedRules() {
+	if len(p.Rules) == 0 {
+		return
+	}
+	uniqueRules := make([]RulePlan, 0, len(p.Rules))
+	for _, rule := range p.Rules {
+		isDuplicate := slices.ContainsFunc(uniqueRules, rule.equal)
+		if !isDuplicate {
+			uniqueRules = append(uniqueRules, rule)
+		}
+	}
+	p.Rules = uniqueRules
 }
 
 // planner is an interface for types that can create a [PropertyPlan] or [RulePlan].
@@ -170,4 +193,14 @@ func (p planBuilder) appendPath(path string) planBuilder {
 func (p planBuilder) setExamples(examples ...string) planBuilder {
 	p.propertyPlan.Examples = examples
 	return p
+}
+
+func appendPredicatesToPlanBuilder[T any](builder planBuilder, predicates []predicateContainer[T]) planBuilder {
+	for _, predicate := range predicates {
+		if predicate.description == "" {
+			continue
+		}
+		builder.rulePlan.Conditions = append(builder.rulePlan.Conditions, predicate.description)
+	}
+	return builder
 }

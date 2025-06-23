@@ -178,7 +178,7 @@ func TestValidatorValidateSlice(t *testing.T) {
 					&govy.PropertyError{
 						PropertyName: "Field",
 						Errors: []*govy.RuleError{{
-							Message: internal.RequiredErrorMessage,
+							Message: internal.RequiredMessage,
 							Code:    rules.ErrorCodeRequired,
 						}},
 					},
@@ -191,7 +191,7 @@ func TestValidatorValidateSlice(t *testing.T) {
 					&govy.PropertyError{
 						PropertyName: "Field",
 						Errors: []*govy.RuleError{{
-							Message: internal.RequiredErrorMessage,
+							Message: internal.RequiredMessage,
 							Code:    rules.ErrorCodeRequired,
 						}},
 					},

@@ -55,3 +55,17 @@ func Intersection[T cmp.Ordered](s ...[]T) []T {
 	slices.Sort(result)
 	return result
 }
+
+// EqualSlices compares two slices, checking if every value under each index is equal in both slices.
+// Each slice's elements must satisfy [comparable] interface.
+func EqualSlices[T comparable](s1, s2 []T) bool {
+	if len(s1) != len(s2) {
+		return false
+	}
+	for i := range s1 {
+		if s1[i] != s2[i] {
+			return false
+		}
+	}
+	return true
+}

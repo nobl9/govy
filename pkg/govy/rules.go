@@ -167,13 +167,15 @@ func (r PropertyRules[T, S]) WithExamples(examples ...string) PropertyRules[T, S
 }
 
 // Rules associates provided [Rule] with the property.
-func (r PropertyRules[T, S]) Rules(rules ...validationInterface[T]) PropertyRules[T, S] {
-	r.rules = append(r.rules, rules...)
+func (r PropertyRules[T, S]) Rules(rules ...rulesInterface[T]) PropertyRules[T, S] {
+	for _, rule := range rules {
+		r.rules = append(r.rules, rule)
+	}
 	return r
 }
 
 // Include embeds specified [Validator] and its [PropertyRules] into the property.
-func (r PropertyRules[T, S]) Include(rules ...Validator[T]) PropertyRules[T, S] {
+func (r PropertyRules[T, S]) Include(rules ...validatorInterface[T]) PropertyRules[T, S] {
 	for _, rule := range rules {
 		r.rules = append(r.rules, rule)
 	}
@@ -227,17 +229,27 @@ func (r PropertyRules[T, S]) cascadeInternal(mode CascadeMode) propertyRulesInte
 
 // plan constructs a validation plan for the property.
 func (r PropertyRules[T, S]) plan(builder planBuilder) {
-	builder.propertyPlan.IsOptional = (r.omitEmpty || r.isPointer) && !r.required
 	builder.propertyPlan.IsHidden = r.hideValue
-	for _, predicate := range r.predicates {
-		builder.rulePlan.Conditions = append(builder.rulePlan.Conditions, predicate.description)
-	}
+	builder = appendPredicatesToPlanBuilder(builder, r.predicates)
 	if r.originalType != nil {
 		builder.propertyPlan.TypeInfo = TypeInfo(*r.originalType)
 	} else {
 		builder.propertyPlan.TypeInfo = TypeInfo(typeinfo.Get[T]())
 	}
 	builder = builder.appendPath(r.name).setExamples(r.examples...)
+	if r.required {
+		// Dummy rule to register the property as required.
+		NewRule(func(v T) error { return nil }).
+			WithDescription(internal.RequiredDescription).
+			WithErrorCode(internal.RequiredErrorCode).
+			plan(builder)
+	} else if r.omitEmpty || r.isPointer {
+		// Dummy rule to register the property as optional.
+		NewRule(func(v T) error { return nil }).
+			WithDescription(internal.OptionalDescription).
+			WithErrorCode(internal.OptionalErrorCode).
+			plan(builder)
+	}
 	for _, rule := range r.rules {
 		if p, ok := rule.(planner); ok {
 			p.plan(builder)
@@ -293,7 +305,10 @@ func (r PropertyRules[T, S]) getValue(st S) (v T, skip bool, propErr *PropertyEr
 
 func newRequiredError() *RuleError {
 	return NewRuleError(
-		internal.RequiredErrorMessage,
-		internal.RequiredErrorCodeString,
+		internal.RequiredMessage,
+		internal.RequiredErrorCode,
 	)
 }
+
+// isPropertyRules implements [propertyRulesInterface].
+func (r PropertyRules[T, S]) isPropertyRules() {}

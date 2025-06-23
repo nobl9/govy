@@ -13,6 +13,10 @@
       ],
       "rules": [
         {
+          "description": "property is required",
+          "errorCode": "required"
+        },
+        {
           "description": "must be one of: v1, v2",
           "errorCode": "one_of"
         }
@@ -30,8 +34,26 @@
       ],
       "rules": [
         {
+          "description": "property is required",
+          "errorCode": "required"
+        },
+        {
           "description": "should be equal to 'Pod'",
           "errorCode": "equal_to"
+        }
+      ]
+    },
+    {
+      "path": "$.metadata",
+      "typeInfo": {
+        "name": "PodMetadata",
+        "kind": "struct",
+        "package": "github.com/nobl9/govy/pkg/govy_test"
+      },
+      "rules": [
+        {
+          "description": "property is required",
+          "errorCode": "required"
         }
       ]
     },
@@ -119,6 +141,10 @@
       },
       "rules": [
         {
+          "description": "property is required",
+          "errorCode": "required"
+        },
+        {
           "description": "string cannot be empty",
           "errorCode": "string_not_empty"
         }
@@ -132,8 +158,22 @@
       },
       "rules": [
         {
-          "description": "string cannot be empty",
-          "errorCode": "string_not_empty"
+          "description": "property is required",
+          "errorCode": "required"
+        }
+      ]
+    },
+    {
+      "path": "$.spec",
+      "typeInfo": {
+        "name": "PodSpec",
+        "kind": "struct",
+        "package": "github.com/nobl9/govy/pkg/govy_test"
+      },
+      "rules": [
+        {
+          "description": "property is required",
+          "errorCode": "required"
         }
       ]
     },
@@ -184,6 +224,10 @@
       },
       "rules": [
         {
+          "description": "property is required",
+          "errorCode": "required"
+        },
+        {
           "description": "string cannot be empty",
           "errorCode": "string_not_empty"
         }
@@ -196,6 +240,10 @@
         "kind": "string"
       },
       "rules": [
+        {
+          "description": "property is required",
+          "errorCode": "required"
+        },
         {
           "description": "length must be between 1 and 63",
           "errorCode": "string_dns_label:string_length"
@@ -222,6 +270,10 @@
         "Default"
       ],
       "rules": [
+        {
+          "description": "property is optional",
+          "errorCode": "optional"
+        },
         {
           "description": "must be one of: ClusterFirst, Default",
           "errorCode": "one_of"

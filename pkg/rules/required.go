@@ -20,5 +20,5 @@ func Required[T any]() govy.Rule[T] {
 	}).
 		WithErrorCode(ErrorCodeRequired).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescription(internal.RequiredDescription)
 }

@@ -217,3 +217,6 @@ func examplesToString(examples []string) string {
 	b.WriteString(")")
 	return b.String()
 }
+
+// isRules implements [rulesInterface].
+func (r Rule[T]) isRules() {}

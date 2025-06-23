@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	ErrorCodeRequired                      govy.ErrorCode = internal.RequiredErrorCodeString
+	ErrorCodeRequired                      govy.ErrorCode = internal.RequiredErrorCode
 	ErrorCodeForbidden                     govy.ErrorCode = "forbidden"
 	ErrorCodeEqualTo                       govy.ErrorCode = "equal_to"
 	ErrorCodeNotEqualTo                    govy.ErrorCode = "not_equal_to"
@@ -66,6 +66,7 @@ const (
 	ErrorCodeMutuallyExclusive             govy.ErrorCode = "mutually_exclusive"
 	ErrorCodeEqualProperties               govy.ErrorCode = "equal_properties"
 	ErrorCodeSliceUnique                   govy.ErrorCode = "slice_unique"
+	ErrorCodeUniqueProperties              govy.ErrorCode = "unique_properties"
 	ErrorCodeURL                           govy.ErrorCode = "url"
 	ErrorCodeDurationPrecision             govy.ErrorCode = "duration_precision"
 )

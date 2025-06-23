@@ -5,23 +5,6 @@ import (
 	"strings"
 )
 
-// validationInterface is a common interface implemented by all validation entities.
-// These include [Validator], [PropertyRules] and [Rule].
-type validationInterface[T any] interface {
-	Validate(s T) error
-}
-
-// propertyRulesInterface is an internal interface which further limits
-// what [New] constructor and [Validator] can accept as property rules.
-//
-// On top of [validationInterface] requirements it specifies internal functions
-// which allow interacting with [propertyRulesInterface] instances like [PropertyRules]
-// in an immutable fashion (no pointer receivers).
-type propertyRulesInterface[T any] interface {
-	validationInterface[T]
-	cascadeInternal(mode CascadeMode) propertyRulesInterface[T]
-}
-
 // New creates a new [Validator] aggregating the provided property rules.
 func New[S any](props ...propertyRulesInterface[S]) Validator[S] {
 	return Validator[S]{props: props}
@@ -148,12 +131,13 @@ func (v Validator[S]) ValidateSlice(s []S) error {
 
 // plan constructs a validation plan for all the properties of the [Validator].
 func (v Validator[S]) plan(builder planBuilder) {
-	for _, predicate := range v.predicates {
-		builder.rulePlan.Conditions = append(builder.rulePlan.Conditions, predicate.description)
-	}
+	builder = appendPredicatesToPlanBuilder(builder, v.predicates)
 	for _, rules := range v.props {
 		if p, ok := rules.(planner); ok {
 			p.plan(builder)
 		}
 	}
 }
+
+// isValidator implements [validatorInterface].
+func (v Validator[S]) isValidator() {}

@@ -109,7 +109,7 @@ func (r PropertyRulesForMap[M, K, V, S]) WithExamples(examples ...string) Proper
 
 // RulesForKeys adds [Rule] for map's keys.
 func (r PropertyRulesForMap[M, K, V, S]) RulesForKeys(
-	rules ...validationInterface[K],
+	rules ...rulesInterface[K],
 ) PropertyRulesForMap[M, K, V, S] {
 	r.forKeyRules = r.forKeyRules.Rules(rules...)
 	return r
@@ -117,7 +117,7 @@ func (r PropertyRulesForMap[M, K, V, S]) RulesForKeys(
 
 // RulesForValues adds [Rule] for map's values.
 func (r PropertyRulesForMap[M, K, V, S]) RulesForValues(
-	rules ...validationInterface[V],
+	rules ...rulesInterface[V],
 ) PropertyRulesForMap[M, K, V, S] {
 	r.forValueRules = r.forValueRules.Rules(rules...)
 	return r
@@ -126,14 +126,14 @@ func (r PropertyRulesForMap[M, K, V, S]) RulesForValues(
 // RulesForItems adds [Rule] for [MapItem].
 // It allows validating both key and value in conjunction.
 func (r PropertyRulesForMap[M, K, V, S]) RulesForItems(
-	rules ...validationInterface[MapItem[K, V]],
+	rules ...rulesInterface[MapItem[K, V]],
 ) PropertyRulesForMap[M, K, V, S] {
 	r.forItemRules = r.forItemRules.Rules(rules...)
 	return r
 }
 
 // Rules adds [Rule] for the whole map.
-func (r PropertyRulesForMap[M, K, V, S]) Rules(rules ...validationInterface[M]) PropertyRulesForMap[M, K, V, S] {
+func (r PropertyRulesForMap[M, K, V, S]) Rules(rules ...rulesInterface[M]) PropertyRulesForMap[M, K, V, S] {
 	r.mapRules = r.mapRules.Rules(rules...)
 	return r
 }
@@ -148,13 +148,17 @@ func (r PropertyRulesForMap[M, K, V, S]) When(
 }
 
 // IncludeForKeys associates specified [Validator] and its [PropertyRules] with map's keys.
-func (r PropertyRulesForMap[M, K, V, S]) IncludeForKeys(validators ...Validator[K]) PropertyRulesForMap[M, K, V, S] {
+func (r PropertyRulesForMap[M, K, V, S]) IncludeForKeys(
+	validators ...validatorInterface[K],
+) PropertyRulesForMap[M, K, V, S] {
 	r.forKeyRules = r.forKeyRules.Include(validators...)
 	return r
 }
 
 // IncludeForValues associates specified [Validator] and its [PropertyRules] with map's values.
-func (r PropertyRulesForMap[M, K, V, S]) IncludeForValues(rules ...Validator[V]) PropertyRulesForMap[M, K, V, S] {
+func (r PropertyRulesForMap[M, K, V, S]) IncludeForValues(
+	rules ...validatorInterface[V],
+) PropertyRulesForMap[M, K, V, S] {
 	r.forValueRules = r.forValueRules.Include(rules...)
 	return r
 }
@@ -162,7 +166,7 @@ func (r PropertyRulesForMap[M, K, V, S]) IncludeForValues(rules ...Validator[V])
 // IncludeForItems associates specified [Validator] and its [PropertyRules] with [MapItem].
 // It allows validating both key and value in conjunction.
 func (r PropertyRulesForMap[M, K, V, S]) IncludeForItems(
-	rules ...Validator[MapItem[K, V]],
+	rules ...validatorInterface[MapItem[K, V]],
 ) PropertyRulesForMap[M, K, V, S] {
 	r.forItemRules = r.forItemRules.Include(rules...)
 	return r
@@ -190,9 +194,7 @@ func (r PropertyRulesForMap[M, K, V, S]) cascadeInternal(mode CascadeMode) prope
 
 // plan constructs a validation plan for the property rules.
 func (r PropertyRulesForMap[M, K, V, S]) plan(builder planBuilder) {
-	for _, predicate := range r.predicates {
-		builder.rulePlan.Conditions = append(builder.rulePlan.Conditions, predicate.description)
-	}
+	builder = appendPredicatesToPlanBuilder(builder, r.predicates)
 	r.mapRules.plan(builder.setExamples(r.mapRules.examples...))
 	builder = builder.appendPath(r.mapRules.name)
 	// JSON/YAML path for keys uses '~' to extract the keys.
@@ -211,3 +213,6 @@ func (r PropertyRulesForMap[M, K, V, S]) plan(builder planBuilder) {
 func (r PropertyRulesForMap[M, K, V, S]) getJSONPathForKey(key any) string {
 	return jsonpath.Join(r.mapRules.name, jsonpath.EscapeSegment(fmt.Sprint(key)))
 }
+
+// isPropertyRules implements [propertyRulesInterface].
+func (r PropertyRulesForMap[M, K, V, S]) isPropertyRules() {}

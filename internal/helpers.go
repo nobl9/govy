@@ -9,12 +9,17 @@ import (
 	"sync"
 )
 
-const RequiredErrorMessage = "property is required but was empty"
+const (
+	RequiredMessage     = "property is required but was empty"
+	RequiredDescription = "property is required"
+	RequiredErrorCode   = "required"
 
-const RequiredErrorCodeString = "required"
+	OptionalDescription = "property is optional"
+	OptionalErrorCode   = "optional"
+)
 
-// IsEmptyFunc verifies if the value is zero value of its type.
-func IsEmpty(v interface{}) bool {
+// IsEmpty verifies if the value is zero value of its type.
+func IsEmpty(v any) bool {
 	if v == nil {
 		return true
 	}

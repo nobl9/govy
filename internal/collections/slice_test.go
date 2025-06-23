@@ -96,3 +96,22 @@ func TestIntersection(t *testing.T) {
 		assert.Equal(t, tc.expected, actual)
 	}
 }
+
+func TestEqualSlices(t *testing.T) {
+	testCases := []struct {
+		s1, s2   []int
+		expected bool
+	}{
+		{s1: nil, s2: nil, expected: true},
+		{s1: []int{}, s2: []int{}, expected: true},
+		{s1: []int{1, 2, 3}, s2: []int{1, 2, 3}, expected: true},
+		{s1: []int{1, 2, 3}, s2: []int{3, 2, 1}, expected: false},
+		{s1: []int{1, 2}, s2: []int{1, 2, 3}, expected: false},
+		{s1: []int{1, 2, 3}, s2: []int{1, 2}, expected: false},
+		{s1: []int{1, 2, 3}, s2: nil, expected: false},
+		{s1: nil, s2: []int{1, 2, 3}, expected: false},
+	}
+	for _, tc := range testCases {
+		assert.Equal(t, tc.expected, EqualSlices(tc.s1, tc.s2))
+	}
+}

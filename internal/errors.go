@@ -48,7 +48,7 @@ var newLineReplacer = strings.NewReplacer("\n", "\\n", "\r", "\\r")
 //   - the struct is not empty or it is empty but does not have any fields
 //
 // If a value is a struct of type [time.Time] it will be formatted using [time.RFC3339] layout.
-func PropertyValueString(v interface{}) string {
+func PropertyValueString(v any) string {
 	if v == nil {
 		return ""
 	}
@@ -96,12 +96,12 @@ func PropertyValueString(v interface{}) string {
 	return s
 }
 
-func hasJSONTags(v interface{}, isPointer bool) bool {
+func hasJSONTags(v any, isPointer bool) bool {
 	t := reflect.TypeOf(v)
 	if isPointer {
 		t = t.Elem()
 	}
-	for i := 0; i < t.NumField(); i++ {
+	for i := range t.NumField() {
 		field := t.Field(i)
 		if _, hasTag := field.Tag.Lookup("json"); hasTag {
 			return true
