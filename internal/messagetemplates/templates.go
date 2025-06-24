@@ -29,6 +29,7 @@ const (
 	NotOneOfTemplate
 	OneOfPropertiesTemplate
 	MutuallyExclusiveTemplate
+	MutuallyDependentTemplate
 	RequiredTemplate
 	StringNonEmptyTemplate
 	StringMatchRegexpTemplate
@@ -85,6 +86,14 @@ var rawMessageTemplates = map[templateKey]string{
 {{- else -}}
 	[{{ joinSlice .ComparisonValue "" }}] properties are mutually exclusive, provide only one of them
 {{- end }}`,
+	MutuallyDependentTemplate: `[{{ joinSlice .ComparisonValue "" }}] properties are mutually dependent,
+{{- if eq (len .Custom.NonEmptyProperties) 1 }} since {{ .Custom.NonEmptyProperties }} is provided,
+{{- else }} since [{{ joinSlice .Custom.NonEmptyProperties "" }}] are provided,
+{{- end }}
+{{- if eq (len .Custom.EmptyProperties) 1 }} {{ .Custom.EmptyProperties }} property must also be set
+{{- else }} [{{ joinSlice .Custom.EmptyProperties "" }}] properties must also be set
+{{- end }}
+`,
 	RequiredTemplate:          internal.RequiredMessage,
 	StringNonEmptyTemplate:    "string cannot be empty",
 	StringMatchRegexpTemplate: "string must match regular expression: '{{ .ComparisonValue }}'",

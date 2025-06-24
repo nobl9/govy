@@ -76,6 +76,68 @@ type paymentMethod struct {
 	Transfer *string
 }
 
+var paymentMethodGetters = map[string]func(p paymentMethod) any{
+	"Cash":     func(p paymentMethod) any { return p.Cash },
+	"Card":     func(p paymentMethod) any { return p.Card },
+	"Transfer": func(p paymentMethod) any { return p.Transfer },
+}
+
+var oneOfPropertiesTestCases = []*struct {
+	paymentMethod paymentMethod
+	expectedError string
+}{
+	{
+		paymentMethod: paymentMethod{
+			Cash:     nil,
+			Card:     ptr("2$"),
+			Transfer: nil,
+		},
+	},
+	{
+		paymentMethod: paymentMethod{
+			Cash:     ptr("1$"),
+			Card:     ptr("2$"),
+			Transfer: nil,
+		},
+	},
+	{
+		paymentMethod: paymentMethod{
+			Cash:     ptr("1$"),
+			Card:     ptr("2$"),
+			Transfer: ptr("3$"),
+		},
+	},
+	{
+		paymentMethod: paymentMethod{
+			Cash:     nil,
+			Card:     nil,
+			Transfer: nil,
+		},
+		expectedError: "one of [Card, Cash, Transfer] properties must be set, none was provided",
+	},
+}
+
+func TestOneOfProperties(t *testing.T) {
+	for _, tc := range oneOfPropertiesTestCases {
+		err := OneOfProperties(paymentMethodGetters).Validate(tc.paymentMethod)
+		if tc.expectedError != "" {
+			assert.EqualError(t, err, tc.expectedError)
+			assert.True(t, govy.HasErrorCode(err, ErrorCodeOneOfProperties))
+		} else {
+			assert.NoError(t, err)
+		}
+	}
+}
+
+func BenchmarkOneOfProperties(b *testing.B) {
+	for _, tc := range oneOfPropertiesTestCases {
+		rule := OneOfProperties(paymentMethodGetters)
+		for range b.N {
+			_ = rule.Validate(tc.paymentMethod)
+		}
+	}
+}
+
 var mutuallyExclusiveTestCases = []*struct {
 	required      bool
 	paymentMethod paymentMethod
@@ -144,12 +206,6 @@ var mutuallyExclusiveTestCases = []*struct {
 	},
 }
 
-var paymentMethodGetters = map[string]func(p paymentMethod) any{
-	"Cash":     func(p paymentMethod) any { return p.Cash },
-	"Card":     func(p paymentMethod) any { return p.Card },
-	"Transfer": func(p paymentMethod) any { return p.Transfer },
-}
-
 func TestMutuallyExclusive(t *testing.T) {
 	for _, tc := range mutuallyExclusiveTestCases {
 		err := MutuallyExclusive(tc.required, paymentMethodGetters).Validate(tc.paymentMethod)
@@ -171,29 +227,15 @@ func BenchmarkMutuallyExclusive(b *testing.B) {
 	}
 }
 
-var oneOfPropertiesTestCases = []*struct {
+var mutuallyDependentTestCases = []*struct {
 	paymentMethod paymentMethod
 	expectedError string
 }{
 	{
 		paymentMethod: paymentMethod{
-			Cash:     nil,
+			Cash:     ptr("2$"),
 			Card:     ptr("2$"),
-			Transfer: nil,
-		},
-	},
-	{
-		paymentMethod: paymentMethod{
-			Cash:     ptr("1$"),
-			Card:     ptr("2$"),
-			Transfer: nil,
-		},
-	},
-	{
-		paymentMethod: paymentMethod{
-			Cash:     ptr("1$"),
-			Card:     ptr("2$"),
-			Transfer: ptr("3$"),
+			Transfer: ptr("2$"),
 		},
 	},
 	{
@@ -202,25 +244,42 @@ var oneOfPropertiesTestCases = []*struct {
 			Card:     nil,
 			Transfer: nil,
 		},
-		expectedError: "one of [Card, Cash, Transfer] properties must be set, none was provided",
+	},
+	{
+		paymentMethod: paymentMethod{
+			Cash:     nil,
+			Card:     ptr("2$"),
+			Transfer: nil,
+		},
+		expectedError: "[Card, Cash, Transfer] properties are mutually dependent," +
+			" since [Card] is provided, [Cash, Transfer] properties must also be set",
+	},
+	{
+		paymentMethod: paymentMethod{
+			Cash:     nil,
+			Card:     ptr("2$"),
+			Transfer: ptr("2$"),
+		},
+		expectedError: "[Card, Cash, Transfer] properties are mutually dependent," +
+			" since [Card, Transfer] are provided, [Cash] property must also be set",
 	},
 }
 
-func TestOneOfProperties(t *testing.T) {
-	for _, tc := range oneOfPropertiesTestCases {
-		err := OneOfProperties(paymentMethodGetters).Validate(tc.paymentMethod)
+func TestMutuallyDependent(t *testing.T) {
+	for _, tc := range mutuallyDependentTestCases {
+		err := MutuallyDependent(paymentMethodGetters).Validate(tc.paymentMethod)
 		if tc.expectedError != "" {
 			assert.EqualError(t, err, tc.expectedError)
-			assert.True(t, govy.HasErrorCode(err, ErrorCodeOneOfProperties))
+			assert.True(t, govy.HasErrorCode(err, ErrorCodeMutuallyDependent))
 		} else {
 			assert.NoError(t, err)
 		}
 	}
 }
 
-func BenchmarkOneOfProperties(b *testing.B) {
-	for _, tc := range oneOfPropertiesTestCases {
-		rule := OneOfProperties(paymentMethodGetters)
+func BenchmarkMutuallyDependent(b *testing.B) {
+	for _, tc := range mutuallyDependentTestCases {
+		rule := MutuallyDependent(paymentMethodGetters)
 		for range b.N {
 			_ = rule.Validate(tc.paymentMethod)
 		}
