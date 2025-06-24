@@ -140,7 +140,6 @@ type mutuallyDependentTemplateVars struct {
 // MutuallyDependent checks if properties are mutually dependent.
 // This means, if any of the properties is set, the rest must be also set.
 // Property is considered set if its value is not empty (non-zero).
-// If required is true, then a single non-empty property is required.
 func MutuallyDependent[S any](getters map[string]func(s S) any) govy.Rule[S] {
 	tpl := messagetemplates.Get(messagetemplates.MutuallyDependentTemplate)
 	sortedKeys := collections.SortedKeys(getters)
