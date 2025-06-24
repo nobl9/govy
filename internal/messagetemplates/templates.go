@@ -86,7 +86,7 @@ var rawMessageTemplates = map[templateKey]string{
 {{- else -}}
 	[{{ joinSlice .ComparisonValue "" }}] properties are mutually exclusive, provide only one of them
 {{- end }}`,
-	MutuallyDependentTemplate: `[{{ joinSlice .ComparisonValue "" }}] properties are mutually dependent, 
+	MutuallyDependentTemplate: `[{{ joinSlice .ComparisonValue "" }}] properties are mutually dependent,
 {{- if eq (len .Custom.NonEmptyProperties) 1 }} since {{ .Custom.NonEmptyProperties }} is provided,
 {{- else }} since [{{ joinSlice .Custom.NonEmptyProperties "" }}] are provided,
 {{- end }}
