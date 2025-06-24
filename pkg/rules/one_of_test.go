@@ -251,7 +251,8 @@ var mutuallyDependentTestCases = []*struct {
 			Card:     ptr("2$"),
 			Transfer: nil,
 		},
-		expectedError: "[Card, Cash, Transfer] properties are mutually dependent, since [Card] is provided, [Cash, Transfer] properties must also be set",
+		expectedError: "[Card, Cash, Transfer] properties are mutually dependent," +
+			" since [Card] is provided, [Cash, Transfer] properties must also be set",
 	},
 	{
 		paymentMethod: paymentMethod{
@@ -259,7 +260,8 @@ var mutuallyDependentTestCases = []*struct {
 			Card:     ptr("2$"),
 			Transfer: ptr("2$"),
 		},
-		expectedError: "[Card, Cash, Transfer] properties are mutually dependent, since [Card, Transfer] are provided, [Cash] property must also be set",
+		expectedError: "[Card, Cash, Transfer] properties are mutually dependent," +
+			" since [Card, Transfer] are provided, [Cash] property must also be set",
 	},
 }
 
