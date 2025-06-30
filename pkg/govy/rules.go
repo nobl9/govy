@@ -2,15 +2,57 @@ package govy
 
 import (
 	"errors"
+	"runtime"
+	"sync"
 
 	"github.com/nobl9/govy/internal"
+	"github.com/nobl9/govy/internal/nameinfer"
 	"github.com/nobl9/govy/internal/typeinfo"
 )
 
 // For creates a new [PropertyRules] instance for the property
 // which value is extracted through [PropertyGetter] function.
 func For[T, S any](getter PropertyGetter[T, S]) PropertyRules[T, S] {
-	return forConstructor(getter, inferName())
+	return forConstructor(getter, inferName(5))
+}
+
+// For2 creates a new [PropertyRules] instance for the property
+// which value is extracted through [PropertyGetter] function.
+func For2[T, S any](getter PropertyGetter[T, S]) PropertyRules[T, S] {
+	rpc := make([]uintptr, 1)
+	n := runtime.Callers(2, rpc)
+	return forConstructor2(getter, func() string {
+		var (
+			once sync.Once
+			name string
+		)
+		once.Do(func() {
+			if n < 1 {
+				return // No caller found, return empty name.
+			}
+			frame, _ := runtime.CallersFrames(rpc).Next()
+			name = nameinfer.InferName(frame.File, frame.Line)
+		})
+		return name
+	})
+}
+
+// For3 creates a new [PropertyRules] instance for the property
+// which value is extracted through [PropertyGetter] function.
+func For3[T, S any](getter PropertyGetter[T, S]) PropertyRules[T, S] {
+	_, file, line, _ := runtime.Caller(2)
+	return forConstructor2(getter, func() string {
+		var (
+			once sync.Once
+			name string
+		)
+		once.Do(func() {
+			name = inferName(8)
+		})
+		file = file
+		line = line
+		return name
+	})
 }
 
 func forConstructor[T, S any](getter PropertyGetter[T, S], name string) PropertyRules[T, S] {
@@ -20,13 +62,20 @@ func forConstructor[T, S any](getter PropertyGetter[T, S], name string) Property
 	}
 }
 
+func forConstructor2[T, S any](getter PropertyGetter[T, S], nameFunc func() string) PropertyRules[T, S] {
+	return PropertyRules[T, S]{
+		nameFunc: nameFunc,
+		getter:   func(s S) (v T, err error) { return getter(s), nil },
+	}
+}
+
 // ForPointer accepts a getter function returning a pointer and wraps its call in order to
 // safely extract the value under the pointer or return a zero value for a give type T.
 // If required is set to true, the nil pointer value will result in an error and the
 // validation will not proceed.
 func ForPointer[T, S any](getter PropertyGetter[*T, S]) PropertyRules[T, S] {
 	return PropertyRules[T, S]{
-		name: inferName(),
+		name: inferName(5),
 		getter: func(s S) (indirect T, err error) {
 			ptr := getter(s)
 			if ptr != nil {
@@ -46,7 +95,7 @@ func ForPointer[T, S any](getter PropertyGetter[*T, S]) PropertyRules[T, S] {
 func Transform[T, N, S any](getter PropertyGetter[T, S], transform Transformer[T, N]) PropertyRules[N, S] {
 	typInfo := typeinfo.Get[T]()
 	return PropertyRules[N, S]{
-		name: inferName(),
+		name: inferName(5),
 		transformGetter: func(s S) (transformed N, original any, err error) {
 			v := getter(s)
 			if internal.IsEmpty(v) {
@@ -87,7 +136,9 @@ func (emptyErr) Error() string { return "" }
 // It is the middle-level building block of the validation process,
 // aggregated by [Validator] and aggregating [Rule].
 type PropertyRules[T, S any] struct {
-	name            string
+	name string
+	// nameFunc is assumed to be concurrnetly safe.
+	nameFunc        func() string
 	getter          internalPropertyGetter[T, S]
 	transformGetter internalTransformPropertyGetter[T, S]
 	rules           []validationInterface[T]
@@ -129,10 +180,10 @@ func (r PropertyRules[T, S]) Validate(st S) error {
 		switch errValue := err.(type) {
 		// Same as Rule[S] as for GetSelf we'd get the same type on T and S.
 		case *PropertyError:
-			allErrors = append(allErrors, errValue.prependParentPropertyName(r.name))
+			allErrors = append(allErrors, errValue.prependParentPropertyName(r.nameFunc()))
 		case *ValidatorError:
 			for _, e := range errValue.Errors {
-				allErrors = append(allErrors, e.prependParentPropertyName(r.name))
+				allErrors = append(allErrors, e.prependParentPropertyName(r.nameFunc()))
 			}
 		default:
 			ruleErrors = append(ruleErrors, err)
@@ -142,7 +193,7 @@ func (r PropertyRules[T, S]) Validate(st S) error {
 		}
 	}
 	if len(ruleErrors) > 0 {
-		allErrors = append(allErrors, NewPropertyError(r.name, propValue, ruleErrors...))
+		allErrors = append(allErrors, NewPropertyError(r.nameFunc(), propValue, ruleErrors...))
 	}
 	if len(allErrors) > 0 {
 		if r.hideValue {
@@ -236,7 +287,7 @@ func (r PropertyRules[T, S]) plan(builder planBuilder) {
 	} else {
 		builder.propertyPlan.TypeInfo = TypeInfo(typeinfo.Get[T]())
 	}
-	builder = builder.appendPath(r.name).setExamples(r.examples...)
+	builder = builder.appendPath(r.nameFunc()).setExamples(r.examples...)
 	if r.required {
 		// Dummy rule to register the property as required.
 		NewRule(func(v T) error { return nil }).
@@ -285,7 +336,7 @@ func (r PropertyRules[T, S]) getValue(st S) (v T, skip bool, propErr *PropertyEr
 		} else {
 			propValue = v
 		}
-		return v, false, NewPropertyError(r.name, propValue, err)
+		return v, false, NewPropertyError(r.nameFunc(), propValue, err)
 	}
 	isEmpty := isEmptyError || (!r.isPointer && internal.IsEmpty(v))
 	// If the value is not empty we simply return it.
@@ -294,7 +345,7 @@ func (r PropertyRules[T, S]) getValue(st S) (v T, skip bool, propErr *PropertyEr
 	}
 	// If the value is empty and the property is required, we return [ErrorCodeRequired].
 	if r.required {
-		return v, false, NewPropertyError(r.name, nil, newRequiredError())
+		return v, false, NewPropertyError(r.nameFunc(), nil, newRequiredError())
 	}
 	// If the value is empty and we're skipping empty values or the value is a pointer, we skip the validation.
 	if r.omitEmpty || r.isPointer {

@@ -7,7 +7,7 @@ import (
 // ForSlice creates a new [PropertyRulesForSlice] instance for a slice property
 // which value is extracted through [PropertyGetter] function.
 func ForSlice[T, S any](getter PropertyGetter[[]T, S]) PropertyRulesForSlice[T, S] {
-	name := inferName()
+	name := inferName(5)
 	return PropertyRulesForSlice[T, S]{
 		sliceRules:   forConstructor(GetSelf[[]T](), name),
 		forEachRules: forConstructor(GetSelf[T](), ""),
