@@ -106,7 +106,8 @@ func AssertNoError(t testingT, err error) bool {
 // If [ExpectedRuleError.IsKeyError] is provided it will be required to match
 // the actual [govy.PropertyError.IsKeyError].
 //
-// If the actual error is of type [govy.ValidatorErrors] the following two fields are also matched:
+// If the actual error is of type [govy.ValidatorErrors] either one of the following two fields must be provided.
+// Otherwise, there's no way to compare the expected and actual errors.
 //   - [ExpectedRuleError.ValidatorName] is equal to [govy.ValidatorError.Name]
 //   - [ExpectedRuleError.ValidatorIndex] is equal to [govy.ValidatorError.SliceIndex]
 //
@@ -356,6 +357,30 @@ func assertErrorMatches(
 	matched matchedErrors,
 ) bool {
 	t.Helper()
+
+	if expected.ValidatorName != "" && expected.ValidatorName != validatorErr.Name {
+		t.Errorf("Expected name '%s' of %T.Name but got '%s'", expected.ValidatorName, validatorErr, validatorErr.Name)
+		return false
+	}
+	if expected.ValidatorIndex != nil {
+		switch {
+		case validatorErr.SliceIndex == nil:
+			t.Errorf(
+				"Expected index '%d' of %T.SliceIndex but got no index",
+				*expected.ValidatorIndex,
+				validatorErr,
+			)
+			return false
+		case *expected.ValidatorIndex != *validatorErr.SliceIndex:
+			t.Errorf(
+				"Expected index '%d' of %T.SliceIndex but got '%d'",
+				*expected.ValidatorIndex,
+				validatorErr,
+				*validatorErr.SliceIndex,
+			)
+			return false
+		}
+	}
 
 	multiMatch := false
 	for i, actual := range validatorErr.Errors {
