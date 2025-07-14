@@ -545,6 +545,84 @@ ACTUAL:
 			},
 			out: `*govy.ValidatorError contains different number of errors than expected, expected: 1, actual: 0.`,
 		},
+		"match ValidatorError by name": {
+			ok: true,
+			inputError: &govy.ValidatorError{
+				Name: "bar",
+				Errors: []*govy.PropertyError{
+					{
+						PropertyName: "that",
+						Errors:       []*govy.RuleError{{Message: "test"}},
+					},
+				},
+			},
+			expectedErrors: []govytest.ExpectedRuleError{
+				{PropertyName: "that", Message: "test", ValidatorName: "bar"},
+			},
+		},
+		"does not match ValidatorError by name": {
+			ok: false,
+			inputError: &govy.ValidatorError{
+				Name: "bar",
+				Errors: []*govy.PropertyError{
+					{
+						PropertyName: "that",
+						Errors:       []*govy.RuleError{{Message: "test"}},
+					},
+				},
+			},
+			expectedErrors: []govytest.ExpectedRuleError{
+				{PropertyName: "that", Message: "test", ValidatorName: "baz"},
+			},
+			out: "Expected name 'baz' of *govy.ValidatorError.Name but got 'bar'",
+		},
+		"match ValidatorError by index": {
+			ok: true,
+			inputError: &govy.ValidatorError{
+				SliceIndex: ptr(1),
+				Errors: []*govy.PropertyError{
+					{
+						PropertyName: "that",
+						Errors:       []*govy.RuleError{{Message: "test"}},
+					},
+				},
+			},
+			expectedErrors: []govytest.ExpectedRuleError{
+				{PropertyName: "that", Message: "test", ValidatorIndex: ptr(1)},
+			},
+		},
+		"does not match ValidatorError by index": {
+			ok: false,
+			inputError: &govy.ValidatorError{
+				SliceIndex: ptr(1),
+				Errors: []*govy.PropertyError{
+					{
+						PropertyName: "that",
+						Errors:       []*govy.RuleError{{Message: "test"}},
+					},
+				},
+			},
+			expectedErrors: []govytest.ExpectedRuleError{
+				{PropertyName: "that", Message: "test", ValidatorIndex: ptr(2)},
+			},
+			out: "Expected index '2' of *govy.ValidatorError.SliceIndex but got '1'",
+		},
+		"match ValidatorError by name and index": {
+			ok: true,
+			inputError: &govy.ValidatorError{
+				Name:       "bar",
+				SliceIndex: ptr(1),
+				Errors: []*govy.PropertyError{
+					{
+						PropertyName: "that",
+						Errors:       []*govy.RuleError{{Message: "test"}},
+					},
+				},
+			},
+			expectedErrors: []govytest.ExpectedRuleError{
+				{PropertyName: "that", Message: "test", ValidatorName: "bar", ValidatorIndex: ptr(1)},
+			},
+		},
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
