@@ -607,6 +607,21 @@ ACTUAL:
 			},
 			out: "Expected index '2' of *govy.ValidatorError.SliceIndex but got '1'",
 		},
+		"does not match ValidatorError by index (no actual index)": {
+			ok: false,
+			inputError: &govy.ValidatorError{
+				Errors: []*govy.PropertyError{
+					{
+						PropertyName: "that",
+						Errors:       []*govy.RuleError{{Message: "test"}},
+					},
+				},
+			},
+			expectedErrors: []govytest.ExpectedRuleError{
+				{PropertyName: "that", Message: "test", ValidatorIndex: ptr(2)},
+			},
+			out: "Expected index '2' of *govy.ValidatorError.SliceIndex but got no index",
+		},
 		"match ValidatorError by name and index": {
 			ok: true,
 			inputError: &govy.ValidatorError{

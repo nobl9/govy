@@ -362,14 +362,24 @@ func assertErrorMatches(
 		t.Errorf("Expected name '%s' of %T.Name but got '%s'", expected.ValidatorName, validatorErr, validatorErr.Name)
 		return false
 	}
-	if expected.ValidatorIndex != nil && *expected.ValidatorIndex != *validatorErr.SliceIndex {
-		t.Errorf(
-			"Expected index '%d' of %T.SliceIndex but got '%d'",
-			*expected.ValidatorIndex,
-			validatorErr,
-			*validatorErr.SliceIndex,
-		)
-		return false
+	if expected.ValidatorIndex != nil {
+		switch {
+		case validatorErr.SliceIndex == nil:
+			t.Errorf(
+				"Expected index '%d' of %T.SliceIndex but got no index",
+				*expected.ValidatorIndex,
+				validatorErr,
+			)
+			return false
+		case *expected.ValidatorIndex != *validatorErr.SliceIndex:
+			t.Errorf(
+				"Expected index '%d' of %T.SliceIndex but got '%d'",
+				*expected.ValidatorIndex,
+				validatorErr,
+				*validatorErr.SliceIndex,
+			)
+			return false
+		}
 	}
 
 	multiMatch := false
