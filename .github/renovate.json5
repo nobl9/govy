@@ -22,6 +22,13 @@
   "commitMessagePrefix": "chore:",
   // This will run go mod tidy after each go.mod update.
   "postUpdateOptions": ["gomodTidy"],
+  "postUpgradeTasks": {
+    "commands": [
+      "go work sync",
+      "make generate",
+    ],
+    "executionMode": "branch",
+  },
   // Groups:
   "packageRules": [
     {
