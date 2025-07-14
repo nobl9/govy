@@ -26,6 +26,7 @@
     "commands": [
       "go work sync",
       "make generate",
+      "make format",
     ],
     "executionMode": "branch",
   },
