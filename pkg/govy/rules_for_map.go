@@ -10,7 +10,7 @@ import (
 // ForMap creates a new [PropertyRulesForMap] instance for a map property
 // which value is extracted through [PropertyGetter] function.
 func ForMap[M ~map[K]V, K comparable, V, S any](getter PropertyGetter[M, S]) PropertyRulesForMap[M, K, V, S] {
-	name := inferName()
+	name := inferName(5)
 	return PropertyRulesForMap[M, K, V, S]{
 		mapRules:      forConstructor(getter, name),
 		forKeyRules:   forConstructor(GetSelf[K](), ""),
