@@ -31,8 +31,9 @@
     "executionMode": "branch",
   },
   "allowedCommands": [
-    "^go .*",
-    "^make .*",
+    "go work sync",
+    "make generate",
+    "make format",
   ],
   // Groups:
   "packageRules": [
