@@ -24,15 +24,15 @@
   "postUpdateOptions": ["gomodTidy"],
   "postUpgradeTasks": {
     "commands": [
-      "^go .*",
-      "^make .*",
+      "go work sync",
+      "make generate",
+      "make format",'
     ],
     "executionMode": "branch",
   },
   "allowedCommands": [
-    "go work sync",
-    "make generate",
-    "make format",
+    "^go .*",
+    "^make .*",
   ],
   // Groups:
   "packageRules": [
