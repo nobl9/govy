@@ -145,51 +145,51 @@
         }
       }
     },
-    "golines@0.12": {
-      "last_modified": "2025-03-11T17:52:14Z",
-      "resolved": "github:NixOS/nixpkgs/0d534853a55b5d02a4ababa1d71921ce8f0aee4c#golines",
+    "golines@0.13.0": {
+      "last_modified": "2025-09-18T16:33:27Z",
+      "resolved": "github:NixOS/nixpkgs/f4b140d5b253f5e2a1ff4e5506edbf8267724bde#golines",
       "source": "devbox-search",
-      "version": "0.12.2",
+      "version": "0.13.0",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/21wizpfih1hcixgzdj11i72zc42asgcb-golines-0.12.2",
+              "path": "/nix/store/zq0c03kiwxajgn77fn266zha9izf38g3-golines-0.13.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/21wizpfih1hcixgzdj11i72zc42asgcb-golines-0.12.2"
+          "store_path": "/nix/store/zq0c03kiwxajgn77fn266zha9izf38g3-golines-0.13.0"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/252k0da68p7ja69z57v1n2d137hbvf5r-golines-0.12.2",
+              "path": "/nix/store/0imb5jvjc3bpl8fdfw062nx5ks74b7hf-golines-0.13.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/252k0da68p7ja69z57v1n2d137hbvf5r-golines-0.12.2"
+          "store_path": "/nix/store/0imb5jvjc3bpl8fdfw062nx5ks74b7hf-golines-0.13.0"
         },
         "x86_64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/9m9ckjl3h4gfraynv3aahar31hyn8hry-golines-0.12.2",
+              "path": "/nix/store/ck2ci17q60sf9q950anwrbxr1bs67v73-golines-0.13.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/9m9ckjl3h4gfraynv3aahar31hyn8hry-golines-0.12.2"
+          "store_path": "/nix/store/ck2ci17q60sf9q950anwrbxr1bs67v73-golines-0.13.0"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/s3bvnsxw4x06kkysfbzzlmn1w5j36hp7-golines-0.12.2",
+              "path": "/nix/store/yib9sfr6bgqbdb40qb0bwgywa0i6dbfc-golines-0.13.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/s3bvnsxw4x06kkysfbzzlmn1w5j36hp7-golines-0.12.2"
+          "store_path": "/nix/store/yib9sfr6bgqbdb40qb0bwgywa0i6dbfc-golines-0.13.0"
         }
       }
     },
