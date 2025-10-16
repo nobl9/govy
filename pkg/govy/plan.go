@@ -85,7 +85,7 @@ func (r RulePlan) equal(r2 RulePlan) bool {
 // Plan creates a validation plan for the provided [Validator].
 // Each property is represented by a [PropertyPlan] which aggregates its every [RulePlan].
 // If a property does not have any rules, it won't be included in the result.
-func Plan[S any](v Validator[S]) *ValidatorPlan {
+func Plan[T any](v Validator[T]) *ValidatorPlan {
 	builders := make([]planBuilder, 0)
 	v.plan(planBuilder{path: "$", children: &builders})
 	properties := aggregatePropertyPlans(builders)
@@ -97,7 +97,7 @@ func Plan[S any](v Validator[S]) *ValidatorPlan {
 	name := v.name
 	// Best effort name function setting.
 	if v.nameFunc != nil {
-		name = v.nameFunc(*new(S))
+		name = v.nameFunc(*new(T))
 	}
 	return &ValidatorPlan{
 		Name:       name,

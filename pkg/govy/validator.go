@@ -6,24 +6,24 @@ import (
 )
 
 // New creates a new [Validator] aggregating the provided property rules.
-func New[S any](props ...propertyRulesInterface[S]) Validator[S] {
-	return Validator[S]{props: props}
+func New[T any](props ...propertyRulesInterface[T]) Validator[T] {
+	return Validator[T]{props: props}
 }
 
 // Validator is the top level validation entity.
 // It serves as an aggregator for [PropertyRules].
 // Typically, it represents a struct.
-type Validator[S any] struct {
-	props    []propertyRulesInterface[S]
+type Validator[T any] struct {
+	props    []propertyRulesInterface[T]
 	name     string
-	nameFunc func(S) string
+	nameFunc func(value T) string
 	mode     CascadeMode
 
-	predicateMatcher[S]
+	predicateMatcher[T]
 }
 
 // WithName when a rule fails will pass the provided name to [ValidatorError.WithName].
-func (v Validator[S]) WithName(name string) Validator[S] {
+func (v Validator[T]) WithName(name string) Validator[T] {
 	v.nameFunc = nil
 	v.name = name
 	return v
@@ -31,14 +31,14 @@ func (v Validator[S]) WithName(name string) Validator[S] {
 
 // WithNameFunc when a rule fails extracts name from provided function and passes it to [ValidatorError.WithName].
 // The function receives validated entity's instance as an argument.
-func (v Validator[S]) WithNameFunc(f func(s S) string) Validator[S] {
+func (v Validator[T]) WithNameFunc(f func(value T) string) Validator[T] {
 	v.name = ""
 	v.nameFunc = f
 	return v
 }
 
 // When accepts predicates which will be evaluated BEFORE [Validator] validates ANY rules.
-func (v Validator[S]) When(predicate Predicate[S], opts ...WhenOptions) Validator[S] {
+func (v Validator[T]) When(predicate Predicate[T], opts ...WhenOptions) Validator[T] {
 	v.predicateMatcher = v.when(predicate, opts...)
 	return v
 }
@@ -47,11 +47,11 @@ func (v Validator[S]) When(predicate Predicate[S], opts ...WhenOptions) Validato
 // If the name was already set through [Validator.WithName], it will not be overridden.
 // It does not use the same inference mechanisms as [PropertyRules.InferName],
 // it simply checks the [Validator] type parameter using reflection.
-func (v Validator[S]) InferName() Validator[S] {
+func (v Validator[T]) InferName() Validator[T] {
 	if v.name != "" {
 		return v
 	}
-	split := strings.Split(fmt.Sprintf("%T", *new(S)), ".")
+	split := strings.Split(fmt.Sprintf("%T", *new(T)), ".")
 	if len(split) == 0 {
 		return v
 	}
@@ -61,9 +61,9 @@ func (v Validator[S]) InferName() Validator[S] {
 
 // Cascade sets the [CascadeMode] for the validator,
 // which controls the flow of evaluating the validation rules.
-func (v Validator[S]) Cascade(mode CascadeMode) Validator[S] {
+func (v Validator[T]) Cascade(mode CascadeMode) Validator[T] {
 	v.mode = mode
-	props := make([]propertyRulesInterface[S], 0, len(v.props))
+	props := make([]propertyRulesInterface[T], 0, len(v.props))
 	for _, prop := range v.props {
 		props = append(props, prop.cascadeInternal(mode))
 	}
@@ -74,13 +74,13 @@ func (v Validator[S]) Cascade(mode CascadeMode) Validator[S] {
 // Validate will first evaluate predicates before validating any rules.
 // If any predicate does not pass the validation won't be executed (returns nil).
 // All errors returned by property rules will be aggregated and wrapped in [ValidatorError].
-func (v Validator[S]) Validate(st S) error {
-	if !v.matchPredicates(st) {
+func (v Validator[T]) Validate(value T) error {
+	if !v.matchPredicates(value) {
 		return nil
 	}
 	var allErrors PropertyErrors
 	for _, rules := range v.props {
-		err := rules.Validate(st)
+		err := rules.Validate(value)
 		if err == nil {
 			continue
 		}
@@ -97,24 +97,24 @@ func (v Validator[S]) Validate(st S) error {
 	if len(allErrors) != 0 {
 		name := v.name
 		if v.nameFunc != nil {
-			name = v.nameFunc(st)
+			name = v.nameFunc(value)
 		}
 		return NewValidatorError(allErrors).WithName(name)
 	}
 	return nil
 }
 
-// ValidatorSlice is used to validate a slice of values of the type S.
-// Under the hood [Validator.Validate] is called for each element and the errors
+// ValidateSlice validates a slice of values of the type T.
+// Under the hood, [Validator.Validate] is called for each element and the errors
 // are aggregated into [ValidatorErrors].
 //
 // Note: It is designed to be used for validating independent values.
 // If you need to validate the slice itself, for instance, to check if it has at most N elements,
 // you should use the [Validator] directly in tandem with [ForSlice] and [GetSelf].
-func (v Validator[S]) ValidateSlice(s []S) error {
+func (v Validator[T]) ValidateSlice(values []T) error {
 	errs := make(ValidatorErrors, 0)
-	for i, st := range s {
-		if err := v.Validate(st); err != nil {
+	for i, value := range values {
+		if err := v.Validate(value); err != nil {
 			vErr, ok := err.(*ValidatorError)
 			if !ok {
 				return err
@@ -130,7 +130,7 @@ func (v Validator[S]) ValidateSlice(s []S) error {
 }
 
 // plan constructs a validation plan for all the properties of the [Validator].
-func (v Validator[S]) plan(builder planBuilder) {
+func (v Validator[T]) plan(builder planBuilder) {
 	builder = appendPredicatesToPlanBuilder(builder, v.predicates)
 	for _, rules := range v.props {
 		if p, ok := rules.(planner); ok {
@@ -140,4 +140,4 @@ func (v Validator[S]) plan(builder planBuilder) {
 }
 
 // isValidator implements [validatorInterface].
-func (v Validator[S]) isValidator() {}
+func (v Validator[T]) isValidator() {}

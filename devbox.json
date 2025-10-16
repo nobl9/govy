@@ -2,12 +2,12 @@
   "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/0.12.0/.schema/devbox.schema.json",
   "packages": [
     "yarn@1.22.22",
-    "golines@0.12",
+    "golines@0.13",
     "govulncheck@1.1.4",
-    "gofumpt@0.8.0",
+    "gofumpt@0.9.1",
     "golangci-lint@1.64.8",
-    "gosec@latest",
-    "go@1.24.5",
+    "gosec@2.22.9",
+    "go@1.25.1",
     "gotools@0.34.0"
   ],
   "shell": {

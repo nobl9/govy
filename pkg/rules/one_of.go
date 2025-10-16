@@ -60,18 +60,18 @@ func NotOneOf[T comparable](values ...T) govy.Rule[T] {
 
 // OneOfProperties checks if at least one of the properties is set.
 // Property is considered set if its value is not empty (non-zero).
-func OneOfProperties[S any](getters map[string]func(s S) any) govy.Rule[S] {
+func OneOfProperties[T any](getters map[string]func(parent T) any) govy.Rule[T] {
 	tpl := messagetemplates.Get(messagetemplates.OneOfPropertiesTemplate)
 
-	return govy.NewRule(func(s S) error {
+	return govy.NewRule(func(parent T) error {
 		for _, getter := range getters {
-			v := getter(s)
+			v := getter(parent)
 			if !internal.IsEmpty(v) {
 				return nil
 			}
 		}
 		return govy.NewRuleErrorTemplate(govy.TemplateVars{
-			PropertyValue:   s,
+			PropertyValue:   parent,
 			ComparisonValue: collections.SortedKeys(getters),
 		})
 	}).
@@ -91,13 +91,13 @@ type mutuallyExclusiveTemplateVars struct {
 // This means, exactly one of the properties can be set.
 // Property is considered set if its value is not empty (non-zero).
 // If required is true, then a single non-empty property is required.
-func MutuallyExclusive[S any](required bool, getters map[string]func(s S) any) govy.Rule[S] {
+func MutuallyExclusive[T any](required bool, getters map[string]func(parent T) any) govy.Rule[T] {
 	tpl := messagetemplates.Get(messagetemplates.MutuallyExclusiveTemplate)
 
-	return govy.NewRule(func(s S) error {
+	return govy.NewRule(func(parent T) error {
 		var nonEmpty []string
 		for name, getter := range getters {
-			v := getter(s)
+			v := getter(parent)
 			if internal.IsEmpty(v) {
 				continue
 			}
@@ -109,7 +109,7 @@ func MutuallyExclusive[S any](required bool, getters map[string]func(s S) any) g
 				return nil
 			}
 			return govy.NewRuleErrorTemplate(govy.TemplateVars{
-				PropertyValue:   s,
+				PropertyValue:   parent,
 				ComparisonValue: collections.SortedKeys(getters),
 				Custom:          mutuallyExclusiveTemplateVars{NoProperties: true},
 			})
@@ -118,7 +118,7 @@ func MutuallyExclusive[S any](required bool, getters map[string]func(s S) any) g
 		default:
 			slices.Sort(nonEmpty)
 			return govy.NewRuleErrorTemplate(govy.TemplateVars{
-				PropertyValue:   s,
+				PropertyValue:   parent,
 				ComparisonValue: nonEmpty,
 				Custom:          mutuallyExclusiveTemplateVars{NoProperties: false},
 			})
@@ -140,15 +140,15 @@ type mutuallyDependentTemplateVars struct {
 // MutuallyDependent checks if properties are mutually dependent.
 // This means, if any of the properties is set, the rest must be also set.
 // Property is considered set if its value is not empty (non-zero).
-func MutuallyDependent[S any](getters map[string]func(s S) any) govy.Rule[S] {
+func MutuallyDependent[T any](getters map[string]func(parent T) any) govy.Rule[T] {
 	tpl := messagetemplates.Get(messagetemplates.MutuallyDependentTemplate)
 	sortedKeys := collections.SortedKeys(getters)
 
-	return govy.NewRule(func(s S) error {
+	return govy.NewRule(func(parent T) error {
 		emptyIndexes := make([]bool, len(getters))
 		emptyCtr := 0
 		for i, name := range sortedKeys {
-			v := getters[name](s)
+			v := getters[name](parent)
 			if internal.IsEmpty(v) {
 				emptyIndexes[i] = true
 				emptyCtr++
@@ -169,7 +169,7 @@ func MutuallyDependent[S any](getters map[string]func(s S) any) govy.Rule[S] {
 			}
 		}
 		return govy.NewRuleErrorTemplate(govy.TemplateVars{
-			PropertyValue:   s,
+			PropertyValue:   parent,
 			ComparisonValue: sortedKeys,
 			Custom: mutuallyDependentTemplateVars{
 				NonEmptyProperties: nonEmpty,
