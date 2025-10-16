@@ -74,18 +74,18 @@ type uniquePropertiesTemplateVars struct {
 //
 // You can optionally specify constraints which will be included in the error message to further
 // clarify the reason for breaking uniqueness.
-func UniqueProperties[S, V any, H comparable](
+func UniqueProperties[V, P any, H comparable](
 	hashFunc HashFunction[V, H],
-	getters map[string]func(s S) V,
+	getters map[string]func(parent P) V,
 	constraints ...string,
-) govy.Rule[S] {
+) govy.Rule[P] {
 	tpl := messagetemplates.Get(messagetemplates.UniquePropertiesTemplate)
 
 	sortedKeys := collections.SortedKeys(getters)
-	return govy.NewRule(func(s S) error {
+	return govy.NewRule(func(parent P) error {
 		unique := make(map[H]string)
 		for _, prop := range sortedKeys {
-			value := getters[prop](s)
+			value := getters[prop](parent)
 			hash := hashFunc(value)
 			if previousProperty, ok := unique[hash]; ok {
 				return govy.NewRuleErrorTemplate(govy.TemplateVars{
