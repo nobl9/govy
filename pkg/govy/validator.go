@@ -104,8 +104,8 @@ func (v Validator[T]) Validate(value T) error {
 	return nil
 }
 
-// ValidateSlice is used to validate a slice of values of the type S.
-// Under the hood [Validator.Validate] is called for each element and the errors
+// ValidateSlice validates a slice of values of the type T.
+// Under the hood, [Validator.Validate] is called for each element and the errors
 // are aggregated into [ValidatorErrors].
 //
 // Note: It is designed to be used for validating independent values.

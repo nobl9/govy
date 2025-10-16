@@ -21,7 +21,7 @@ func forConstructor[T, P any](getter PropertyGetter[T, P], name string) Property
 }
 
 // ForPointer accepts a getter function returning a pointer and wraps its call in order to
-// safely extract the value under the pointer or return a zero value for a give type T.
+// safely extract the value under the pointer or return a zero value for a given type T.
 // If required is set to true, the nil pointer value will result in an error and the
 // validation will not proceed.
 func ForPointer[T, P any](getter PropertyGetter[*T, P]) PropertyRules[T, P] {
@@ -67,7 +67,7 @@ func GetSelf[P any]() PropertyGetter[P, P] {
 	return func(parent P) P { return parent }
 }
 
-// Transformer is a function that transforms a value of type T to a value of type N.
+// Transformer is a function that transforms its parameter `value` of type T to a value of type N.
 // If the transformation fails, the function should return an error.
 type Transformer[T, N any] func(value T) (N, error)
 
@@ -127,7 +127,7 @@ func (r PropertyRules[T, P]) Validate(parent P) error {
 			continue
 		}
 		switch errValue := err.(type) {
-		// Same as Rule[P] as for GetSelf we'd get the same type on T and S.
+		// Same as Rule[P] as for GetSelf we'd get the same type on T and P.
 		case *PropertyError:
 			allErrors = append(allErrors, errValue.prependParentPropertyName(r.name))
 		case *ValidatorError:

@@ -119,7 +119,7 @@ func (r PropertyRulesForSlice[S, T, P]) Cascade(mode CascadeMode) PropertyRulesF
 	return r
 }
 
-// cascadeInternal is an internal wrapper around [PropertyRulesForMap.Cascade] which
+// cascadeInternal is an internal wrapper around [PropertyRulesForSlice.Cascade] which
 // fulfills [propertyRulesInterface] interface.
 // If the [CascadeMode] is already set, it won't change it.
 func (r PropertyRulesForSlice[S, T, P]) cascadeInternal(mode CascadeMode) propertyRulesInterface[P] {
