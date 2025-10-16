@@ -5,7 +5,7 @@
     "golines@0.13",
     "govulncheck@1.1.4",
     "gofumpt@0.9.1",
-    "golangci-lint@1.64.8",
+    "golangci-lint@2.5.0",
     "gosec@2.22.9",
     "go@1.25.1",
     "gotools@0.34.0"
