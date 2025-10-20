@@ -115,13 +115,16 @@ func (r Rule[T]) WithErrorCode(code ErrorCode) Rule[T] {
 }
 
 // WithMessage overrides the returned [RuleError] error message.
-func (r Rule[T]) WithMessage(format string, a ...any) Rule[T] {
+func (r Rule[T]) WithMessage(message string) Rule[T] {
 	r.messageTemplate = nil
-	if len(a) == 0 {
-		r.message = format
-	} else {
-		r.message = fmt.Sprintf(format, a...)
-	}
+	r.message = message
+	return r
+}
+
+// WithMessagef overrides the returned [RuleError] error message using printf-like formatting.
+func (r Rule[T]) WithMessagef(format string, a ...any) Rule[T] {
+	r.messageTemplate = nil
+	r.message = fmt.Sprintf(format, a...)
 	return r
 }
 
@@ -143,7 +146,13 @@ func (r Rule[T]) WithMessageTemplateString(tplStr string) Rule[T] {
 }
 
 // WithDetails adds details to the returned [RuleError] error message.
-func (r Rule[T]) WithDetails(format string, a ...any) Rule[T] {
+func (r Rule[T]) WithDetails(details string) Rule[T] {
+	r.details = details
+	return r
+}
+
+// WithDetailsf adds formatted details to the returned [RuleError] error message.
+func (r Rule[T]) WithDetailsf(format string, a ...any) Rule[T] {
 	r.details = fmt.Sprintf(format, a...)
 	return r
 }
