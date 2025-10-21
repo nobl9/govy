@@ -68,7 +68,7 @@ func Example_validationPlan() {
 	).
 		WithName("Teacher")
 
-	plan, err := govy.Plan(teacherValidator)
+	plan, err := govy.Plan(teacherValidator, govy.PlanStrictMode())
 	if err != nil {
 		panic(err)
 	}

@@ -90,12 +90,22 @@ type planOptions struct {
 
 type PlanOption func(options planOptions) planOptions
 
-// RequirePredicateDescriptions returns a [planOptions] that will cause [Plan] to return an error
+// PlanRequirePredicateDescriptions returns a [PlanOption] that will cause [Plan] to return an error
 // if any [Predicate] set through [Validator.When] or [PropertyRules.When] does not have
 // a description provided via [WhenDescription].
-func RequirePredicateDescriptions() PlanOption {
+func PlanRequirePredicateDescriptions() PlanOption {
 	return func(options planOptions) planOptions {
 		options.requirePredicateDescriptions = true
+		return options
+	}
+}
+
+// PlanStrictMode bundles all [Plan] validations into a single [PlanOption].
+// These include:
+//   - [PlanRequirePredicateDescriptions]
+func PlanStrictMode() PlanOption {
+	return func(options planOptions) planOptions {
+		options = PlanRequirePredicateDescriptions()(options)
 		return options
 	}
 }

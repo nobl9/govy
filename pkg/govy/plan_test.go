@@ -259,7 +259,7 @@ func requireJSON(t *testing.T, plan *govy.ValidatorPlan) string {
 	return buf.String()
 }
 
-func TestPlan_requirePredicateDescriptions(t *testing.T) {
+func TestPlanRequirePredicateDescriptions(t *testing.T) {
 	t.Run("validator level predicate without description", func(t *testing.T) {
 		validator := govy.New(
 			govy.For(func(s string) string { return s }).
@@ -267,7 +267,7 @@ func TestPlan_requirePredicateDescriptions(t *testing.T) {
 				WithName("String"),
 		).When(func(s string) bool { return true })
 
-		_, err := govy.Plan(validator, govy.RequirePredicateDescriptions())
+		_, err := govy.Plan(validator, govy.PlanRequirePredicateDescriptions())
 		assert.Require(t, assert.Error(t, err))
 
 		var missingErr *govy.MissingPredicateDescriptionsError
@@ -284,7 +284,7 @@ func TestPlan_requirePredicateDescriptions(t *testing.T) {
 				When(func(s string) bool { return true }),
 		)
 
-		_, err := govy.Plan(validator, govy.RequirePredicateDescriptions())
+		_, err := govy.Plan(validator, govy.PlanRequirePredicateDescriptions())
 		assert.Require(t, assert.Error(t, err))
 
 		var missingErr *govy.MissingPredicateDescriptionsError
@@ -309,7 +309,7 @@ func TestPlan_requirePredicateDescriptions(t *testing.T) {
 				When(func(f Foo) bool { return true }),
 		).When(func(f Foo) bool { return true })
 
-		_, err := govy.Plan(validator, govy.RequirePredicateDescriptions())
+		_, err := govy.Plan(validator, govy.PlanRequirePredicateDescriptions())
 		assert.Require(t, assert.Error(t, err))
 
 		var missingErr *govy.MissingPredicateDescriptionsError
@@ -325,7 +325,7 @@ func TestPlan_requirePredicateDescriptions(t *testing.T) {
 				When(func(s string) bool { return true }, govy.WhenDescription("when true")),
 		).When(func(s string) bool { return true }, govy.WhenDescription("validator when true"))
 
-		_, err := govy.Plan(validator, govy.RequirePredicateDescriptions())
+		_, err := govy.Plan(validator, govy.PlanRequirePredicateDescriptions())
 		assert.Require(t, assert.NoError(t, err))
 	})
 
@@ -338,6 +338,36 @@ func TestPlan_requirePredicateDescriptions(t *testing.T) {
 		).When(func(s string) bool { return true })
 
 		_, err := govy.Plan(validator)
+		assert.Require(t, assert.NoError(t, err))
+	})
+}
+
+func TestPlanStrictMode(t *testing.T) {
+	t.Run("invalid - all validations fail", func(t *testing.T) {
+		validator := govy.New(
+			govy.For(func(s string) string { return s }).
+				Required().
+				WithName("String"),
+		).When(func(s string) bool { return true })
+
+		_, err := govy.Plan(validator, govy.PlanStrictMode())
+		assert.Require(t, assert.Error(t, err))
+
+		var missingErr *govy.MissingPredicateDescriptionsError
+		assert.True(t, errors.As(err, &missingErr))
+		assert.Len(t, missingErr.Locations, 1)
+		assert.ErrorContains(t, err, "validator level")
+	})
+
+	t.Run("valid", func(t *testing.T) {
+		validator := govy.New(
+			govy.For(func(s string) string { return s }).
+				Required().
+				WithName("String").
+				When(func(s string) bool { return true }, govy.WhenDescription("when true")),
+		).When(func(s string) bool { return true }, govy.WhenDescription("validator when true"))
+
+		_, err := govy.Plan(validator, govy.PlanStrictMode())
 		assert.Require(t, assert.NoError(t, err))
 	})
 }
