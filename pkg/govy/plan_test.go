@@ -134,7 +134,8 @@ func TestPlan(t *testing.T) {
 	).
 		WithName("Pod")
 
-	plan := govy.Plan(validator)
+	plan, err := govy.Plan(validator)
+	assert.Require(t, assert.NoError(t, err))
 
 	actual := requireJSON(t, plan)
 	assert.Equal(t, readExpectedPlan(t, "expected_pod_plan.json"), actual)
@@ -152,7 +153,8 @@ func TestPlan_validValuesIntersection(t *testing.T) {
 			Rules(rules.OneOf("bar", "baz", "foo")),
 	)
 
-	plan := govy.Plan(validator)
+	plan, err := govy.Plan(validator)
+	assert.Require(t, assert.NoError(t, err))
 
 	actual := requireJSON(t, plan)
 	assert.Equal(t, readExpectedPlan(t, "expected_values_intersection_plan.json"), actual)
@@ -169,7 +171,8 @@ func TestPlan_customSliceType(t *testing.T) {
 			Rules(rules.SliceMaxLength[Slice](1)),
 	)
 
-	plan := govy.Plan(validator)
+	plan, err := govy.Plan(validator)
+	assert.Require(t, assert.NoError(t, err))
 
 	actual := requireJSON(t, plan)
 	assert.Equal(t, readExpectedPlan(t, "expected_custom_slice_type_plan.json"), actual)
@@ -204,7 +207,8 @@ func TestPlan_conditionsWithoutRules(t *testing.T) {
 			When(func(f Foo) bool { return true }),
 	)
 
-	plan := govy.Plan(validator)
+	plan, err := govy.Plan(validator)
+	assert.Require(t, assert.NoError(t, err))
 
 	actual := requireJSON(t, plan)
 	assert.Equal(t, readExpectedPlan(t, "expected_conditions_without_rules_plan.json"), actual)
@@ -221,7 +225,8 @@ func TestPlan_removeDuplicateRules(t *testing.T) {
 			WithName("String"),
 	)
 
-	plan := govy.Plan(validator)
+	plan, err := govy.Plan(validator)
+	assert.Require(t, assert.NoError(t, err))
 
 	actual := requireJSON(t, plan)
 	assert.Equal(t, readExpectedPlan(t, "expected_remove_duplicate_rules_plan.json"), actual)
@@ -238,7 +243,8 @@ func TestPlan_optionalProperties(t *testing.T) {
 			When(func(s string) bool { return true }, govy.WhenDescription("when true")),
 	)
 
-	plan := govy.Plan(validator)
+	plan, err := govy.Plan(validator)
+	assert.Require(t, assert.NoError(t, err))
 
 	actual := requireJSON(t, plan)
 	assert.Equal(t, readExpectedPlan(t, "expected_optional_properties_plan.json"), actual)
@@ -251,6 +257,89 @@ func requireJSON(t *testing.T, plan *govy.ValidatorPlan) string {
 	err := enc.Encode(plan)
 	assert.Require(t, assert.NoError(t, err))
 	return buf.String()
+}
+
+func TestPlan_requirePredicateDescriptions(t *testing.T) {
+	t.Run("validator level predicate without description", func(t *testing.T) {
+		validator := govy.New(
+			govy.For(func(s string) string { return s }).
+				Required().
+				WithName("String"),
+		).When(func(s string) bool { return true })
+
+		_, err := govy.Plan(validator, govy.RequirePredicateDescriptions())
+		assert.Require(t, assert.Error(t, err))
+
+		var missingErr *govy.MissingPredicateDescriptionsError
+		assert.True(t, errors.As(err, &missingErr))
+		assert.Len(t, missingErr.Locations, 1)
+		assert.ErrorContains(t, err, "validator level")
+	})
+
+	t.Run("property level predicate without description", func(t *testing.T) {
+		validator := govy.New(
+			govy.For(func(s string) string { return s }).
+				Required().
+				WithName("String").
+				When(func(s string) bool { return true }),
+		)
+
+		_, err := govy.Plan(validator, govy.RequirePredicateDescriptions())
+		assert.Require(t, assert.Error(t, err))
+
+		var missingErr *govy.MissingPredicateDescriptionsError
+		assert.True(t, errors.As(err, &missingErr))
+		assert.Len(t, missingErr.Locations, 1)
+		assert.ErrorContains(t, err, "String")
+	})
+
+	t.Run("multiple predicates without descriptions", func(t *testing.T) {
+		type Foo struct {
+			Name string
+			Age  int
+		}
+		validator := govy.New(
+			govy.For(func(f Foo) string { return f.Name }).
+				Required().
+				WithName("name").
+				When(func(f Foo) bool { return true }),
+			govy.For(func(f Foo) int { return f.Age }).
+				Required().
+				WithName("age").
+				When(func(f Foo) bool { return true }),
+		).When(func(f Foo) bool { return true })
+
+		_, err := govy.Plan(validator, govy.RequirePredicateDescriptions())
+		assert.Require(t, assert.Error(t, err))
+
+		var missingErr *govy.MissingPredicateDescriptionsError
+		assert.True(t, errors.As(err, &missingErr))
+		assert.Len(t, missingErr.Locations, 3)
+	})
+
+	t.Run("all predicates have descriptions", func(t *testing.T) {
+		validator := govy.New(
+			govy.For(func(s string) string { return s }).
+				Required().
+				WithName("String").
+				When(func(s string) bool { return true }, govy.WhenDescription("when true")),
+		).When(func(s string) bool { return true }, govy.WhenDescription("validator when true"))
+
+		_, err := govy.Plan(validator, govy.RequirePredicateDescriptions())
+		assert.Require(t, assert.NoError(t, err))
+	})
+
+	t.Run("disabled by default", func(t *testing.T) {
+		validator := govy.New(
+			govy.For(func(s string) string { return s }).
+				Required().
+				WithName("String").
+				When(func(s string) bool { return true }),
+		).When(func(s string) bool { return true })
+
+		_, err := govy.Plan(validator)
+		assert.Require(t, assert.NoError(t, err))
+	})
 }
 
 func readExpectedPlan(t *testing.T, name string) string {

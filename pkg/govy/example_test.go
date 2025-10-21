@@ -1718,7 +1718,10 @@ func ExamplePlan() {
 			),
 	).WithName("Teacher")
 
-	properties := govy.Plan(v)
+	properties, err := govy.Plan(v)
+	if err != nil {
+		panic(err)
+	}
 	enc := json.NewEncoder(os.Stdout)
 	enc.SetIndent("", "  ")
 	_ = enc.Encode(properties)

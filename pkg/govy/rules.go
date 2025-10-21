@@ -184,8 +184,8 @@ func (r PropertyRules[T, P]) Include(rules ...validatorInterface[T]) PropertyRul
 
 // When defines a [Predicate] which determines when the rules for this property should be evaluated.
 // It can be called multiple times to set multiple predicates.
-// Additionally, it accepts [WhenOptions] which customizes the behavior of the predicate.
-func (r PropertyRules[T, P]) When(predicate Predicate[P], opts ...WhenOptions) PropertyRules[T, P] {
+// Additionally, it accepts [WhenOption] which customizes the behavior of the predicate.
+func (r PropertyRules[T, P]) When(predicate Predicate[P], opts ...WhenOption) PropertyRules[T, P] {
 	r.predicateMatcher = r.when(predicate, opts...)
 	return r
 }
@@ -230,13 +230,13 @@ func (r PropertyRules[T, P]) cascadeInternal(mode CascadeMode) propertyRulesInte
 // plan constructs a validation plan for the property.
 func (r PropertyRules[T, P]) plan(builder planBuilder) {
 	builder.propertyPlan.IsHidden = r.hideValue
-	builder = appendPredicatesToPlanBuilder(builder, r.predicates)
 	if r.originalType != nil {
 		builder.propertyPlan.TypeInfo = TypeInfo(*r.originalType)
 	} else {
 		builder.propertyPlan.TypeInfo = TypeInfo(typeinfo.Get[T]())
 	}
 	builder = builder.appendPath(r.name).setExamples(r.examples...)
+	builder = appendPredicatesToPlanBuilder(builder, r.predicates)
 	if r.required {
 		// Dummy rule to register the property as required.
 		NewRule(func(v T) error { return nil }).
@@ -258,7 +258,7 @@ func (r PropertyRules[T, P]) plan(builder planBuilder) {
 	// If we don't have any rules defined for this property, append it nonetheless.
 	// It can be useful when we have things like [WithExamples] or [Required] set.
 	if len(r.rules) == 0 {
-		*builder.children = append(*builder.children, builder)
+		*builder.path = append(*builder.path, builder)
 	}
 }
 

@@ -193,7 +193,7 @@ func (r Rule[T]) plan(builder planBuilder) {
 		rulePlan = mod(rulePlan)
 	}
 	builder.rulePlan = rulePlan
-	*builder.children = append(*builder.children, builder)
+	*builder.path = append(*builder.path, builder)
 }
 
 func createErrorMessage(message, details string, examples []string) string {

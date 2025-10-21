@@ -2,6 +2,7 @@ package govy
 
 import (
 	"cmp"
+	"fmt"
 	"maps"
 	"slices"
 	"strings"
@@ -82,12 +83,43 @@ func (r RulePlan) equal(r2 RulePlan) bool {
 		collections.EqualSlices(r.Examples, r2.Examples)
 }
 
+// PlanOptions contains options for configuring the behavior of the [Plan] function.
+type PlanOptions struct {
+	requirePredicateDescriptions bool
+}
+
+// RequirePredicateDescriptions returns a [PlanOptions] that will cause [Plan] to return an error
+// if any [Predicate] set through [Validator.When] or [PropertyRules.When] does not have
+// a description provided via [WhenDescription].
+func RequirePredicateDescriptions() PlanOptions {
+	return PlanOptions{requirePredicateDescriptions: true}
+}
+
 // Plan creates a validation plan for the provided [Validator].
 // Each property is represented by a [PropertyPlan] which aggregates its every [RulePlan].
 // If a property does not have any rules, it won't be included in the result.
-func Plan[T any](v Validator[T]) *ValidatorPlan {
+// You can customize the behavior of the plan generation by providing [PlanOptions].
+func Plan[T any](v Validator[T], opts ...PlanOptions) (*ValidatorPlan, error) {
+	var options PlanOptions
+	for _, opt := range opts {
+		if opt.requirePredicateDescriptions {
+			options.requirePredicateDescriptions = true
+		}
+	}
+
 	builders := make([]planBuilder, 0)
-	v.plan(planBuilder{path: "$", children: &builders})
+	missingDescriptions := make([]predicateLocation, 0)
+	v.plan(planBuilder{
+		propertyPath:        "$",
+		path:                &builders,
+		missingDescriptions: &missingDescriptions,
+		options:             options,
+	})
+
+	if options.requirePredicateDescriptions && len(missingDescriptions) > 0 {
+		return nil, newMissingPredicateDescriptionsError(missingDescriptions)
+	}
+
 	properties := aggregatePropertyPlans(builders)
 	// Post-processing after the properties have been aggregated.
 	for _, prop := range properties {
@@ -102,16 +134,45 @@ func Plan[T any](v Validator[T]) *ValidatorPlan {
 	return &ValidatorPlan{
 		Name:       name,
 		Properties: properties,
+	}, nil
+}
+
+// predicateLocation stores information about a predicate without a description.
+type predicateLocation struct {
+	propertyPath string
+}
+
+// MissingPredicateDescriptionsError is returned when [Plan] is called with
+// [PlanOptions.RequirePredicateDescriptions] set to true and there are predicates
+// without descriptions.
+type MissingPredicateDescriptionsError struct {
+	Locations []predicateLocation
+}
+
+func newMissingPredicateDescriptionsError(locations []predicateLocation) *MissingPredicateDescriptionsError {
+	return &MissingPredicateDescriptionsError{Locations: locations}
+}
+
+func (e *MissingPredicateDescriptionsError) Error() string {
+	var paths []string
+	for _, loc := range e.Locations {
+		switch loc.propertyPath {
+		case "", "$":
+			paths = append(paths, "validator level")
+		default:
+			paths = append(paths, loc.propertyPath)
+		}
 	}
+	return fmt.Sprintf("predicates without descriptions found at: %s", strings.Join(paths, ", "))
 }
 
 func aggregatePropertyPlans(builders []planBuilder) []*PropertyPlan {
 	propertiesMap := make(map[string]*PropertyPlan)
 	for _, b := range builders {
-		entry, ok := propertiesMap[b.path]
+		entry, ok := propertiesMap[b.propertyPath]
 		if !ok {
 			entry = &PropertyPlan{
-				Path:     b.path,
+				Path:     b.propertyPath,
 				TypeInfo: b.propertyPlan.TypeInfo,
 				Examples: b.propertyPlan.Examples,
 				IsHidden: b.propertyPlan.IsHidden,
@@ -120,7 +181,7 @@ func aggregatePropertyPlans(builders []planBuilder) []*PropertyPlan {
 		if !b.rulePlan.isEmpty() {
 			entry.Rules = append(entry.Rules, b.rulePlan)
 		}
-		propertiesMap[b.path] = entry
+		propertiesMap[b.propertyPath] = entry
 	}
 	return slices.SortedFunc(
 		maps.Values(propertiesMap),
@@ -161,31 +222,33 @@ type planner interface {
 
 // planBuilder is used to traverse the validation rules and build a slice of [PropertyPlan].
 type planBuilder struct {
-	path         string
-	rulePlan     RulePlan
-	propertyPlan PropertyPlan
-	// children stores every rule for the current property.
-	// It's not safe for concurrent usage.
-	children *[]planBuilder
+	propertyPath        string
+	rulePlan            RulePlan
+	propertyPlan        PropertyPlan
+	path                *[]planBuilder
+	missingDescriptions *[]predicateLocation
+	options             PlanOptions
 }
 
 func (p planBuilder) appendPath(path string) planBuilder {
 	builder := planBuilder{
-		children:     p.children,
-		rulePlan:     p.rulePlan,
-		propertyPlan: p.propertyPlan,
+		path:                p.path,
+		missingDescriptions: p.missingDescriptions,
+		options:             p.options,
+		rulePlan:            p.rulePlan,
+		propertyPlan:        p.propertyPlan,
 	}
 	switch {
-	case p.path == "" && path != "":
-		builder.path = path
-	case p.path != "" && path != "":
+	case p.propertyPath == "" && path != "":
+		builder.propertyPath = path
+	case p.propertyPath != "" && path != "":
 		if strings.HasPrefix(path, "[") {
-			builder.path = p.path + path
+			builder.propertyPath = p.propertyPath + path
 		} else {
-			builder.path = p.path + "." + path
+			builder.propertyPath = p.propertyPath + "." + path
 		}
 	default:
-		builder.path = p.path
+		builder.propertyPath = p.propertyPath
 	}
 	return builder
 }
@@ -198,6 +261,11 @@ func (p planBuilder) setExamples(examples ...string) planBuilder {
 func appendPredicatesToPlanBuilder[T any](builder planBuilder, predicates []predicateContainer[T]) planBuilder {
 	for _, predicate := range predicates {
 		if predicate.description == "" {
+			if builder.options.requirePredicateDescriptions && builder.missingDescriptions != nil {
+				*builder.missingDescriptions = append(*builder.missingDescriptions, predicateLocation{
+					propertyPath: builder.propertyPath,
+				})
+			}
 			continue
 		}
 		builder.rulePlan.Conditions = append(builder.rulePlan.Conditions, predicate.description)
