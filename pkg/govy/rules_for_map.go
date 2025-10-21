@@ -141,7 +141,7 @@ func (r PropertyRulesForMap[M, K, V, P]) Rules(rules ...rulesInterface[M]) Prope
 // When => refer to [PropertyRules.When] documentation.
 func (r PropertyRulesForMap[M, K, V, P]) When(
 	predicate Predicate[P],
-	opts ...WhenOptions,
+	opts ...WhenOption,
 ) PropertyRulesForMap[M, K, V, P] {
 	r.predicateMatcher = r.when(predicate, opts...)
 	return r

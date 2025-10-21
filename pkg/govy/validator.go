@@ -38,7 +38,7 @@ func (v Validator[T]) WithNameFunc(f func(value T) string) Validator[T] {
 }
 
 // When accepts predicates which will be evaluated BEFORE [Validator] validates ANY rules.
-func (v Validator[T]) When(predicate Predicate[T], opts ...WhenOptions) Validator[T] {
+func (v Validator[T]) When(predicate Predicate[T], opts ...WhenOption) Validator[T] {
 	v.predicateMatcher = v.when(predicate, opts...)
 	return v
 }

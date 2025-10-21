@@ -93,7 +93,7 @@ func (r PropertyRulesForSlice[S, T, P]) Rules(rules ...rulesInterface[S]) Proper
 // When => refer to [PropertyRules.When] documentation.
 func (r PropertyRulesForSlice[S, T, P]) When(
 	predicate Predicate[P],
-	opts ...WhenOptions,
+	opts ...WhenOption,
 ) PropertyRulesForSlice[S, T, P] {
 	r.predicateMatcher = r.when(predicate, opts...)
 	return r
