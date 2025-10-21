@@ -59,7 +59,7 @@ var expectedRuleErrorValidationForValidatorErrors = govy.New(
 			"validatorName":  func(e ExpectedRuleError) any { return e.ValidatorName },
 			"validatorIndex": func(e ExpectedRuleError) any { return e.ValidatorIndex },
 		}).
-			WithDetails(
+			WithDetailsf(
 				"The actual error was of type %T."+
 					"\n  In order to match expected error with an actual error"+
 					" produced by a specific govy.Validator instance,"+

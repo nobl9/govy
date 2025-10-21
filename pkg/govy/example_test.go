@@ -572,6 +572,33 @@ func ExampleRule_WithDetails() {
 	//     - string must match regular expression: '^(Tom|Jerry)$'; Teacher can be either Tom or Jerry :)
 }
 
+// You can use [govy.Rule.WithDetailsf] to add formatted details to the returned [govy.RuleError] error message.
+func ExampleRule_WithDetailsf() {
+	minLen := 3
+	maxLen := 10
+	v := govy.New(
+		govy.For(func(t Teacher) string { return t.Name }).
+			WithName("name").
+			Rules(rules.StringLength(minLen, maxLen).
+				WithDetailsf("Teacher name must be between %d and %d characters", minLen, maxLen)),
+	).WithName("Teacher")
+
+	teacher := Teacher{
+		Name: "Jo",
+		Age:  51 * year,
+	}
+
+	err := v.Validate(teacher)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	// Output:
+	// Validation for Teacher has failed for the following properties:
+	//   - 'name' with value 'Jo':
+	//     - length must be between 3 and 10; Teacher name must be between 3 and 10 characters
+}
+
 // You can use [govy.Rule.WithExamples] to add examples of valid inputs
 // which pass the [govy.Rule].
 // This can be useful for more complex rules, especially regex based, where
@@ -660,6 +687,32 @@ func ExampleRule_WithMessage() {
 	// Validation for Teacher has failed for the following properties:
 	//   - 'name' with value 'Jake':
 	//     - unsupported name; Teacher can be either Tom or Jerry :)
+}
+
+// You can use [govy.Rule.WithMessagef] to override the default error message using printf-like formatting.
+func ExampleRule_WithMessagef() {
+	allowedNames := []string{"Tom", "Jerry"}
+	v := govy.New(
+		govy.For(func(t Teacher) string { return t.Name }).
+			WithName("name").
+			Rules(rules.StringMatchRegexp(regexp.MustCompile("^(Tom|Jerry)$")).
+				WithMessagef("name must be one of: %v", allowedNames)),
+	).WithName("Teacher")
+
+	teacher := Teacher{
+		Name: "Jake",
+		Age:  51 * year,
+	}
+
+	err := v.Validate(teacher)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	// Output:
+	// Validation for Teacher has failed for the following properties:
+	//   - 'name' with value 'Jake':
+	//     - name must be one of: [Tom Jerry]
 }
 
 // If you want to have more control over the resulting error message, but [govy.Rule.WithMessage]
