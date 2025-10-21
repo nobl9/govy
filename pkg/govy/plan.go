@@ -83,41 +83,41 @@ func (r RulePlan) equal(r2 RulePlan) bool {
 		collections.EqualSlices(r.Examples, r2.Examples)
 }
 
-// PlanOptions contains options for configuring the behavior of the [Plan] function.
-type PlanOptions struct {
+// planOptions contains options for configuring the behavior of the [Plan] function.
+type planOptions struct {
 	requirePredicateDescriptions bool
 }
 
-// RequirePredicateDescriptions returns a [PlanOptions] that will cause [Plan] to return an error
+type PlanOption func(options planOptions) planOptions
+
+// RequirePredicateDescriptions returns a [planOptions] that will cause [Plan] to return an error
 // if any [Predicate] set through [Validator.When] or [PropertyRules.When] does not have
 // a description provided via [WhenDescription].
-func RequirePredicateDescriptions() PlanOptions {
-	return PlanOptions{requirePredicateDescriptions: true}
+func RequirePredicateDescriptions() PlanOption {
+	return func(options planOptions) planOptions {
+		options.requirePredicateDescriptions = true
+		return options
+	}
 }
 
 // Plan creates a validation plan for the provided [Validator].
 // Each property is represented by a [PropertyPlan] which aggregates its every [RulePlan].
 // If a property does not have any rules, it won't be included in the result.
-// You can customize the behavior of the plan generation by providing [PlanOptions].
-func Plan[T any](v Validator[T], opts ...PlanOptions) (*ValidatorPlan, error) {
-	var options PlanOptions
-	for _, opt := range opts {
-		if opt.requirePredicateDescriptions {
-			options.requirePredicateDescriptions = true
-		}
-	}
-
+// You can customize the behavior of the plan generation by providing [PlanOption].
+func Plan[T any](v Validator[T], opts ...PlanOption) (*ValidatorPlan, error) {
 	builders := make([]planBuilder, 0)
-	missingDescriptions := make([]predicateLocation, 0)
-	v.plan(planBuilder{
+	rootBuilder := planBuilder{
 		propertyPath:        "$",
 		path:                &builders,
-		missingDescriptions: &missingDescriptions,
-		options:             options,
-	})
+		missingDescriptions: ptr(make([]predicateLocation, 0)),
+	}
+	for _, opt := range opts {
+		rootBuilder.options = opt(rootBuilder.options)
+	}
+	v.plan(rootBuilder)
 
-	if options.requirePredicateDescriptions && len(missingDescriptions) > 0 {
-		return nil, newMissingPredicateDescriptionsError(missingDescriptions)
+	if err := rootBuilder.validate(); err != nil {
+		return nil, err
 	}
 
 	properties := aggregatePropertyPlans(builders)
@@ -143,7 +143,7 @@ type predicateLocation struct {
 }
 
 // MissingPredicateDescriptionsError is returned when [Plan] is called with
-// [PlanOptions.RequirePredicateDescriptions] set to true and there are predicates
+// [planOptions.RequirePredicateDescriptions] set to true and there are predicates
 // without descriptions.
 type MissingPredicateDescriptionsError struct {
 	Locations []predicateLocation
@@ -227,7 +227,7 @@ type planBuilder struct {
 	propertyPlan        PropertyPlan
 	path                *[]planBuilder
 	missingDescriptions *[]predicateLocation
-	options             PlanOptions
+	options             planOptions
 }
 
 func (p planBuilder) appendPath(path string) planBuilder {
@@ -258,6 +258,13 @@ func (p planBuilder) setExamples(examples ...string) planBuilder {
 	return p
 }
 
+func (p planBuilder) validate() error {
+	if p.options.requirePredicateDescriptions && len(*p.missingDescriptions) > 0 {
+		return newMissingPredicateDescriptionsError(*p.missingDescriptions)
+	}
+	return nil
+}
+
 func appendPredicatesToPlanBuilder[T any](builder planBuilder, predicates []predicateContainer[T]) planBuilder {
 	for _, predicate := range predicates {
 		if predicate.description == "" {
@@ -272,3 +279,5 @@ func appendPredicatesToPlanBuilder[T any](builder planBuilder, predicates []pred
 	}
 	return builder
 }
+
+func ptr[T any](v T) *T { return &v }
