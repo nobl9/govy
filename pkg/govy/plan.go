@@ -152,20 +152,19 @@ type predicateLocation struct {
 	propertyPath string
 }
 
-// MissingPredicateDescriptionsError is returned when [Plan] is called with
-// [planOptions.RequirePredicateDescriptions] set to true and there are predicates
-// without descriptions.
-type MissingPredicateDescriptionsError struct {
-	Locations []predicateLocation
+// missingPredicateDescriptionsError is returned when [Plan] is called with
+// [PlanRequirePredicateDescriptions] option and there are any [Predicate] without descriptions.
+type missingPredicateDescriptionsError struct {
+	locations []predicateLocation
 }
 
-func newMissingPredicateDescriptionsError(locations []predicateLocation) *MissingPredicateDescriptionsError {
-	return &MissingPredicateDescriptionsError{Locations: locations}
+func newMissingPredicateDescriptionsError(locations []predicateLocation) *missingPredicateDescriptionsError {
+	return &missingPredicateDescriptionsError{locations: locations}
 }
 
-func (e *MissingPredicateDescriptionsError) Error() string {
+func (e *missingPredicateDescriptionsError) Error() string {
 	var paths []string
-	for _, loc := range e.Locations {
+	for _, loc := range e.locations {
 		switch loc.propertyPath {
 		case "", "$":
 			paths = append(paths, "validator level")

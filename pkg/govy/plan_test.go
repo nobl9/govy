@@ -270,10 +270,7 @@ func TestPlanRequirePredicateDescriptions(t *testing.T) {
 		_, err := govy.Plan(validator, govy.PlanRequirePredicateDescriptions())
 		assert.Require(t, assert.Error(t, err))
 
-		var missingErr *govy.MissingPredicateDescriptionsError
-		assert.True(t, errors.As(err, &missingErr))
-		assert.Len(t, missingErr.Locations, 1)
-		assert.ErrorContains(t, err, "validator level")
+		assert.Equal(t, "predicates without descriptions found at: validator level", err.Error())
 	})
 
 	t.Run("property level predicate without description", func(t *testing.T) {
@@ -287,10 +284,7 @@ func TestPlanRequirePredicateDescriptions(t *testing.T) {
 		_, err := govy.Plan(validator, govy.PlanRequirePredicateDescriptions())
 		assert.Require(t, assert.Error(t, err))
 
-		var missingErr *govy.MissingPredicateDescriptionsError
-		assert.True(t, errors.As(err, &missingErr))
-		assert.Len(t, missingErr.Locations, 1)
-		assert.ErrorContains(t, err, "String")
+		assert.Equal(t, "predicates without descriptions found at: $.String", err.Error())
 	})
 
 	t.Run("multiple predicates without descriptions", func(t *testing.T) {
@@ -312,9 +306,7 @@ func TestPlanRequirePredicateDescriptions(t *testing.T) {
 		_, err := govy.Plan(validator, govy.PlanRequirePredicateDescriptions())
 		assert.Require(t, assert.Error(t, err))
 
-		var missingErr *govy.MissingPredicateDescriptionsError
-		assert.True(t, errors.As(err, &missingErr))
-		assert.Len(t, missingErr.Locations, 3)
+		assert.Equal(t, "predicates without descriptions found at: validator level, $.name, $.age", err.Error())
 	})
 
 	t.Run("all predicates have descriptions", func(t *testing.T) {
@@ -353,10 +345,7 @@ func TestPlanStrictMode(t *testing.T) {
 		_, err := govy.Plan(validator, govy.PlanStrictMode())
 		assert.Require(t, assert.Error(t, err))
 
-		var missingErr *govy.MissingPredicateDescriptionsError
-		assert.True(t, errors.As(err, &missingErr))
-		assert.Len(t, missingErr.Locations, 1)
-		assert.ErrorContains(t, err, "validator level")
+		assert.Equal(t, "predicates without descriptions found at: validator level", err.Error())
 	})
 
 	t.Run("valid", func(t *testing.T) {
