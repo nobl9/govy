@@ -90,10 +90,10 @@ type planOptions struct {
 
 type PlanOption func(options planOptions) planOptions
 
-// PlanRequirePredicateDescriptions returns a [PlanOption] that will cause [Plan] to return an error
+// PlanRequirePredicateDescription returns a [PlanOption] that will cause [Plan] to return an error
 // if any [Predicate] set through [Validator.When] or [PropertyRules.When] does not have
 // a description provided via [WhenDescription].
-func PlanRequirePredicateDescriptions() PlanOption {
+func PlanRequirePredicateDescription() PlanOption {
 	return func(options planOptions) planOptions {
 		options.requirePredicateDescriptions = true
 		return options
@@ -102,10 +102,10 @@ func PlanRequirePredicateDescriptions() PlanOption {
 
 // PlanStrictMode bundles all [Plan] validations into a single [PlanOption].
 // These include:
-//   - [PlanRequirePredicateDescriptions]
+//   - [PlanRequirePredicateDescription]
 func PlanStrictMode() PlanOption {
 	return func(options planOptions) planOptions {
-		options = PlanRequirePredicateDescriptions()(options)
+		options = PlanRequirePredicateDescription()(options)
 		return options
 	}
 }
@@ -153,7 +153,7 @@ type predicateLocation struct {
 }
 
 // missingPredicateDescriptionsError is returned when [Plan] is called with
-// [PlanRequirePredicateDescriptions] option and there are any [Predicate] without descriptions.
+// [PlanRequirePredicateDescription] option and there are any [Predicate] without description.
 type missingPredicateDescriptionsError struct {
 	locations []predicateLocation
 }
@@ -172,7 +172,7 @@ func (e *missingPredicateDescriptionsError) Error() string {
 			paths = append(paths, loc.propertyPath)
 		}
 	}
-	return fmt.Sprintf("predicates without descriptions found at: %s", strings.Join(paths, ", "))
+	return fmt.Sprintf("predicates without description found at: %s", strings.Join(paths, ", "))
 }
 
 func aggregatePropertyPlans(builders []planBuilder) []*PropertyPlan {

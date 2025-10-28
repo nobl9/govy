@@ -267,10 +267,10 @@ func TestPlanRequirePredicateDescriptions(t *testing.T) {
 				WithName("String"),
 		).When(func(s string) bool { return true })
 
-		_, err := govy.Plan(validator, govy.PlanRequirePredicateDescriptions())
+		_, err := govy.Plan(validator, govy.PlanRequirePredicateDescription())
 		assert.Require(t, assert.Error(t, err))
 
-		assert.Equal(t, "predicates without descriptions found at: validator level", err.Error())
+		assert.Equal(t, "predicates without description found at: validator level", err.Error())
 	})
 
 	t.Run("property level predicate without description", func(t *testing.T) {
@@ -281,13 +281,13 @@ func TestPlanRequirePredicateDescriptions(t *testing.T) {
 				When(func(s string) bool { return true }),
 		)
 
-		_, err := govy.Plan(validator, govy.PlanRequirePredicateDescriptions())
+		_, err := govy.Plan(validator, govy.PlanRequirePredicateDescription())
 		assert.Require(t, assert.Error(t, err))
 
-		assert.Equal(t, "predicates without descriptions found at: $.String", err.Error())
+		assert.Equal(t, "predicates without description found at: $.String", err.Error())
 	})
 
-	t.Run("multiple predicates without descriptions", func(t *testing.T) {
+	t.Run("multiple predicates without description", func(t *testing.T) {
 		type Foo struct {
 			Name string
 			Age  int
@@ -303,10 +303,10 @@ func TestPlanRequirePredicateDescriptions(t *testing.T) {
 				When(func(f Foo) bool { return true }),
 		).When(func(f Foo) bool { return true })
 
-		_, err := govy.Plan(validator, govy.PlanRequirePredicateDescriptions())
+		_, err := govy.Plan(validator, govy.PlanRequirePredicateDescription())
 		assert.Require(t, assert.Error(t, err))
 
-		assert.Equal(t, "predicates without descriptions found at: validator level, $.name, $.age", err.Error())
+		assert.Equal(t, "predicates without description found at: validator level, $.name, $.age", err.Error())
 	})
 
 	t.Run("all predicates have descriptions", func(t *testing.T) {
@@ -317,7 +317,7 @@ func TestPlanRequirePredicateDescriptions(t *testing.T) {
 				When(func(s string) bool { return true }, govy.WhenDescription("when true")),
 		).When(func(s string) bool { return true }, govy.WhenDescription("validator when true"))
 
-		_, err := govy.Plan(validator, govy.PlanRequirePredicateDescriptions())
+		_, err := govy.Plan(validator, govy.PlanRequirePredicateDescription())
 		assert.Require(t, assert.NoError(t, err))
 	})
 
@@ -345,7 +345,7 @@ func TestPlanStrictMode(t *testing.T) {
 		_, err := govy.Plan(validator, govy.PlanStrictMode())
 		assert.Require(t, assert.Error(t, err))
 
-		assert.Equal(t, "predicates without descriptions found at: validator level", err.Error())
+		assert.Equal(t, "predicates without description found at: validator level", err.Error())
 	})
 
 	t.Run("valid", func(t *testing.T) {
