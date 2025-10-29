@@ -1771,7 +1771,10 @@ func ExamplePlan() {
 			),
 	).WithName("Teacher")
 
-	properties := govy.Plan(v)
+	properties, err := govy.Plan(v)
+	if err != nil {
+		panic(err)
+	}
 	enc := json.NewEncoder(os.Stdout)
 	enc.SetIndent("", "  ")
 	_ = enc.Encode(properties)
@@ -1809,4 +1812,34 @@ func ExamplePlan() {
 	//     }
 	//   ]
 	// }
+}
+
+// You can enforce certain rules upon [govy.Plan].
+// For instance, If you'd want to make sure every [govy.Predicate]
+// has a description attached to it, provide [govy.Plan] with [govy.PlanRequirePredicateDescription] option.
+//
+// If you want to follow our best recommendations, use [govy.PlanStrictMode].
+func ExamplePlan_validation() {
+	v := govy.New(
+		govy.For(func(t Teacher) string { return t.Name }).
+			WithName("name").
+			WithExamples("Jake", "John").
+			When(func(t Teacher) bool { return t.Name == "Jerry" }).
+			Rules(
+				rules.NEQ("Jerry").
+					WithDetails("Jerry is just a name!"),
+				govy.NewRule(func(v string) error {
+					return fmt.Errorf("some custom error")
+				}).
+					WithDescription("this is a custom error!"),
+			),
+	).
+		When(func(t Teacher) bool { return t.Age > 18 }).
+		WithName("Teacher")
+
+	_, err := govy.Plan(v, govy.PlanStrictMode())
+	fmt.Println(err)
+
+	// Output:
+	// predicates without description found at: validator level, $.name
 }
