@@ -113,10 +113,12 @@ func ExampleNameInferModeGenerate() {
 	//     - should be equal to 'Thomas'
 }
 
-// Beware where you call [govyconfig.SetNameInferMode].
-// If you call it after the [govy.For] has been called, it won't do anything.
-// This is because the name inference is done during the creation of [govy.PropertyRules].
-func ExampleSetNameInferMode_invalidUsage() {
+// It doesn't matter when you call [govyconfig.SetNameInferMode].
+// However, beware that once a [govy.PropertyRules] is defined, it will cache the inferred name.
+// To demonstrate this we'll set the [govyconfig.NameInferModeDisable] and you can observe
+// that the name is still inferred, in fact, it's not inferred anymore,
+// it was inferred once and now it's cached.
+func ExampleSetNameInferMode_changeModeInRuntime() {
 	govyconfig.SetNameInferIncludeTestFiles(true)
 	defer govyconfig.SetNameInferIncludeTestFiles(false)
 
@@ -125,8 +127,7 @@ func ExampleSetNameInferMode_invalidUsage() {
 			Rules(rules.EQ("Jerry")),
 	).WithName("Teacher")
 
-	govyconfig.SetNameInferMode(govyconfig.NameInferModeRuntime)
-	defer govyconfig.SetNameInferMode(govyconfig.NameInferModeDisable)
+	govyconfig.SetNameInferMode(govyconfig.NameInferModeDisable)
 
 	teacher := Teacher{Name: "Tom"}
 	err := v.Validate(teacher)
@@ -134,7 +135,18 @@ func ExampleSetNameInferMode_invalidUsage() {
 		fmt.Println(err)
 	}
 
+	govyconfig.SetNameInferMode(govyconfig.NameInferModeRuntime)
+
+	fmt.Println("-- After setting Runtime infer mode.")
+	err = v.Validate(teacher)
+	if err != nil {
+		fmt.Println(err)
+	}
+
 	// Output:
+	// Validation for Teacher has failed:
+	//   - should be equal to 'Jerry'
+	// -- After setting Runtime infer mode.
 	// Validation for Teacher has failed:
 	//   - should be equal to 'Jerry'
 }

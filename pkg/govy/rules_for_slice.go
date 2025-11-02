@@ -9,7 +9,7 @@ import (
 func ForSlice[S ~[]T, T, P any](getter PropertyGetter[S, P]) PropertyRulesForSlice[S, T, P] {
 	return PropertyRulesForSlice[S, T, P]{
 		sliceRules:   forConstructor(GetSelf[S]()),
-		forEachRules: forConstructor(GetSelf[T]()),
+		forEachRules: forConstructorWithoutNameInference(GetSelf[T]()),
 		getter:       getter,
 	}
 }
@@ -132,7 +132,7 @@ func (r PropertyRulesForSlice[S, T, P]) cascadeInternal(mode CascadeMode) proper
 func (r PropertyRulesForSlice[S, T, P]) plan(builder planBuilder) {
 	builder = appendPredicatesToPlanBuilder(builder, r.predicates)
 	r.sliceRules.plan(builder.setExamples(r.sliceRules.examples...))
-	builder = builder.appendPath(r.sliceRules.name)
+	builder = builder.appendPath(r.sliceRules.getName())
 	if len(r.forEachRules.rules) > 0 {
 		r.forEachRules.plan(builder.appendPath("[*]"))
 	}
@@ -140,7 +140,7 @@ func (r PropertyRulesForSlice[S, T, P]) plan(builder planBuilder) {
 
 // getJSONPathForIndex returns a JSONPath for the given index.
 func (r PropertyRulesForSlice[S, T, P]) getJSONPathForIndex(index int) string {
-	return jsonpath.JoinArray(r.sliceRules.name, jsonpath.NewArrayIndex(index))
+	return jsonpath.JoinArray(r.sliceRules.getName(), jsonpath.NewArrayIndex(index))
 }
 
 // isPropertyRules implements [propertyRulesInterface].

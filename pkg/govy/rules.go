@@ -2,12 +2,15 @@ package govy
 
 import (
 	"errors"
+	"fmt"
 	"runtime"
 	"sync"
 
 	"github.com/nobl9/govy/internal"
+	"github.com/nobl9/govy/internal/logging"
 	"github.com/nobl9/govy/internal/nameinfer"
 	"github.com/nobl9/govy/internal/typeinfo"
+	"github.com/nobl9/govy/pkg/govyconfig"
 )
 
 // For creates a new [PropertyRules] instance for the property
@@ -18,31 +21,43 @@ func For[T, P any](getter PropertyGetter[T, P]) PropertyRules[T, P] {
 
 func forConstructor[T, P any](getter PropertyGetter[T, P]) PropertyRules[T, P] {
 	return PropertyRules[T, P]{
-		nameFunc: getNameFunc(),
+		nameFunc: getInferredNameFunc(),
 		getter:   func(parent P) (v T, err error) { return getter(parent), nil },
 	}
 }
 
-func getSelfConstructor[T any]() PropertyRules[T, T] {
-	return PropertyRules[T, T]{
-		getter: func(v T) (T, error) { return v, nil },
+// forConstructorWithoutNameInference creates [PropertyRules] without name inference.
+// Used for internal rules in [ForSlice] and [ForMap] where names are managed separately.
+func forConstructorWithoutNameInference[T, P any](getter PropertyGetter[T, P]) PropertyRules[T, P] {
+	return PropertyRules[T, P]{
+		getter: func(parent P) (v T, err error) { return getter(parent), nil },
 	}
 }
 
-func getNameFunc() func() string {
+// getInferredNameFunc must be called
+func getInferredNameFunc() func() string {
 	rpc := make([]uintptr, 1)
 	n := runtime.Callers(4, rpc)
+	var (
+		once sync.Once
+		name string
+	)
 	return func() string {
-		var (
-			once sync.Once
-			name string
-		)
 		once.Do(func() {
 			if n < 1 {
 				return // No caller found, return empty name.
 			}
 			frame, _ := runtime.CallersFrames(rpc).Next()
-			name = nameinfer.InferName(frame.File, frame.Line)
+			mode := govyconfig.GetNameInferMode()
+			switch mode {
+			case govyconfig.NameInferModeGenerate:
+				name = govyconfig.GetInferredName(frame.File, frame.Line)
+			case govyconfig.NameInferModeRuntime:
+				name = nameinfer.InferName(frame.File, frame.Line)
+			case govyconfig.NameInferModeDisable:
+			default:
+				logging.Logger().Error(fmt.Sprintf("unknown %T", mode))
+			}
 		})
 		return name
 	}
@@ -54,7 +69,7 @@ func getNameFunc() func() string {
 // validation will not proceed.
 func ForPointer[T, P any](getter PropertyGetter[*T, P]) PropertyRules[T, P] {
 	return PropertyRules[T, P]{
-		nameFunc: getNameFunc(),
+		nameFunc: getInferredNameFunc(),
 		getter: func(parent P) (indirect T, err error) {
 			ptr := getter(parent)
 			if ptr != nil {
@@ -74,7 +89,7 @@ func ForPointer[T, P any](getter PropertyGetter[*T, P]) PropertyRules[T, P] {
 func Transform[T, N, P any](getter PropertyGetter[T, P], transform Transformer[T, N]) PropertyRules[N, P] {
 	typInfo := typeinfo.Get[T]()
 	return PropertyRules[N, P]{
-		nameFunc: getNameFunc(),
+		nameFunc: getInferredNameFunc(),
 		transformGetter: func(parent P) (transformed N, original any, err error) {
 			v := getter(parent)
 			if internal.IsEmpty(v) {
@@ -116,7 +131,7 @@ func (emptyErr) Error() string { return "" }
 // aggregated by [Validator] and aggregating [Rule].
 type PropertyRules[T, P any] struct {
 	name string
-	// nameFunc is assumed to be concurrnetly safe.
+	// nameFunc is assumed to be concurrently safe.
 	nameFunc        func() string
 	getter          internalPropertyGetter[T, P]
 	transformGetter internalTransformPropertyGetter[T, P]
