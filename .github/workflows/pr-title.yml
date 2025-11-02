@@ -7,7 +7,7 @@ jobs:
   pr-title-check:
     runs-on: ubuntu-latest
     steps:
-    - uses: Slashgear/action-check-pr-title@v4.3.0
+    - uses: Slashgear/action-check-pr-title@v5.0.1
       with:
         regexp: "^(feat|fix|sec|infra|test|chore|doc): .{5,}"
         helpMessage: "Example: 'feat: new pr title' <- prefix, colon, space, PR title of at least 5 chars"

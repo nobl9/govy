@@ -12,8 +12,10 @@ import (
 )
 
 func TestPropertyRulesForEach(t *testing.T) {
+	type Values []string
 	type mockStruct struct {
 		Fields []string
+		Values Values
 	}
 
 	t.Run("no predicates, no error", func(t *testing.T) {
@@ -191,6 +193,33 @@ func TestPropertyRulesForEach(t *testing.T) {
 				PropertyValue:       "made-up",
 				IsSliceElementError: true,
 				Errors:              []*govy.RuleError{{Message: includedErr.Error()}},
+			},
+		}, errs)
+	})
+
+	t.Run("include validator", func(t *testing.T) {
+		err1 := errors.New("error1")
+		err2 := errors.New("error2")
+
+		r := govy.ForSlice(func(m mockStruct) Values { return m.Values }).
+			WithName("values").
+			Include(govy.New(
+				govy.ForSlice(govy.GetSelf[Values]()).
+					RulesForEach(govy.NewRule(func(v string) error { return err1 })),
+			)).
+			RulesForEach(govy.NewRule(func(v string) error { return err2 }))
+
+		errs := mustPropertyErrors(t, r.Validate(mockStruct{Values: Values{"value"}}))
+		assert.Require(t, assert.Len(t, errs, 1))
+		assert.ElementsMatch(t, []*govy.PropertyError{
+			{
+				PropertyName:        "values[0]",
+				PropertyValue:       "value",
+				IsSliceElementError: true,
+				Errors: []*govy.RuleError{
+					{Message: err1.Error()},
+					{Message: err2.Error()},
+				},
 			},
 		}, errs)
 	})

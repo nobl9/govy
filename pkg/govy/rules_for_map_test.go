@@ -12,9 +12,11 @@ import (
 )
 
 func TestPropertyRulesForMap(t *testing.T) {
+	type Labels map[string]string
 	type mockStruct struct {
 		StringMap map[string]string
 		IntMap    map[string]int
+		Labels    Labels
 	}
 
 	t.Run("no predicates, no error", func(t *testing.T) {
@@ -394,6 +396,39 @@ func TestPropertyRulesForMap(t *testing.T) {
 			PropertyValue: "value",
 			Errors:        []*govy.RuleError{{Message: expectedErr.Error()}},
 		}, errs[0])
+	})
+
+	t.Run("include validator", func(t *testing.T) {
+		err1 := errors.New("error1")
+		err2 := errors.New("error2")
+
+		r := govy.ForMap(func(m mockStruct) Labels { return m.Labels }).
+			WithName("labels").
+			Include(govy.New(
+				govy.ForMap(govy.GetSelf[Labels]()).
+					RulesForValues(govy.NewRule(func(v string) error { return err1 })),
+			)).
+			RulesForKeys(govy.NewRule(func(v string) error { return err2 }))
+
+		errs := mustPropertyErrors(t, r.Validate(mockStruct{Labels: Labels{"key": "value"}}))
+		assert.Require(t, assert.Len(t, errs, 2))
+		assert.ElementsMatch(t, []*govy.PropertyError{
+			{
+				PropertyName:  "labels.key",
+				PropertyValue: "key",
+				IsKeyError:    true,
+				Errors: []*govy.RuleError{
+					{Message: err2.Error()},
+				},
+			},
+			{
+				PropertyName:  "labels.key",
+				PropertyValue: "value",
+				Errors: []*govy.RuleError{
+					{Message: err1.Error()},
+				},
+			},
+		}, errs)
 	})
 }
 

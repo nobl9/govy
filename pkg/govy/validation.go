@@ -8,8 +8,8 @@ type validationInterface[T any] interface {
 
 // validatorInterface defines validation entities which group properties,
 // such as [Validator].
-type validatorInterface[S any] interface {
-	validationInterface[S]
+type validatorInterface[T any] interface {
+	validationInterface[T]
 	isValidator()
 }
 

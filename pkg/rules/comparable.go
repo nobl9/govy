@@ -160,11 +160,11 @@ type equalPropertiesTemplateVars struct {
 //   - [CompareDeepEqualFunc]
 //
 // If builtin [ComparisonFunc] is not enough, a custom function can be used.
-func EqualProperties[S, T any](compare ComparisonFunc[T], getters map[string]func(s S) T) govy.Rule[S] {
+func EqualProperties[T, P any](compare ComparisonFunc[T], getters map[string]func(parent P) T) govy.Rule[P] {
 	tpl := messagetemplates.Get(messagetemplates.EqualPropertiesTemplate)
 
 	sortedKeys := collections.SortedKeys(getters)
-	return govy.NewRule(func(s S) error {
+	return govy.NewRule(func(parent P) error {
 		if len(getters) < 2 {
 			return nil
 		}
@@ -174,7 +174,7 @@ func EqualProperties[S, T any](compare ComparisonFunc[T], getters map[string]fun
 			lastProp  string
 		)
 		for _, prop := range sortedKeys {
-			v := getters[prop](s)
+			v := getters[prop](parent)
 			if i != 0 && !compare(v, lastValue) {
 				return govy.NewRuleErrorTemplate(govy.TemplateVars{
 					ComparisonValue: sortedKeys,
