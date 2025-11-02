@@ -113,11 +113,12 @@ func ExampleNameInferModeGenerate() {
 	//     - should be equal to 'Thomas'
 }
 
-// It doesn't matter when you call [govyconfig.SetNameInferMode].
-// However, beware that once a [govy.PropertyRules] is defined, it will cache the inferred name.
-// To demonstrate this we'll set the [govyconfig.NameInferModeDisable] and you can observe
-// that the name is still inferred, in fact, it's not inferred anymore,
-// it was inferred once and now it's cached.
+// When you call [govyconfig.SetNameInferMode] is important.
+// Beware that once a [govy.Validator.Validate] is called, it will cache the inferred name.
+//
+// To demonstrate this we'll set the [govyconfig.NameInferModeDisable] and you will observe
+// that the name is still inferred, although to be precise, it's not inferred anymore,
+// it was inferred the first time Validate was called and now it's cached.
 func ExampleSetNameInferMode_changeModeInRuntime() {
 	govyconfig.SetNameInferIncludeTestFiles(true)
 	defer govyconfig.SetNameInferIncludeTestFiles(false)

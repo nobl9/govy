@@ -2,15 +2,9 @@ package govy
 
 import (
 	"errors"
-	"fmt"
-	"runtime"
-	"sync"
 
 	"github.com/nobl9/govy/internal"
-	"github.com/nobl9/govy/internal/logging"
-	"github.com/nobl9/govy/internal/nameinfer"
 	"github.com/nobl9/govy/internal/typeinfo"
-	"github.com/nobl9/govy/pkg/govyconfig"
 )
 
 // For creates a new [PropertyRules] instance for the property
@@ -19,57 +13,13 @@ func For[T, P any](getter PropertyGetter[T, P]) PropertyRules[T, P] {
 	return forConstructor(getter)
 }
 
-func forConstructor[T, P any](getter PropertyGetter[T, P]) PropertyRules[T, P] {
-	return PropertyRules[T, P]{
-		nameFunc: getInferredNameFunc(),
-		getter:   func(parent P) (v T, err error) { return getter(parent), nil },
-	}
-}
-
-// forConstructorWithoutNameInference creates [PropertyRules] without name inference.
-// Used for internal rules in [ForSlice] and [ForMap] where names are managed separately.
-func forConstructorWithoutNameInference[T, P any](getter PropertyGetter[T, P]) PropertyRules[T, P] {
-	return PropertyRules[T, P]{
-		getter: func(parent P) (v T, err error) { return getter(parent), nil },
-	}
-}
-
-// getInferredNameFunc must be called
-func getInferredNameFunc() func() string {
-	rpc := make([]uintptr, 1)
-	n := runtime.Callers(4, rpc)
-	var (
-		once sync.Once
-		name string
-	)
-	return func() string {
-		once.Do(func() {
-			if n < 1 {
-				return // No caller found, return empty name.
-			}
-			frame, _ := runtime.CallersFrames(rpc).Next()
-			mode := govyconfig.GetNameInferMode()
-			switch mode {
-			case govyconfig.NameInferModeGenerate:
-				name = govyconfig.GetInferredName(frame.File, frame.Line)
-			case govyconfig.NameInferModeRuntime:
-				name = nameinfer.InferName(frame.File, frame.Line)
-			case govyconfig.NameInferModeDisable:
-			default:
-				logging.Logger().Error(fmt.Sprintf("unknown %T", mode))
-			}
-		})
-		return name
-	}
-}
-
 // ForPointer accepts a getter function returning a pointer and wraps its call in order to
 // safely extract the value under the pointer or return a zero value for a given type T.
 // If required is set to true, the nil pointer value will result in an error and the
 // validation will not proceed.
 func ForPointer[T, P any](getter PropertyGetter[*T, P]) PropertyRules[T, P] {
 	return PropertyRules[T, P]{
-		nameFunc: getInferredNameFunc(),
+		nameFunc: getInferredNameFunc(getCallersAndProgramCounter(4)),
 		getter: func(parent P) (indirect T, err error) {
 			ptr := getter(parent)
 			if ptr != nil {
@@ -89,7 +39,7 @@ func ForPointer[T, P any](getter PropertyGetter[*T, P]) PropertyRules[T, P] {
 func Transform[T, N, P any](getter PropertyGetter[T, P], transform Transformer[T, N]) PropertyRules[N, P] {
 	typInfo := typeinfo.Get[T]()
 	return PropertyRules[N, P]{
-		nameFunc: getInferredNameFunc(),
+		nameFunc: getInferredNameFunc(getCallersAndProgramCounter(4)),
 		transformGetter: func(parent P) (transformed N, original any, err error) {
 			v := getter(parent)
 			if internal.IsEmpty(v) {
@@ -102,6 +52,23 @@ func Transform[T, N, P any](getter PropertyGetter[T, P], transform Transformer[T
 			return transformed, v, nil
 		},
 		originalType: &typInfo,
+	}
+}
+
+// forConstructor creates [PropertyRules].
+// It wraps the getter function in [internalPropertyGetter] and adds name inference.
+func forConstructor[T, P any](getter PropertyGetter[T, P]) PropertyRules[T, P] {
+	return PropertyRules[T, P]{
+		nameFunc: getInferredNameFunc(getCallersAndProgramCounter(4)),
+		getter:   func(parent P) (v T, err error) { return getter(parent), nil },
+	}
+}
+
+// forConstructorWithoutNameInference creates [PropertyRules] without name inference.
+// Used for internal rules in [ForSlice] and [ForMap] where names are managed separately.
+func forConstructorWithoutNameInference[T, P any](getter PropertyGetter[T, P]) PropertyRules[T, P] {
+	return PropertyRules[T, P]{
+		getter: func(parent P) (v T, err error) { return getter(parent), nil },
 	}
 }
 
@@ -120,6 +87,7 @@ type PropertyGetter[T, P any] func(parent P) T
 type (
 	internalPropertyGetter[T, P any]          func(P) (v T, err error)
 	internalTransformPropertyGetter[T, P any] func(P) (transformed T, original any, err error)
+	nameFunc                                  func() string
 	emptyErr                                  struct{}
 )
 
@@ -130,9 +98,8 @@ func (emptyErr) Error() string { return "" }
 // It is the middle-level building block of the validation process,
 // aggregated by [Validator] and aggregating [Rule].
 type PropertyRules[T, P any] struct {
-	name string
-	// nameFunc is assumed to be concurrently safe.
-	nameFunc        func() string
+	name            string
+	nameFunc        nameFunc
 	getter          internalPropertyGetter[T, P]
 	transformGetter internalTransformPropertyGetter[T, P]
 	rules           []validationInterface[T]
