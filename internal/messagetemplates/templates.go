@@ -63,7 +63,6 @@ const (
 	UniquePropertiesTemplate
 )
 
-// nolint: lll
 var rawMessageTemplates = map[templateKey]string{
 	LengthTemplate:            "length must be between {{ .MinLength }} and {{ .MaxLength }}",
 	MinLengthTemplate:         "length must be greater than or equal to {{ .ComparisonValue }}",

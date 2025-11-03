@@ -1828,7 +1828,6 @@ func BenchmarkStringFQDN(b *testing.B) {
 	}
 }
 
-// nolint: lll
 var (
 	errK8sQualifiedNameEmptyPrefixPart = errors.New("prefix part must not be empty")
 	errK8sQualifiedNamePrefixLength    = errors.New("prefix part length must be less than or equal to 253")

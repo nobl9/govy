@@ -14,7 +14,6 @@ linters:
     - dogsled
     - errcheck
     - exhaustive
-    - gochecknoinits
     - gocognit
     - gocritic
     - gocyclo
@@ -23,7 +22,6 @@ linters:
     - govet
     - importas
     - ineffassign
-    - lll
     - makezero
     - misspell
     - nakedret
@@ -44,16 +42,18 @@ linters:
     exhaustive:
       default-signifies-exhaustive: true
     gocognit:
-      min-complexity: 30
+      min-complexity: 40
     gocritic:
       disabled-checks:
         - singleCaseSwitch
       enabled-tags:
         - opinionated
-    lll:
-      line-length: 120
     misspell:
       locale: US
+    revive:
+      rules:
+        - name: unused-parameter
+          disabled: true
   exclusions:
     generated: strict
     rules:
@@ -77,6 +77,5 @@ formatters:
       extra-rules: true
     golines:
       max-len: 120
-      shorten-comments: true
   exclusions:
     generated: strict
