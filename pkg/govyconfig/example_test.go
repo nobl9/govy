@@ -113,7 +113,7 @@ func ExampleNameInferModeGenerate() {
 	//     - should be equal to 'Thomas'
 }
 
-// When you call [govyconfig.SetNameInferMode] is important.
+// Knowing when to call [govyconfig.SetNameInferMode] is important.
 // Beware that once a [govy.Validator.Validate] is called, it will cache the inferred name.
 //
 // To demonstrate this we'll set the [govyconfig.NameInferModeDisable] and you will observe
@@ -138,7 +138,7 @@ func ExampleSetNameInferMode_changeModeInRuntime() {
 
 	govyconfig.SetNameInferMode(govyconfig.NameInferModeRuntime)
 
-	fmt.Println("-- After setting Runtime infer mode.")
+	fmt.Println("\n---\nAfter setting Runtime infer mode.\n---")
 	err = v.Validate(teacher)
 	if err != nil {
 		fmt.Println(err)
@@ -147,7 +147,9 @@ func ExampleSetNameInferMode_changeModeInRuntime() {
 	// Output:
 	// Validation for Teacher has failed:
 	//   - should be equal to 'Jerry'
-	// -- After setting Runtime infer mode.
+	// ---
+	// After setting Runtime infer mode.
+	// ---
 	// Validation for Teacher has failed:
 	//   - should be equal to 'Jerry'
 }
