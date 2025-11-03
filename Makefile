@@ -2,6 +2,7 @@
 MAKEFLAGS += --silent --no-print-directory
 
 BIN_DIR := ./bin
+SCRIPTS_DIR := ./scripts
 APP_NAME := govy
 LDFLAGS += -s -w
 
@@ -18,6 +19,7 @@ activate:
 
 ## Install devbox binary.
 install/devbox:
+	$(call _print_step,Installing devbox)
 	curl -fsSL https://get.jetpack.io/devbox | bash
 
 .PHONY: build
@@ -30,7 +32,8 @@ build:
 .PHONY: release
 ## Build and release the binaries.
 release:
-	@goreleaser release --snapshot --clean
+	$(call _print_step,Releasing binary)
+	goreleaser release --snapshot --clean
 
 .PHONY: test
 ## Run all unit tests.
@@ -51,9 +54,9 @@ test/coverage:
 	go test -coverprofile=coverage.out ./...
 	go tool cover -html=coverage.out
 
-.PHONY: check check/vet check/lint check/gosec check/spell check/trailing check/markdown check/format check/generate check/vulns
+.PHONY: check check/vet check/lint check/gosec check/spell check/trailing check/markdown check/generate check/vulns
 ## Run all checks.
-check: check/vet check/lint check/gosec check/spell check/trailing check/markdown check/format check/generate check/vulns
+check: check/vet check/lint check/gosec check/spell check/trailing check/markdown check/generate check/vulns
 
 ## Run 'go vet' on the whole project.
 check/vet:
@@ -63,7 +66,7 @@ check/vet:
 ## Run golangci-lint all-in-one linter with configuration defined inside .golangci.yml.
 check/lint:
 	$(call _print_step,Running golangci-lint)
-	golangci-lint run
+	golangci-lint run ./... ./tests/examplemodule
 
 ## Check for security problems using gosec, which inspects the Go code by scanning the AST.
 check/gosec:
@@ -73,17 +76,17 @@ check/gosec:
 ## Check spelling, rules are defined in cspell.json.
 check/spell:
 	$(call _print_step,Verifying spelling)
-	yarn --silent cspell --no-progress '**/**'
+	cspell --no-progress '**/**'
 
 ## Check for trailing whitespaces in any of the projects' files.
 check/trailing:
 	$(call _print_step,Looking for trailing whitespaces)
-	yarn --silent check-trailing-whitespaces
+	$(SCRIPTS_DIR)/check-trailing-whitespaces.bash
 
 ## Check markdown files for potential issues with markdownlint.
 check/markdown:
 	$(call _print_step,Verifying Markdown files)
-	yarn --silent markdownlint '*.md' --disable MD010 # MD010 does not handle code blocks well.
+	markdownlint '**/*.md'
 
 ## Check for potential vulnerabilities across all Go dependencies.
 check/vulns:
@@ -93,13 +96,7 @@ check/vulns:
 ## Verify if the auto generated code has been committed.
 check/generate:
 	$(call _print_step,Checking if generated code matches the provided definitions)
-	./scripts/check-generate.sh
-
-## Verify if the files are formatted.
-## You must first commit the changes, otherwise it won't detect the diffs.
-check/format:
-	$(call _print_step,Checking if files are formatted)
-	./scripts/check-formatting.sh
+	$(SCRIPTS_DIR)/check-generate.bash
 
 .PHONY: generate generate/code generate/readme
 ## Auto generate files.
@@ -107,40 +104,24 @@ generate: generate/code generate/readme
 
 ## Generate Golang code.
 generate/code:
-	echo "Generating Go code..."
+	$(call _print_step,Generating Go code)
 	go generate ./...
 
 ## Generate README.md file embedded examples.
 generate/readme:
-	echo "Generating README.md embedded examples..."
-	./scripts/embed-example-in-readme.bash README.md
+	$(call _print_step,Generating README.md embedded examples)
+	$(SCRIPTS_DIR)/embed-example-in-readme.bash README.md
 
-.PHONY: format format/go format/cspell
+.PHONY: format format/go
 ## Format files.
-format: format/go format/cspell
+format: format/go
 
 ## Format Go files.
 format/go:
-	echo "Formatting Go files..."
-	gofumpt -l -w -extra .
-	goimports -local=$$(head -1 go.mod | awk '{print $$2}') -w .
-	golines -m 120 --ignore-generated --reformat-tags -w .
-
-## Format cspell config file.
-format/cspell:
-	echo "Formatting cspell.yaml configuration (words list)..."
-	yarn --silent format-cspell-config
-
-.PHONY: install
-## Install all dev dependencies.
-install: install/yarn
-
-## Install JS dependencies with yarn.
-install/yarn:
-	echo "Installing yarn dependencies..."
-	yarn --silent install
+	$(call _print_step,Formatting Go files)
+	golangci-lint fmt
 
 .PHONY: help
 ## Print this help message.
 help:
-	./scripts/makefile-help.awk $(MAKEFILE_LIST)
+	$(SCRIPTS_DIR)/makefile-help.awk $(MAKEFILE_LIST)

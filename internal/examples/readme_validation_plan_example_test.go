@@ -33,7 +33,7 @@ func Example_validationPlan() {
 		govy.For(func(u University) string { return u.Address }).
 			WithName("address").
 			Rules(rules.StringMatchRegexp(
-				regexp.MustCompile(`[\w\s.]+, [0-9]{2}-[0-9]{3} \w+`),
+				regexp.MustCompile(`[\w\s.]+, \d{2}-\d{3} \w+`),
 			).
 				WithDetails("Polish address format must consist of the main address and zip code").
 				WithExamples("5 M. Skłodowska-Curie Square, 60-965 Poznan")).
@@ -157,7 +157,7 @@ func Example_validationPlan() {
 	//       },
 	//       "rules": [
 	//         {
-	//           "description": "string must match regular expression: '[\\w\\s.]+, [0-9]{2}-[0-9]{3} \\w+'",
+	//           "description": "string must match regular expression: '[\\w\\s.]+, \\d{2}-\\d{3} \\w+'",
 	//           "details": "Polish address format must consist of the main address and zip code",
 	//           "errorCode": "string_match_regexp",
 	//           "conditions": [

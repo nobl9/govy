@@ -33,7 +33,7 @@ func Example_basicUsage() {
 			WithName("address").
 			Required().
 			Rules(rules.StringMatchRegexp(
-				regexp.MustCompile(`[\w\s.]+, [0-9]{2}-[0-9]{3} \w+`),
+				regexp.MustCompile(`[\w\s.]+, \d{2}-\d{3} \w+`),
 			).
 				WithDetails("Polish address format must consist of the main address and zip code").
 				WithExamples("5 M. Skłodowska-Curie Square, 60-965 Poznan")),
@@ -102,5 +102,5 @@ func Example_basicUsage() {
 	//   - 'university.name':
 	//     - property is required but was empty
 	//   - 'university.address' with value '10th University St.':
-	//     - string must match regular expression: '[\w\s.]+, [0-9]{2}-[0-9]{3} \w+' (e.g. '5 M. Skłodowska-Curie Square, 60-965 Poznan'); Polish address format must consist of the main address and zip code
+	//     - string must match regular expression: '[\w\s.]+, \d{2}-\d{3} \w+' (e.g. '5 M. Skłodowska-Curie Square, 60-965 Poznan'); Polish address format must consist of the main address and zip code
 }

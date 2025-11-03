@@ -1,9 +1,8 @@
 package main
 
 import (
-	"fmt"
-
 	"examplemodule/university"
+	"fmt"
 
 	"github.com/nobl9/govy/pkg/govyconfig"
 )

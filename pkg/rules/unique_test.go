@@ -53,14 +53,14 @@ var sliceUniqueTestCases = []*struct {
 		slice:         []string{"a", "b", "c", "b"},
 		hashFunc:      HashFuncSelf[string](),
 		constraints:   []string{"values must be unique"},
-		expectedError: "elements are not unique, 2nd and 4th elements collide based on constraints: values must be unique", // nolint: lll
+		expectedError: "elements are not unique, 2nd and 4th elements collide based on constraints: values must be unique",
 		shouldFail:    true,
 	},
 	{
 		slice:         []string{"a", "b", "c", "b"},
 		hashFunc:      HashFuncSelf[string](),
 		constraints:   []string{"constraint 1", "constraint 2"},
-		expectedError: "elements are not unique, 2nd and 4th elements collide based on constraints: constraint 1, constraint 2", // nolint: lll
+		expectedError: "elements are not unique, 2nd and 4th elements collide based on constraints: constraint 1, constraint 2",
 		shouldFail:    true,
 	},
 	{
