@@ -67,8 +67,8 @@ issues:
 formatters:
   enable:
     - gofumpt
-    - goimports
     - golines
+    - goimports
   settings:
     goimports:
       local-prefixes:
