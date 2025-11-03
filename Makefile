@@ -66,7 +66,7 @@ check/vet:
 ## Run golangci-lint all-in-one linter with configuration defined inside .golangci.yml.
 check/lint:
 	$(call _print_step,Running golangci-lint)
-	golangci-lint run
+	golangci-lint run ./... ./tests/examplemodule
 
 ## Check for security problems using gosec, which inspects the Go code by scanning the AST.
 check/gosec:
