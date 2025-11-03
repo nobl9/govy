@@ -78,6 +78,7 @@ is required.
 ## Tests coverage
 
 Tests coverage reporting is automated using the following actions:
+
 - [go-coverage-report](https://github.com/ncruces/go-coverage-report) which
   is responsible for updating the coverage badge in main README.md.
   It stores the coverage results in GitHub wiki and it can be easily inspected

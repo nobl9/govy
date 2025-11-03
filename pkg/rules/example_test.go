@@ -1,4 +1,3 @@
-// nolint: lll
 package rules_test
 
 import (

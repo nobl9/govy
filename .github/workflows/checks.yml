@@ -20,15 +20,5 @@ jobs:
         with:
           enable-cache: true
           devbox-version: ${{ vars.DEVBOX_VERSION }}
-      - name: Run spell and markdown checkers
-        run: devbox run -- make check/spell check/trailing check/markdown
-      - name: Check generated code
-        run: devbox run -- make check/generate
-      - name: Check formatting
-        run: devbox run -- make check/format
-      - name: Run go vet
-        run: devbox run -- make check/vet
-      - name: Run golangci-lint
-        run: devbox run -- make check/lint
-      - name: Run Gosec Security Scanner
-        run: devbox run -- make check/gosec
+      - name: Run checks
+        run: devbox run -- make check

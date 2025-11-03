@@ -34,4 +34,4 @@ jobs:
         uses: release-drafter/release-drafter@v6
       - name: Add release notes to the draft
         if: github.event_name == 'push'
-        run: .github/scripts/release-notes.sh ${{ steps.drafter.outputs.tag_name }}
+        run: .github/scripts/release-notes.bash ${{ steps.drafter.outputs.tag_name }}

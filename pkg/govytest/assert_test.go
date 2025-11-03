@@ -1,4 +1,3 @@
-// nolint: lll
 package govytest_test
 
 import (

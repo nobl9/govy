@@ -5,7 +5,6 @@ import (
 	"sync"
 )
 
-// nolint: lll
 // Define all regular expressions here:
 var (
 	// Ref: https://www.ietf.org/rfc/rfc4122.txt
