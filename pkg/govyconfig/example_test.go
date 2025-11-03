@@ -138,7 +138,7 @@ func ExampleSetNameInferMode_changeModeInRuntime() {
 
 	govyconfig.SetNameInferMode(govyconfig.NameInferModeRuntime)
 
-	fmt.Println("\n---\nAfter setting Runtime infer mode.\n---")
+	fmt.Println("---\nAfter setting Runtime infer mode.\n---")
 	err = v.Validate(teacher)
 	if err != nil {
 		fmt.Println(err)
