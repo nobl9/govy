@@ -145,51 +145,51 @@
         }
       }
     },
-    "gosec@2.22.9": {
-      "last_modified": "2025-10-07T08:41:47Z",
-      "resolved": "github:NixOS/nixpkgs/bce5fe2bb998488d8e7e7856315f90496723793c#gosec",
+    "gosec@2.22.10": {
+      "last_modified": "2025-10-22T20:59:19Z",
+      "resolved": "github:NixOS/nixpkgs/01b6809f7f9d1183a2b3e081f0a1e6f8f415cb09#gosec",
       "source": "devbox-search",
-      "version": "2.22.9",
+      "version": "2.22.10",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/yw56karbpi0kwzrm4nr3xp45pda1gdqq-gosec-2.22.9",
+              "path": "/nix/store/dry3x199c7ihmhlyk5b7iqfvsgvcxkbk-gosec-2.22.10",
               "default": true
             }
           ],
-          "store_path": "/nix/store/yw56karbpi0kwzrm4nr3xp45pda1gdqq-gosec-2.22.9"
+          "store_path": "/nix/store/dry3x199c7ihmhlyk5b7iqfvsgvcxkbk-gosec-2.22.10"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/ac3bmngk6h4m84zadpm2hv13ii8g0lhg-gosec-2.22.9",
+              "path": "/nix/store/pfi1cazgc313na39b1qmq952g6a07hla-gosec-2.22.10",
               "default": true
             }
           ],
-          "store_path": "/nix/store/ac3bmngk6h4m84zadpm2hv13ii8g0lhg-gosec-2.22.9"
+          "store_path": "/nix/store/pfi1cazgc313na39b1qmq952g6a07hla-gosec-2.22.10"
         },
         "x86_64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/001d59n4x1827k6g88n7l8haaf6vjin2-gosec-2.22.9",
+              "path": "/nix/store/njk7c30fzv77khyqb3p62brsrqy7c1i5-gosec-2.22.10",
               "default": true
             }
           ],
-          "store_path": "/nix/store/001d59n4x1827k6g88n7l8haaf6vjin2-gosec-2.22.9"
+          "store_path": "/nix/store/njk7c30fzv77khyqb3p62brsrqy7c1i5-gosec-2.22.10"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/vsdhsskpsyrrza16r2z0ylijrlr9aqcn-gosec-2.22.9",
+              "path": "/nix/store/i8qv1qyf029ii6xhrab0ymf1n1i1qi0q-gosec-2.22.10",
               "default": true
             }
           ],
-          "store_path": "/nix/store/vsdhsskpsyrrza16r2z0ylijrlr9aqcn-gosec-2.22.9"
+          "store_path": "/nix/store/i8qv1qyf029ii6xhrab0ymf1n1i1qi0q-gosec-2.22.10"
         }
       }
     },
