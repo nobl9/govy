@@ -227,17 +227,14 @@ func TestPropertyRulesForEach(t *testing.T) {
 
 func TestPropertyRulesForSlice_InferName(t *testing.T) {
 	govyconfig.SetNameInferIncludeTestFiles(true)
-	govyconfig.SetNameInferMode(govyconfig.NameInferModeRuntime)
-	defer func() {
-		govyconfig.SetNameInferIncludeTestFiles(false)
-		govyconfig.SetNameInferMode(govyconfig.NameInferModeDisable)
-	}()
+	defer govyconfig.SetNameInferIncludeTestFiles(false)
 
 	type Teacher struct {
 		Students []string `json:"students"`
 	}
 
 	r := govy.ForSlice(func(t Teacher) []string { return t.Students }).
+		NameInferMode(govy.NameInferModeRuntime).
 		RulesForEach(rules.EQ("John"))
 	errs := mustPropertyErrors(t, r.Validate(Teacher{Students: []string{"Luke"}}))
 	assert.Len(t, errs, 1)

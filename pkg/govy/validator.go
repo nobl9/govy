@@ -1,10 +1,5 @@
 package govy
 
-import (
-	"fmt"
-	"strings"
-)
-
 // New creates a new [Validator] aggregating the provided property rules.
 func New[T any](props ...propertyRulesInterface[T]) Validator[T] {
 	return Validator[T]{props: props}
@@ -14,10 +9,10 @@ func New[T any](props ...propertyRulesInterface[T]) Validator[T] {
 // It serves as an aggregator for [PropertyRules].
 // Typically, it represents a struct.
 type Validator[T any] struct {
-	props    []propertyRulesInterface[T]
-	name     string
-	nameFunc func(value T) string
-	mode     CascadeMode
+	props       []propertyRulesInterface[T]
+	name        string
+	nameFunc    func(value T) string
+	cascadeMode CascadeMode
 
 	predicateMatcher[T]
 }
@@ -43,29 +38,22 @@ func (v Validator[T]) When(predicate Predicate[T], opts ...WhenOption) Validator
 	return v
 }
 
-// InferName will set the name of the [Validator] to its type S.
-// If the name was already set through [Validator.WithName], it will not be overridden.
-// It does not use the same inference mechanisms as [PropertyRules.InferName],
-// it simply checks the [Validator] type parameter using reflection.
-func (v Validator[T]) InferName() Validator[T] {
-	if v.name != "" {
-		return v
-	}
-	split := strings.Split(fmt.Sprintf("%T", *new(T)), ".")
-	if len(split) == 0 {
-		return v
-	}
-	v.name = split[len(split)-1]
-	return v
-}
-
 // Cascade sets the [CascadeMode] for the validator,
 // which controls the flow of evaluating the validation rules.
 func (v Validator[T]) Cascade(mode CascadeMode) Validator[T] {
-	v.mode = mode
+	v.cascadeMode = mode
 	props := make([]propertyRulesInterface[T], 0, len(v.props))
 	for _, prop := range v.props {
 		props = append(props, prop.cascadeInternal(mode))
+	}
+	v.props = props
+	return v
+}
+
+func (v Validator[T]) NameInferMode(mode NameInferMode) Validator[T] {
+	props := make([]propertyRulesInterface[T], 0, len(v.props))
+	for _, prop := range v.props {
+		props = append(props, prop.nameInferModeInternal(mode))
 	}
 	v.props = props
 	return v
@@ -90,16 +78,12 @@ func (v Validator[T]) Validate(value T) error {
 			continue
 		}
 		allErrors = append(allErrors, pErrs...)
-		if v.mode == CascadeModeStop {
+		if v.cascadeMode == CascadeModeStop {
 			break
 		}
 	}
 	if len(allErrors) != 0 {
-		name := v.name
-		if v.nameFunc != nil {
-			name = v.nameFunc(value)
-		}
-		return NewValidatorError(allErrors).WithName(name)
+		return NewValidatorError(allErrors).WithName(v.getName(value))
 	}
 	return nil
 }
@@ -127,6 +111,18 @@ func (v Validator[T]) ValidateSlice(values []T) error {
 		return nil
 	}
 	return errs
+}
+
+// getName returns the name of the property.
+func (v Validator[T]) getName(value T) string {
+	switch {
+	case v.name != "":
+		return v.name
+	case v.nameFunc != nil:
+		return v.nameFunc(value)
+	default:
+		return ""
+	}
 }
 
 // plan constructs a validation plan for all the properties of the [Validator].

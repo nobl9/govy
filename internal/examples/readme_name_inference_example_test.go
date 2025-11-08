@@ -10,9 +10,7 @@ import (
 
 func Example_nameInference() {
 	govyconfig.SetNameInferIncludeTestFiles(true) // Required for the example to run.
-	govyconfig.SetNameInferMode(govyconfig.NameInferModeRuntime)
 	defer govyconfig.SetNameInferIncludeTestFiles(false)
-	defer govyconfig.SetNameInferMode(govyconfig.NameInferModeDisable)
 
 	type Teacher struct {
 		Name string `json:"name"`
@@ -21,7 +19,9 @@ func Example_nameInference() {
 	v := govy.New(
 		govy.For(func(t Teacher) string { return t.Name }).
 			Rules(rules.EQ("Jerry")),
-	).InferName()
+	).
+		NameInferMode(govy.NameInferModeRuntime).
+		WithNameFunc(govy.NameFuncFromTypeName[Teacher]())
 
 	teacher := Teacher{Name: "Tom"}
 	err := v.Validate(teacher)

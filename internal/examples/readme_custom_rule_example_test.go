@@ -29,7 +29,7 @@ func Example_customRules() {
 			Rules(
 				customRule,
 				rules.StringStartsWith("J")),
-	).InferName()
+	).WithNameFunc(govy.NameFuncFromTypeName[Teacher]())
 
 	teacher := Teacher{Name: "George"}
 

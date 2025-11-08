@@ -16,13 +16,13 @@ import (
 
 	"github.com/nobl9/govy/internal"
 	"github.com/nobl9/govy/internal/nameinfer"
-	"github.com/nobl9/govy/pkg/govyconfig"
+	"github.com/nobl9/govy/pkg/govy"
 )
 
 type nameInferTemplateData struct {
 	ProgramInvocation string
 	Package           string
-	Names             map[string]govyconfig.InferredName
+	Names             map[string]govy.InferredName
 }
 
 //go:embed inferred_names.go.tmpl
@@ -69,7 +69,7 @@ func (n *nameInferCommand) Run() error {
 
 	modAST := nameinfer.NewModuleAST(root)
 
-	names := make(map[string]govyconfig.InferredName)
+	names := make(map[string]govy.InferredName)
 	for _, pkg := range modAST.Packages {
 		for i, f := range pkg.Syntax {
 			importName := nameinfer.GetGovyImportName(f)
@@ -88,7 +88,7 @@ func (n *nameInferCommand) Run() error {
 				}
 				line := modAST.FileSet.Position(selectorExpr.Pos()).Line
 				inferredName := nameinfer.InferNameFromFile(modAST.FileSet, pkg, f, line)
-				name := govyconfig.InferredName{
+				name := govy.InferredName{
 					Name: inferredName,
 					File: strings.TrimPrefix(pkg.GoFiles[i], root+"/"),
 					Line: line,

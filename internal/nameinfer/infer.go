@@ -5,12 +5,13 @@ import (
 	"go/ast"
 	"go/token"
 	"go/types"
+	"reflect"
 	"slices"
+	"strings"
 
 	"golang.org/x/tools/go/packages"
 
 	"github.com/nobl9/govy/internal/logging"
-	"github.com/nobl9/govy/pkg/govyconfig"
 )
 
 var FunctionsWithGetter = []string{
@@ -74,6 +75,22 @@ func InferNameFromFile(fileSet *token.FileSet, pkg *packages.Package, f *ast.Fil
 
 	finder := nameFinder{pkg: pkg}
 	return finder.FindName(getterNode, nil)
+}
+
+// NameInferDefaultFunc is the default function for inferring field names from struct tags.
+// It looks for json and yaml tags, preferring json if both are set.
+func NameInferDefaultFunc(fieldName, tagValue string) string {
+	for _, tagKey := range []string{"json", "yaml"} {
+		tagValues := strings.Split(
+			reflect.StructTag(strings.Trim(tagValue, "`")).Get(tagKey),
+			",",
+		)
+		if len(tagValues) > 0 && tagValues[0] != "" {
+			fieldName = tagValues[0]
+			break
+		}
+	}
+	return fieldName
 }
 
 func GetGovyImportName(f *ast.File) string {
@@ -235,7 +252,7 @@ func (n nameFinder) findNameInSelectorExpr(
 		if childStructType, isStruct := n.findStructTypeInStructField(field); isStruct {
 			structType = childStructType
 		}
-		fieldName = govyconfig.GetNameInferFunc()(fieldName, tagValue)
+		fieldName = NameInferDefaultFunc(fieldName, tagValue)
 		if name == "" {
 			return fieldName, structType
 		}

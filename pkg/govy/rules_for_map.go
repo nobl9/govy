@@ -26,7 +26,7 @@ type PropertyRulesForMap[M ~map[K]V, K comparable, V, P any] struct {
 	forValueRules PropertyRules[V, V]
 	forItemRules  PropertyRules[MapItem[K, V], MapItem[K, V]]
 	getter        PropertyGetter[M, P]
-	mode          CascadeMode
+	cascadeMode   CascadeMode
 
 	predicateMatcher[P]
 }
@@ -45,7 +45,7 @@ func (r PropertyRulesForMap[M, K, V, P]) Validate(parent P) error {
 	err := r.mapRules.Validate(parent)
 	var propErrs PropertyErrors
 	if err != nil {
-		if r.mode == CascadeModeStop {
+		if r.cascadeMode == CascadeModeStop {
 			return err
 		}
 		var ok bool
@@ -181,7 +181,7 @@ func (r PropertyRulesForMap[M, K, V, P]) IncludeForItems(
 
 // Cascade => refer to [PropertyRules.Cascade] documentation.
 func (r PropertyRulesForMap[M, K, V, P]) Cascade(mode CascadeMode) PropertyRulesForMap[M, K, V, P] {
-	r.mode = mode
+	r.cascadeMode = mode
 	r.mapRules = r.mapRules.Cascade(mode)
 	r.forKeyRules = r.forKeyRules.Cascade(mode)
 	r.forValueRules = r.forValueRules.Cascade(mode)
@@ -189,14 +189,23 @@ func (r PropertyRulesForMap[M, K, V, P]) Cascade(mode CascadeMode) PropertyRules
 	return r
 }
 
+func (r PropertyRulesForMap[M, K, V, P]) NameInferMode(mode NameInferMode) PropertyRulesForMap[M, K, V, P] {
+	r.mapRules = r.mapRules.NameInferMode(mode)
+	return r
+}
+
 // cascadeInternal is an internal wrapper around [PropertyRulesForMap.Cascade] which
 // fulfills [propertyRulesInterface] interface.
 // If the [CascadeMode] is already set, it won't change it.
 func (r PropertyRulesForMap[M, K, V, P]) cascadeInternal(mode CascadeMode) propertyRulesInterface[P] {
-	if r.mode != 0 {
+	if r.cascadeMode != 0 {
 		return r
 	}
 	return r.Cascade(mode)
+}
+
+func (r PropertyRulesForMap[M, K, V, P]) nameInferModeInternal(mode NameInferMode) propertyRulesInterface[P] {
+	return r.NameInferMode(mode)
 }
 
 // plan constructs a validation plan for the property rules.

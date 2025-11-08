@@ -101,41 +101,40 @@ func TestValidatorWithName(t *testing.T) {
 }
 
 func TestValidatorWithNameFunc(t *testing.T) {
-	v := govy.New(
-		govy.For(func(m mockValidatorStruct) string { return "test" }).
-			WithName("test").
-			Rules(govy.NewRule(func(v string) error { return errors.New("test") })),
-	).WithNameFunc(func(m mockValidatorStruct) string { return "validator with field: " + m.Field })
-
-	err := v.Validate(mockValidatorStruct{Field: "FIELD"})
-	assert.Require(t, assert.Error(t, err))
-	assert.EqualError(t, err, `Validation for validator with field: FIELD has failed for the following properties:
-  - 'test' with value 'test':
-    - test`)
-}
-
-func TestValidatorInferName(t *testing.T) {
-	t.Run("infer name", func(t *testing.T) {
+	t.Run("custom name function", func(t *testing.T) {
 		v := govy.New(
 			govy.For(func(m mockValidatorStruct) string { return "test" }).
 				WithName("test").
 				Rules(govy.NewRule(func(v string) error { return errors.New("test") })),
-		).InferName()
+		).WithNameFunc(func(m mockValidatorStruct) string { return "validator with field: " + m.Field })
 
-		err := v.Validate(mockValidatorStruct{})
+		err := v.Validate(mockValidatorStruct{Field: "FIELD"})
 		assert.Require(t, assert.Error(t, err))
-		assert.EqualError(t, err, `Validation for mockValidatorStruct has failed for the following properties:
+		assert.EqualError(t, err, `Validation for validator with field: FIELD has failed for the following properties:
   - 'test' with value 'test':
     - test`)
 	})
-	t.Run("do not infer name if name was already set", func(t *testing.T) {
+	t.Run("type based builtin name function", func(t *testing.T) {
+		v := govy.New(
+			govy.For(func(t Teacher) string { return "test" }).
+				WithName("test").
+				Rules(govy.NewRule(func(v string) error { return errors.New("test") })),
+		).WithNameFunc(govy.NameFuncFromTypeName[Teacher]())
+
+		err := v.Validate(Teacher{})
+		assert.Require(t, assert.Error(t, err))
+		assert.EqualError(t, err, `Validation for Teacher has failed for the following properties:
+  - 'test' with value 'test':
+    - test`)
+	})
+	t.Run("setting WithName AFTTER WithNameFunc cancels name function out", func(t *testing.T) {
 		v := govy.New(
 			govy.For(func(m mockValidatorStruct) string { return "test" }).
 				WithName("test").
 				Rules(govy.NewRule(func(v string) error { return errors.New("test") })),
 		).
-			WithName("myValidator").
-			InferName()
+			WithNameFunc(govy.NameFuncFromTypeName[mockValidatorStruct]()).
+			WithName("myValidator")
 
 		err := v.Validate(mockValidatorStruct{})
 		assert.Require(t, assert.Error(t, err))
