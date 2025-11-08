@@ -422,6 +422,16 @@ func TestPropertyRules_InferName(t *testing.T) {
 	})
 }
 
+type mockStruct struct {
+	Field string `json:"field"`
+}
+
+func BenchmarkFor(b *testing.B) {
+	for b.Loop() {
+		_ = govy.For(func(m mockStruct) string { return m.Field })
+	}
+}
+
 func mustPropertyErrors(t *testing.T, err error) govy.PropertyErrors {
 	t.Helper()
 	return mustErrorType[govy.PropertyErrors](t, err)

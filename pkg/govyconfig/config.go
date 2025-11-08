@@ -93,6 +93,9 @@ const (
 
 // SetNameInferMode sets the mode of property names' inference.
 // It overrides the default mode [NameInferModeDisable].
+// It must be called BEFORE given [govy.PropertyRules] is evaluated.
+// Any changes made to the [NameInferMode] will not take effect on such evaluated rules,
+// as the inferred name (even if it's empty string due to [NameInferModeDisable]) is cached.
 // It's safe to call this function concurrently.
 func SetNameInferMode(mode NameInferMode) {
 	mu.Lock()

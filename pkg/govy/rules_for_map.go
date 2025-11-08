@@ -10,12 +10,11 @@ import (
 // ForMap creates a new [PropertyRulesForMap] instance for a map property
 // which value is extracted through [PropertyGetter] function.
 func ForMap[M ~map[K]V, K comparable, V, P any](getter PropertyGetter[M, P]) PropertyRulesForMap[M, K, V, P] {
-	name := inferName()
 	return PropertyRulesForMap[M, K, V, P]{
-		mapRules:      forConstructor(getter, name),
-		forKeyRules:   forConstructor(GetSelf[K](), ""),
-		forValueRules: forConstructor(GetSelf[V](), ""),
-		forItemRules:  forConstructor(GetSelf[MapItem[K, V]](), ""),
+		mapRules:      forConstructor(getter),
+		forKeyRules:   forConstructorWithoutNameInference(GetSelf[K]()),
+		forValueRules: forConstructorWithoutNameInference(GetSelf[V]()),
+		forItemRules:  forConstructorWithoutNameInference(GetSelf[MapItem[K, V]]()),
 		getter:        getter,
 	}
 }
@@ -204,7 +203,7 @@ func (r PropertyRulesForMap[M, K, V, P]) cascadeInternal(mode CascadeMode) prope
 func (r PropertyRulesForMap[M, K, V, P]) plan(builder planBuilder) {
 	builder = appendPredicatesToPlanBuilder(builder, r.predicates)
 	r.mapRules.plan(builder.setExamples(r.mapRules.examples...))
-	builder = builder.appendPath(r.mapRules.name)
+	builder = builder.appendPath(r.mapRules.getName())
 	// JSON/YAML path for keys uses '~' to extract the keys.
 	if len(r.forKeyRules.rules) > 0 {
 		r.forKeyRules.plan(builder.appendPath("~"))
@@ -219,7 +218,7 @@ func (r PropertyRulesForMap[M, K, V, P]) plan(builder planBuilder) {
 
 // getJSONPathForKey returns a JSONPath for the given key.
 func (r PropertyRulesForMap[M, K, V, P]) getJSONPathForKey(key any) string {
-	return jsonpath.Join(r.mapRules.name, jsonpath.EscapeSegment(fmt.Sprint(key)))
+	return jsonpath.Join(r.mapRules.getName(), jsonpath.EscapeSegment(fmt.Sprint(key)))
 }
 
 // isPropertyRules implements [propertyRulesInterface].
