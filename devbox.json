@@ -2,7 +2,7 @@
   "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/refs/heads/main/.schema/devbox.schema.json",
   "packages": [
     "govulncheck@1.1.4",
-    "golangci-lint@2.5.0",
+    "golangci-lint@2.6.1",
     "gosec@2.22.10",
     "go@1.25.2",
     "gotools@0.34.0",
