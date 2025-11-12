@@ -86,7 +86,7 @@ check/trailing:
 ## Check markdown files for potential issues with markdownlint.
 check/markdown:
 	$(call _print_step,Verifying Markdown files)
-	markdownlint '**/*.md'
+	markdownlint '**/*.md' --ignore node_modules
 
 ## Check for potential vulnerabilities across all Go dependencies.
 check/vulns:

@@ -101,6 +101,12 @@ func (r PropertyRulesForMap[M, K, V, P]) WithName(name string) PropertyRulesForM
 	return r
 }
 
+// WithID => refer to [PropertyRules.WithID] documentation.
+func (r PropertyRulesForMap[M, K, V, P]) WithID(id string) PropertyRulesForMap[M, K, V, P] {
+	r.mapRules = r.mapRules.WithID(id)
+	return r
+}
+
 // WithExamples => refer to [PropertyRules.WithExamples] documentation.
 func (r PropertyRulesForMap[M, K, V, P]) WithExamples(examples ...string) PropertyRulesForMap[M, K, V, P] {
 	r.mapRules = r.mapRules.WithExamples(examples...)

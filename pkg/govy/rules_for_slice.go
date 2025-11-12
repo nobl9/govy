@@ -72,6 +72,12 @@ func (r PropertyRulesForSlice[S, T, P]) WithName(name string) PropertyRulesForSl
 	return r
 }
 
+// WithID => refer to [PropertyRules.WithID] documentation.
+func (r PropertyRulesForSlice[S, T, P]) WithID(id string) PropertyRulesForSlice[S, T, P] {
+	r.sliceRules = r.sliceRules.WithID(id)
+	return r
+}
+
 // WithExamples => refer to [PropertyRules.WithExamples] documentation.
 func (r PropertyRulesForSlice[S, T, P]) WithExamples(examples ...string) PropertyRulesForSlice[S, T, P] {
 	r.sliceRules = r.sliceRules.WithExamples(examples...)

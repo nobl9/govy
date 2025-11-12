@@ -164,6 +164,18 @@ func (r PropertyRules[T, P]) WithName(name string) PropertyRules[T, P] {
 	return r
 }
 
+// WithID sets a unique identifier for this [PropertyRules] instance.
+// The identifier can be used to:
+//   - Retrieve the property rules' ID via [PropertyRules.GetID]
+//   - Reference the property rules when using [Validator.RemoveProperties]
+//
+// This is useful when you want explicit control over identifiers
+// rather than relying on property names or auto-generated UUIDs.
+func (r PropertyRules[T, P]) WithID(id string) PropertyRules[T, P] {
+	r.id = r.id.WithUserSuppliedID(id)
+	return r
+}
+
 // WithExamples sets the examples for the property.
 func (r PropertyRules[T, P]) WithExamples(examples ...string) PropertyRules[T, P] {
 	r.examples = append(r.examples, examples...)
