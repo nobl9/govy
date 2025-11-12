@@ -37,10 +37,10 @@ func (v Validator[T]) WithName(name string) Validator[T] {
 // WithID sets a unique identifier for this [Validator] instance.
 // The identifier can be used to:
 //   - Retrieve the validator's ID via [Validator.GetID]
-//   - Reference the validator when using [Validator.RemoveProperties]
+//   - Reference the validator when using [Validator.RemovePropertiesByID]
 //
 // This is useful when you want explicit control over identifiers
-// rather than relying on validator names or auto-generated UUIDs.
+// rather than relying on auto-generated UUIDs.
 func (v Validator[T]) WithID(id string) Validator[T] {
 	v.id = v.id.WithUserSuppliedID(id)
 	return v
@@ -88,17 +88,18 @@ func (v Validator[T]) Cascade(mode CascadeMode) Validator[T] {
 	return v
 }
 
-// RemoveProperties removes any [PropertyRules] or included [Validator]
+// RemovePropertiesByID removes any [PropertyRules] or included [Validator]
 // which match the provided identifiers.
 // It returns a modified [Validator] instance without these rules,
 // the original [Validator] is not changed.
 //
-// Identifiers can be obtained using [PropertyRules.GetID].
-// The identifier resolution follows this priority:
-//   - User-supplied ID if set
-//   - Property name (via [PropertyRules.WithName]) if set
+// Identifiers must be obtained using [PropertyRules.GetID] or [Validator.GetID].
+// Property names are not accepted as identifiers - you must use explicit IDs.
+//
+// The identifier returned by GetID follows this priority:
+//   - User-supplied ID (via [PropertyRules.WithID] or [Validator.WithID]) if set
 //   - Auto-generated UUID otherwise
-func (v Validator[T]) RemoveProperties(ids ...string) Validator[T] {
+func (v Validator[T]) RemovePropertiesByID(ids ...string) Validator[T] {
 	if len(ids) == 0 {
 		return v
 	}
@@ -119,14 +120,7 @@ func (v Validator[T]) RemoveProperties(ids ...string) Validator[T] {
 //   - Validator name (via [Validator.WithName]) if set
 //   - Auto-generated UUID otherwise
 func (v Validator[T]) GetID() string {
-	switch {
-	case v.id.HasUserSuppliedID():
-		return v.id.GetUserSuppliedID()
-	case v.name != "":
-		return v.name
-	default:
-		return v.id.GetGeneratedID()
-	}
+	return v.id.GetID()
 }
 
 // Validate will first evaluate predicates before validating any rules.

@@ -340,43 +340,41 @@ func TestValidatorWithID(t *testing.T) {
 	})
 }
 
-func TestValidatorRemoveProperties(t *testing.T) {
-	t.Run("remove single property by name", func(t *testing.T) {
+func TestValidatorRemovePropertiesByID(t *testing.T) {
+	t.Run("remove single property by ID", func(t *testing.T) {
 		err1 := errors.New("error1")
 		err2 := errors.New("error2")
-		v := govy.New(
-			govy.For(func(m mockValidatorStruct) string { return "test1" }).
-				WithName("property1").
-				Rules(govy.NewRule(func(v string) error { return err1 })),
-			govy.For(func(m mockValidatorStruct) string { return "test2" }).
-				WithName("property2").
-				Rules(govy.NewRule(func(v string) error { return err2 })),
-		)
+		prop1 := govy.For(func(m mockValidatorStruct) string { return "test1" }).
+			WithName("property1").
+			Rules(govy.NewRule(func(v string) error { return err1 }))
+		prop2 := govy.For(func(m mockValidatorStruct) string { return "test2" }).
+			WithName("property2").
+			Rules(govy.NewRule(func(v string) error { return err2 }))
+		v := govy.New(prop1, prop2)
 
-		filteredV := v.RemoveProperties("property1")
+		filteredV := v.RemovePropertiesByID(prop1.GetID())
 		err := mustValidatorError(t, filteredV.Validate(mockValidatorStruct{}))
 
 		assert.Require(t, assert.Len(t, err.Errors, 1))
 		assert.Equal(t, "property2", err.Errors[0].PropertyName)
 	})
 
-	t.Run("remove multiple properties by name", func(t *testing.T) {
+	t.Run("remove multiple properties by ID", func(t *testing.T) {
 		err1 := errors.New("error1")
 		err2 := errors.New("error2")
 		err3 := errors.New("error3")
-		v := govy.New(
-			govy.For(func(m mockValidatorStruct) string { return "test1" }).
-				WithName("property1").
-				Rules(govy.NewRule(func(v string) error { return err1 })),
-			govy.For(func(m mockValidatorStruct) string { return "test2" }).
-				WithName("property2").
-				Rules(govy.NewRule(func(v string) error { return err2 })),
-			govy.For(func(m mockValidatorStruct) string { return "test3" }).
-				WithName("property3").
-				Rules(govy.NewRule(func(v string) error { return err3 })),
-		)
+		prop1 := govy.For(func(m mockValidatorStruct) string { return "test1" }).
+			WithName("property1").
+			Rules(govy.NewRule(func(v string) error { return err1 }))
+		prop2 := govy.For(func(m mockValidatorStruct) string { return "test2" }).
+			WithName("property2").
+			Rules(govy.NewRule(func(v string) error { return err2 }))
+		prop3 := govy.For(func(m mockValidatorStruct) string { return "test3" }).
+			WithName("property3").
+			Rules(govy.NewRule(func(v string) error { return err3 }))
+		v := govy.New(prop1, prop2, prop3)
 
-		filteredV := v.RemoveProperties("property1", "property3")
+		filteredV := v.RemovePropertiesByID(prop1.GetID(), prop3.GetID())
 		err := mustValidatorError(t, filteredV.Validate(mockValidatorStruct{}))
 
 		assert.Require(t, assert.Len(t, err.Errors, 1))
@@ -397,7 +395,7 @@ func TestValidatorRemoveProperties(t *testing.T) {
 
 		v := govy.New(prop1, prop2)
 
-		filteredV := v.RemoveProperties("property1")
+		filteredV := v.RemovePropertiesByID(prop1.GetID())
 		err := mustValidatorError(t, filteredV.Validate(mockValidatorStruct{}))
 
 		assert.Require(t, assert.Len(t, err.Errors, 1))
@@ -405,16 +403,15 @@ func TestValidatorRemoveProperties(t *testing.T) {
 	})
 
 	t.Run("remove all properties", func(t *testing.T) {
-		v := govy.New(
-			govy.For(func(m mockValidatorStruct) string { return "test1" }).
-				WithName("property1").
-				Rules(govy.NewRule(func(v string) error { return errors.New("error1") })),
-			govy.For(func(m mockValidatorStruct) string { return "test2" }).
-				WithName("property2").
-				Rules(govy.NewRule(func(v string) error { return errors.New("error2") })),
-		)
+		prop1 := govy.For(func(m mockValidatorStruct) string { return "test1" }).
+			WithName("property1").
+			Rules(govy.NewRule(func(v string) error { return errors.New("error1") }))
+		prop2 := govy.For(func(m mockValidatorStruct) string { return "test2" }).
+			WithName("property2").
+			Rules(govy.NewRule(func(v string) error { return errors.New("error2") }))
+		v := govy.New(prop1, prop2)
 
-		filteredV := v.RemoveProperties("property1", "property2")
+		filteredV := v.RemovePropertiesByID(prop1.GetID(), prop2.GetID())
 		err := filteredV.Validate(mockValidatorStruct{})
 
 		assert.NoError(t, err)
@@ -422,13 +419,12 @@ func TestValidatorRemoveProperties(t *testing.T) {
 
 	t.Run("remove non-existent property", func(t *testing.T) {
 		err1 := errors.New("error1")
-		v := govy.New(
-			govy.For(func(m mockValidatorStruct) string { return "test1" }).
-				WithName("property1").
-				Rules(govy.NewRule(func(v string) error { return err1 })),
-		)
+		prop1 := govy.For(func(m mockValidatorStruct) string { return "test1" }).
+			WithName("property1").
+			Rules(govy.NewRule(func(v string) error { return err1 }))
+		v := govy.New(prop1)
 
-		filteredV := v.RemoveProperties("nonExistent")
+		filteredV := v.RemovePropertiesByID("non-existent-uuid-12345")
 		err := mustValidatorError(t, filteredV.Validate(mockValidatorStruct{}))
 
 		assert.Require(t, assert.Len(t, err.Errors, 1))
@@ -443,7 +439,7 @@ func TestValidatorRemoveProperties(t *testing.T) {
 				Rules(govy.NewRule(func(v string) error { return err1 })),
 		)
 
-		filteredV := v.RemoveProperties()
+		filteredV := v.RemovePropertiesByID()
 		err := mustValidatorError(t, filteredV.Validate(mockValidatorStruct{}))
 
 		assert.Require(t, assert.Len(t, err.Errors, 1))
@@ -453,16 +449,15 @@ func TestValidatorRemoveProperties(t *testing.T) {
 	t.Run("original validator is unchanged", func(t *testing.T) {
 		err1 := errors.New("error1")
 		err2 := errors.New("error2")
-		v := govy.New(
-			govy.For(func(m mockValidatorStruct) string { return "test1" }).
-				WithName("property1").
-				Rules(govy.NewRule(func(v string) error { return err1 })),
-			govy.For(func(m mockValidatorStruct) string { return "test2" }).
-				WithName("property2").
-				Rules(govy.NewRule(func(v string) error { return err2 })),
-		)
+		prop1 := govy.For(func(m mockValidatorStruct) string { return "test1" }).
+			WithName("property1").
+			Rules(govy.NewRule(func(v string) error { return err1 }))
+		prop2 := govy.For(func(m mockValidatorStruct) string { return "test2" }).
+			WithName("property2").
+			Rules(govy.NewRule(func(v string) error { return err2 }))
+		v := govy.New(prop1, prop2)
 
-		filteredV := v.RemoveProperties("property1")
+		filteredV := v.RemovePropertiesByID(prop1.GetID())
 
 		originalErr := mustValidatorError(t, v.Validate(mockValidatorStruct{}))
 		assert.Len(t, originalErr.Errors, 2)
@@ -485,18 +480,18 @@ func TestValidatorRemoveProperties(t *testing.T) {
 				Rules(rules.EQ("expected")),
 		).WithID("nested-validator")
 
-		parentValidator := govy.New(
-			govy.For(func(p parent) nested { return p.Nested }).
-				WithName("nested").
-				Include(nestedValidator),
-		)
+		nestedProp := govy.For(func(p parent) nested { return p.Nested }).
+			WithName("nested").
+			Include(nestedValidator)
+
+		parentValidator := govy.New(nestedProp)
 
 		obj := parent{Nested: nested{Value: "wrong"}}
 
 		err := mustValidatorError(t, parentValidator.Validate(obj))
 		assert.Require(t, assert.Len(t, err.Errors, 1))
 
-		filteredValidator := parentValidator.RemoveProperties("nested")
+		filteredValidator := parentValidator.RemovePropertiesByID(nestedProp.GetID())
 		filteredErr := filteredValidator.Validate(obj)
 		assert.NoError(t, filteredErr)
 	})
@@ -506,18 +501,18 @@ func TestValidatorRemoveProperties(t *testing.T) {
 			Items []string
 		}
 
-		v := govy.New(
-			govy.ForSlice(func(w withSlice) []string { return w.Items }).
-				WithName("items").
-				Rules(rules.SliceMaxLength[[]string](1)),
-		)
+		sliceProp := govy.ForSlice(func(w withSlice) []string { return w.Items }).
+			WithName("items").
+			Rules(rules.SliceMaxLength[[]string](1))
+
+		v := govy.New(sliceProp)
 
 		obj := withSlice{Items: []string{"a", "b"}}
 
 		err := mustValidatorError(t, v.Validate(obj))
 		assert.Require(t, assert.Len(t, err.Errors, 1))
 
-		filteredV := v.RemoveProperties("items")
+		filteredV := v.RemovePropertiesByID(sliceProp.GetID())
 		filteredErr := filteredV.Validate(obj)
 		assert.NoError(t, filteredErr)
 	})
@@ -527,18 +522,18 @@ func TestValidatorRemoveProperties(t *testing.T) {
 			Data map[string]string
 		}
 
-		v := govy.New(
-			govy.ForMap(func(w withMap) map[string]string { return w.Data }).
-				WithName("data").
-				Rules(rules.MapMaxLength[map[string]string](1)),
-		)
+		mapProp := govy.ForMap(func(w withMap) map[string]string { return w.Data }).
+			WithName("data").
+			Rules(rules.MapMaxLength[map[string]string](1))
+
+		v := govy.New(mapProp)
 
 		obj := withMap{Data: map[string]string{"a": "1", "b": "2"}}
 
 		err := mustValidatorError(t, v.Validate(obj))
 		assert.Require(t, assert.Len(t, err.Errors, 1))
 
-		filteredV := v.RemoveProperties("data")
+		filteredV := v.RemovePropertiesByID(mapProp.GetID())
 		filteredErr := filteredV.Validate(obj)
 		assert.NoError(t, filteredErr)
 	})

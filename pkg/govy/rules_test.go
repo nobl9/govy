@@ -465,7 +465,7 @@ func TestPropertyRulesWithID(t *testing.T) {
 		assert.Equal(t, "custom-map-id", prop.GetID())
 	})
 
-	t.Run("use WithID for RemoveProperties", func(t *testing.T) {
+	t.Run("use WithID for RemovePropertiesByID", func(t *testing.T) {
 		fieldProp := govy.For(func(m mockStruct) string { return m.Field }).
 			WithName("field").
 			WithID("field-to-remove").
@@ -477,7 +477,7 @@ func TestPropertyRulesWithID(t *testing.T) {
 
 		v := govy.New(fieldProp, otherProp)
 
-		filteredV := v.RemoveProperties("field-to-remove")
+		filteredV := v.RemovePropertiesByID(fieldProp.GetID())
 
 		err := filteredV.Validate(mockStruct{Field: "wrong"})
 		assert.NoError(t, err)
@@ -488,10 +488,15 @@ func TestPropertyRulesWithID(t *testing.T) {
 			WithName("field").
 			Rules(rules.EQ("test"))
 
+		originalID := original.GetID()
 		modified := original.WithID("custom-id")
 
-		assert.Equal(t, "field", original.GetID())
+		// Original should still have its generated UUID
+		assert.Equal(t, originalID, original.GetID())
+		// Modified should have the custom ID
 		assert.Equal(t, "custom-id", modified.GetID())
+		// IDs should be different
+		assert.True(t, originalID != modified.GetID())
 	})
 }
 

@@ -19,14 +19,9 @@ func (i instanceID) WithUserSuppliedID(id string) instanceID {
 	return i
 }
 
-func (i instanceID) HasUserSuppliedID() bool {
-	return i.userSuppliedID != ""
-}
-
-func (i instanceID) GetUserSuppliedID() string {
-	return i.userSuppliedID
-}
-
-func (i instanceID) GetGeneratedID() string {
+func (i instanceID) GetID() string {
+	if i.userSuppliedID != "" {
+		return i.userSuppliedID
+	}
 	return i.generatedID
 }

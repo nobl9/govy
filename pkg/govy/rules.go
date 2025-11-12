@@ -167,10 +167,10 @@ func (r PropertyRules[T, P]) WithName(name string) PropertyRules[T, P] {
 // WithID sets a unique identifier for this [PropertyRules] instance.
 // The identifier can be used to:
 //   - Retrieve the property rules' ID via [PropertyRules.GetID]
-//   - Reference the property rules when using [Validator.RemoveProperties]
+//   - Reference the property rules when using [Validator.RemovePropertiesByID]
 //
 // This is useful when you want explicit control over identifiers
-// rather than relying on property names or auto-generated UUIDs.
+// rather than relying on auto-generated UUIDs.
 func (r PropertyRules[T, P]) WithID(id string) PropertyRules[T, P] {
 	r.id = r.id.WithUserSuppliedID(id)
 	return r
@@ -239,14 +239,7 @@ func (r PropertyRules[T, P]) Cascade(mode CascadeMode) PropertyRules[T, P] {
 //   - Property name (via [PropertyRules.WithName]) if set
 //   - Auto-generated UUID otherwise
 func (r PropertyRules[T, P]) GetID() string {
-	switch {
-	case r.id.HasUserSuppliedID():
-		return r.id.GetUserSuppliedID()
-	case r.name != "":
-		return r.name
-	default:
-		return r.id.GetGeneratedID()
-	}
+	return r.id.GetID()
 }
 
 // cascadeInternal is an internal wrapper around [PropertyRules.Cascade] which
