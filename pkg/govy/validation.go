@@ -21,6 +21,7 @@ type validatorInterface[T any] interface {
 // in an immutable fashion (no pointer receivers).
 type propertyRulesInterface[T any] interface {
 	validationInterface[T]
+	GetID() string
 	cascadeInternal(mode CascadeMode) propertyRulesInterface[T]
 	isPropertyRules()
 }

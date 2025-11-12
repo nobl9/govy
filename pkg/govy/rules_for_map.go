@@ -190,6 +190,11 @@ func (r PropertyRulesForMap[M, K, V, P]) Cascade(mode CascadeMode) PropertyRules
 	return r
 }
 
+// GetID => refer to [PropertyRules.GetID] documentation.
+func (r PropertyRulesForMap[M, K, V, P]) GetID() string {
+	return r.mapRules.GetID()
+}
+
 // cascadeInternal is an internal wrapper around [PropertyRulesForMap.Cascade] which
 // fulfills [propertyRulesInterface] interface.
 // If the [CascadeMode] is already set, it won't change it.

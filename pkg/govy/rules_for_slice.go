@@ -119,6 +119,11 @@ func (r PropertyRulesForSlice[S, T, P]) Cascade(mode CascadeMode) PropertyRulesF
 	return r
 }
 
+// GetID => refer to [PropertyRules.GetID] documentation.
+func (r PropertyRulesForSlice[S, T, P]) GetID() string {
+	return r.sliceRules.GetID()
+}
+
 // cascadeInternal is an internal wrapper around [PropertyRulesForSlice.Cascade] which
 // fulfills [propertyRulesInterface] interface.
 // If the [CascadeMode] is already set, it won't change it.
