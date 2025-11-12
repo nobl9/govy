@@ -101,6 +101,12 @@ func (r PropertyRulesForMap[M, K, V, P]) WithName(name string) PropertyRulesForM
 	return r
 }
 
+// WithID => refer to [PropertyRules.WithID] documentation.
+func (r PropertyRulesForMap[M, K, V, P]) WithID(id string) PropertyRulesForMap[M, K, V, P] {
+	r.mapRules = r.mapRules.WithID(id)
+	return r
+}
+
 // WithExamples => refer to [PropertyRules.WithExamples] documentation.
 func (r PropertyRulesForMap[M, K, V, P]) WithExamples(examples ...string) PropertyRulesForMap[M, K, V, P] {
 	r.mapRules = r.mapRules.WithExamples(examples...)
@@ -188,6 +194,11 @@ func (r PropertyRulesForMap[M, K, V, P]) Cascade(mode CascadeMode) PropertyRules
 	r.forValueRules = r.forValueRules.Cascade(mode)
 	r.forItemRules = r.forItemRules.Cascade(mode)
 	return r
+}
+
+// GetID => refer to [PropertyRules.GetID] documentation.
+func (r PropertyRulesForMap[M, K, V, P]) GetID() string {
+	return r.mapRules.GetID()
 }
 
 // cascadeInternal is an internal wrapper around [PropertyRulesForMap.Cascade] which

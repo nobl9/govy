@@ -15,6 +15,7 @@ func For[T, P any](getter PropertyGetter[T, P]) PropertyRules[T, P] {
 
 func forConstructor[T, P any](getter PropertyGetter[T, P], name string) PropertyRules[T, P] {
 	return PropertyRules[T, P]{
+		id:     newInstanceID(),
 		name:   name,
 		getter: func(parent P) (v T, err error) { return getter(parent), nil },
 	}
@@ -26,6 +27,7 @@ func forConstructor[T, P any](getter PropertyGetter[T, P], name string) Property
 // validation will not proceed.
 func ForPointer[T, P any](getter PropertyGetter[*T, P]) PropertyRules[T, P] {
 	return PropertyRules[T, P]{
+		id:   newInstanceID(),
 		name: inferName(),
 		getter: func(parent P) (indirect T, err error) {
 			ptr := getter(parent)
@@ -46,6 +48,7 @@ func ForPointer[T, P any](getter PropertyGetter[*T, P]) PropertyRules[T, P] {
 func Transform[T, N, P any](getter PropertyGetter[T, P], transform Transformer[T, N]) PropertyRules[N, P] {
 	typInfo := typeinfo.Get[T]()
 	return PropertyRules[N, P]{
+		id:   newInstanceID(),
 		name: inferName(),
 		transformGetter: func(parent P) (transformed N, original any, err error) {
 			v := getter(parent)
@@ -87,6 +90,7 @@ func (emptyErr) Error() string { return "" }
 // It is the middle-level building block of the validation process,
 // aggregated by [Validator] and aggregating [Rule].
 type PropertyRules[T, P any] struct {
+	id              instanceID
 	name            string
 	getter          internalPropertyGetter[T, P]
 	transformGetter internalTransformPropertyGetter[T, P]
@@ -160,6 +164,18 @@ func (r PropertyRules[T, P]) WithName(name string) PropertyRules[T, P] {
 	return r
 }
 
+// WithID sets a unique identifier for this [PropertyRules] instance.
+// The identifier can be used to:
+//   - Retrieve the property rules' ID via [PropertyRules.GetID]
+//   - Reference the property rules when using [Validator.RemovePropertiesByID]
+//
+// This is useful when you want explicit control over identifiers
+// rather than relying on auto-generated UUIDs.
+func (r PropertyRules[T, P]) WithID(id string) PropertyRules[T, P] {
+	r.id = r.id.WithUserSuppliedID(id)
+	return r
+}
+
 // WithExamples sets the examples for the property.
 func (r PropertyRules[T, P]) WithExamples(examples ...string) PropertyRules[T, P] {
 	r.examples = append(r.examples, examples...)
@@ -215,6 +231,15 @@ func (r PropertyRules[T, P]) HideValue() PropertyRules[T, P] {
 func (r PropertyRules[T, P]) Cascade(mode CascadeMode) PropertyRules[T, P] {
 	r.mode = mode
 	return r
+}
+
+// GetID returns an identifier for these property rules.
+// The identifier is resolved in the following priority order:
+//   - User-supplied ID if set
+//   - Property name (via [PropertyRules.WithName]) if set
+//   - Auto-generated UUID otherwise
+func (r PropertyRules[T, P]) GetID() string {
+	return r.id.GetID()
 }
 
 // cascadeInternal is an internal wrapper around [PropertyRules.Cascade] which

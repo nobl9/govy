@@ -2,18 +2,23 @@ package govy
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 )
 
 // New creates a new [Validator] aggregating the provided property rules.
 func New[T any](props ...propertyRulesInterface[T]) Validator[T] {
-	return Validator[T]{props: props}
+	return Validator[T]{
+		id:    newInstanceID(),
+		props: props,
+	}
 }
 
 // Validator is the top level validation entity.
 // It serves as an aggregator for [PropertyRules].
 // Typically, it represents a struct.
 type Validator[T any] struct {
+	id       instanceID
 	props    []propertyRulesInterface[T]
 	name     string
 	nameFunc func(value T) string
@@ -26,6 +31,18 @@ type Validator[T any] struct {
 func (v Validator[T]) WithName(name string) Validator[T] {
 	v.nameFunc = nil
 	v.name = name
+	return v
+}
+
+// WithID sets a unique identifier for this [Validator] instance.
+// The identifier can be used to:
+//   - Retrieve the validator's ID via [Validator.GetID]
+//   - Reference the validator when using [Validator.RemovePropertiesByID]
+//
+// This is useful when you want explicit control over identifiers
+// rather than relying on auto-generated UUIDs.
+func (v Validator[T]) WithID(id string) Validator[T] {
+	v.id = v.id.WithUserSuppliedID(id)
 	return v
 }
 
@@ -69,6 +86,41 @@ func (v Validator[T]) Cascade(mode CascadeMode) Validator[T] {
 	}
 	v.props = props
 	return v
+}
+
+// RemovePropertiesByID removes any [PropertyRules] or included [Validator]
+// which match the provided identifiers.
+// It returns a modified [Validator] instance without these rules,
+// the original [Validator] is not changed.
+//
+// Identifiers must be obtained using [PropertyRules.GetID] or [Validator.GetID].
+// Property names are not accepted as identifiers - you must use explicit IDs.
+//
+// The identifier returned by GetID follows this priority:
+//   - User-supplied ID (via [PropertyRules.WithID] or [Validator.WithID]) if set
+//   - Auto-generated UUID otherwise
+func (v Validator[T]) RemovePropertiesByID(ids ...string) Validator[T] {
+	if len(ids) == 0 {
+		return v
+	}
+	filtered := make([]propertyRulesInterface[T], 0, len(v.props))
+	for _, prop := range v.props {
+		if slices.Contains(ids, prop.GetID()) {
+			continue
+		}
+		filtered = append(filtered, prop)
+	}
+	v.props = filtered
+	return v
+}
+
+// GetID returns an identifier for this [Validator] instance.
+// The identifier is resolved in the following priority order:
+//   - User-supplied ID (via [Validator.WithID]) if set
+//   - Validator name (via [Validator.WithName]) if set
+//   - Auto-generated UUID otherwise
+func (v Validator[T]) GetID() string {
+	return v.id.GetID()
 }
 
 // Validate will first evaluate predicates before validating any rules.

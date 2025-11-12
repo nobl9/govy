@@ -1842,3 +1842,169 @@ func ExamplePlan_validation() {
 	// Output:
 	// predicates without description found at: validator level, $.name
 }
+
+// Sometimes you want to reuse a [govy.Validator] but exclude certain property rules.
+// This is particularly useful when you have a base validator that you want to customize
+// for different contexts without duplicating code.
+// Use [govy.Validator.RemovePropertiesByID] to filter out specific property rules by their identifiers.
+//
+// Property identifiers must be obtained using [PropertyRules.GetID] or explicitly set with [PropertyRules.WithID].
+// Property names are not accepted - you must use actual IDs.
+//
+// This example demonstrates how to create a base [govy.Validator] for [Teacher] and then
+// create specialized versions by removing certain validations using GetID().
+func ExampleValidator_RemovePropertiesByID() {
+	universityValidation := govy.New(
+		govy.For(func(u University) string { return u.Address }).
+			WithName("address").
+			Required(),
+	)
+
+	nameProp := govy.For(func(t Teacher) string { return t.Name }).
+		WithName("name").
+		Required().
+		Rules(
+			rules.StringNotEmpty(),
+			rules.OneOf("Jake", "George"))
+
+	ageProp := govy.For(func(t Teacher) time.Duration { return t.Age }).
+		WithName("age").
+		Rules(rules.GT(18 * year))
+
+	universityProp := govy.For(func(t Teacher) University { return t.University }).
+		WithName("university").
+		Include(universityValidation)
+
+	baseTeacherValidator := govy.New(
+		nameProp,
+		ageProp,
+		universityProp,
+	).WithName("Teacher")
+
+	relaxedTeacherValidator := baseTeacherValidator.RemovePropertiesByID(ageProp.GetID(), universityProp.GetID())
+
+	strictTeacher := Teacher{
+		Name: "John",
+		Age:  17 * year,
+		University: University{
+			Name:    "Poznan University of Technology",
+			Address: "",
+		},
+	}
+
+	relaxedTeacher := Teacher{
+		Name: "Jake",
+	}
+
+	err := baseTeacherValidator.Validate(strictTeacher)
+	if err != nil {
+		fmt.Printf("Base validator:\n%v\n\n", err)
+	}
+	err = relaxedTeacherValidator.Validate(strictTeacher)
+	if err != nil {
+		fmt.Printf("Relaxed validator with strict data:\n%v\n\n", err)
+	}
+	err = relaxedTeacherValidator.Validate(relaxedTeacher)
+	if err == nil {
+		fmt.Println("Relaxed validator passed!")
+	}
+
+	// Output:
+	// Base validator:
+	// Validation for Teacher has failed for the following properties:
+	//   - 'name' with value 'John':
+	//     - must be one of: Jake, George
+	//   - 'age' with value '148920h0m0s':
+	//     - should be greater than '157680h0m0s'
+	//   - 'university.address':
+	//     - property is required but was empty
+	//
+	// Relaxed validator with strict data:
+	// Validation for Teacher has failed for the following properties:
+	//   - 'name' with value 'John':
+	//     - must be one of: Jake, George
+	//
+	// Relaxed validator passed!
+}
+
+// You can retrieve the identifier of a [govy.Validator] or [govy.PropertyRules]
+// using the [govy.Validator.GetID] or [govy.PropertyRules.GetID] methods.
+// This is useful when you need to call [govy.Validator.RemovePropertiesByID] method
+// without hardcoding ID strings.
+//
+// The [govy.Validator.GetID] and [govy.PropertyRules.GetID] methods return:
+//   - User-supplied ID (via [govy.Validator.WithID] or [govy.PropertyRules.WithID]) if set
+//   - Auto-generated UUID otherwise
+//
+// This example demonstrates how to use GetID to dynamically remove properties.
+// Notice how there are two [govy.PropertyRules] for "name" - using explicit IDs
+// allows us to distinguish between them, which wouldn't be possible with name-based removal.
+func ExamplePropertyRules_GetID() {
+	universityValidator := govy.New(
+		govy.For(func(u University) string { return u.Address }).
+			WithName("address").
+			Required(),
+	).WithID("university-validator")
+
+	nameProperty := govy.For(func(t Teacher) string { return t.Name }).
+		WithName("name").
+		WithID("name-property").
+		Required()
+
+	namePropertyExtra := govy.For(func(t Teacher) string { return t.Name }).
+		WithName("name").
+		WithID("name-property-extra").
+		Required().
+		Rules(rules.OneOf("John", "George"))
+
+	ageProperty := govy.For(func(t Teacher) time.Duration { return t.Age }).
+		WithName("age").
+		WithID("age-property").
+		Rules(rules.GT(18 * year))
+
+	universityProperty := govy.For(func(t Teacher) University { return t.University }).
+		WithName("university").
+		WithID("university-property").
+		Include(universityValidator)
+
+	teacherValidator := govy.New(
+		nameProperty,
+		namePropertyExtra,
+		ageProperty,
+		universityProperty,
+	).WithName("Teacher").WithID("teacher-validator")
+
+	fmt.Println("Teacher validator ID:", teacherValidator.GetID())
+	fmt.Println("Name property ID:", nameProperty.GetID())
+	fmt.Println("Name property (extra) ID:", namePropertyExtra.GetID())
+	fmt.Println("Age property ID:", ageProperty.GetID())
+	fmt.Println("University property ID:", universityProperty.GetID())
+
+	relaxedValidator := teacherValidator.RemovePropertiesByID(
+		ageProperty.GetID(),
+		universityProperty.GetID(),
+		namePropertyExtra.GetID(),
+	)
+
+	teacher := Teacher{
+		Name: "Jake",
+		Age:  17 * year,
+		University: University{
+			Name:    "Poznan University of Technology",
+			Address: "",
+		},
+	}
+
+	err := relaxedValidator.Validate(teacher)
+	if err == nil {
+		fmt.Println("Relaxed validation passed!")
+	}
+
+	// Output:
+	// Teacher validator ID: teacher-validator
+	// Name property ID: name-property
+	// Name property (extra) ID: name-property-extra
+	// Age property ID: age-property
+	// University property ID: university-property
+	// Relaxed validation passed!
+}

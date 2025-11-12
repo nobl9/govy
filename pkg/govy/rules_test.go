@@ -422,6 +422,84 @@ func TestPropertyRules_InferName(t *testing.T) {
 	})
 }
 
+func TestPropertyRulesWithID(t *testing.T) {
+	type mockStruct struct {
+		Field string
+	}
+
+	t.Run("PropertyRules with custom ID", func(t *testing.T) {
+		prop := govy.For(func(m mockStruct) string { return m.Field }).
+			WithName("field").
+			WithID("custom-field-id").
+			Rules(rules.EQ("test"))
+
+		assert.Equal(t, "custom-field-id", prop.GetID())
+	})
+
+	t.Run("PropertyRules ID priority: custom ID over name", func(t *testing.T) {
+		prop := govy.For(func(m mockStruct) string { return m.Field }).
+			WithName("field").
+			WithID("custom-id").
+			Rules(rules.EQ("test"))
+
+		assert.Equal(t, "custom-id", prop.GetID())
+	})
+
+	t.Run("PropertyRulesForSlice with custom ID", func(t *testing.T) {
+		prop := govy.ForSlice(func(m mockStruct) []string { return []string{m.Field} }).
+			WithName("items").
+			WithID("custom-slice-id").
+			Rules(rules.SliceMaxLength[[]string](10))
+
+		assert.Equal(t, "custom-slice-id", prop.GetID())
+	})
+
+	t.Run("PropertyRulesForMap with custom ID", func(t *testing.T) {
+		prop := govy.ForMap(func(m mockStruct) map[string]string {
+			return map[string]string{"key": m.Field}
+		}).
+			WithName("data").
+			WithID("custom-map-id").
+			Rules(rules.MapMaxLength[map[string]string](10))
+
+		assert.Equal(t, "custom-map-id", prop.GetID())
+	})
+
+	t.Run("use WithID for RemovePropertiesByID", func(t *testing.T) {
+		fieldProp := govy.For(func(m mockStruct) string { return m.Field }).
+			WithName("field").
+			WithID("field-to-remove").
+			Rules(rules.EQ("expected"))
+
+		otherProp := govy.For(func(m mockStruct) string { return "value" }).
+			WithName("other").
+			Rules(rules.EQ("value"))
+
+		v := govy.New(fieldProp, otherProp)
+
+		filteredV := v.RemovePropertiesByID(fieldProp.GetID())
+
+		err := filteredV.Validate(mockStruct{Field: "wrong"})
+		assert.NoError(t, err)
+	})
+
+	t.Run("WithID creates a copy", func(t *testing.T) {
+		original := govy.For(func(m mockStruct) string { return m.Field }).
+			WithName("field").
+			Rules(rules.EQ("test"))
+
+		originalID := original.GetID()
+		modified := original.WithID("custom-id")
+
+		// Original should still have its generated UUID
+		assert.Equal(t, originalID, original.GetID())
+		// Modified should have the custom ID
+		assert.Equal(t, "custom-id", modified.GetID())
+		// IDs should be different
+		assert.True(t, originalID != modified.GetID())
+	})
+}
+
 func mustPropertyErrors(t *testing.T, err error) govy.PropertyErrors {
 	t.Helper()
 	return mustErrorType[govy.PropertyErrors](t, err)

@@ -72,6 +72,12 @@ func (r PropertyRulesForSlice[S, T, P]) WithName(name string) PropertyRulesForSl
 	return r
 }
 
+// WithID => refer to [PropertyRules.WithID] documentation.
+func (r PropertyRulesForSlice[S, T, P]) WithID(id string) PropertyRulesForSlice[S, T, P] {
+	r.sliceRules = r.sliceRules.WithID(id)
+	return r
+}
+
 // WithExamples => refer to [PropertyRules.WithExamples] documentation.
 func (r PropertyRulesForSlice[S, T, P]) WithExamples(examples ...string) PropertyRulesForSlice[S, T, P] {
 	r.sliceRules = r.sliceRules.WithExamples(examples...)
@@ -117,6 +123,11 @@ func (r PropertyRulesForSlice[S, T, P]) Cascade(mode CascadeMode) PropertyRulesF
 	r.sliceRules = r.sliceRules.Cascade(mode)
 	r.forEachRules = r.forEachRules.Cascade(mode)
 	return r
+}
+
+// GetID => refer to [PropertyRules.GetID] documentation.
+func (r PropertyRulesForSlice[S, T, P]) GetID() string {
+	return r.sliceRules.GetID()
 }
 
 // cascadeInternal is an internal wrapper around [PropertyRulesForSlice.Cascade] which
