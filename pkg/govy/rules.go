@@ -19,7 +19,7 @@ func For[T, P any](getter PropertyGetter[T, P]) PropertyRules[T, P] {
 // validation will not proceed.
 func ForPointer[T, P any](getter PropertyGetter[*T, P]) PropertyRules[T, P] {
 	return PropertyRules[T, P]{
-		nameFunc: getNameInferFunc(getCallersAndProgramCounter(4)),
+		nameFunc: getInferNameFunc(getCallersAndProgramCounter(4)),
 		getter: func(parent P) (indirect T, err error) {
 			ptr := getter(parent)
 			if ptr != nil {
@@ -39,7 +39,7 @@ func ForPointer[T, P any](getter PropertyGetter[*T, P]) PropertyRules[T, P] {
 func Transform[T, N, P any](getter PropertyGetter[T, P], transform Transformer[T, N]) PropertyRules[N, P] {
 	typInfo := typeinfo.Get[T]()
 	return PropertyRules[N, P]{
-		nameFunc: getNameInferFunc(getCallersAndProgramCounter(4)),
+		nameFunc: getInferNameFunc(getCallersAndProgramCounter(4)),
 		transformGetter: func(parent P) (transformed N, original any, err error) {
 			v := getter(parent)
 			if internal.IsEmpty(v) {
@@ -59,7 +59,7 @@ func Transform[T, N, P any](getter PropertyGetter[T, P], transform Transformer[T
 // It wraps the getter function in [internalPropertyGetter] and adds name inference.
 func forConstructor[T, P any](getter PropertyGetter[T, P]) PropertyRules[T, P] {
 	return PropertyRules[T, P]{
-		nameFunc: getNameInferFunc(getCallersAndProgramCounter(4)),
+		nameFunc: getInferNameFunc(getCallersAndProgramCounter(4)),
 		getter:   func(parent P) (v T, err error) { return getter(parent), nil },
 	}
 }
@@ -98,7 +98,7 @@ func (emptyErr) Error() string { return "" }
 // aggregated by [Validator] and aggregating [Rule].
 type PropertyRules[T, P any] struct {
 	name            string
-	nameFunc        internalNameInferFunc
+	nameFunc        internalInferNameFunc
 	getter          internalPropertyGetter[T, P]
 	transformGetter internalTransformPropertyGetter[T, P]
 	rules           []validationInterface[T]
@@ -107,7 +107,7 @@ type PropertyRules[T, P any] struct {
 	hideValue       bool
 	isPointer       bool
 	cascadeMode     CascadeMode
-	nameInferMode   NameInferMode
+	inferNameMode   InferNameMode
 	examples        []string
 	originalType    *typeinfo.TypeInfo
 
@@ -229,8 +229,12 @@ func (r PropertyRules[T, P]) Cascade(mode CascadeMode) PropertyRules[T, P] {
 	return r
 }
 
-func (r PropertyRules[T, P]) NameInferMode(mode NameInferMode) PropertyRules[T, P] {
-	r.nameInferMode = mode
+// InferName sets the [InferNameMode] for the property,
+// which controls if and how the property name is inferred.
+// If you manually provide a name using [PropertyRules.WithName]
+// this setting will have no effect, acting like [InferNameModeDisable].
+func (r PropertyRules[T, P]) InferName(mode InferNameMode) PropertyRules[T, P] {
+	r.inferNameMode = mode
 	return r
 }
 
@@ -244,11 +248,13 @@ func (r PropertyRules[T, P]) cascadeInternal(mode CascadeMode) propertyRulesInte
 	return r.Cascade(mode)
 }
 
-func (r PropertyRules[T, P]) nameInferModeInternal(mode NameInferMode) propertyRulesInterface[P] {
-	if r.nameInferMode != 0 {
+// cascadeInternal is an internal wrapper around [PropertyRules.InferName] which
+// fulfills [propertyRulesInterface] interface.
+func (r PropertyRules[T, P]) inferNameModeInternal(mode InferNameMode) propertyRulesInterface[P] {
+	if r.inferNameMode != 0 {
 		return r
 	}
-	return r.NameInferMode(mode)
+	return r.InferName(mode)
 }
 
 // plan constructs a validation plan for the property.
@@ -333,7 +339,7 @@ func (r PropertyRules[T, S]) getName() string {
 	case r.name != "":
 		return r.name
 	case r.nameFunc != nil:
-		return r.nameFunc(r.nameInferMode)
+		return r.nameFunc(r.inferNameMode)
 	default:
 		return ""
 	}

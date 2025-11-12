@@ -118,9 +118,9 @@ func (r PropertyRulesForSlice[S, T, P]) Cascade(mode CascadeMode) PropertyRulesF
 	return r
 }
 
-// NameInferMode => refer to [PropertyRules.NameInferMode] documentation.
-func (r PropertyRulesForSlice[S, T, P]) NameInferMode(mode NameInferMode) PropertyRulesForSlice[S, T, P] {
-	r.sliceRules = r.sliceRules.NameInferMode(mode)
+// InferName => refer to [PropertyRules.InferName] documentation.
+func (r PropertyRulesForSlice[S, T, P]) InferName(mode InferNameMode) PropertyRulesForSlice[S, T, P] {
+	r.sliceRules = r.sliceRules.InferName(mode)
 	return r
 }
 
@@ -134,8 +134,10 @@ func (r PropertyRulesForSlice[S, T, P]) cascadeInternal(mode CascadeMode) proper
 	return r.Cascade(mode)
 }
 
-func (r PropertyRulesForSlice[S, T, P]) nameInferModeInternal(mode NameInferMode) propertyRulesInterface[P] {
-	return r.NameInferMode(mode)
+// cascadeInternal is an internal wrapper around [PropertyRulesForSlice.InferName] which
+// fulfills [propertyRulesInterface] interface.
+func (r PropertyRulesForSlice[S, T, P]) inferNameModeInternal(mode InferNameMode) propertyRulesInterface[P] {
+	return r.InferName(mode)
 }
 
 // plan generates a validation plan for the property rules.

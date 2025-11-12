@@ -1,4 +1,4 @@
-package nameinfer
+package infername
 
 import "testing"
 

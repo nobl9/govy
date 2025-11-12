@@ -189,8 +189,9 @@ func (r PropertyRulesForMap[M, K, V, P]) Cascade(mode CascadeMode) PropertyRules
 	return r
 }
 
-func (r PropertyRulesForMap[M, K, V, P]) NameInferMode(mode NameInferMode) PropertyRulesForMap[M, K, V, P] {
-	r.mapRules = r.mapRules.NameInferMode(mode)
+// InferName => refer to [PropertyRules.InferName] documentation.
+func (r PropertyRulesForMap[M, K, V, P]) InferName(mode InferNameMode) PropertyRulesForMap[M, K, V, P] {
+	r.mapRules = r.mapRules.InferName(mode)
 	return r
 }
 
@@ -204,8 +205,10 @@ func (r PropertyRulesForMap[M, K, V, P]) cascadeInternal(mode CascadeMode) prope
 	return r.Cascade(mode)
 }
 
-func (r PropertyRulesForMap[M, K, V, P]) nameInferModeInternal(mode NameInferMode) propertyRulesInterface[P] {
-	return r.NameInferMode(mode)
+// cascadeInternal is an internal wrapper around [PropertyRulesForMap.InferName] which
+// fulfills [propertyRulesInterface] interface.
+func (r PropertyRulesForMap[M, K, V, P]) inferNameModeInternal(mode InferNameMode) propertyRulesInterface[P] {
+	return r.InferName(mode)
 }
 
 // plan constructs a validation plan for the property rules.

@@ -1,4 +1,4 @@
-package nameinfer
+package infername
 
 import (
 	"fmt"
@@ -77,9 +77,9 @@ func InferNameFromFile(fileSet *token.FileSet, pkg *packages.Package, f *ast.Fil
 	return finder.FindName(getterNode, nil)
 }
 
-// NameInferDefaultFunc is the default function for inferring field names from struct tags.
+// InferNameDefaultFunc is the default function for inferring field names from struct tags.
 // It looks for json and yaml tags, preferring json if both are set.
-func NameInferDefaultFunc(fieldName, tagValue string) string {
+func InferNameDefaultFunc(fieldName, tagValue string) string {
 	for _, tagKey := range []string{"json", "yaml"} {
 		tagValues := strings.Split(
 			reflect.StructTag(strings.Trim(tagValue, "`")).Get(tagKey),
@@ -252,7 +252,7 @@ func (n nameFinder) findNameInSelectorExpr(
 		if childStructType, isStruct := n.findStructTypeInStructField(field); isStruct {
 			structType = childStructType
 		}
-		fieldName = NameInferDefaultFunc(fieldName, tagValue)
+		fieldName = InferNameDefaultFunc(fieldName, tagValue)
 		if name == "" {
 			return fieldName, structType
 		}

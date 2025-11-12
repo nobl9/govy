@@ -22,7 +22,7 @@ type validatorInterface[T any] interface {
 type propertyRulesInterface[T any] interface {
 	validationInterface[T]
 	cascadeInternal(mode CascadeMode) propertyRulesInterface[T]
-	nameInferModeInternal(mode NameInferMode) propertyRulesInterface[T]
+	inferNameModeInternal(mode InferNameMode) propertyRulesInterface[T]
 	isPropertyRules()
 }
 

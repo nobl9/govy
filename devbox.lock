@@ -2,8 +2,8 @@
   "lockfile_version": "1",
   "packages": {
     "cspell@9.2.1": {
-      "last_modified": "2025-10-10T13:35:32Z",
-      "resolved": "github:NixOS/nixpkgs/870493f9a8cb0b074ae5b411b2f232015db19a65#cspell",
+      "last_modified": "2025-10-30T18:40:41Z",
+      "resolved": "github:NixOS/nixpkgs/45ebaee5d90bab997812235564af4cf5107bde89#cspell",
       "source": "devbox-search",
       "version": "9.2.1",
       "systems": {
@@ -11,41 +11,41 @@
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/jfv7ajnjvjgphbmw2i577n41wc2w73cg-cspell-9.2.1",
+              "path": "/nix/store/nah077slwpsf5s333f6a1vclpxhlh6yn-cspell-9.2.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/jfv7ajnjvjgphbmw2i577n41wc2w73cg-cspell-9.2.1"
+          "store_path": "/nix/store/nah077slwpsf5s333f6a1vclpxhlh6yn-cspell-9.2.1"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/5c4slhhrlcjxzimfzaqb2gp0d54bgf1w-cspell-9.2.1",
+              "path": "/nix/store/drkapf995prf96j597wp5756ic407bxb-cspell-9.2.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/5c4slhhrlcjxzimfzaqb2gp0d54bgf1w-cspell-9.2.1"
+          "store_path": "/nix/store/drkapf995prf96j597wp5756ic407bxb-cspell-9.2.1"
         },
         "x86_64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/20k7f35cgkc6akarp5dblp80i8in2cxw-cspell-9.2.1",
+              "path": "/nix/store/xp9j4i3ybw792vm4zyxc44rq2594wf11-cspell-9.2.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/20k7f35cgkc6akarp5dblp80i8in2cxw-cspell-9.2.1"
+          "store_path": "/nix/store/xp9j4i3ybw792vm4zyxc44rq2594wf11-cspell-9.2.1"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/fq35ck51x9ww73bvb42q55yxyl8bxswg-cspell-9.2.1",
+              "path": "/nix/store/8viv2x7yn1k4vhhr5s4w69bmgm7bbvh2-cspell-9.2.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/fq35ck51x9ww73bvb42q55yxyl8bxswg-cspell-9.2.1"
+          "store_path": "/nix/store/8viv2x7yn1k4vhhr5s4w69bmgm7bbvh2-cspell-9.2.1"
         }
       }
     },
@@ -97,51 +97,51 @@
         }
       }
     },
-    "golangci-lint@2.5.0": {
-      "last_modified": "2025-10-07T08:41:47Z",
-      "resolved": "github:NixOS/nixpkgs/bce5fe2bb998488d8e7e7856315f90496723793c#golangci-lint",
+    "golangci-lint@2.6.0": {
+      "last_modified": "2025-10-30T18:40:41Z",
+      "resolved": "github:NixOS/nixpkgs/45ebaee5d90bab997812235564af4cf5107bde89#golangci-lint",
       "source": "devbox-search",
-      "version": "2.5.0",
+      "version": "2.6.0",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/15bzlcc1h11sv9vwawrnfcw0avn3nhlw-golangci-lint-2.5.0",
+              "path": "/nix/store/3d9s59vm4hjgavsnfkd18p5krry20fgv-golangci-lint-2.6.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/15bzlcc1h11sv9vwawrnfcw0avn3nhlw-golangci-lint-2.5.0"
+          "store_path": "/nix/store/3d9s59vm4hjgavsnfkd18p5krry20fgv-golangci-lint-2.6.0"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/60qpwfy5bac8lflw12kffxdhvvylsr4k-golangci-lint-2.5.0",
+              "path": "/nix/store/2yk0xhvyvx5f2x41wnlx5n9hijvb2xyv-golangci-lint-2.6.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/60qpwfy5bac8lflw12kffxdhvvylsr4k-golangci-lint-2.5.0"
+          "store_path": "/nix/store/2yk0xhvyvx5f2x41wnlx5n9hijvb2xyv-golangci-lint-2.6.0"
         },
         "x86_64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/laxn1i91p32i319i5ixslxz4bl451hvq-golangci-lint-2.5.0",
+              "path": "/nix/store/573khksn3wshypg14xx9i3fy0xn2iwzj-golangci-lint-2.6.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/laxn1i91p32i319i5ixslxz4bl451hvq-golangci-lint-2.5.0"
+          "store_path": "/nix/store/573khksn3wshypg14xx9i3fy0xn2iwzj-golangci-lint-2.6.0"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/s95zr6py9ppj3hpm295mdzs40q59177p-golangci-lint-2.5.0",
+              "path": "/nix/store/gqgzprwh1lpfkvwcyb7z2zn2higx445w-golangci-lint-2.6.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/s95zr6py9ppj3hpm295mdzs40q59177p-golangci-lint-2.5.0"
+          "store_path": "/nix/store/gqgzprwh1lpfkvwcyb7z2zn2higx445w-golangci-lint-2.6.0"
         }
       }
     },
@@ -194,8 +194,8 @@
       }
     },
     "gotools@0.34.0": {
-      "last_modified": "2025-06-17T01:11:27Z",
-      "resolved": "github:NixOS/nixpkgs/c539ae8d21e49776966d714f82fba33b1fca78bc#gotools",
+      "last_modified": "2025-10-22T20:59:19Z",
+      "resolved": "github:NixOS/nixpkgs/01b6809f7f9d1183a2b3e081f0a1e6f8f415cb09#gotools",
       "source": "devbox-search",
       "version": "0.34.0",
       "systems": {
@@ -203,47 +203,47 @@
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/nfzm3xhkpy4hy2by3rkqigfsr7gi6ask-gotools-0.34.0",
+              "path": "/nix/store/32rb5avsad08bkcxpjbhcr8n7gjzsz1a-gotools-0.34.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/nfzm3xhkpy4hy2by3rkqigfsr7gi6ask-gotools-0.34.0"
+          "store_path": "/nix/store/32rb5avsad08bkcxpjbhcr8n7gjzsz1a-gotools-0.34.0"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/qcybjhya89vk0sbvx17y2cy26hz5cnw5-gotools-0.34.0",
+              "path": "/nix/store/9ypq7cwvyv7zdm63fb0g0hzdvmk8pnx9-gotools-0.34.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/qcybjhya89vk0sbvx17y2cy26hz5cnw5-gotools-0.34.0"
+          "store_path": "/nix/store/9ypq7cwvyv7zdm63fb0g0hzdvmk8pnx9-gotools-0.34.0"
         },
         "x86_64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/z93y0jyhb42ad47x82669x682p4shljv-gotools-0.34.0",
+              "path": "/nix/store/07yyxbbpql5ppx8kxv81c28yqwm6pi37-gotools-0.34.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/z93y0jyhb42ad47x82669x682p4shljv-gotools-0.34.0"
+          "store_path": "/nix/store/07yyxbbpql5ppx8kxv81c28yqwm6pi37-gotools-0.34.0"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/0286ripm24a4dl0rq5znxfna7nssnkaq-gotools-0.34.0",
+              "path": "/nix/store/pydkhsylb9n1dwjn78j8gnvg9hbrgza3-gotools-0.34.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/0286ripm24a4dl0rq5znxfna7nssnkaq-gotools-0.34.0"
+          "store_path": "/nix/store/pydkhsylb9n1dwjn78j8gnvg9hbrgza3-gotools-0.34.0"
         }
       }
     },
     "govulncheck@1.1.4": {
-      "last_modified": "2025-05-06T08:06:31Z",
-      "resolved": "github:NixOS/nixpkgs/1cb1c02a6b1b7cf67e3d7731cbbf327a53da9679#govulncheck",
+      "last_modified": "2025-10-22T20:59:19Z",
+      "resolved": "github:NixOS/nixpkgs/01b6809f7f9d1183a2b3e081f0a1e6f8f415cb09#govulncheck",
       "source": "devbox-search",
       "version": "1.1.4",
       "systems": {
@@ -251,47 +251,47 @@
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/iimidywpxf9sj458la3f0iczczzxihv4-govulncheck-1.1.4",
+              "path": "/nix/store/d98frya3iv286mdg6fb4d2qgqs36ryli-govulncheck-1.1.4",
               "default": true
             }
           ],
-          "store_path": "/nix/store/iimidywpxf9sj458la3f0iczczzxihv4-govulncheck-1.1.4"
+          "store_path": "/nix/store/d98frya3iv286mdg6fb4d2qgqs36ryli-govulncheck-1.1.4"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/nd78h9zfv8gi0rd5zq6qln392jjd7kqk-govulncheck-1.1.4",
+              "path": "/nix/store/vzxhv5yf0r89hlvncb4pmmcdzrp4snj1-govulncheck-1.1.4",
               "default": true
             }
           ],
-          "store_path": "/nix/store/nd78h9zfv8gi0rd5zq6qln392jjd7kqk-govulncheck-1.1.4"
+          "store_path": "/nix/store/vzxhv5yf0r89hlvncb4pmmcdzrp4snj1-govulncheck-1.1.4"
         },
         "x86_64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/fb3m8b0wf2pq656pkwskm0dps35a9nzv-govulncheck-1.1.4",
+              "path": "/nix/store/2nq5v1mj29kzfbyyl17ynvgnaprqcc4z-govulncheck-1.1.4",
               "default": true
             }
           ],
-          "store_path": "/nix/store/fb3m8b0wf2pq656pkwskm0dps35a9nzv-govulncheck-1.1.4"
+          "store_path": "/nix/store/2nq5v1mj29kzfbyyl17ynvgnaprqcc4z-govulncheck-1.1.4"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/cn8gcpsyw1l3ap5lznddfarylaz853dq-govulncheck-1.1.4",
+              "path": "/nix/store/nfvnqqylsv45fd7qi5ip5r0apblkpgg1-govulncheck-1.1.4",
               "default": true
             }
           ],
-          "store_path": "/nix/store/cn8gcpsyw1l3ap5lznddfarylaz853dq-govulncheck-1.1.4"
+          "store_path": "/nix/store/nfvnqqylsv45fd7qi5ip5r0apblkpgg1-govulncheck-1.1.4"
         }
       }
     },
     "markdownlint-cli@0.45.0": {
-      "last_modified": "2025-10-07T08:41:47Z",
-      "resolved": "github:NixOS/nixpkgs/bce5fe2bb998488d8e7e7856315f90496723793c#markdownlint-cli",
+      "last_modified": "2025-10-22T20:59:19Z",
+      "resolved": "github:NixOS/nixpkgs/01b6809f7f9d1183a2b3e081f0a1e6f8f415cb09#markdownlint-cli",
       "source": "devbox-search",
       "version": "0.45.0",
       "systems": {
@@ -299,41 +299,41 @@
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/wvm4vma53pwzhxsd03fjwcapfqgrls2c-markdownlint-cli-0.45.0",
+              "path": "/nix/store/n8r26agrzpfcfq1h290ng32a9c2vibd4-markdownlint-cli-0.45.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/wvm4vma53pwzhxsd03fjwcapfqgrls2c-markdownlint-cli-0.45.0"
+          "store_path": "/nix/store/n8r26agrzpfcfq1h290ng32a9c2vibd4-markdownlint-cli-0.45.0"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/vryz6yihgm5n5sjgwmh77bm9anwsv2pf-markdownlint-cli-0.45.0",
+              "path": "/nix/store/8bj392k642g6dip1mlw330vs2v9y7nl0-markdownlint-cli-0.45.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/vryz6yihgm5n5sjgwmh77bm9anwsv2pf-markdownlint-cli-0.45.0"
+          "store_path": "/nix/store/8bj392k642g6dip1mlw330vs2v9y7nl0-markdownlint-cli-0.45.0"
         },
         "x86_64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/8r3hv9i2k3j9r08i5k97pwmmiiqh6m4n-markdownlint-cli-0.45.0",
+              "path": "/nix/store/idp6m459vvg7h3pq33w0728qs5qmp0zh-markdownlint-cli-0.45.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/8r3hv9i2k3j9r08i5k97pwmmiiqh6m4n-markdownlint-cli-0.45.0"
+          "store_path": "/nix/store/idp6m459vvg7h3pq33w0728qs5qmp0zh-markdownlint-cli-0.45.0"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/j7wws488qny8pmh3gvj43lyr8xv3crd9-markdownlint-cli-0.45.0",
+              "path": "/nix/store/f0inncvh6l700ni1kpbyrwk8na398hna-markdownlint-cli-0.45.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/j7wws488qny8pmh3gvj43lyr8xv3crd9-markdownlint-cli-0.45.0"
+          "store_path": "/nix/store/f0inncvh6l700ni1kpbyrwk8na398hna-markdownlint-cli-0.45.0"
         }
       }
     }

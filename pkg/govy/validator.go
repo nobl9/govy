@@ -50,10 +50,12 @@ func (v Validator[T]) Cascade(mode CascadeMode) Validator[T] {
 	return v
 }
 
-func (v Validator[T]) NameInferMode(mode NameInferMode) Validator[T] {
+// InferName sets the [InferNameMode] for the validator,
+// which controls the name inference logic for validation rules.
+func (v Validator[T]) InferName(mode InferNameMode) Validator[T] {
 	props := make([]propertyRulesInterface[T], 0, len(v.props))
 	for _, prop := range v.props {
-		props = append(props, prop.nameInferModeInternal(mode))
+		props = append(props, prop.inferNameModeInternal(mode))
 	}
 	v.props = props
 	return v

@@ -433,15 +433,15 @@ func TestPropertyRulesForMap(t *testing.T) {
 }
 
 func TestPropertyRulesForMap_InferName(t *testing.T) {
-	govyconfig.SetNameInferIncludeTestFiles(true)
-	defer govyconfig.SetNameInferIncludeTestFiles(false)
+	govyconfig.SetInferNameIncludeTestFiles(true)
+	defer govyconfig.SetInferNameIncludeTestFiles(false)
 
 	type Teacher struct {
 		Students map[string]int `json:"students"`
 	}
 
 	r := govy.ForMap(func(t Teacher) map[string]int { return t.Students }).
-		NameInferMode(govy.NameInferModeRuntime).
+		InferName(govy.InferNameModeRuntime).
 		RulesForKeys(rules.EQ("John"))
 	errs := mustPropertyErrors(t, r.Validate(Teacher{Students: map[string]int{"Luke": 35}}))
 	assert.Len(t, errs, 1)

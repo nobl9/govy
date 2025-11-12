@@ -301,8 +301,8 @@ func TestTransform(t *testing.T) {
 }
 
 func TestPropertyRules_InferName(t *testing.T) {
-	govyconfig.SetNameInferIncludeTestFiles(true)
-	defer govyconfig.SetNameInferIncludeTestFiles(false)
+	govyconfig.SetInferNameIncludeTestFiles(true)
+	defer govyconfig.SetInferNameIncludeTestFiles(false)
 
 	type Age struct {
 		Years int `json:"years"`
@@ -319,7 +319,7 @@ func TestPropertyRules_InferName(t *testing.T) {
 
 	t.Run("inline getter", func(t *testing.T) {
 		r := govy.For(func(t Teacher) string { return t.Name }).
-			NameInferMode(govy.NameInferModeRuntime).
+			InferName(govy.InferNameModeRuntime).
 			Rules(rules.EQ("John"))
 		errs := mustPropertyErrors(t, r.Validate(Teacher{Name: "Luke"}))
 		assert.Len(t, errs, 1)
@@ -328,7 +328,7 @@ func TestPropertyRules_InferName(t *testing.T) {
 	t.Run("selector expression getter", func(t *testing.T) {
 		r := govy.
 			For(func(t Teacher) string { return t.Name }).
-			NameInferMode(govy.NameInferModeRuntime).
+			InferName(govy.InferNameModeRuntime).
 			Rules(rules.EQ("John"))
 		errs := mustPropertyErrors(t, r.Validate(Teacher{Name: "Luke"}))
 		assert.Len(t, errs, 1)
@@ -337,7 +337,7 @@ func TestPropertyRules_InferName(t *testing.T) {
 	t.Run("nested selector expression getter", func(t *testing.T) {
 		r := govy.
 			For(func(t Teacher) int { return t.Details.Age.Years }).
-			NameInferMode(govy.NameInferModeRuntime).
+			InferName(govy.InferNameModeRuntime).
 			Rules(rules.EQ(29))
 		errs := mustPropertyErrors(t, r.Validate(Teacher{Name: "Luke", Details: Details{Age: Age{Years: 30}}}))
 		assert.Len(t, errs, 1)
@@ -349,7 +349,7 @@ func TestPropertyRules_InferName(t *testing.T) {
 				teacherName := t.Name
 				return teacherName
 			}).
-			NameInferMode(govy.NameInferModeRuntime).
+			InferName(govy.InferNameModeRuntime).
 			Rules(rules.EQ("John"))
 		errs := mustPropertyErrors(t, r.Validate(Teacher{Name: "Luke"}))
 		assert.Len(t, errs, 1)
@@ -361,7 +361,7 @@ func TestPropertyRules_InferName(t *testing.T) {
 				teacherAge := t.Details.Age.Years
 				return teacherAge
 			}).
-			NameInferMode(govy.NameInferModeRuntime).
+			InferName(govy.InferNameModeRuntime).
 			Rules(rules.EQ(29))
 		errs := mustPropertyErrors(t, r.Validate(Teacher{Name: "Luke", Details: Details{Age: Age{Years: 30}}}))
 		assert.Len(t, errs, 1)
@@ -374,7 +374,7 @@ func TestPropertyRules_InferName(t *testing.T) {
 		}
 		r := govy.
 			For(getter).
-			NameInferMode(govy.NameInferModeRuntime).
+			InferName(govy.InferNameModeRuntime).
 			Rules(rules.EQ(29))
 		errs := mustPropertyErrors(t, r.Validate(Teacher{Name: "Luke", Details: Details{Age: Age{Years: 30}}}))
 		assert.Len(t, errs, 1)
@@ -383,7 +383,7 @@ func TestPropertyRules_InferName(t *testing.T) {
 	t.Run("pointer", func(t *testing.T) {
 		r := govy.
 			For(func(t Teacher) *string { return t.Remarks }).
-			NameInferMode(govy.NameInferModeRuntime).
+			InferName(govy.InferNameModeRuntime).
 			Rules(rules.EQ(ptr("No remarks")))
 		errs := mustPropertyErrors(t, r.Validate(Teacher{Name: "Luke", Remarks: ptr("Some remarks")}))
 		assert.Len(t, errs, 1)
@@ -397,7 +397,7 @@ func TestPropertyRules_InferName(t *testing.T) {
 				}
 				return t.Remarks
 			}).
-			NameInferMode(govy.NameInferModeRuntime).
+			InferName(govy.InferNameModeRuntime).
 			Rules(rules.EQ(ptr("No remarks")))
 		errs := mustPropertyErrors(t, r.Validate(Teacher{Name: "Luke", Remarks: ptr("Some remarks")}))
 		assert.Len(t, errs, 1)
@@ -411,7 +411,7 @@ func TestPropertyRules_InferName(t *testing.T) {
 				}
 				return nil
 			}).
-			NameInferMode(govy.NameInferModeRuntime).
+			InferName(govy.InferNameModeRuntime).
 			Rules(rules.EQ(ptr("No remarks")))
 		errs := mustPropertyErrors(t, r.Validate(Teacher{Name: "Luke", Remarks: ptr("Some remarks")}))
 		assert.Len(t, errs, 1)
@@ -420,7 +420,7 @@ func TestPropertyRules_InferName(t *testing.T) {
 	t.Run("no json tag", func(t *testing.T) {
 		r := govy.
 			For(func(t Teacher) string { return t.Surname }).
-			NameInferMode(govy.NameInferModeRuntime).
+			InferName(govy.InferNameModeRuntime).
 			Rules(rules.EQ("Cormack"))
 		errs := mustPropertyErrors(t, r.Validate(Teacher{Surname: "Ellis"}))
 		assert.Len(t, errs, 1)
