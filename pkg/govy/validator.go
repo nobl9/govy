@@ -2,6 +2,7 @@ package govy
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 )
 
@@ -81,15 +82,7 @@ func (v Validator[T]) RemovePropertiesByName(names ...string) Validator[T] {
 	}
 	filtered := make([]propertyRulesInterface[T], 0, len(v.props))
 	for _, prop := range v.props {
-		propName := prop.getName()
-		found := false
-		for _, name := range names {
-			if propName == name {
-				found = true
-				break
-			}
-		}
-		if !found {
+		if !slices.Contains(names, prop.getName()) {
 			filtered = append(filtered, prop)
 		}
 	}
