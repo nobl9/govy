@@ -71,6 +71,32 @@ func (v Validator[T]) Cascade(mode CascadeMode) Validator[T] {
 	return v
 }
 
+// RemovePropertiesByName removes any [PropertyRules] or included [Validator]
+// which match the provided property names.
+// It returns a modified [Validator] instance without these rules,
+// the original [Validator] is not changed.
+func (v Validator[T]) RemovePropertiesByName(names ...string) Validator[T] {
+	if len(names) == 0 {
+		return v
+	}
+	filtered := make([]propertyRulesInterface[T], 0, len(v.props))
+	for _, prop := range v.props {
+		propName := prop.getName()
+		found := false
+		for _, name := range names {
+			if propName == name {
+				found = true
+				break
+			}
+		}
+		if !found {
+			filtered = append(filtered, prop)
+		}
+	}
+	v.props = filtered
+	return v
+}
+
 // Validate will first evaluate predicates before validating any rules.
 // If any predicate does not pass the validation won't be executed (returns nil).
 // All errors returned by property rules will be aggregated and wrapped in [ValidatorError].

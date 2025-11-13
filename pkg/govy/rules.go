@@ -310,5 +310,10 @@ func newRequiredError() *RuleError {
 	)
 }
 
+// getName returns the name of the property.
+func (r PropertyRules[T, P]) getName() string {
+	return r.name
+}
+
 // isPropertyRules implements [propertyRulesInterface].
 func (r PropertyRules[T, P]) isPropertyRules() {}
