@@ -305,6 +305,129 @@ func TestValidatorCascade(t *testing.T) {
 	}
 }
 
+func TestValidatorRemovePropertiesByName(t *testing.T) {
+	t.Run("remove single property by name", func(t *testing.T) {
+		v := govy.New(
+			govy.For(func(m mockValidatorStruct) string { return m.Field }).
+				WithName("field").
+				Rules(rules.EQ("test")),
+			govy.For(func(m mockValidatorStruct) string { return m.Field }).
+				WithName("other").
+				Rules(rules.EQ("invalid")),
+		)
+		err := v.Validate(mockValidatorStruct{Field: "invalid"})
+		assert.Error(t, err)
+
+		modified := v.RemovePropertiesByName("field")
+		err = modified.Validate(mockValidatorStruct{Field: "invalid"})
+		assert.NoError(t, err)
+	})
+
+	t.Run("remove multiple properties by name", func(t *testing.T) {
+		v := govy.New(
+			govy.For(func(m mockValidatorStruct) string { return m.Field }).
+				WithName("field1").
+				Rules(rules.EQ("test")),
+			govy.For(func(m mockValidatorStruct) string { return m.Field }).
+				WithName("field2").
+				Rules(rules.EQ("test")),
+			govy.For(func(m mockValidatorStruct) string { return m.Field }).
+				WithName("field3").
+				Rules(rules.EQ("valid")),
+		)
+		err := v.Validate(mockValidatorStruct{Field: "valid"})
+		assert.Error(t, err)
+
+		modified := v.RemovePropertiesByName("field1", "field2")
+		err = modified.Validate(mockValidatorStruct{Field: "valid"})
+		assert.NoError(t, err)
+	})
+
+	t.Run("remove all properties", func(t *testing.T) {
+		v := govy.New(
+			govy.For(func(m mockValidatorStruct) string { return m.Field }).
+				WithName("field1").
+				Rules(rules.EQ("test")),
+			govy.For(func(m mockValidatorStruct) string { return m.Field }).
+				WithName("field2").
+				Rules(rules.EQ("test")),
+		)
+		err := v.Validate(mockValidatorStruct{Field: "anything"})
+		assert.Error(t, err)
+
+		modified := v.RemovePropertiesByName("field1", "field2")
+		err = modified.Validate(mockValidatorStruct{Field: "anything"})
+		assert.NoError(t, err)
+	})
+
+	t.Run("remove non-existent property", func(t *testing.T) {
+		v := govy.New(
+			govy.For(func(m mockValidatorStruct) string { return m.Field }).
+				WithName("field").
+				Rules(rules.EQ("test")),
+		)
+		modified := v.RemovePropertiesByName("nonexistent")
+		err := modified.Validate(mockValidatorStruct{Field: "invalid"})
+		assert.Error(t, err)
+	})
+
+	t.Run("remove with empty names slice", func(t *testing.T) {
+		v := govy.New(
+			govy.For(func(m mockValidatorStruct) string { return m.Field }).
+				WithName("field").
+				Rules(rules.EQ("test")),
+		)
+		modified := v.RemovePropertiesByName()
+		err := modified.Validate(mockValidatorStruct{Field: "invalid"})
+		assert.Error(t, err)
+	})
+
+	t.Run("original validator is unchanged", func(t *testing.T) {
+		original := govy.New(
+			govy.For(func(m mockValidatorStruct) string { return m.Field }).
+				WithName("field").
+				Rules(rules.EQ("test")),
+		)
+		modified := original.RemovePropertiesByName("field")
+
+		errOriginal := original.Validate(mockValidatorStruct{Field: "invalid"})
+		assert.Error(t, errOriginal)
+
+		errModified := modified.Validate(mockValidatorStruct{Field: "invalid"})
+		assert.NoError(t, errModified)
+	})
+
+	t.Run("remove slice property rules", func(t *testing.T) {
+		v := govy.New(
+			govy.ForSlice(func(m mockValidatorStruct) []string { return []string{m.Field} }).
+				WithName("items").
+				Rules(rules.SliceMaxLength[[]string](0)),
+		)
+		err := v.Validate(mockValidatorStruct{Field: "test"})
+		assert.Error(t, err)
+
+		modified := v.RemovePropertiesByName("items")
+		err = modified.Validate(mockValidatorStruct{Field: "test"})
+		assert.NoError(t, err)
+	})
+
+	t.Run("remove map property rules", func(t *testing.T) {
+		v := govy.New(
+			govy.ForMap(func(m mockValidatorStruct) map[string]string {
+				return map[string]string{"key": m.Field}
+			}).
+				WithName("mapping").
+				Rules(rules.MapMaxLength[map[string]string](0)),
+		)
+		err := v.Validate(mockValidatorStruct{Field: "test"})
+		assert.Error(t, err)
+
+		modified := v.RemovePropertiesByName("mapping")
+		err = modified.Validate(mockValidatorStruct{Field: "test"})
+		assert.NoError(t, err)
+	})
+}
+
 func mustValidatorError(t *testing.T, err error) *govy.ValidatorError {
 	t.Helper()
 	return mustErrorType[*govy.ValidatorError](t, err)

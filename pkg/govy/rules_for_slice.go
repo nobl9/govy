@@ -144,5 +144,10 @@ func (r PropertyRulesForSlice[S, T, P]) getJSONPathForIndex(index int) string {
 	return jsonpath.JoinArray(r.sliceRules.name, jsonpath.NewArrayIndex(index))
 }
 
+// getName returns the name of the property.
+func (r PropertyRulesForSlice[S, T, P]) getName() string {
+	return r.sliceRules.getName()
+}
+
 // isPropertyRules implements [propertyRulesInterface].
 func (r PropertyRulesForSlice[S, T, P]) isPropertyRules() {}

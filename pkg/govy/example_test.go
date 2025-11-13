@@ -1842,3 +1842,35 @@ func ExamplePlan_validation() {
 	// Output:
 	// predicates without description found at: validator level, $.name
 }
+
+// This example demonstrates how to remove specific properties from a [govy.Validator] by their names.
+// This is useful when you want to create a modified validator without certain rules.
+func ExampleValidator_RemovePropertiesByName() {
+	baseValidator := govy.New(
+		govy.For(func(t Teacher) string { return t.Name }).
+			WithName("name").
+			Rules(rules.StringNotEmpty()),
+		govy.For(func(t Teacher) time.Duration { return t.Age }).
+			WithName("age").
+			Rules(rules.GT(time.Duration(0))),
+	)
+
+	teacher := Teacher{Name: "John", Age: -1}
+
+	// Base validator fails because age is negative
+	err := baseValidator.Validate(teacher)
+	if err != nil {
+		fmt.Println("Base validator failed")
+	}
+
+	// Modified validator passes because age validation is removed
+	modifiedValidator := baseValidator.RemovePropertiesByName("age")
+	err = modifiedValidator.Validate(teacher)
+	if err == nil {
+		fmt.Println("Modified validator passed")
+	}
+
+	// Output:
+	// Base validator failed
+	// Modified validator passed
+}

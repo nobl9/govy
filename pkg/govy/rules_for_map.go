@@ -222,5 +222,10 @@ func (r PropertyRulesForMap[M, K, V, P]) getJSONPathForKey(key any) string {
 	return jsonpath.Join(r.mapRules.name, jsonpath.EscapeSegment(fmt.Sprint(key)))
 }
 
+// getName returns the name of the property.
+func (r PropertyRulesForMap[M, K, V, P]) getName() string {
+	return r.mapRules.getName()
+}
+
 // isPropertyRules implements [propertyRulesInterface].
 func (r PropertyRulesForMap[M, K, V, P]) isPropertyRules() {}
