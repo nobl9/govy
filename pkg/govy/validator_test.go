@@ -315,8 +315,11 @@ func TestValidatorRemovePropertiesByName(t *testing.T) {
 				WithName("other").
 				Rules(rules.EQ("invalid")),
 		)
+		err := v.Validate(mockValidatorStruct{Field: "invalid"})
+		assert.Error(t, err)
+
 		modified := v.RemovePropertiesByName("field")
-		err := modified.Validate(mockValidatorStruct{Field: "invalid"})
+		err = modified.Validate(mockValidatorStruct{Field: "invalid"})
 		assert.NoError(t, err)
 	})
 
@@ -332,8 +335,11 @@ func TestValidatorRemovePropertiesByName(t *testing.T) {
 				WithName("field3").
 				Rules(rules.EQ("valid")),
 		)
+		err := v.Validate(mockValidatorStruct{Field: "valid"})
+		assert.Error(t, err)
+
 		modified := v.RemovePropertiesByName("field1", "field2")
-		err := modified.Validate(mockValidatorStruct{Field: "valid"})
+		err = modified.Validate(mockValidatorStruct{Field: "valid"})
 		assert.NoError(t, err)
 	})
 
@@ -346,8 +352,11 @@ func TestValidatorRemovePropertiesByName(t *testing.T) {
 				WithName("field2").
 				Rules(rules.EQ("test")),
 		)
+		err := v.Validate(mockValidatorStruct{Field: "anything"})
+		assert.Error(t, err)
+
 		modified := v.RemovePropertiesByName("field1", "field2")
-		err := modified.Validate(mockValidatorStruct{Field: "anything"})
+		err = modified.Validate(mockValidatorStruct{Field: "anything"})
 		assert.NoError(t, err)
 	})
 
@@ -392,10 +401,13 @@ func TestValidatorRemovePropertiesByName(t *testing.T) {
 		v := govy.New(
 			govy.ForSlice(func(m mockValidatorStruct) []string { return []string{m.Field} }).
 				WithName("items").
-				Rules(rules.SliceMaxLength[[]string](5)),
+				Rules(rules.SliceMaxLength[[]string](0)),
 		)
+		err := v.Validate(mockValidatorStruct{Field: "test"})
+		assert.Error(t, err)
+
 		modified := v.RemovePropertiesByName("items")
-		err := modified.Validate(mockValidatorStruct{Field: "test"})
+		err = modified.Validate(mockValidatorStruct{Field: "test"})
 		assert.NoError(t, err)
 	})
 
@@ -405,10 +417,13 @@ func TestValidatorRemovePropertiesByName(t *testing.T) {
 				return map[string]string{"key": m.Field}
 			}).
 				WithName("mapping").
-				Rules(rules.MapMaxLength[map[string]string](5)),
+				Rules(rules.MapMaxLength[map[string]string](0)),
 		)
+		err := v.Validate(mockValidatorStruct{Field: "test"})
+		assert.Error(t, err)
+
 		modified := v.RemovePropertiesByName("mapping")
-		err := modified.Validate(mockValidatorStruct{Field: "test"})
+		err = modified.Validate(mockValidatorStruct{Field: "test"})
 		assert.NoError(t, err)
 	})
 }
