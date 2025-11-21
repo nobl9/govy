@@ -10,6 +10,7 @@ import (
 	"github.com/nobl9/govy/internal"
 	"github.com/nobl9/govy/pkg/govy"
 	"github.com/nobl9/govy/pkg/govyconfig"
+	"github.com/nobl9/govy/pkg/jsonpath"
 	"github.com/nobl9/govy/pkg/rules"
 )
 
@@ -20,7 +21,7 @@ func TestPropertyRules(t *testing.T) {
 
 	t.Run("no predicates, no error", func(t *testing.T) {
 		r := govy.For(func(m mockStruct) string { return "path" }).
-			WithName("test.path").
+			WithPath(jsonpath.PropertySegment{Name: "test"}, jsonpath.PropertySegment{Name: "path"}).
 			Rules(govy.NewRule(func(v string) error { return nil }))
 		err := r.Validate(mockStruct{})
 		assert.NoError(t, err)
@@ -29,7 +30,7 @@ func TestPropertyRules(t *testing.T) {
 	t.Run("no predicates, validate", func(t *testing.T) {
 		expectedErr := errors.New("ops!")
 		r := govy.For(func(m mockStruct) string { return "path" }).
-			WithName("test.path").
+			WithPath(jsonpath.PropertySegment{Name: "test"}, jsonpath.PropertySegment{Name: "path"}).
 			Rules(govy.NewRule(func(v string) error { return expectedErr }))
 		errs := mustPropertyErrors(t, r.Validate(mockStruct{}))
 		assert.Require(t, assert.Len(t, errs, 1))
@@ -42,7 +43,7 @@ func TestPropertyRules(t *testing.T) {
 
 	t.Run("predicate matches, don't validate", func(t *testing.T) {
 		r := govy.For(func(m mockStruct) string { return "value" }).
-			WithName("test.path").
+			WithPath(jsonpath.PropertySegment{Name: "test"}, jsonpath.PropertySegment{Name: "path"}).
 			When(func(mockStruct) bool { return true }).
 			When(func(mockStruct) bool { return true }).
 			When(func(st mockStruct) bool { return st.Field == "" }).
@@ -54,7 +55,7 @@ func TestPropertyRules(t *testing.T) {
 	t.Run("multiple rules", func(t *testing.T) {
 		err1 := errors.New("oh no!")
 		r := govy.For(func(m mockStruct) string { return "value" }).
-			WithName("test.path").
+			WithPath(jsonpath.PropertySegment{Name: "test"}, jsonpath.PropertySegment{Name: "path"}).
 			Rules(govy.NewRule(func(v string) error { return nil })).
 			Rules(govy.NewRule(func(v string) error { return err1 })).
 			Rules(govy.NewRule(func(v string) error { return nil })).
@@ -86,7 +87,7 @@ func TestPropertyRules(t *testing.T) {
 	t.Run("cascade mode stop", func(t *testing.T) {
 		expectedErr := errors.New("oh no!")
 		r := govy.For(func(m mockStruct) string { return "value" }).
-			WithName("test.path").
+			WithPath(jsonpath.PropertySegment{Name: "test"}, jsonpath.PropertySegment{Name: "path"}).
 			Cascade(govy.CascadeModeStop).
 			Rules(govy.NewRule(func(v string) error { return expectedErr })).
 			Rules(govy.NewRule(func(v string) error { return errors.New("no") }))
@@ -104,7 +105,7 @@ func TestPropertyRules(t *testing.T) {
 		err2 := errors.New("included")
 		err3 := errors.New("included again")
 		r := govy.For(func(m mockStruct) mockStruct { return m }).
-			WithName("test.path").
+			WithPath(jsonpath.PropertySegment{Name: "test"}, jsonpath.PropertySegment{Name: "path"}).
 			Rules(govy.NewRule(func(v mockStruct) error { return err1 })).
 			Include(govy.New(
 				govy.For(func(s mockStruct) string { return "value" }).
@@ -137,7 +138,7 @@ func TestPropertyRules(t *testing.T) {
 	t.Run("get self", func(t *testing.T) {
 		expectedErrs := errors.New("self error")
 		r := govy.For(govy.GetSelf[mockStruct]()).
-			WithName("test.path").
+			WithPath(jsonpath.PropertySegment{Name: "test"}, jsonpath.PropertySegment{Name: "path"}).
 			Rules(govy.NewRule(func(v mockStruct) error { return expectedErrs }))
 		object := mockStruct{Field: "this"}
 		errs := mustPropertyErrors(t, r.Validate(object))
@@ -152,7 +153,7 @@ func TestPropertyRules(t *testing.T) {
 	t.Run("hide value", func(t *testing.T) {
 		expectedErr := errors.New("oh no! here's the value: 'secret'")
 		r := govy.For(func(m mockStruct) string { return "secret" }).
-			WithName("test.path").
+			WithPath(jsonpath.PropertySegment{Name: "test"}, jsonpath.PropertySegment{Name: "path"}).
 			HideValue().
 			Rules(govy.NewRule(func(v string) error { return expectedErr }))
 		errs := mustPropertyErrors(t, r.Validate(mockStruct{}))

@@ -2,6 +2,7 @@ package govy
 
 import (
 	"github.com/nobl9/govy/internal/jsonpath"
+	jsonpathpkg "github.com/nobl9/govy/pkg/jsonpath"
 )
 
 // ForSlice creates a new [PropertyRulesForSlice] instance for a slice property
@@ -68,7 +69,15 @@ func (r PropertyRulesForSlice[S, T, P]) Validate(parent P) error {
 
 // WithName => refer to [PropertyRules.WithName] documentation.
 func (r PropertyRulesForSlice[S, T, P]) WithName(name string) PropertyRulesForSlice[S, T, P] {
-	r.sliceRules = r.sliceRules.WithName(name)
+	r.sliceRules.name = jsonpathpkg.PropertySegment{Name: name}.String()
+	return r
+}
+
+// WithPath => refer to [PropertyRules.WithPath] documentation.
+func (r PropertyRulesForSlice[S, T, P]) WithPath(segments ...jsonpathpkg.Segment) PropertyRulesForSlice[S, T, P] {
+	path := jsonpathpkg.Path{}
+	path = path.Append(segments...)
+	r.sliceRules.name = path.String()
 	return r
 }
 

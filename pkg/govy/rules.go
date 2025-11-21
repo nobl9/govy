@@ -5,6 +5,7 @@ import (
 
 	"github.com/nobl9/govy/internal"
 	"github.com/nobl9/govy/internal/typeinfo"
+	"github.com/nobl9/govy/pkg/jsonpath"
 )
 
 // For creates a new [PropertyRules] instance for the property
@@ -155,8 +156,22 @@ func (r PropertyRules[T, P]) Validate(parent P) error {
 
 // WithName sets the name of the property.
 // If the name was inferred, it will be overridden.
+// The name is wrapped in a PropertySegment, which means special characters (like dots)
+// will be escaped. For example, "foo.bar" becomes "['foo.bar']".
+// To specify a path with multiple segments, use WithPath instead.
 func (r PropertyRules[T, P]) WithName(name string) PropertyRules[T, P] {
-	r.name = name
+	r.name = jsonpath.PropertySegment{Name: name}.String()
+	return r
+}
+
+// WithPath sets the property path using multiple segments.
+// Each segment can be a PropertySegment, IndexSegment, or RootSegment.
+// For example, WithPath(PropertySegment{Name: "spec"}, PropertySegment{Name: "foo"}) results in "spec.foo".
+// This is useful when you want to specify nested property paths.
+func (r PropertyRules[T, P]) WithPath(segments ...jsonpath.Segment) PropertyRules[T, P] {
+	path := jsonpath.Path{}
+	path = path.Append(segments...)
+	r.name = path.String()
 	return r
 }
 

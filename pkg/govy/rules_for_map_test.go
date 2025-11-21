@@ -8,6 +8,7 @@ import (
 
 	"github.com/nobl9/govy/pkg/govy"
 	"github.com/nobl9/govy/pkg/govyconfig"
+	"github.com/nobl9/govy/pkg/jsonpath"
 	"github.com/nobl9/govy/pkg/rules"
 )
 
@@ -21,7 +22,7 @@ func TestPropertyRulesForMap(t *testing.T) {
 
 	t.Run("no predicates, no error", func(t *testing.T) {
 		baseRules := govy.ForMap(func(m mockStruct) map[string]string { return map[string]string{"key": "value"} }).
-			WithName("test.path")
+			WithPath(jsonpath.PropertySegment{Name: "test"}, jsonpath.PropertySegment{Name: "path"})
 		for _, r := range []govy.PropertyRulesForMap[map[string]string, string, string, mockStruct]{
 			baseRules.RulesForKeys(govy.NewRule(func(v string) error { return nil })),
 			baseRules.RulesForValues(govy.NewRule(func(v string) error { return nil })),
@@ -35,7 +36,7 @@ func TestPropertyRulesForMap(t *testing.T) {
 	t.Run("no predicates, validate", func(t *testing.T) {
 		expectedErr := errors.New("ops!")
 		baseRules := govy.ForMap(func(m mockStruct) map[string]string { return map[string]string{"key": "value"} }).
-			WithName("test.path")
+			WithPath(jsonpath.PropertySegment{Name: "test"}, jsonpath.PropertySegment{Name: "path"})
 		for name, test := range map[string]struct {
 			Rules    govy.PropertyRulesForMap[map[string]string, string, string, mockStruct]
 			Expected *govy.PropertyError
@@ -78,7 +79,7 @@ func TestPropertyRulesForMap(t *testing.T) {
 
 	t.Run("predicate matches, don't validate", func(t *testing.T) {
 		baseRules := govy.ForMap(func(m mockStruct) map[string]string { return map[string]string{"key": "value"} }).
-			WithName("test.path").
+			WithPath(jsonpath.PropertySegment{Name: "test"}, jsonpath.PropertySegment{Name: "path"}).
 			When(func(mockStruct) bool { return true }).
 			When(func(mockStruct) bool { return true }).
 			When(func(st mockStruct) bool { return len(st.StringMap) == 0 })
@@ -105,7 +106,7 @@ func TestPropertyRulesForMap(t *testing.T) {
 		errNestedRule := errors.New("nested rule error")
 
 		r := govy.ForMap(func(m mockStruct) map[string]string { return m.StringMap }).
-			WithName("test.path").
+			WithPath(jsonpath.PropertySegment{Name: "test"}, jsonpath.PropertySegment{Name: "path"}).
 			Rules(govy.NewRule(func(v map[string]string) error { return errRule })).
 			RulesForKeys(
 				govy.NewRule(func(v string) error { return errKey }),
@@ -212,7 +213,7 @@ func TestPropertyRulesForMap(t *testing.T) {
 		keyErr := errors.New("key error")
 		valueErr := errors.New("value error")
 		r := govy.ForMap(func(m mockStruct) map[string]string { return map[string]string{"key": "value"} }).
-			WithName("test.path").
+			WithPath(jsonpath.PropertySegment{Name: "test"}, jsonpath.PropertySegment{Name: "path"}).
 			Cascade(govy.CascadeModeStop).
 			RulesForValues(govy.NewRule(func(v string) error { return valueErr })).
 			RulesForKeys(govy.NewRule(func(v string) error { return keyErr }))
@@ -243,7 +244,7 @@ func TestPropertyRulesForMap(t *testing.T) {
 		errIncludedItem2 := errors.New("included item 2 error")
 
 		r := govy.ForMap(func(m mockStruct) map[string]int { return m.IntMap }).
-			WithName("test.path").
+			WithPath(jsonpath.PropertySegment{Name: "test"}, jsonpath.PropertySegment{Name: "path"}).
 			Rules(govy.NewRule(func(v map[string]int) error { return errRule })).
 			IncludeForKeys(govy.New(
 				govy.For(func(s string) string { return s }).
@@ -316,7 +317,7 @@ func TestPropertyRulesForMap(t *testing.T) {
 		errIncludedItem2 := errors.New("included item 2 error")
 
 		r := govy.ForMap(func(m mockStruct) map[string]string { return m.StringMap }).
-			WithName("test.path").
+			WithPath(jsonpath.PropertySegment{Name: "test"}, jsonpath.PropertySegment{Name: "path"}).
 			Rules(govy.NewRule(func(v map[string]string) error { return errRule })).
 			IncludeForKeys(govy.New(
 				govy.For(func(s string) string { return s }).
@@ -386,7 +387,7 @@ func TestPropertyRulesForMap(t *testing.T) {
 				RulesForValues(govy.NewRule(func(v string) error { return expectedErr })),
 		)
 		r := govy.For(func(m mockStruct) map[string]string { return m.StringMap }).
-			WithName("test.path").
+			WithPath(jsonpath.PropertySegment{Name: "test"}, jsonpath.PropertySegment{Name: "path"}).
 			Include(inc)
 
 		errs := mustPropertyErrors(t, r.Validate(mockStruct{StringMap: map[string]string{"key": "value"}}))

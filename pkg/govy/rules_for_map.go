@@ -5,6 +5,7 @@ import (
 
 	"github.com/nobl9/govy/internal"
 	"github.com/nobl9/govy/internal/jsonpath"
+	jsonpathpkg "github.com/nobl9/govy/pkg/jsonpath"
 )
 
 // ForMap creates a new [PropertyRulesForMap] instance for a map property
@@ -95,9 +96,17 @@ func (r PropertyRulesForMap[M, K, V, P]) Validate(parent P) error {
 	return nil
 }
 
-// WithName => refer to [PropertyRules.When] documentation.
+// WithName => refer to [PropertyRules.WithName] documentation.
 func (r PropertyRulesForMap[M, K, V, P]) WithName(name string) PropertyRulesForMap[M, K, V, P] {
-	r.mapRules = r.mapRules.WithName(name)
+	r.mapRules.name = jsonpathpkg.PropertySegment{Name: name}.String()
+	return r
+}
+
+// WithPath => refer to [PropertyRules.WithPath] documentation.
+func (r PropertyRulesForMap[M, K, V, P]) WithPath(segments ...jsonpathpkg.Segment) PropertyRulesForMap[M, K, V, P] {
+	path := jsonpathpkg.Path{}
+	path = path.Append(segments...)
+	r.mapRules.name = path.String()
 	return r
 }
 

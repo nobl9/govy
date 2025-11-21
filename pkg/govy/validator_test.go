@@ -9,6 +9,7 @@ import (
 
 	"github.com/nobl9/govy/pkg/govy"
 	"github.com/nobl9/govy/pkg/govytest"
+	"github.com/nobl9/govy/pkg/jsonpath"
 	"github.com/nobl9/govy/pkg/rules"
 )
 
@@ -31,10 +32,10 @@ func TestValidator(t *testing.T) {
 				WithName("test").
 				Rules(govy.NewRule(func(v string) error { return nil })),
 			govy.For(func(m mockValidatorStruct) string { return "name" }).
-				WithName("test.name").
+				WithPath(jsonpath.PropertySegment{Name: "test"}, jsonpath.PropertySegment{Name: "name"}).
 				Rules(govy.NewRule(func(v string) error { return err1 })),
 			govy.For(func(m mockValidatorStruct) string { return "display" }).
-				WithName("test.display").
+				WithPath(jsonpath.PropertySegment{Name: "test"}, jsonpath.PropertySegment{Name: "display"}).
 				Rules(govy.NewRule(func(v string) error { return err2 })),
 		)
 		err := mustValidatorError(t, v.Validate(mockValidatorStruct{}))
