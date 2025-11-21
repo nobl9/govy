@@ -8,7 +8,6 @@ import (
 const (
 	jsonPathSeparator = "."
 	escapedChars      = jsonPathSeparator + "[] \t\n\r"
-	slashEscapedChars = ""
 )
 
 // EscapeSegment accepts a path segment (not the entire path!) and escapes any special characters.
