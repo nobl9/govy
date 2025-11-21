@@ -7,7 +7,7 @@ import (
 )
 
 // New creates a new [Validator] aggregating the provided property rules.
-func New[T any](props ...propertyRulesInterface[T]) Validator[T] {
+func New[T any](props ...PropertyRulesInterface[T]) Validator[T] {
 	return Validator[T]{props: props}
 }
 
@@ -15,7 +15,7 @@ func New[T any](props ...propertyRulesInterface[T]) Validator[T] {
 // It serves as an aggregator for [PropertyRules].
 // Typically, it represents a struct.
 type Validator[T any] struct {
-	props    []propertyRulesInterface[T]
+	props    []PropertyRulesInterface[T]
 	name     string
 	nameFunc func(value T) string
 	mode     CascadeMode
@@ -64,7 +64,7 @@ func (v Validator[T]) InferName() Validator[T] {
 // which controls the flow of evaluating the validation rules.
 func (v Validator[T]) Cascade(mode CascadeMode) Validator[T] {
 	v.mode = mode
-	props := make([]propertyRulesInterface[T], 0, len(v.props))
+	props := make([]PropertyRulesInterface[T], 0, len(v.props))
 	for _, prop := range v.props {
 		props = append(props, prop.cascadeInternal(mode))
 	}
@@ -80,7 +80,7 @@ func (v Validator[T]) RemovePropertiesByName(names ...string) Validator[T] {
 	if len(names) == 0 {
 		return v
 	}
-	filtered := make([]propertyRulesInterface[T], 0, len(v.props))
+	filtered := make([]PropertyRulesInterface[T], 0, len(v.props))
 	for _, prop := range v.props {
 		if !slices.Contains(names, prop.getName()) {
 			filtered = append(filtered, prop)
