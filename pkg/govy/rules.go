@@ -242,7 +242,7 @@ func (r PropertyRules[T, P]) InferName(mode InferNameMode) PropertyRules[T, P] {
 // fulfills [propertyRulesInterface] interface.
 // If the [CascadeMode] is already set, it won't change it.
 func (r PropertyRules[T, P]) cascadeInternal(mode CascadeMode) PropertyRulesInterface[P] {
-	if r.mode != 0 {
+	if r.cascadeMode != 0 {
 		return r
 	}
 	return r.Cascade(mode)
@@ -250,7 +250,7 @@ func (r PropertyRules[T, P]) cascadeInternal(mode CascadeMode) PropertyRulesInte
 
 // cascadeInternal is an internal wrapper around [PropertyRules.InferName] which
 // fulfills [propertyRulesInterface] interface.
-func (r PropertyRules[T, P]) inferNameModeInternal(mode InferNameMode) propertyRulesInterface[P] {
+func (r PropertyRules[T, P]) inferNameModeInternal(mode InferNameMode) PropertyRulesInterface[P] {
 	if r.inferNameMode != 0 {
 		return r
 	}
@@ -345,17 +345,12 @@ func (r PropertyRules[T, S]) getName() string {
 	}
 }
 
+// isPropertyRules implements [propertyRulesInterface].
+func (r PropertyRules[T, P]) isPropertyRules() {}
+
 func newRequiredError() *RuleError {
 	return NewRuleError(
 		internal.RequiredMessage,
 		internal.RequiredErrorCode,
 	)
 }
-
-// getName returns the name of the property.
-func (r PropertyRules[T, P]) getName() string {
-	return r.name
-}
-
-// isPropertyRules implements [propertyRulesInterface].
-func (r PropertyRules[T, P]) isPropertyRules() {}
