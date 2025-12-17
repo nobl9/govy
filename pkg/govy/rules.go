@@ -179,7 +179,7 @@ func (r PropertyRules[T, P]) WithExamples(examples ...string) PropertyRules[T, P
 }
 
 // Rules associates provided [Rule] with the property.
-func (r PropertyRules[T, P]) Rules(rules ...rulesInterface[T]) PropertyRules[T, P] {
+func (r PropertyRules[T, P]) Rules(rules ...RulesInterface[T]) PropertyRules[T, P] {
 	for _, rule := range rules {
 		r.rules = append(r.rules, rule)
 	}
@@ -187,7 +187,7 @@ func (r PropertyRules[T, P]) Rules(rules ...rulesInterface[T]) PropertyRules[T, 
 }
 
 // Include embeds specified [Validator] and its [PropertyRules] into the property.
-func (r PropertyRules[T, P]) Include(rules ...validatorInterface[T]) PropertyRules[T, P] {
+func (r PropertyRules[T, P]) Include(rules ...ValidatorInterface[T]) PropertyRules[T, P] {
 	for _, rule := range rules {
 		r.rules = append(r.rules, rule)
 	}
@@ -241,8 +241,8 @@ func (r PropertyRules[T, P]) InferName(mode InferNameMode) PropertyRules[T, P] {
 // cascadeInternal is an internal wrapper around [PropertyRules.Cascade] which
 // fulfills [propertyRulesInterface] interface.
 // If the [CascadeMode] is already set, it won't change it.
-func (r PropertyRules[T, P]) cascadeInternal(mode CascadeMode) propertyRulesInterface[P] {
-	if r.cascadeMode != 0 {
+func (r PropertyRules[T, P]) cascadeInternal(mode CascadeMode) PropertyRulesInterface[P] {
+	if r.mode != 0 {
 		return r
 	}
 	return r.Cascade(mode)
@@ -350,6 +350,11 @@ func newRequiredError() *RuleError {
 		internal.RequiredMessage,
 		internal.RequiredErrorCode,
 	)
+}
+
+// getName returns the name of the property.
+func (r PropertyRules[T, P]) getName() string {
+	return r.name
 }
 
 // isPropertyRules implements [propertyRulesInterface].

@@ -108,7 +108,7 @@ func (r PropertyRulesForMap[M, K, V, P]) WithExamples(examples ...string) Proper
 
 // RulesForKeys adds [Rule] for map's keys.
 func (r PropertyRulesForMap[M, K, V, P]) RulesForKeys(
-	rules ...rulesInterface[K],
+	rules ...RulesInterface[K],
 ) PropertyRulesForMap[M, K, V, P] {
 	r.forKeyRules = r.forKeyRules.Rules(rules...)
 	return r
@@ -116,7 +116,7 @@ func (r PropertyRulesForMap[M, K, V, P]) RulesForKeys(
 
 // RulesForValues adds [Rule] for map's values.
 func (r PropertyRulesForMap[M, K, V, P]) RulesForValues(
-	rules ...rulesInterface[V],
+	rules ...RulesInterface[V],
 ) PropertyRulesForMap[M, K, V, P] {
 	r.forValueRules = r.forValueRules.Rules(rules...)
 	return r
@@ -125,14 +125,14 @@ func (r PropertyRulesForMap[M, K, V, P]) RulesForValues(
 // RulesForItems adds [Rule] for [MapItem].
 // It allows validating both key and value in conjunction.
 func (r PropertyRulesForMap[M, K, V, P]) RulesForItems(
-	rules ...rulesInterface[MapItem[K, V]],
+	rules ...RulesInterface[MapItem[K, V]],
 ) PropertyRulesForMap[M, K, V, P] {
 	r.forItemRules = r.forItemRules.Rules(rules...)
 	return r
 }
 
 // Rules adds [Rule] for the whole map.
-func (r PropertyRulesForMap[M, K, V, P]) Rules(rules ...rulesInterface[M]) PropertyRulesForMap[M, K, V, P] {
+func (r PropertyRulesForMap[M, K, V, P]) Rules(rules ...RulesInterface[M]) PropertyRulesForMap[M, K, V, P] {
 	r.mapRules = r.mapRules.Rules(rules...)
 	return r
 }
@@ -148,7 +148,7 @@ func (r PropertyRulesForMap[M, K, V, P]) When(
 
 // Include embeds specified [Validator] and its [PropertyRules] into the property.
 func (r PropertyRulesForMap[M, K, V, P]) Include(
-	validators ...validatorInterface[M],
+	validators ...ValidatorInterface[M],
 ) PropertyRulesForMap[M, K, V, P] {
 	r.mapRules = r.mapRules.Include(validators...)
 	return r
@@ -156,7 +156,7 @@ func (r PropertyRulesForMap[M, K, V, P]) Include(
 
 // IncludeForKeys associates specified [Validator] and its [PropertyRules] with map's keys.
 func (r PropertyRulesForMap[M, K, V, P]) IncludeForKeys(
-	validators ...validatorInterface[K],
+	validators ...ValidatorInterface[K],
 ) PropertyRulesForMap[M, K, V, P] {
 	r.forKeyRules = r.forKeyRules.Include(validators...)
 	return r
@@ -164,7 +164,7 @@ func (r PropertyRulesForMap[M, K, V, P]) IncludeForKeys(
 
 // IncludeForValues associates specified [Validator] and its [PropertyRules] with map's values.
 func (r PropertyRulesForMap[M, K, V, P]) IncludeForValues(
-	rules ...validatorInterface[V],
+	rules ...ValidatorInterface[V],
 ) PropertyRulesForMap[M, K, V, P] {
 	r.forValueRules = r.forValueRules.Include(rules...)
 	return r
@@ -173,7 +173,7 @@ func (r PropertyRulesForMap[M, K, V, P]) IncludeForValues(
 // IncludeForItems associates specified [Validator] and its [PropertyRules] with [MapItem].
 // It allows validating both key and value in conjunction.
 func (r PropertyRulesForMap[M, K, V, P]) IncludeForItems(
-	rules ...validatorInterface[MapItem[K, V]],
+	rules ...ValidatorInterface[MapItem[K, V]],
 ) PropertyRulesForMap[M, K, V, P] {
 	r.forItemRules = r.forItemRules.Include(rules...)
 	return r
@@ -198,8 +198,8 @@ func (r PropertyRulesForMap[M, K, V, P]) InferName(mode InferNameMode) PropertyR
 // cascadeInternal is an internal wrapper around [PropertyRulesForMap.Cascade] which
 // fulfills [propertyRulesInterface] interface.
 // If the [CascadeMode] is already set, it won't change it.
-func (r PropertyRulesForMap[M, K, V, P]) cascadeInternal(mode CascadeMode) propertyRulesInterface[P] {
-	if r.cascadeMode != 0 {
+func (r PropertyRulesForMap[M, K, V, P]) cascadeInternal(mode CascadeMode) PropertyRulesInterface[P] {
+	if r.mode != 0 {
 		return r
 	}
 	return r.Cascade(mode)
@@ -231,6 +231,11 @@ func (r PropertyRulesForMap[M, K, V, P]) plan(builder planBuilder) {
 // getJSONPathForKey returns a JSONPath for the given key.
 func (r PropertyRulesForMap[M, K, V, P]) getJSONPathForKey(key any) string {
 	return jsonpath.Join(r.mapRules.getName(), jsonpath.EscapeSegment(fmt.Sprint(key)))
+}
+
+// getName returns the name of the property.
+func (r PropertyRulesForMap[M, K, V, P]) getName() string {
+	return r.mapRules.getName()
 }
 
 // isPropertyRules implements [propertyRulesInterface].

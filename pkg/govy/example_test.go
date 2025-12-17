@@ -1844,6 +1844,38 @@ func ExamplePlan_validation() {
 	// predicates without description found at: validator level, $.name
 }
 
+// This example demonstrates how to remove specific properties from a [govy.Validator] by their names.
+// This is useful when you want to create a modified validator without certain rules.
+func ExampleValidator_RemovePropertiesByName() {
+	baseValidator := govy.New(
+		govy.For(func(t Teacher) string { return t.Name }).
+			WithName("name").
+			Rules(rules.StringNotEmpty()),
+		govy.For(func(t Teacher) time.Duration { return t.Age }).
+			WithName("age").
+			Rules(rules.GT(time.Duration(0))),
+	)
+
+	teacher := Teacher{Name: "John", Age: -1}
+
+	// Base validator fails because age is negative
+	err := baseValidator.Validate(teacher)
+	if err != nil {
+		fmt.Println("Base validator failed")
+	}
+
+	// Modified validator passes because age validation is removed
+	modifiedValidator := baseValidator.RemovePropertiesByName("age")
+	err = modifiedValidator.Validate(teacher)
+	if err == nil {
+		fmt.Println("Modified validator passed")
+	}
+
+	// Output:
+	// Base validator failed
+	// Modified validator passed
+}
+
 // In the interactive tutorial for govy, we've been using
 // [govy.PropertyRules.WithName] to provide the name for our properties.
 //
@@ -1876,7 +1908,7 @@ func ExamplePlan_validation() {
 //
 // Since this tutorial is run as a test,
 // we need to explicitly instruct govy to infer names from test files.
-// By default test files are not parsed to improve performance.
+// By default, test files are not parsed to improve performance.
 // In order to do that, we use [govyconfig.SetInferNameIncludeTestFiles].
 func ExampleInferNameMode() {
 	govyconfig.SetInferNameIncludeTestFiles(true)

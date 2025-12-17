@@ -1,7 +1,13 @@
 package govy
 
+import (
+	"fmt"
+	"slices"
+	"strings"
+)
+
 // New creates a new [Validator] aggregating the provided property rules.
-func New[T any](props ...propertyRulesInterface[T]) Validator[T] {
+func New[T any](props ...PropertyRulesInterface[T]) Validator[T] {
 	return Validator[T]{props: props}
 }
 
@@ -9,10 +15,10 @@ func New[T any](props ...propertyRulesInterface[T]) Validator[T] {
 // It serves as an aggregator for [PropertyRules].
 // Typically, it represents a struct.
 type Validator[T any] struct {
-	props       []propertyRulesInterface[T]
-	name        string
-	nameFunc    func(value T) string
-	cascadeMode CascadeMode
+	props    []PropertyRulesInterface[T]
+	name     string
+	nameFunc func(value T) string
+	mode     CascadeMode
 
 	predicateMatcher[T]
 }
@@ -41,12 +47,30 @@ func (v Validator[T]) When(predicate Predicate[T], opts ...WhenOption) Validator
 // Cascade sets the [CascadeMode] for the validator,
 // which controls the flow of evaluating the validation rules.
 func (v Validator[T]) Cascade(mode CascadeMode) Validator[T] {
-	v.cascadeMode = mode
-	props := make([]propertyRulesInterface[T], 0, len(v.props))
+	v.mode = mode
+	props := make([]PropertyRulesInterface[T], 0, len(v.props))
 	for _, prop := range v.props {
 		props = append(props, prop.cascadeInternal(mode))
 	}
 	v.props = props
+	return v
+}
+
+// RemovePropertiesByName removes any [PropertyRules] or included [Validator]
+// which match the provided property names.
+// It returns a modified [Validator] instance without these rules,
+// the original [Validator] is not changed.
+func (v Validator[T]) RemovePropertiesByName(names ...string) Validator[T] {
+	if len(names) == 0 {
+		return v
+	}
+	filtered := make([]PropertyRulesInterface[T], 0, len(v.props))
+	for _, prop := range v.props {
+		if !slices.Contains(names, prop.getName()) {
+			filtered = append(filtered, prop)
+		}
+	}
+	v.props = filtered
 	return v
 }
 

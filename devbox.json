@@ -3,11 +3,11 @@
   "packages": [
     "govulncheck@1.1.4",
     "golangci-lint@2.6.0",
-    "gosec@2.22.9",
-    "go@1.25.1",
+    "gosec@2.22.11",
+    "go@1.25.4",
     "gotools@0.34.0",
-    "markdownlint-cli@0.45.0",
-    "cspell@9.2.1"
+    "markdownlint-cli@0.46.0",
+    "cspell@9.4.0"
   ],
   "shell": {
     "init_hook": [
