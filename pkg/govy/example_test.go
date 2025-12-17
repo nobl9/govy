@@ -1958,7 +1958,7 @@ func ExampleInferNameModeGenerate() {
 	govyconfig.SetInferredName(govyconfig.InferredName{
 		Name: "name",
 		File: "pkg/govy/example_test.go",
-		Line: 1964,
+		Line: 1965,
 	})
 
 	v2 := govy.New(
