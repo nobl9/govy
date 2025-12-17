@@ -1951,19 +1951,21 @@ func ExampleInferNameModeGenerate() {
 		govy.For(func(t Teacher) string { return t.Name }).
 			Rules(rules.EQ("Jerry")),
 	).
-		InferName(govy.InferNameModeGenerate).
+		InferName(govy.InferNameModeDisable).
 		WithName("Teacher")
 
 	govyconfig.SetInferredName(govyconfig.InferredName{
 		Name: "name",
-		File: "pkg/govyconfig/example_test.go",
-		Line: 96,
+		File: "pkg/govy/example_test.go",
+		Line: 1964,
 	})
 
 	v2 := govy.New(
 		govy.For(func(t Teacher) string { return t.Name }).
 			Rules(rules.EQ("Thomas")),
-	).WithName("NotTeacher")
+	).
+		InferName(govy.InferNameModeGenerate).
+		WithName("NotTeacher")
 
 	teacher := Teacher{Name: "Tom"}
 	if err := v1.Validate(teacher); err != nil {
