@@ -1892,7 +1892,8 @@ func ExampleValidator_RemovePropertiesByName() {
 // By default govy **WILL NOT** attempt to infer **ANY** property names.
 //
 // So, how do we do that properly?
-// Both [govy.Validator] and [govy.PropertyRules] (including variants) have a dedicated function -- TODO
+// Both [govy.Validator] and [govy.PropertyRules] (including variants) have a dedicated method
+// to configure how property names are inferred.
 //
 // It depends on the [govy.InferNameMode] used:
 //   - [govy.InferNameModeDisable], name inference is disabled (default), nothing to do here
@@ -1904,7 +1905,7 @@ func ExampleValidator_RemovePropertiesByName() {
 //   - [govy.InferNameModeGenerate], the name is inferred during separate code generation phase.
 //     This mode requires you to run 'cmd/govy nameinfer' BEFORE you run your code.
 //     It will generate a file with inferred names for your structs which automatically
-//     registers these names using [govy.SetInferredName].
+//     registers these names using [govyconfig.SetInferredName].
 //
 // Since this tutorial is run as a test,
 // we need to explicitly instruct govy to infer names from test files.

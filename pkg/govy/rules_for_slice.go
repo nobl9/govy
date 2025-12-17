@@ -125,7 +125,7 @@ func (r PropertyRulesForSlice[S, T, P]) InferName(mode InferNameMode) PropertyRu
 }
 
 // cascadeInternal is an internal wrapper around [PropertyRulesForSlice.Cascade] which
-// fulfills [propertyRulesInterface] interface.
+// fulfills [PropertyRulesInterface] interface.
 // If the [CascadeMode] is already set, it won't change it.
 func (r PropertyRulesForSlice[S, T, P]) cascadeInternal(mode CascadeMode) PropertyRulesInterface[P] {
 	if r.cascadeMode != 0 {
@@ -134,8 +134,8 @@ func (r PropertyRulesForSlice[S, T, P]) cascadeInternal(mode CascadeMode) Proper
 	return r.Cascade(mode)
 }
 
-// cascadeInternal is an internal wrapper around [PropertyRulesForSlice.InferName] which
-// fulfills [propertyRulesInterface] interface.
+// inferNameModeInternal is an internal wrapper around [PropertyRulesForSlice.InferName] which
+// fulfills [PropertyRulesInterface] interface.
 func (r PropertyRulesForSlice[S, T, P]) inferNameModeInternal(mode InferNameMode) PropertyRulesInterface[P] {
 	return r.InferName(mode)
 }
@@ -160,5 +160,5 @@ func (r PropertyRulesForSlice[S, T, P]) getName() string {
 	return r.sliceRules.getName()
 }
 
-// isPropertyRules implements [propertyRulesInterface].
+// isPropertyRules implements [PropertyRulesInterface].
 func (r PropertyRulesForSlice[S, T, P]) isPropertyRules() {}

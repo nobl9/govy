@@ -196,7 +196,7 @@ func (r PropertyRulesForMap[M, K, V, P]) InferName(mode InferNameMode) PropertyR
 }
 
 // cascadeInternal is an internal wrapper around [PropertyRulesForMap.Cascade] which
-// fulfills [propertyRulesInterface] interface.
+// fulfills [PropertyRulesInterface] interface.
 // If the [CascadeMode] is already set, it won't change it.
 func (r PropertyRulesForMap[M, K, V, P]) cascadeInternal(mode CascadeMode) PropertyRulesInterface[P] {
 	if r.cascadeMode != 0 {
@@ -205,8 +205,8 @@ func (r PropertyRulesForMap[M, K, V, P]) cascadeInternal(mode CascadeMode) Prope
 	return r.Cascade(mode)
 }
 
-// cascadeInternal is an internal wrapper around [PropertyRulesForMap.InferName] which
-// fulfills [propertyRulesInterface] interface.
+// inferNameModeInternal is an internal wrapper around [PropertyRulesForMap.InferName] which
+// fulfills [PropertyRulesInterface] interface.
 func (r PropertyRulesForMap[M, K, V, P]) inferNameModeInternal(mode InferNameMode) PropertyRulesInterface[P] {
 	return r.InferName(mode)
 }
@@ -238,5 +238,5 @@ func (r PropertyRulesForMap[M, K, V, P]) getName() string {
 	return r.mapRules.getName()
 }
 
-// isPropertyRules implements [propertyRulesInterface].
+// isPropertyRules implements [PropertyRulesInterface].
 func (r PropertyRulesForMap[M, K, V, P]) isPropertyRules() {}
