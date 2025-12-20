@@ -671,14 +671,12 @@ func Example_validationPlan() {
 
 ### Properties name inference
 
-_DISCLAIMER_: This feature is experimental and is subject to change.
-
 Govy provides a way to automatically infer property names from the code itself.
 This way, there's no need to manually provide properties' names with
 `WithName` function.
 
-Checkout [example_test.go](./pkg/govyconfig/example_test.go) for an interactive
-introduction to this feature.
+Checkout [example_test.go](./pkg/govy/example_test.go) for an interactive
+introduction to this feature (see `ExampleInferNameMode` and related examples).
 
 Documentation for the name inference code generator is available
 [here](cmd/govy/README.md#nameinfer).
