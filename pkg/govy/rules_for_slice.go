@@ -16,10 +16,11 @@ func ForSlice[S ~[]T, T, P any](getter PropertyGetter[S, P]) PropertyRulesForSli
 
 // PropertyRulesForSlice is responsible for validating a single property.
 type PropertyRulesForSlice[S ~[]T, T, P any] struct {
-	sliceRules   PropertyRules[S, S]
-	forEachRules PropertyRules[T, T]
-	getter       PropertyGetter[S, P]
-	cascadeMode  CascadeMode
+	sliceRules    PropertyRules[S, S]
+	forEachRules  PropertyRules[T, T]
+	getter        PropertyGetter[S, P]
+	cascadeMode   CascadeMode
+	inferNameMode InferNameMode
 
 	predicateMatcher[P]
 }
@@ -120,6 +121,7 @@ func (r PropertyRulesForSlice[S, T, P]) Cascade(mode CascadeMode) PropertyRulesF
 
 // InferName => refer to [PropertyRules.InferName] documentation.
 func (r PropertyRulesForSlice[S, T, P]) InferName(mode InferNameMode) PropertyRulesForSlice[S, T, P] {
+	r.inferNameMode = mode
 	r.sliceRules = r.sliceRules.InferName(mode)
 	return r
 }
@@ -136,7 +138,11 @@ func (r PropertyRulesForSlice[S, T, P]) cascadeInternal(mode CascadeMode) Proper
 
 // inferNameModeInternal is an internal wrapper around [PropertyRulesForSlice.InferName] which
 // fulfills [PropertyRulesInterface] interface.
+// If the [InferNameMode] is already set, it won't change it.
 func (r PropertyRulesForSlice[S, T, P]) inferNameModeInternal(mode InferNameMode) PropertyRulesInterface[P] {
+	if r.inferNameMode != 0 {
+		return r
+	}
 	return r.InferName(mode)
 }
 

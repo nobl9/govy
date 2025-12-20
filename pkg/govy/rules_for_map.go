@@ -27,6 +27,7 @@ type PropertyRulesForMap[M ~map[K]V, K comparable, V, P any] struct {
 	forItemRules  PropertyRules[MapItem[K, V], MapItem[K, V]]
 	getter        PropertyGetter[M, P]
 	cascadeMode   CascadeMode
+	inferNameMode InferNameMode
 
 	predicateMatcher[P]
 }
@@ -191,6 +192,7 @@ func (r PropertyRulesForMap[M, K, V, P]) Cascade(mode CascadeMode) PropertyRules
 
 // InferName => refer to [PropertyRules.InferName] documentation.
 func (r PropertyRulesForMap[M, K, V, P]) InferName(mode InferNameMode) PropertyRulesForMap[M, K, V, P] {
+	r.inferNameMode = mode
 	r.mapRules = r.mapRules.InferName(mode)
 	return r
 }
@@ -207,7 +209,11 @@ func (r PropertyRulesForMap[M, K, V, P]) cascadeInternal(mode CascadeMode) Prope
 
 // inferNameModeInternal is an internal wrapper around [PropertyRulesForMap.InferName] which
 // fulfills [PropertyRulesInterface] interface.
+// If the [InferNameMode] is already set, it won't change it.
 func (r PropertyRulesForMap[M, K, V, P]) inferNameModeInternal(mode InferNameMode) PropertyRulesInterface[P] {
+	if r.inferNameMode != 0 {
+		return r
+	}
 	return r.InferName(mode)
 }
 
