@@ -1985,11 +1985,13 @@ func ExampleInferNameModeGenerate() {
 }
 
 // Knowing when to call [govy.Validator.InferName] is important.
-// Beware that once a [govy.Validator.Validate] is called, it will cache the inferred name.
+// The name inference runs only once per [PropertyRules] instance, on the first validation.
+// Once this happens, the result is cached - even if that result is an empty string.
 //
-// To demonstrate this we'll set the [govy.InferNameModeDisable] and you will observe
-// that the name is still inferred, although to be precise, it's not inferred anymore,
-// it was inferred the first time [govy.Validator.Validate] was called and now it's cached.
+// This example demonstrates that changing the mode after the first validation has no effect.
+// The first validation runs with [govy.InferNameModeDisable], which produces an empty name.
+// This empty result is then cached. Even after switching to [govy.InferNameModeRuntime],
+// the cached empty result persists, so no property name appears in the output.
 func ExampleValidator_InferName_changeModeInRuntime() {
 	govyconfig.SetInferNameIncludeTestFiles(true)
 	defer govyconfig.SetInferNameIncludeTestFiles(false)

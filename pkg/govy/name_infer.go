@@ -56,6 +56,14 @@ func getInferNameFunc(callers int, pc []uintptr) internalInferNameFunc {
 				return
 			}
 			frame, _ := runtime.CallersFrames(pc).Next()
+			if frame.File == "" || frame.Line == 0 {
+				logging.Logger().Error(
+					"invalid frame captured for name inference",
+					"file", frame.File,
+					"line", frame.Line,
+				)
+				return
+			}
 			switch mode {
 			case InferNameModeGenerate:
 				name = govyconfig.GetInferredName(frame.File, frame.Line)
@@ -63,7 +71,7 @@ func getInferNameFunc(callers int, pc []uintptr) internalInferNameFunc {
 				name = infername.InferName(frame.File, frame.Line)
 			case InferNameModeDisable:
 			default:
-				logging.Logger().Error(fmt.Sprintf("unknown %T", mode))
+				logging.Logger().Error(fmt.Sprintf("unknown %T", mode), "mode", int(mode))
 			}
 		})
 		return name

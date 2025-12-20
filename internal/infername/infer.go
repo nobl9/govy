@@ -27,6 +27,11 @@ func InferName(file string, line int) string {
 
 	pkg, astFile := modAST.FindFile(file)
 	if astFile == nil {
+		logging.Logger().Error(
+			"AST file not found for name inference",
+			"file", file,
+			"line", line,
+		)
 		return ""
 	}
 	return InferNameFromFile(modAST.FileSet, pkg, astFile, line)
