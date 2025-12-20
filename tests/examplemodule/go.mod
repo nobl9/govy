@@ -1,6 +1,6 @@
 module examplemodule
 
-go 1.24
+go 1.25.5
 
 require github.com/nobl9/govy v0.19.1
 
