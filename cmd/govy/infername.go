@@ -15,11 +15,11 @@ import (
 	"text/template"
 
 	"github.com/nobl9/govy/internal"
-	"github.com/nobl9/govy/internal/nameinfer"
+	"github.com/nobl9/govy/internal/infername"
 	"github.com/nobl9/govy/pkg/govyconfig"
 )
 
-type nameInferTemplateData struct {
+type inferNameTemplateData struct {
 	ProgramInvocation string
 	Package           string
 	Names             map[string]govyconfig.InferredName
@@ -31,12 +31,12 @@ var inferredNamesTemplateStr string
 var inferredNamesTemplate = template.Must(
 	template.New("inferred_names").Parse(inferredNamesTemplateStr))
 
-func newNameInferCommand() *nameInferCommand {
-	fset := flag.NewFlagSet(nameInferCmdName, flag.ExitOnError)
-	cmd := &nameInferCommand{fset: fset}
+func newInferNameCommand() *inferNameCommand {
+	fset := flag.NewFlagSet(inferNameCmdName, flag.ExitOnError)
+	cmd := &inferNameCommand{fset: fset}
 	fset.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage of %s %s:\n", govyCmdName, nameInferCmdName)
-		fmt.Fprintf(os.Stderr, "  %s %s [flags]\n", govyCmdName, nameInferCmdName)
+		fmt.Fprintf(os.Stderr, "Usage of %s %s:\n", govyCmdName, inferNameCmdName)
+		fmt.Fprintf(os.Stderr, "  %s %s [flags]\n", govyCmdName, inferNameCmdName)
 		fmt.Fprintf(os.Stderr, "Flags:\n")
 		fset.PrintDefaults()
 	}
@@ -46,14 +46,14 @@ func newNameInferCommand() *nameInferCommand {
 	return cmd
 }
 
-type nameInferCommand struct {
+type inferNameCommand struct {
 	fset      *flag.FlagSet
 	outputDir string
 	pkg       string
 	fileName  string
 }
 
-func (n *nameInferCommand) Run() error {
+func (n *inferNameCommand) Run() error {
 	_ = n.fset.Parse(os.Args[2:])
 	if n.outputDir == "" {
 		errFatalWithUsage(n.fset, "'-dir' flag is required")
@@ -67,12 +67,12 @@ func (n *nameInferCommand) Run() error {
 		return errors.New("failed to find module root")
 	}
 
-	modAST := nameinfer.NewModuleAST(root)
+	modAST := infername.NewModuleAST(root)
 
 	names := make(map[string]govyconfig.InferredName)
 	for _, pkg := range modAST.Packages {
 		for i, f := range pkg.Syntax {
-			importName := nameinfer.GetGovyImportName(f)
+			importName := infername.GetGovyImportName(f)
 			ast.Inspect(f, func(n ast.Node) bool {
 				selectorExpr, ok := n.(*ast.SelectorExpr)
 				if !ok {
@@ -83,11 +83,11 @@ func (n *nameInferCommand) Run() error {
 					return true
 				}
 				if exprIdent.Name != importName ||
-					!slices.Contains(nameinfer.FunctionsWithGetter, selectorExpr.Sel.Name) {
+					!slices.Contains(infername.FunctionsWithGetter, selectorExpr.Sel.Name) {
 					return true
 				}
 				line := modAST.FileSet.Position(selectorExpr.Pos()).Line
-				inferredName := nameinfer.InferNameFromFile(modAST.FileSet, pkg, f, line)
+				inferredName := infername.InferNameFromFile(modAST.FileSet, pkg, f, line)
 				name := govyconfig.InferredName{
 					Name: inferredName,
 					File: strings.TrimPrefix(pkg.GoFiles[i], root+"/"),
@@ -106,7 +106,7 @@ func (n *nameInferCommand) Run() error {
 	}
 
 	buf := new(bytes.Buffer)
-	if err := inferredNamesTemplate.Execute(buf, nameInferTemplateData{
+	if err := inferredNamesTemplate.Execute(buf, inferNameTemplateData{
 		ProgramInvocation: fmt.Sprintf("%s %s", govyCmdName, strings.Join(os.Args[1:], " ")),
 		Package:           n.pkg,
 		Names:             names,

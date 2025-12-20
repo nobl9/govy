@@ -7,20 +7,20 @@ import (
 // ForSlice creates a new [PropertyRulesForSlice] instance for a slice property
 // which value is extracted through [PropertyGetter] function.
 func ForSlice[S ~[]T, T, P any](getter PropertyGetter[S, P]) PropertyRulesForSlice[S, T, P] {
-	name := inferName()
 	return PropertyRulesForSlice[S, T, P]{
-		sliceRules:   forConstructor(GetSelf[S](), name),
-		forEachRules: forConstructor(GetSelf[T](), ""),
+		sliceRules:   forConstructor(GetSelf[S]()),
+		forEachRules: forConstructorWithoutNameInference(GetSelf[T]()),
 		getter:       getter,
 	}
 }
 
 // PropertyRulesForSlice is responsible for validating a single property.
 type PropertyRulesForSlice[S ~[]T, T, P any] struct {
-	sliceRules   PropertyRules[S, S]
-	forEachRules PropertyRules[T, T]
-	getter       PropertyGetter[S, P]
-	mode         CascadeMode
+	sliceRules    PropertyRules[S, S]
+	forEachRules  PropertyRules[T, T]
+	getter        PropertyGetter[S, P]
+	cascadeMode   CascadeMode
+	inferNameMode InferNameMode
 
 	predicateMatcher[P]
 }
@@ -34,7 +34,7 @@ func (r PropertyRulesForSlice[S, T, P]) Validate(parent P) error {
 	err := r.sliceRules.Validate(v)
 	var propErrs PropertyErrors
 	if err != nil {
-		if r.mode == CascadeModeStop {
+		if r.cascadeMode == CascadeModeStop {
 			return err
 		}
 		var ok bool
@@ -113,27 +113,44 @@ func (r PropertyRulesForSlice[S, T, P]) Include(rules ...ValidatorInterface[S]) 
 
 // Cascade => refer to [PropertyRules.Cascade] documentation.
 func (r PropertyRulesForSlice[S, T, P]) Cascade(mode CascadeMode) PropertyRulesForSlice[S, T, P] {
-	r.mode = mode
+	r.cascadeMode = mode
 	r.sliceRules = r.sliceRules.Cascade(mode)
 	r.forEachRules = r.forEachRules.Cascade(mode)
 	return r
 }
 
+// InferName => refer to [PropertyRules.InferName] documentation.
+func (r PropertyRulesForSlice[S, T, P]) InferName(mode InferNameMode) PropertyRulesForSlice[S, T, P] {
+	r.inferNameMode = mode
+	r.sliceRules = r.sliceRules.InferName(mode)
+	return r
+}
+
 // cascadeInternal is an internal wrapper around [PropertyRulesForSlice.Cascade] which
-// fulfills [propertyRulesInterface] interface.
+// fulfills [PropertyRulesInterface] interface.
 // If the [CascadeMode] is already set, it won't change it.
 func (r PropertyRulesForSlice[S, T, P]) cascadeInternal(mode CascadeMode) PropertyRulesInterface[P] {
-	if r.mode != 0 {
+	if r.cascadeMode != 0 {
 		return r
 	}
 	return r.Cascade(mode)
+}
+
+// inferNameModeInternal is an internal wrapper around [PropertyRulesForSlice.InferName] which
+// fulfills [PropertyRulesInterface] interface.
+// If the [InferNameMode] is already set, it won't change it.
+func (r PropertyRulesForSlice[S, T, P]) inferNameModeInternal(mode InferNameMode) PropertyRulesInterface[P] {
+	if r.inferNameMode != 0 {
+		return r
+	}
+	return r.InferName(mode)
 }
 
 // plan generates a validation plan for the property rules.
 func (r PropertyRulesForSlice[S, T, P]) plan(builder planBuilder) {
 	builder = appendPredicatesToPlanBuilder(builder, r.predicates)
 	r.sliceRules.plan(builder.setExamples(r.sliceRules.examples...))
-	builder = builder.appendPath(r.sliceRules.name)
+	builder = builder.appendPath(r.sliceRules.getName())
 	if len(r.forEachRules.rules) > 0 {
 		r.forEachRules.plan(builder.appendPath("[*]"))
 	}
@@ -141,7 +158,7 @@ func (r PropertyRulesForSlice[S, T, P]) plan(builder planBuilder) {
 
 // getJSONPathForIndex returns a JSONPath for the given index.
 func (r PropertyRulesForSlice[S, T, P]) getJSONPathForIndex(index int) string {
-	return jsonpath.JoinArray(r.sliceRules.name, jsonpath.NewArrayIndex(index))
+	return jsonpath.JoinArray(r.sliceRules.getName(), jsonpath.NewArrayIndex(index))
 }
 
 // getName returns the name of the property.
@@ -149,5 +166,5 @@ func (r PropertyRulesForSlice[S, T, P]) getName() string {
 	return r.sliceRules.getName()
 }
 
-// isPropertyRules implements [propertyRulesInterface].
+// isPropertyRules implements [PropertyRulesInterface].
 func (r PropertyRulesForSlice[S, T, P]) isPropertyRules() {}

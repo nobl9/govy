@@ -49,7 +49,7 @@ var expectedRuleErrorValidation = govy.New(
 			"message":         func(e ExpectedRuleError) any { return e.Message },
 			"containsMessage": func(e ExpectedRuleError) any { return e.ContainsMessage },
 		})),
-).InferName()
+).WithNameFunc(govy.NameFuncFromTypeName[ExpectedRuleError]())
 
 // expectedRuleErrorValidationForValidatorErrors defines the validation rules for [ExpectedRuleError]
 // when asserting errors in [govy.ValidatorErrors] slice.
@@ -69,7 +69,7 @@ var expectedRuleErrorValidationForValidatorErrors = govy.New(
 			)),
 	govy.ForPointer(func(e ExpectedRuleError) *int { return e.ValidatorIndex }).
 		Rules(rules.GTE(0)),
-).InferName()
+).WithNameFunc(govy.NameFuncFromTypeName[ExpectedRuleError]())
 
 // AssertNoError asserts that the provided error is nil.
 // If the error is not nil and of type [govy.ValidatorError] it will try

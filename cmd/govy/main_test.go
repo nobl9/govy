@@ -65,12 +65,12 @@ var expectedCommandOutputLines = []string{
 
 var moduleRoot = internal.FindModuleRoot()
 
-func TestCmd_NameInfer(t *testing.T) {
+func TestCmd_InferName(t *testing.T) {
 	tmpDir := t.TempDir()
 	fileName := "govy_inferred_names.go"
 	out := execCmd(t,
 		"go", "run", "../../cmd/govy",
-		nameInferCmdName,
+		inferNameCmdName,
 		"-dir", tmpDir,
 		"-pkg", "validation",
 		"-filename", fileName,

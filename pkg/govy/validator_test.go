@@ -8,6 +8,7 @@ import (
 	"github.com/nobl9/govy/internal/assert"
 
 	"github.com/nobl9/govy/pkg/govy"
+	"github.com/nobl9/govy/pkg/govyconfig"
 	"github.com/nobl9/govy/pkg/govytest"
 	"github.com/nobl9/govy/pkg/rules"
 )
@@ -101,41 +102,40 @@ func TestValidatorWithName(t *testing.T) {
 }
 
 func TestValidatorWithNameFunc(t *testing.T) {
-	v := govy.New(
-		govy.For(func(m mockValidatorStruct) string { return "test" }).
-			WithName("test").
-			Rules(govy.NewRule(func(v string) error { return errors.New("test") })),
-	).WithNameFunc(func(m mockValidatorStruct) string { return "validator with field: " + m.Field })
-
-	err := v.Validate(mockValidatorStruct{Field: "FIELD"})
-	assert.Require(t, assert.Error(t, err))
-	assert.EqualError(t, err, `Validation for validator with field: FIELD has failed for the following properties:
-  - 'test' with value 'test':
-    - test`)
-}
-
-func TestValidatorInferName(t *testing.T) {
-	t.Run("infer name", func(t *testing.T) {
+	t.Run("custom name function", func(t *testing.T) {
 		v := govy.New(
 			govy.For(func(m mockValidatorStruct) string { return "test" }).
 				WithName("test").
 				Rules(govy.NewRule(func(v string) error { return errors.New("test") })),
-		).InferName()
+		).WithNameFunc(func(m mockValidatorStruct) string { return "validator with field: " + m.Field })
 
-		err := v.Validate(mockValidatorStruct{})
+		err := v.Validate(mockValidatorStruct{Field: "FIELD"})
 		assert.Require(t, assert.Error(t, err))
-		assert.EqualError(t, err, `Validation for mockValidatorStruct has failed for the following properties:
+		assert.EqualError(t, err, `Validation for validator with field: FIELD has failed for the following properties:
   - 'test' with value 'test':
     - test`)
 	})
-	t.Run("do not infer name if name was already set", func(t *testing.T) {
+	t.Run("type based builtin name function", func(t *testing.T) {
+		v := govy.New(
+			govy.For(func(t Teacher) string { return "test" }).
+				WithName("test").
+				Rules(govy.NewRule(func(v string) error { return errors.New("test") })),
+		).WithNameFunc(govy.NameFuncFromTypeName[Teacher]())
+
+		err := v.Validate(Teacher{})
+		assert.Require(t, assert.Error(t, err))
+		assert.EqualError(t, err, `Validation for Teacher has failed for the following properties:
+  - 'test' with value 'test':
+    - test`)
+	})
+	t.Run("setting WithName AFTTER WithNameFunc cancels name function out", func(t *testing.T) {
 		v := govy.New(
 			govy.For(func(m mockValidatorStruct) string { return "test" }).
 				WithName("test").
 				Rules(govy.NewRule(func(v string) error { return errors.New("test") })),
 		).
-			WithName("myValidator").
-			InferName()
+			WithNameFunc(govy.NameFuncFromTypeName[mockValidatorStruct]()).
+			WithName("myValidator")
 
 		err := v.Validate(mockValidatorStruct{})
 		assert.Require(t, assert.Error(t, err))
@@ -295,6 +295,18 @@ func TestValidatorCascade(t *testing.T) {
 				{PropertyName: "string", Message: "2"},
 			},
 		},
+		"mixed inheritance": {
+			govy.New(
+				propertyRulesNeverFails,
+				propertyRules.Cascade(govy.CascadeModeContinue),
+				propertyRulesForSlice,
+				propertyRulesForMap.Cascade(govy.CascadeModeContinue),
+			).Cascade(govy.CascadeModeStop),
+			[]govytest.ExpectedRuleError{
+				{PropertyName: "string", Message: "1"},
+				{PropertyName: "string", Message: "2"},
+			},
+		},
 	}
 
 	for name, tc := range testCases {
@@ -425,6 +437,134 @@ func TestValidatorRemovePropertiesByName(t *testing.T) {
 		modified := v.RemovePropertiesByName("mapping")
 		err = modified.Validate(mockValidatorStruct{Field: "test"})
 		assert.NoError(t, err)
+	})
+}
+
+func TestValidatorInferName(t *testing.T) {
+	govyconfig.SetInferNameIncludeTestFiles(true)
+	defer govyconfig.SetInferNameIncludeTestFiles(false)
+
+	type mockInferNameStruct struct {
+		Name     string         `json:"name"`
+		Students []string       `json:"students"`
+		Grades   map[string]int `json:"grades"`
+	}
+
+	propertyRules := govy.For(func(m mockInferNameStruct) string { return m.Name }).
+		Rules(rules.EQ("expected"))
+	propertyRulesForSlice := govy.ForSlice(func(m mockInferNameStruct) []string { return m.Students }).
+		RulesForEach(rules.EQ("expected"))
+	propertyRulesForMap := govy.ForMap(func(m mockInferNameStruct) map[string]int { return m.Grades }).
+		RulesForKeys(rules.EQ("expected"))
+
+	t.Run("propagates mode to all properties", func(t *testing.T) {
+		v := govy.New(
+			propertyRules,
+			propertyRulesForSlice,
+			propertyRulesForMap,
+		).
+			InferName(govy.InferNameModeRuntime)
+
+		err := v.Validate(mockInferNameStruct{
+			Name:     "actual",
+			Students: []string{"actual"},
+			Grades:   map[string]int{"actual": 1},
+		})
+		errs := mustValidatorError(t, err)
+		govytest.AssertError(
+			t,
+			errs,
+			govytest.ExpectedRuleError{
+				PropertyName: "name",
+				Message:      "should be equal to 'expected'",
+			},
+			govytest.ExpectedRuleError{
+				PropertyName: "students[0]",
+				Message:      "should be equal to 'expected'",
+			},
+			govytest.ExpectedRuleError{
+				PropertyName: "grades.actual",
+				IsKeyError:   true,
+				Message:      "should be equal to 'expected'",
+			},
+		)
+	})
+
+	t.Run("property mode Runtime is not overridden by validator mode Generate", func(t *testing.T) {
+		govyconfig.SetInferredName(govyconfig.InferredName{
+			Name: "generated-students", // Changed name to differentiate between runtime and generate modes.
+			File: "pkg/govy/validator_test.go",
+			Line: 507,
+		})
+
+		v := govy.New(
+			govy.For(func(m mockInferNameStruct) string { return m.Name }).
+				InferName(govy.InferNameModeDisable).
+				Rules(rules.EQ("expected")),
+			govy.ForSlice(func(m mockInferNameStruct) []string { return m.Students }).
+				InferName(govy.InferNameModeRuntime).
+				RulesForEach(rules.EQ("expected")),
+			govy.ForMap(func(m mockInferNameStruct) map[string]int { return m.Grades }).
+				// InferName(govy.InferNameModeRuntime). -- Inference mode should be inherited from Validator.
+				RulesForKeys(rules.EQ("expected")),
+		).
+			InferName(govy.InferNameModeGenerate)
+
+		err := v.Validate(mockInferNameStruct{
+			Name:     "actual",
+			Students: []string{"actual"},
+			Grades:   map[string]int{"actual": 1},
+		})
+		errs := mustValidatorError(t, err)
+		govytest.AssertError(
+			t,
+			errs,
+			govytest.ExpectedRuleError{
+				PropertyName: "", // Name inference is disabled.
+				Message:      "should be equal to 'expected'",
+			},
+			govytest.ExpectedRuleError{
+				PropertyName: "students[0]", // Runtime mode.
+				Message:      "should be equal to 'expected'",
+			},
+			govytest.ExpectedRuleError{
+				PropertyName: "generated-students.actual", // Generate mode.
+				IsKeyError:   true,
+				Message:      "should be equal to 'expected'",
+			},
+		)
+	})
+
+	t.Run("no mode set on properties - validator can set mode", func(t *testing.T) {
+		// Properties don't set any mode (defaults to InferNameModeDisable = 0).
+		// Validator.InferName(InferNameModeRuntime) should propagate to all properties.
+		v := govy.New(
+			govy.For(func(m mockInferNameStruct) string { return m.Name }).
+				Rules(rules.EQ("expected")),
+			govy.ForSlice(func(m mockInferNameStruct) []string { return m.Students }).
+				RulesForEach(rules.EQ("expected")),
+			govy.ForMap(func(m mockInferNameStruct) map[string]int { return m.Grades }).
+				RulesForKeys(rules.EQ("expected")),
+		).InferName(govy.InferNameModeRuntime)
+
+		err := v.Validate(mockInferNameStruct{
+			Name:     "actual",
+			Students: []string{"actual"},
+			Grades:   map[string]int{"actual": 1},
+		})
+		errs := mustValidatorError(t, err)
+		// Check that all properties have inferred names (validator's mode was applied).
+		govytest.AssertError(
+			t,
+			errs,
+			govytest.ExpectedRuleError{PropertyName: "name", Message: "should be equal to 'expected'"},
+			govytest.ExpectedRuleError{PropertyName: "students[0]", Message: "should be equal to 'expected'"},
+			govytest.ExpectedRuleError{
+				PropertyName: "grades.actual",
+				IsKeyError:   true,
+				Message:      "should be equal to 'expected'",
+			},
+		)
 	})
 }
 

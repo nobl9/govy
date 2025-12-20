@@ -10,12 +10,11 @@ import (
 // ForMap creates a new [PropertyRulesForMap] instance for a map property
 // which value is extracted through [PropertyGetter] function.
 func ForMap[M ~map[K]V, K comparable, V, P any](getter PropertyGetter[M, P]) PropertyRulesForMap[M, K, V, P] {
-	name := inferName()
 	return PropertyRulesForMap[M, K, V, P]{
-		mapRules:      forConstructor(getter, name),
-		forKeyRules:   forConstructor(GetSelf[K](), ""),
-		forValueRules: forConstructor(GetSelf[V](), ""),
-		forItemRules:  forConstructor(GetSelf[MapItem[K, V]](), ""),
+		mapRules:      forConstructor(getter),
+		forKeyRules:   forConstructorWithoutNameInference(GetSelf[K]()),
+		forValueRules: forConstructorWithoutNameInference(GetSelf[V]()),
+		forItemRules:  forConstructorWithoutNameInference(GetSelf[MapItem[K, V]]()),
 		getter:        getter,
 	}
 }
@@ -27,7 +26,8 @@ type PropertyRulesForMap[M ~map[K]V, K comparable, V, P any] struct {
 	forValueRules PropertyRules[V, V]
 	forItemRules  PropertyRules[MapItem[K, V], MapItem[K, V]]
 	getter        PropertyGetter[M, P]
-	mode          CascadeMode
+	cascadeMode   CascadeMode
+	inferNameMode InferNameMode
 
 	predicateMatcher[P]
 }
@@ -46,7 +46,7 @@ func (r PropertyRulesForMap[M, K, V, P]) Validate(parent P) error {
 	err := r.mapRules.Validate(parent)
 	var propErrs PropertyErrors
 	if err != nil {
-		if r.mode == CascadeModeStop {
+		if r.cascadeMode == CascadeModeStop {
 			return err
 		}
 		var ok bool
@@ -182,7 +182,7 @@ func (r PropertyRulesForMap[M, K, V, P]) IncludeForItems(
 
 // Cascade => refer to [PropertyRules.Cascade] documentation.
 func (r PropertyRulesForMap[M, K, V, P]) Cascade(mode CascadeMode) PropertyRulesForMap[M, K, V, P] {
-	r.mode = mode
+	r.cascadeMode = mode
 	r.mapRules = r.mapRules.Cascade(mode)
 	r.forKeyRules = r.forKeyRules.Cascade(mode)
 	r.forValueRules = r.forValueRules.Cascade(mode)
@@ -190,21 +190,38 @@ func (r PropertyRulesForMap[M, K, V, P]) Cascade(mode CascadeMode) PropertyRules
 	return r
 }
 
+// InferName => refer to [PropertyRules.InferName] documentation.
+func (r PropertyRulesForMap[M, K, V, P]) InferName(mode InferNameMode) PropertyRulesForMap[M, K, V, P] {
+	r.inferNameMode = mode
+	r.mapRules = r.mapRules.InferName(mode)
+	return r
+}
+
 // cascadeInternal is an internal wrapper around [PropertyRulesForMap.Cascade] which
-// fulfills [propertyRulesInterface] interface.
+// fulfills [PropertyRulesInterface] interface.
 // If the [CascadeMode] is already set, it won't change it.
 func (r PropertyRulesForMap[M, K, V, P]) cascadeInternal(mode CascadeMode) PropertyRulesInterface[P] {
-	if r.mode != 0 {
+	if r.cascadeMode != 0 {
 		return r
 	}
 	return r.Cascade(mode)
+}
+
+// inferNameModeInternal is an internal wrapper around [PropertyRulesForMap.InferName] which
+// fulfills [PropertyRulesInterface] interface.
+// If the [InferNameMode] is already set, it won't change it.
+func (r PropertyRulesForMap[M, K, V, P]) inferNameModeInternal(mode InferNameMode) PropertyRulesInterface[P] {
+	if r.inferNameMode != 0 {
+		return r
+	}
+	return r.InferName(mode)
 }
 
 // plan constructs a validation plan for the property rules.
 func (r PropertyRulesForMap[M, K, V, P]) plan(builder planBuilder) {
 	builder = appendPredicatesToPlanBuilder(builder, r.predicates)
 	r.mapRules.plan(builder.setExamples(r.mapRules.examples...))
-	builder = builder.appendPath(r.mapRules.name)
+	builder = builder.appendPath(r.mapRules.getName())
 	// JSON/YAML path for keys uses '~' to extract the keys.
 	if len(r.forKeyRules.rules) > 0 {
 		r.forKeyRules.plan(builder.appendPath("~"))
@@ -219,7 +236,7 @@ func (r PropertyRulesForMap[M, K, V, P]) plan(builder planBuilder) {
 
 // getJSONPathForKey returns a JSONPath for the given key.
 func (r PropertyRulesForMap[M, K, V, P]) getJSONPathForKey(key any) string {
-	return jsonpath.Join(r.mapRules.name, jsonpath.EscapeSegment(fmt.Sprint(key)))
+	return jsonpath.Join(r.mapRules.getName(), jsonpath.EscapeSegment(fmt.Sprint(key)))
 }
 
 // getName returns the name of the property.
@@ -227,5 +244,5 @@ func (r PropertyRulesForMap[M, K, V, P]) getName() string {
 	return r.mapRules.getName()
 }
 
-// isPropertyRules implements [propertyRulesInterface].
+// isPropertyRules implements [PropertyRulesInterface].
 func (r PropertyRulesForMap[M, K, V, P]) isPropertyRules() {}

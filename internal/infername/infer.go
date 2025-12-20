@@ -1,18 +1,23 @@
-package nameinfer
+package infername
 
 import (
 	"fmt"
 	"go/ast"
 	"go/token"
 	"go/types"
+	"reflect"
 	"slices"
+	"strings"
 
 	"golang.org/x/tools/go/packages"
 
 	"github.com/nobl9/govy/internal/logging"
-	"github.com/nobl9/govy/pkg/govyconfig"
 )
 
+// FunctionsWithGetter is a list of govy package functions that accept a property
+// getter as their first argument and thus qualify for property name inference.
+// These functions follow the pattern: func(getter func(S) T) where S is the
+// struct type being validated and T is the property value type.
 var FunctionsWithGetter = []string{
 	"For",
 	"ForPointer",
@@ -21,24 +26,37 @@ var FunctionsWithGetter = []string{
 	"ForMap",
 }
 
+// InferName infers the name of a field from a file and line number.
 func InferName(file string, line int) string {
 	parseModuleASTOnce()
 
 	pkg, astFile := modAST.FindFile(file)
 	if astFile == nil {
+		logging.Logger().Error(
+			"AST file not found for name inference",
+			"file", file,
+			"line", line,
+		)
 		return ""
 	}
 	return InferNameFromFile(modAST.FileSet, pkg, astFile, line)
 }
 
+// InferNameFromFile infers the property name from a getter function at the given line.
+// It traverses the AST to find a govy function call (For, ForPointer, etc.) and
+// extracts the property name from the getter's return statement by analyzing
+// struct field access patterns like `s.Field` or `s.Nested.Field`.
+// Returns an empty string if inference fails.
 func InferNameFromFile(fileSet *token.FileSet, pkg *packages.Package, f *ast.File, line int) string {
 	var (
 		getterNode                   ast.Node
 		previousNodeIsFuncWithGetter bool
+		// done is used to stop processing nodes after we find the getter function.
+		done bool
 	)
 	importName := GetGovyImportName(f)
 	ast.Inspect(f, func(n ast.Node) bool {
-		if n == nil {
+		if done || n == nil {
 			return false
 		}
 		nodeLine := fileSet.Position(n.Pos()).Line
@@ -51,19 +69,24 @@ func InferNameFromFile(fileSet *token.FileSet, pkg *packages.Package, f *ast.Fil
 		// What follows must be the getter function.
 		if previousNodeIsFuncWithGetter {
 			getterNode = n
+			done = true // Stop processing more nodes
 			return false
 		}
 		switch v := n.(type) {
 		case *ast.SelectorExpr:
-			if se, isSelectorExpr := n.(*ast.SelectorExpr); isSelectorExpr {
-				exprIdent, ok := se.X.(*ast.Ident)
-				// FIXME: It's not safe to assume package name like that.
-				if ok && exprIdent.Name == importName && slices.Contains(FunctionsWithGetter, se.Sel.Name) {
-					previousNodeIsFuncWithGetter = true
-					return false
-				}
+			// Check if field selector is a govy function with getter.
+			if !slices.Contains(FunctionsWithGetter, v.Sel.Name) {
+				return true
 			}
+			// Check if expression is the govy package.
+			exprIdent, ok := v.X.(*ast.Ident)
+			if ok && exprIdent.Name == importName {
+				previousNodeIsFuncWithGetter = true
+			}
+			return false
 		case *ast.Ident:
+			// This case is ONLY for dot imports: `import . "govy"`.
+			// When using dot import, For() is called without package prefix.
 			if slices.Contains(FunctionsWithGetter, v.Name) {
 				previousNodeIsFuncWithGetter = true
 				return false
@@ -76,6 +99,25 @@ func InferNameFromFile(fileSet *token.FileSet, pkg *packages.Package, f *ast.Fil
 	return finder.FindName(getterNode, nil)
 }
 
+// InferNameDefaultFunc is the default function for inferring field names from struct tags.
+// It looks for json and yaml tags, preferring json if both are set.
+func InferNameDefaultFunc(fieldName, tagValue string) string {
+	for _, tagKey := range []string{"json", "yaml"} {
+		tagValues := strings.Split(
+			reflect.StructTag(strings.Trim(tagValue, "`")).Get(tagKey),
+			",",
+		)
+		if len(tagValues) > 0 && tagValues[0] != "" {
+			fieldName = tagValues[0]
+			break
+		}
+	}
+	return fieldName
+}
+
+// GetGovyImportName returns the import alias used for the govy package in the file.
+// It handles aliased imports like `import v "github.com/nobl9/govy/pkg/govy"`,
+// dot imports, and defaults to "govy" if no alias is specified.
 func GetGovyImportName(f *ast.File) string {
 	importName := "govy"
 	for _, imp := range f.Imports {
@@ -87,10 +129,14 @@ func GetGovyImportName(f *ast.File) string {
 	return importName
 }
 
+// nameFinder is a helper struct for finding the name of an inferred field.
 type nameFinder struct {
 	pkg *packages.Package
 }
 
+// FindName recursively traverses AST nodes to find and construct the property name.
+// It dispatches to type-specific handlers based on the AST node type.
+// The structType parameter carries the current struct context for nested field lookups.
 func (n nameFinder) FindName(a any, structType *types.Struct) string {
 	switch v := a.(type) {
 	case *ast.SelectorExpr:
@@ -208,6 +254,10 @@ func (n nameFinder) findNameInAssignStmt(assignment *ast.AssignStmt, structType 
 	return n.FindName(assignment.Rhs[0], structType)
 }
 
+// findNameInSelectorExpr extracts the property name from a selector expression like
+// `s.Field` or `s.Nested.Field`. For nested access, it recursively processes the chain
+// and constructs a dot-separated path (e.g., "nested.field"). It uses struct tags
+// (json/yaml) to determine the final field name via [InferNameDefaultFunc].
 func (n nameFinder) findNameInSelectorExpr(
 	se *ast.SelectorExpr,
 	structType *types.Struct,
@@ -235,7 +285,7 @@ func (n nameFinder) findNameInSelectorExpr(
 		if childStructType, isStruct := n.findStructTypeInStructField(field); isStruct {
 			structType = childStructType
 		}
-		fieldName = govyconfig.GetNameInferFunc()(fieldName, tagValue)
+		fieldName = InferNameDefaultFunc(fieldName, tagValue)
 		if name == "" {
 			return fieldName, structType
 		}

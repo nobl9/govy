@@ -14,4 +14,5 @@ var teacherValidation = govy.New(
 		Rules(rules.EQ("Cambridge")),
 	govy.For(func(t Teacher) university.University { return t.University }).
 		Include(university.UniversityValidation),
-)
+).
+	InferName(govy.InferNameModeRuntime)

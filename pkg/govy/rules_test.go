@@ -301,12 +301,8 @@ func TestTransform(t *testing.T) {
 }
 
 func TestPropertyRules_InferName(t *testing.T) {
-	govyconfig.SetNameInferIncludeTestFiles(true)
-	govyconfig.SetNameInferMode(govyconfig.NameInferModeRuntime)
-	defer func() {
-		govyconfig.SetNameInferIncludeTestFiles(false)
-		govyconfig.SetNameInferMode(govyconfig.NameInferModeDisable)
-	}()
+	govyconfig.SetInferNameIncludeTestFiles(true)
+	defer govyconfig.SetInferNameIncludeTestFiles(false)
 
 	type Age struct {
 		Years int `json:"years"`
@@ -323,6 +319,7 @@ func TestPropertyRules_InferName(t *testing.T) {
 
 	t.Run("inline getter", func(t *testing.T) {
 		r := govy.For(func(t Teacher) string { return t.Name }).
+			InferName(govy.InferNameModeRuntime).
 			Rules(rules.EQ("John"))
 		errs := mustPropertyErrors(t, r.Validate(Teacher{Name: "Luke"}))
 		assert.Len(t, errs, 1)
@@ -331,6 +328,7 @@ func TestPropertyRules_InferName(t *testing.T) {
 	t.Run("selector expression getter", func(t *testing.T) {
 		r := govy.
 			For(func(t Teacher) string { return t.Name }).
+			InferName(govy.InferNameModeRuntime).
 			Rules(rules.EQ("John"))
 		errs := mustPropertyErrors(t, r.Validate(Teacher{Name: "Luke"}))
 		assert.Len(t, errs, 1)
@@ -339,6 +337,7 @@ func TestPropertyRules_InferName(t *testing.T) {
 	t.Run("nested selector expression getter", func(t *testing.T) {
 		r := govy.
 			For(func(t Teacher) int { return t.Details.Age.Years }).
+			InferName(govy.InferNameModeRuntime).
 			Rules(rules.EQ(29))
 		errs := mustPropertyErrors(t, r.Validate(Teacher{Name: "Luke", Details: Details{Age: Age{Years: 30}}}))
 		assert.Len(t, errs, 1)
@@ -350,6 +349,7 @@ func TestPropertyRules_InferName(t *testing.T) {
 				teacherName := t.Name
 				return teacherName
 			}).
+			InferName(govy.InferNameModeRuntime).
 			Rules(rules.EQ("John"))
 		errs := mustPropertyErrors(t, r.Validate(Teacher{Name: "Luke"}))
 		assert.Len(t, errs, 1)
@@ -361,6 +361,7 @@ func TestPropertyRules_InferName(t *testing.T) {
 				teacherAge := t.Details.Age.Years
 				return teacherAge
 			}).
+			InferName(govy.InferNameModeRuntime).
 			Rules(rules.EQ(29))
 		errs := mustPropertyErrors(t, r.Validate(Teacher{Name: "Luke", Details: Details{Age: Age{Years: 30}}}))
 		assert.Len(t, errs, 1)
@@ -373,6 +374,7 @@ func TestPropertyRules_InferName(t *testing.T) {
 		}
 		r := govy.
 			For(getter).
+			InferName(govy.InferNameModeRuntime).
 			Rules(rules.EQ(29))
 		errs := mustPropertyErrors(t, r.Validate(Teacher{Name: "Luke", Details: Details{Age: Age{Years: 30}}}))
 		assert.Len(t, errs, 1)
@@ -381,6 +383,7 @@ func TestPropertyRules_InferName(t *testing.T) {
 	t.Run("pointer", func(t *testing.T) {
 		r := govy.
 			For(func(t Teacher) *string { return t.Remarks }).
+			InferName(govy.InferNameModeRuntime).
 			Rules(rules.EQ(ptr("No remarks")))
 		errs := mustPropertyErrors(t, r.Validate(Teacher{Name: "Luke", Remarks: ptr("Some remarks")}))
 		assert.Len(t, errs, 1)
@@ -394,6 +397,7 @@ func TestPropertyRules_InferName(t *testing.T) {
 				}
 				return t.Remarks
 			}).
+			InferName(govy.InferNameModeRuntime).
 			Rules(rules.EQ(ptr("No remarks")))
 		errs := mustPropertyErrors(t, r.Validate(Teacher{Name: "Luke", Remarks: ptr("Some remarks")}))
 		assert.Len(t, errs, 1)
@@ -407,6 +411,7 @@ func TestPropertyRules_InferName(t *testing.T) {
 				}
 				return nil
 			}).
+			InferName(govy.InferNameModeRuntime).
 			Rules(rules.EQ(ptr("No remarks")))
 		errs := mustPropertyErrors(t, r.Validate(Teacher{Name: "Luke", Remarks: ptr("Some remarks")}))
 		assert.Len(t, errs, 1)
@@ -415,11 +420,22 @@ func TestPropertyRules_InferName(t *testing.T) {
 	t.Run("no json tag", func(t *testing.T) {
 		r := govy.
 			For(func(t Teacher) string { return t.Surname }).
+			InferName(govy.InferNameModeRuntime).
 			Rules(rules.EQ("Cormack"))
 		errs := mustPropertyErrors(t, r.Validate(Teacher{Surname: "Ellis"}))
 		assert.Len(t, errs, 1)
 		assert.EqualError(t, errs, "- 'Surname' with value 'Ellis':\n  - should be equal to 'Cormack'")
 	})
+}
+
+type mockStruct struct {
+	Field string `json:"field"`
+}
+
+func BenchmarkFor(b *testing.B) {
+	for b.Loop() {
+		_ = govy.For(func(m mockStruct) string { return m.Field })
+	}
 }
 
 func mustPropertyErrors(t *testing.T, err error) govy.PropertyErrors {

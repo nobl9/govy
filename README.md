@@ -389,7 +389,7 @@ func Example_addingMessageTemplatesSupportToCustomRules() {
 				customRule,
 				rules.StringStartsWith("J"),
 			),
-	).InferName()
+	).WithNameFunc(govy.NameFuncFromTypeName[Teacher]())
 
 	teacher := Teacher{Name: "George"}
 
@@ -448,7 +448,7 @@ func Example_customRules() {
 			Rules(
 				customRule,
 				rules.StringStartsWith("J")),
-	).InferName()
+	).WithNameFunc(govy.NameFuncFromTypeName[Teacher]())
 
 	teacher := Teacher{Name: "George"}
 
@@ -697,10 +697,8 @@ import (
 )
 
 func Example_nameInference() {
-	govyconfig.SetNameInferIncludeTestFiles(true) // Required for the example to run.
-	govyconfig.SetNameInferMode(govyconfig.NameInferModeRuntime)
-	defer govyconfig.SetNameInferIncludeTestFiles(false)
-	defer govyconfig.SetNameInferMode(govyconfig.NameInferModeDisable)
+	govyconfig.SetInferNameIncludeTestFiles(true) // Required for the example to run.
+	defer govyconfig.SetInferNameIncludeTestFiles(false)
 
 	type Teacher struct {
 		Name string `json:"name"`
@@ -709,7 +707,9 @@ func Example_nameInference() {
 	v := govy.New(
 		govy.For(func(t Teacher) string { return t.Name }).
 			Rules(rules.EQ("Jerry")),
-	).InferName()
+	).
+		InferName(govy.InferNameModeRuntime).
+		WithNameFunc(govy.NameFuncFromTypeName[Teacher]())
 
 	teacher := Teacher{Name: "Tom"}
 	err := v.Validate(teacher)

@@ -40,7 +40,7 @@ func Example_addingMessageTemplatesSupportToCustomRules() {
 				customRule,
 				rules.StringStartsWith("J"),
 			),
-	).InferName()
+	).WithNameFunc(govy.NameFuncFromTypeName[Teacher]())
 
 	teacher := Teacher{Name: "George"}
 

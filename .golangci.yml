@@ -35,7 +35,8 @@ linters:
     - tparallel
     - unconvert
     - unparam
-    - unused
+    # Disabled until https://github.com/dominikh/go-tools/issues/1616 is fixed.
+    # - unused
     - wastedassign
     - whitespace
   settings:

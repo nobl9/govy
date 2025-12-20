@@ -1479,19 +1479,19 @@ func getStringCronTestCases() []*stringCrontabTestCase {
 			&stringCrontabTestCase{createCron(field.n, "%d-%d/a", field.lower, field.upper), true},
 			&stringCrontabTestCase{createCron(field.n, "%d-%d/-10", field.lower, field.upper), true},
 			&stringCrontabTestCase{createCron(field.n, "%d-*/10", field.lower), true},
-			&stringCrontabTestCase{createCron(field.n, "*-*/10", field.lower, field.upper), true},
+			&stringCrontabTestCase{createCron(field.n, "*-*/10"), true},
 			&stringCrontabTestCase{createCron(field.n, "*-%d/10", field.upper), true},
 		)
 	}
 	for month := range crontabMonthsMap {
-		testCases = append(testCases, &stringCrontabTestCase{createCron(3, month), false})
+		testCases = append(testCases, &stringCrontabTestCase{createCron(3, "%s", month), false})
 	}
 	for day := range crontabDaysMap {
 		// Skip special cases for Sunday.
 		if strings.Contains(day, "-") {
 			continue
 		}
-		testCases = append(testCases, &stringCrontabTestCase{createCron(4, day), false})
+		testCases = append(testCases, &stringCrontabTestCase{createCron(4, "%s", day), false})
 	}
 	return testCases
 }

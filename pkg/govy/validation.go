@@ -17,6 +17,7 @@ type PropertyRulesInterface[T any] interface {
 	validationInterface[T]
 	cascadeInternal(mode CascadeMode) PropertyRulesInterface[T]
 	getName() string
+	inferNameModeInternal(mode InferNameMode) PropertyRulesInterface[T]
 	isPropertyRules()
 }
 
