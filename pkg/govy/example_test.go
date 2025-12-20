@@ -1903,7 +1903,7 @@ func ExampleValidator_RemovePropertiesByName() {
 //     If you make sure that [govy.PropertyRules] is created only once and don't mind
 //     the one-time performance hit, this should be enough for you.
 //   - [govy.InferNameModeGenerate], the name is inferred during separate code generation phase.
-//     This mode requires you to run 'cmd/govy nameinfer' BEFORE you run your code.
+//     This mode requires you to run 'cmd/govy infername' BEFORE you run your code.
 //     It will generate a file with inferred names for your structs which automatically
 //     registers these names using [govyconfig.SetInferredName].
 //

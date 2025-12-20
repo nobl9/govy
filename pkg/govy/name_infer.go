@@ -72,7 +72,7 @@ func getInferNameFunc(callers int, pc []uintptr) internalInferNameFunc {
 
 // getCallersAndProgramCounter returns number of callers and program counters
 // of function invocations on the calling goroutine's stack.
-// Its results are intended to be passed directly to [getInferredNameFunc].
+// Its results are intended to be passed directly to [getInferNameFunc].
 func getCallersAndProgramCounter(skipFrames int) (callers int, pc []uintptr) {
 	pc = make([]uintptr, 1)
 	callers = runtime.Callers(skipFrames, pc)
