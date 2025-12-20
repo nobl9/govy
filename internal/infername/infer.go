@@ -14,6 +14,8 @@ import (
 	"github.com/nobl9/govy/internal/logging"
 )
 
+// FunctionsWithGetter is a list of functions that have property getter function
+// and thus qualify for property name inference.
 var FunctionsWithGetter = []string{
 	"For",
 	"ForPointer",
@@ -22,6 +24,7 @@ var FunctionsWithGetter = []string{
 	"ForMap",
 }
 
+// InferName infers the name of a field from a file and line number.
 func InferName(file string, line int) string {
 	parseModuleASTOnce()
 
@@ -37,14 +40,17 @@ func InferName(file string, line int) string {
 	return InferNameFromFile(modAST.FileSet, pkg, astFile, line)
 }
 
+// InferNameFromFile infers the name of a field from a file and line number.
 func InferNameFromFile(fileSet *token.FileSet, pkg *packages.Package, f *ast.File, line int) string {
 	var (
 		getterNode                   ast.Node
 		previousNodeIsFuncWithGetter bool
+		// done is used to stop processing nodes after we find the getter function.
+		done bool
 	)
 	importName := GetGovyImportName(f)
 	ast.Inspect(f, func(n ast.Node) bool {
-		if n == nil {
+		if done || n == nil {
 			return false
 		}
 		nodeLine := fileSet.Position(n.Pos()).Line
@@ -57,19 +63,24 @@ func InferNameFromFile(fileSet *token.FileSet, pkg *packages.Package, f *ast.Fil
 		// What follows must be the getter function.
 		if previousNodeIsFuncWithGetter {
 			getterNode = n
+			done = true // Stop processing more nodes
 			return false
 		}
 		switch v := n.(type) {
 		case *ast.SelectorExpr:
-			if se, isSelectorExpr := n.(*ast.SelectorExpr); isSelectorExpr {
-				exprIdent, ok := se.X.(*ast.Ident)
-				// FIXME: It's not safe to assume package name like that.
-				if ok && exprIdent.Name == importName && slices.Contains(FunctionsWithGetter, se.Sel.Name) {
-					previousNodeIsFuncWithGetter = true
-					return false
-				}
+			// Check if field selector is a govy function with getter.
+			if !slices.Contains(FunctionsWithGetter, v.Sel.Name) {
+				return true
 			}
+			// Check if expression is the govy package.
+			exprIdent, ok := v.X.(*ast.Ident)
+			if ok && exprIdent.Name == importName {
+				previousNodeIsFuncWithGetter = true
+			}
+			return false
 		case *ast.Ident:
+			// This case is ONLY for dot imports: `import . "govy"`.
+			// When using dot import, For() is called without package prefix.
 			if slices.Contains(FunctionsWithGetter, v.Name) {
 				previousNodeIsFuncWithGetter = true
 				return false
@@ -98,6 +109,7 @@ func InferNameDefaultFunc(fieldName, tagValue string) string {
 	return fieldName
 }
 
+// GetGovyImportName returns the import name of the govy package.
 func GetGovyImportName(f *ast.File) string {
 	importName := "govy"
 	for _, imp := range f.Imports {
@@ -109,6 +121,7 @@ func GetGovyImportName(f *ast.File) string {
 	return importName
 }
 
+// nameFinder is a helper struct for finding the name of a inferred field.
 type nameFinder struct {
 	pkg *packages.Package
 }

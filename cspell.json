@@ -65,6 +65,8 @@
     "tmpl",
     "tpng",
     "vuln",
-    "vulns"
+    "vulns",
+    "Implicits",
+    "mygovy"
   ]
 }
