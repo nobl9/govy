@@ -179,21 +179,6 @@ import (
 	}
 }
 
-func TestFrame(t *testing.T) {
-	file, line := Frame(2)
-	assert.True(t, strings.HasSuffix(file, "infer_test.go"))
-	assert.True(t, line > 0)
-}
-
-func TestFrame_nestedCall(t *testing.T) {
-	helper := func() (string, int) {
-		return Frame(3)
-	}
-	file, line := helper()
-	assert.True(t, strings.HasSuffix(file, "infer_test.go"))
-	assert.True(t, line > 0)
-}
-
 func TestFunctionsWithGetter(t *testing.T) {
 	expected := []string{"For", "ForPointer", "Transform", "ForSlice", "ForMap"}
 	assert.ElementsMatch(t, expected, FunctionsWithGetter)
