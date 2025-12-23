@@ -800,6 +800,43 @@ var _ = govy.For(func(s Shape) int { return s.Vertices[0].X })
 			line:     12,
 			expected: "vertices[0].x",
 		},
+		{
+			name: "map with integer key",
+			src: `package test
+import "github.com/nobl9/govy/pkg/govy"
+
+type Value struct {
+	Data string ` + "`json:\"data\"`" + `
+}
+
+type Container struct {
+	Items map[int]Value ` + "`json:\"items\"`" + `
+}
+
+var _ = govy.For(func(c Container) string { return c.Items[42].Data })
+`,
+			line:     12,
+			expected: "items[42].data",
+		},
+		{
+			name: "index with binary expression falls back to empty brackets",
+			src: `package test
+import "github.com/nobl9/govy/pkg/govy"
+
+type Item struct {
+	Name string ` + "`json:\"name\"`" + `
+}
+
+type List struct {
+	Items []Item ` + "`json:\"items\"`" + `
+}
+
+var offset = 1
+var _ = govy.For(func(l List) string { return l.Items[offset+1].Name })
+`,
+			line:     13,
+			expected: "items[].name",
+		},
 	}
 
 	for _, tc := range tests {
@@ -809,4 +846,33 @@ var _ = govy.For(func(s Shape) int { return s.Vertices[0].X })
 			assert.Equal(t, tc.expected, result)
 		})
 	}
+}
+
+func TestInferNameFromFile_indexExpressionWithFunctionCall(t *testing.T) {
+	src := `package test
+import "github.com/nobl9/govy/pkg/govy"
+
+type Student struct {
+	Name string
+}
+
+func getStudents() []Student {
+	return nil
+}
+
+var _ = govy.For(func(_ struct{}) string { return getStudents()[0].Name })
+`
+	res := createTestPackage(t, src)
+
+	result := InferNameFromFile(res.fset, res.pkg, res.f, 12)
+	assert.Equal(t, "", result)
+}
+
+func TestNameFinder_getStructFromType_unhandledType(t *testing.T) {
+	nf := nameFinder{}
+	// Test with a basic type that is not a struct, slice, array, or map.
+	basicType := types.Typ[types.Int]
+	result, ok := nf.getStructFromType(basicType)
+	assert.Equal(t, false, ok)
+	assert.Equal(t, (*types.Struct)(nil), result)
 }

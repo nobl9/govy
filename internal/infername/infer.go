@@ -323,8 +323,10 @@ func (n nameFinder) getStructFromType(t types.Type) (*types.Struct, bool) {
 		return n.getStructFromType(ut.Elem())
 	case *types.Map:
 		return n.getStructFromType(ut.Elem())
+	default:
+		logging.Logger().Debug(fmt.Sprintf("cannot extract struct from type: %T", t))
+		return nil, false
 	}
-	return nil, false
 }
 
 // formatIndexExpr formats an index expression for the property path.
@@ -338,9 +340,12 @@ func (n nameFinder) formatIndexExpr(index ast.Expr) string {
 		case token.STRING:
 			// String literals already include quotes.
 			return "[" + lit.Value + "]"
+		default:
+			logging.Logger().Debug(fmt.Sprintf("unhandled BasicLit kind in index expression: %v", lit.Kind))
 		}
+	} else {
+		logging.Logger().Debug(fmt.Sprintf("non-literal index expression: %T", index))
 	}
-	// For any other expression (variables, function calls, etc.)
 	return "[]"
 }
 
@@ -359,8 +364,8 @@ func (n nameFinder) findNameInIndexExpr(
 		// Handle nested indices like matrix[0][1].
 		name, structType = n.findNameInIndexExpr(v, structType)
 	case *ast.Ident:
-		// Base case - just an identifier being indexed.
-		break
+		// Base case - just an identifier being indexed (e.g., direct variable access).
+		logging.Logger().Debug(fmt.Sprintf("index expression base is identifier: %s", v.Name))
 	default:
 		logging.Logger().Debug(fmt.Sprintf("unexpected type in IndexExpr.X: %T", v))
 		return "", nil
