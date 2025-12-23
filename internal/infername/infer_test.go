@@ -5,7 +5,6 @@ import (
 	"go/parser"
 	"go/token"
 	"go/types"
-	"strings"
 	"testing"
 
 	"golang.org/x/tools/go/packages"
@@ -661,4 +660,153 @@ var _ = For(func(p Person) string { return p.Name })
 
 	result := InferNameFromFile(res.fset, res.pkg, res.f, 8)
 	assert.Equal(t, "name", result)
+}
+
+func TestInferNameFromFile_indexExpression(t *testing.T) {
+	tests := []struct {
+		name     string
+		src      string
+		line     int
+		expected string
+	}{
+		{
+			name: "simple slice index with literal",
+			src: `package test
+import "github.com/nobl9/govy/pkg/govy"
+
+type Student struct {
+	Name string ` + "`json:\"name\"`" + `
+}
+
+type Teacher struct {
+	Students []Student ` + "`json:\"students\"`" + `
+}
+
+var _ = govy.For(func(t Teacher) string { return t.Students[0].Name })
+`,
+			line:     12,
+			expected: "students[0].name",
+		},
+		{
+			name: "map with string key literal",
+			src: `package test
+import "github.com/nobl9/govy/pkg/govy"
+
+type Value struct {
+	Data string ` + "`json:\"data\"`" + `
+}
+
+type Container struct {
+	Metadata map[string]Value ` + "`json:\"metadata\"`" + `
+}
+
+var _ = govy.For(func(c Container) string { return c.Metadata["key"].Data })
+`,
+			line:     12,
+			expected: `metadata["key"].data`,
+		},
+		{
+			name: "slice index with variable (empty brackets)",
+			src: `package test
+import "github.com/nobl9/govy/pkg/govy"
+
+type Item struct {
+	Name string ` + "`json:\"name\"`" + `
+}
+
+type List struct {
+	Items []Item ` + "`json:\"items\"`" + `
+}
+
+var i = 0
+var _ = govy.For(func(l List) string { return l.Items[i].Name })
+`,
+			line:     13,
+			expected: "items[].name",
+		},
+		{
+			name: "nested indices",
+			src: `package test
+import "github.com/nobl9/govy/pkg/govy"
+
+type Cell struct {
+	Value string ` + "`json:\"value\"`" + `
+}
+
+type Container struct {
+	Matrix [][]Cell ` + "`json:\"matrix\"`" + `
+}
+
+var _ = govy.For(func(c Container) string { return c.Matrix[0][1].Value })
+`,
+			line:     12,
+			expected: "matrix[0][1].value",
+		},
+		{
+			name: "deep chain with multiple indices",
+			src: `package test
+import "github.com/nobl9/govy/pkg/govy"
+
+type Employee struct {
+	Name string ` + "`json:\"name\"`" + `
+}
+
+type Department struct {
+	Employees []Employee ` + "`json:\"employees\"`" + `
+}
+
+type Company struct {
+	Departments []Department ` + "`json:\"departments\"`" + `
+}
+
+var _ = govy.For(func(c Company) string { return c.Departments[0].Employees[0].Name })
+`,
+			line:     16,
+			expected: "departments[0].employees[0].name",
+		},
+		{
+			name: "slice of pointers",
+			src: `package test
+import "github.com/nobl9/govy/pkg/govy"
+
+type Student struct {
+	Name string ` + "`json:\"name\"`" + `
+}
+
+type Teacher struct {
+	Students []*Student ` + "`json:\"students\"`" + `
+}
+
+var _ = govy.For(func(t Teacher) string { return t.Students[0].Name })
+`,
+			line:     12,
+			expected: "students[0].name",
+		},
+		{
+			name: "array instead of slice",
+			src: `package test
+import "github.com/nobl9/govy/pkg/govy"
+
+type Point struct {
+	X int ` + "`json:\"x\"`" + `
+}
+
+type Shape struct {
+	Vertices [3]Point ` + "`json:\"vertices\"`" + `
+}
+
+var _ = govy.For(func(s Shape) int { return s.Vertices[0].X })
+`,
+			line:     12,
+			expected: "vertices[0].x",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			res := createTestPackage(t, tc.src)
+			result := InferNameFromFile(res.fset, res.pkg, res.f, tc.line)
+			assert.Equal(t, tc.expected, result)
+		})
+	}
 }

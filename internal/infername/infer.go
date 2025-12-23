@@ -268,6 +268,8 @@ func (n nameFinder) findNameInSelectorExpr(
 		break
 	case *ast.SelectorExpr:
 		name, structType = n.findNameInSelectorExpr(v, structType)
+	case *ast.IndexExpr:
+		name, structType = n.findNameInIndexExpr(v, structType)
 	default:
 		logging.Logger().Debug(fmt.Sprintf("unexpected type: %T", v))
 		return "", nil
@@ -295,12 +297,78 @@ func (n nameFinder) findNameInSelectorExpr(
 	return "", nil
 }
 
-// findStructTypeInStructField returns the underlying [*types.Struct] of [*ast.Field] if it's a struct.
+// findStructTypeInStructField returns the underlying [*types.Struct] of a field if it's a struct.
+// For collection types (slice, array, map), it extracts the element type first.
 func (n nameFinder) findStructTypeInStructField(field *types.Var) (*types.Struct, bool) {
-	switch ut := field.Type().Underlying().(type) {
+	return n.getStructFromType(field.Type())
+}
+
+// getStructFromType extracts a struct type from a potentially wrapped type.
+// It handles pointers, named types, and collection types (slices, arrays, maps).
+func (n nameFinder) getStructFromType(t types.Type) (*types.Struct, bool) {
+	// Unwrap pointer.
+	if ptr, ok := t.(*types.Pointer); ok {
+		t = ptr.Elem()
+	}
+	// Handle named types.
+	if named, ok := t.(*types.Named); ok {
+		t = named.Underlying()
+	}
+	switch ut := t.(type) {
 	case *types.Struct:
 		return ut, true
-	default:
-		return nil, false
+	case *types.Slice:
+		return n.getStructFromType(ut.Elem())
+	case *types.Array:
+		return n.getStructFromType(ut.Elem())
+	case *types.Map:
+		return n.getStructFromType(ut.Elem())
 	}
+	return nil, false
+}
+
+// formatIndexExpr formats an index expression for the property path.
+// Returns [0] for integer literals, ["key"] for string literals,
+// and [] for variables or other expressions.
+func (n nameFinder) formatIndexExpr(index ast.Expr) string {
+	if lit, ok := index.(*ast.BasicLit); ok {
+		switch lit.Kind {
+		case token.INT:
+			return "[" + lit.Value + "]"
+		case token.STRING:
+			// String literals already include quotes.
+			return "[" + lit.Value + "]"
+		}
+	}
+	// For any other expression (variables, function calls, etc.)
+	return "[]"
+}
+
+// findNameInIndexExpr handles index expressions like p.Students[0] or p.Items[i].
+// It extracts the indexed property name and appends the index notation.
+func (n nameFinder) findNameInIndexExpr(
+	ie *ast.IndexExpr,
+	structType *types.Struct,
+) (string, *types.Struct) {
+	var name string
+	// Process the base expression (ie.X).
+	switch v := ie.X.(type) {
+	case *ast.SelectorExpr:
+		name, structType = n.findNameInSelectorExpr(v, structType)
+	case *ast.IndexExpr:
+		// Handle nested indices like matrix[0][1].
+		name, structType = n.findNameInIndexExpr(v, structType)
+	case *ast.Ident:
+		// Base case - just an identifier being indexed.
+		break
+	default:
+		logging.Logger().Debug(fmt.Sprintf("unexpected type in IndexExpr.X: %T", v))
+		return "", nil
+	}
+	if name == "" && structType == nil {
+		return "", nil
+	}
+	// Format the index notation.
+	indexStr := n.formatIndexExpr(ie.Index)
+	return name + indexStr, structType
 }
