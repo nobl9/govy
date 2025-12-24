@@ -873,6 +873,6 @@ func TestNameFinder_getStructFromType_unhandledType(t *testing.T) {
 	// Test with a basic type that is not a struct, slice, array, or map.
 	basicType := types.Typ[types.Int]
 	result, ok := nf.getStructFromType(basicType)
-	assert.Equal(t, false, ok)
+	assert.False(t, ok)
 	assert.Equal(t, (*types.Struct)(nil), result)
 }
