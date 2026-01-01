@@ -1,51 +1,51 @@
 {
   "lockfile_version": "1",
   "packages": {
-    "cspell@9.4.0": {
-      "last_modified": "2025-12-09T08:49:39Z",
-      "resolved": "github:NixOS/nixpkgs/677fbe97984e7af3175b6c121f3c39ee5c8d62c9#cspell",
+    "cspell@9.5.0": {
+      "last_modified": "2025-12-22T13:40:18Z",
+      "resolved": "github:NixOS/nixpkgs/3a7affa77a5a539afa1c7859e2c31abdb1aeadf3#cspell",
       "source": "devbox-search",
-      "version": "9.4.0",
+      "version": "9.5.0",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/k5blr307b2vpvdgxkh9bjajyg98rn1k4-cspell-9.4.0",
+              "path": "/nix/store/n694xxdmgsza39yxaij08mw4zz2h38r0-cspell-9.5.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/k5blr307b2vpvdgxkh9bjajyg98rn1k4-cspell-9.4.0"
+          "store_path": "/nix/store/n694xxdmgsza39yxaij08mw4zz2h38r0-cspell-9.5.0"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/y6y4ki4zqy8qnxmpj60kx8nrjvxr0sv3-cspell-9.4.0",
+              "path": "/nix/store/rqlsis3fr4d5f2chlvkfxdcpkd5bsyza-cspell-9.5.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/y6y4ki4zqy8qnxmpj60kx8nrjvxr0sv3-cspell-9.4.0"
+          "store_path": "/nix/store/rqlsis3fr4d5f2chlvkfxdcpkd5bsyza-cspell-9.5.0"
         },
         "x86_64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/f3zalh1xmkf7apgh3b4jpmamvp4a31wn-cspell-9.4.0",
+              "path": "/nix/store/4i0iclphsg8ma3v0x11qf24jzzar1nsv-cspell-9.5.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/f3zalh1xmkf7apgh3b4jpmamvp4a31wn-cspell-9.4.0"
+          "store_path": "/nix/store/4i0iclphsg8ma3v0x11qf24jzzar1nsv-cspell-9.5.0"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/pm91j4ivm7fpqfyly1f8ggrgpckp9h5l-cspell-9.4.0",
+              "path": "/nix/store/zs9lf55yxys592n91wmbx97yv4cym7kq-cspell-9.5.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/pm91j4ivm7fpqfyly1f8ggrgpckp9h5l-cspell-9.4.0"
+          "store_path": "/nix/store/zs9lf55yxys592n91wmbx97yv4cym7kq-cspell-9.5.0"
         }
       }
     },
