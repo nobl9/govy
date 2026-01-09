@@ -4,7 +4,7 @@
     "govulncheck@1.1.4",
     "golangci-lint@2.7.2",
     "gosec@2.22.11",
-    "go@1.25.4",
+    "go@1.25.5",
     "gotools@0.34.0",
     "markdownlint-cli@0.47.0",
     "cspell@9.4.0"
