@@ -703,7 +703,7 @@ type Container struct {
 var _ = govy.For(func(c Container) string { return c.Metadata["key"].Data })
 `,
 			line:     12,
-			expected: `metadata["key"].data`,
+			expected: `metadata.key.data`,
 		},
 		{
 			name: "slice index with variable (empty brackets)",

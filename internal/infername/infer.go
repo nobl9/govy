@@ -7,10 +7,12 @@ import (
 	"go/types"
 	"reflect"
 	"slices"
+	"strconv"
 	"strings"
 
 	"golang.org/x/tools/go/packages"
 
+	"github.com/nobl9/govy/internal/jsonpath"
 	"github.com/nobl9/govy/internal/logging"
 )
 
@@ -330,7 +332,7 @@ func (n nameFinder) getStructFromType(t types.Type) (*types.Struct, bool) {
 }
 
 // formatIndexExpr formats an index expression for the property path.
-// Returns [0] for integer literals, ["key"] for string literals,
+// Returns [0] for integer literals, .key or ['key.with" dots'] for string literals,
 // and [] for variables or other expressions.
 func (n nameFinder) formatIndexExpr(index ast.Expr) string {
 	if lit, ok := index.(*ast.BasicLit); ok {
@@ -338,8 +340,20 @@ func (n nameFinder) formatIndexExpr(index ast.Expr) string {
 		case token.INT:
 			return "[" + lit.Value + "]"
 		case token.STRING:
-			// String literals already include quotes.
-			return "[" + lit.Value + "]"
+			// Unquote the string literal to get the actual key value.
+			key, err := strconv.Unquote(lit.Value)
+			if err != nil {
+				logging.Logger().Debug(fmt.Sprintf("failed to unquote string literal: %v", err))
+				return "[]"
+			}
+			// Use jsonpath.EscapeSegment to properly escape and format the key.
+			escaped := jsonpath.EscapeSegment(key)
+			// If the key is already wrapped in brackets, return as-is for concatenation.
+			// Otherwise, prepend '.' for proper JSONPath joining.
+			if strings.HasPrefix(escaped, "[") {
+				return escaped
+			}
+			return "." + escaped
 		default:
 			logging.Logger().Debug(fmt.Sprintf("unhandled BasicLit kind in index expression: %v", lit.Kind))
 		}
