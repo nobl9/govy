@@ -332,8 +332,9 @@ func (n nameFinder) getStructFromType(t types.Type) (*types.Struct, bool) {
 }
 
 // formatIndexExpr formats an index expression for the property path.
-// Returns [0] for integer literals, .key or ['key.with" dots'] for string literals,
-// and [] for variables or other expressions.
+// Returns [N] for integer literals, .key for simple string keys,
+// ['key.with.special'] for string keys containing dots/spaces/brackets,
+// and [] for variables or other non-literal expressions.
 func (n nameFinder) formatIndexExpr(index ast.Expr) string {
 	if lit, ok := index.(*ast.BasicLit); ok {
 		switch lit.Kind {

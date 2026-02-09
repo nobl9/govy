@@ -837,6 +837,78 @@ var _ = govy.For(func(l List) string { return l.Items[offset+1].Name })
 			line:     13,
 			expected: "items[].name",
 		},
+		{
+			name: "map with string key containing dots",
+			src: `package test
+import "github.com/nobl9/govy/pkg/govy"
+
+type Value struct {
+	Data string ` + "`json:\"data\"`" + `
+}
+
+type Container struct {
+	Metadata map[string]Value ` + "`json:\"metadata\"`" + `
+}
+
+var _ = govy.For(func(c Container) string { return c.Metadata["my.nested.key"].Data })
+`,
+			line:     12,
+			expected: `metadata['my.nested.key'].data`,
+		},
+		{
+			name: "map with string key containing brackets",
+			src: `package test
+import "github.com/nobl9/govy/pkg/govy"
+
+type Value struct {
+	Data string ` + "`json:\"data\"`" + `
+}
+
+type Container struct {
+	Items map[string]Value ` + "`json:\"items\"`" + `
+}
+
+var _ = govy.For(func(c Container) string { return c.Items["[special]"].Data })
+`,
+			line:     12,
+			expected: `items['[special]'].data`,
+		},
+		{
+			name: "map with string key containing single quotes",
+			src: `package test
+import "github.com/nobl9/govy/pkg/govy"
+
+type Value struct {
+	Data string ` + "`json:\"data\"`" + `
+}
+
+type Container struct {
+	Items map[string]Value ` + "`json:\"items\"`" + `
+}
+
+var _ = govy.For(func(c Container) string { return c.Items["'quoted'"].Data })
+`,
+			line:     12,
+			expected: `items.\'quoted\'.data`,
+		},
+		{
+			name: "map with named type value",
+			src: `package test
+import "github.com/nobl9/govy/pkg/govy"
+
+type CustomValue struct {
+	Data string ` + "`json:\"data\"`" + `
+}
+
+type Container struct {
+	Items map[string]CustomValue ` + "`json:\"items\"`" + `
+}
+
+var _ = govy.For(func(c Container) string { return c.Items["key"].Data })
+`,
+			line:     12,
+			expected: "items.key.data",
+		},
 	}
 
 	for _, tc := range tests {

@@ -1,6 +1,6 @@
 module examplemodule
 
-go 1.24.9
+go 1.25.5
 
 replace github.com/nobl9/govy v0.22.0 => ../../.
 

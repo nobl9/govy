@@ -1,6 +1,6 @@
 module github.com/nobl9/govy
 
-go 1.24.9
+go 1.25.5
 
 require golang.org/x/tools v0.40.0
 
