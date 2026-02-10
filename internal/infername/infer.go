@@ -331,39 +331,6 @@ func (n nameFinder) getStructFromType(t types.Type) (*types.Struct, bool) {
 	}
 }
 
-// formatIndexExpr formats an index expression for the property path.
-// Returns [N] for integer literals, .key for simple string keys,
-// ['key.with.special'] for string keys containing dots/spaces/brackets,
-// and [] for variables or other non-literal expressions.
-func (n nameFinder) formatIndexExpr(index ast.Expr) string {
-	if lit, ok := index.(*ast.BasicLit); ok {
-		switch lit.Kind {
-		case token.INT:
-			return "[" + lit.Value + "]"
-		case token.STRING:
-			// Unquote the string literal to get the actual key value.
-			key, err := strconv.Unquote(lit.Value)
-			if err != nil {
-				logging.Logger().Debug(fmt.Sprintf("failed to unquote string literal: %v", err))
-				return "[]"
-			}
-			// Use jsonpath.EscapeSegment to properly escape and format the key.
-			escaped := jsonpath.EscapeSegment(key)
-			// If the key is already wrapped in brackets, return as-is for concatenation.
-			// Otherwise, prepend '.' for proper JSONPath joining.
-			if strings.HasPrefix(escaped, "[") {
-				return escaped
-			}
-			return "." + escaped
-		default:
-			logging.Logger().Debug(fmt.Sprintf("unhandled BasicLit kind in index expression: %v", lit.Kind))
-		}
-	} else {
-		logging.Logger().Debug(fmt.Sprintf("non-literal index expression: %T", index))
-	}
-	return "[]"
-}
-
 // findNameInIndexExpr handles index expressions like p.Students[0] or p.Items[i].
 // It extracts the indexed property name and appends the index notation.
 func (n nameFinder) findNameInIndexExpr(
@@ -391,4 +358,40 @@ func (n nameFinder) findNameInIndexExpr(
 	// Format the index notation.
 	indexStr := n.formatIndexExpr(ie.Index)
 	return name + indexStr, structType
+}
+
+const defaultIndexStr = "[]"
+
+// formatIndexExpr formats an index expression for the property path.
+// Returns [N] for integer literals, .key for simple string keys,
+// ['key.with.special'] for string keys containing dots/spaces/brackets,
+// and [] for variables or other non-literal expressions.
+func (n nameFinder) formatIndexExpr(index ast.Expr) string {
+	lit, ok := index.(*ast.BasicLit)
+	if !ok {
+		logging.Logger().Debug(fmt.Sprintf("non-literal index expression: %T", index))
+		return defaultIndexStr
+	}
+	switch lit.Kind {
+	case token.INT:
+		return "[" + lit.Value + "]"
+	case token.STRING:
+		// Unquote the string literal to get the actual key value.
+		key, err := strconv.Unquote(lit.Value)
+		if err != nil {
+			logging.Logger().Debug(fmt.Sprintf("failed to unquote string literal: %v", err))
+			return defaultIndexStr
+		}
+		// Use jsonpath.EscapeSegment to properly escape and format the key.
+		escaped := jsonpath.EscapeSegment(key)
+		// If the key is already wrapped in brackets, return as-is for concatenation.
+		// Otherwise, prepend '.' for proper JSONPath joining.
+		if strings.HasPrefix(escaped, "[") {
+			return escaped
+		}
+		return "." + escaped
+	default:
+		logging.Logger().Debug(fmt.Sprintf("unhandled BasicLit kind in index expression: %v", lit.Kind))
+	}
+	return defaultIndexStr
 }
