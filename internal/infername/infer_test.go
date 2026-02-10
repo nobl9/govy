@@ -889,7 +889,7 @@ type Container struct {
 var _ = govy.For(func(c Container) string { return c.Items["'quoted'"].Data })
 `,
 			line:     12,
-			expected: `items.\'quoted\'.data`,
+			expected: `items['\'quoted\''].data`,
 		},
 		{
 			name: "map with named type value",

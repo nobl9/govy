@@ -7,7 +7,7 @@ import (
 
 const (
 	jsonPathSeparator = "."
-	escapedChars      = jsonPathSeparator + "[] \t\n\r"
+	escapedChars      = jsonPathSeparator + "[]' \t\n\r"
 	slashEscapedChars = ""
 )
 
@@ -15,7 +15,7 @@ const (
 // Examples:
 //
 //	EscapeSegment("foo") --> "foo"
-//	EscapeSegment("'foo'") --> "\'foo\'"
+//	EscapeSegment("'foo'") --> "['\'foo\'']"
 //	EscapeSegment("foo.bar") --> "['foo.bar']"
 func EscapeSegment(segment string) string {
 	shouldWrap := segment == "" || strings.ContainsAny(segment, escapedChars)

@@ -326,7 +326,6 @@ func (n nameFinder) getStructFromType(t types.Type) (*types.Struct, bool) {
 	case *types.Map:
 		return n.getStructFromType(ut.Elem())
 	default:
-		logging.Logger().Debug(fmt.Sprintf("cannot extract struct from type: %T", t))
 		return nil, false
 	}
 }
