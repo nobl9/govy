@@ -27,7 +27,8 @@
     "cspell.json",
     "CODEOWNERS",
     "bin/**",
-    "docs/assets/**"
+    "docs/assets/**",
+    "context7.json"
   ],
   "words": [
     "Descriptionf",
