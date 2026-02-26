@@ -4,6 +4,7 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -22,10 +23,25 @@ func TestRules_EnsureTestsAndBenchmarksAreWritten(t *testing.T) {
 	rulesDir := filepath.Join(internal.FindModuleRoot(), "pkg/rules")
 	fset := token.NewFileSet()
 
-	// Parse the directory
-	pkgs, err := parser.ParseDir(fset, rulesDir, nil, parser.ParseComments)
+	// Read all files in the directory
+	entries, err := os.ReadDir(rulesDir)
 	if err != nil {
-		t.Fatalf("Failed to parse directory: %v", err)
+		t.Fatalf("Failed to read directory: %v", err)
+	}
+
+	var files []*ast.File
+	var fileNames []string
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".go") {
+			continue
+		}
+		filePath := filepath.Join(rulesDir, entry.Name())
+		file, err := parser.ParseFile(fset, filePath, nil, parser.ParseComments)
+		if err != nil {
+			t.Fatalf("Failed to parse file %s: %v", entry.Name(), err)
+		}
+		files = append(files, file)
+		fileNames = append(fileNames, entry.Name())
 	}
 
 	exportedFuncs := make(map[string]struct{})
@@ -33,42 +49,38 @@ func TestRules_EnsureTestsAndBenchmarksAreWritten(t *testing.T) {
 	benchmarkFuncs := make(map[string]bool)
 
 	// Collect exported functions
-	for _, pkg := range pkgs {
-		for fileName, file := range pkg.Files {
-			if strings.HasSuffix(fileName, "_test.go") {
-				continue
-			}
-			ast.Inspect(file, func(n ast.Node) bool {
-				fn, ok := n.(*ast.FuncDecl)
-				if !ok {
-					return true
-				}
-				if excludeFuncs[fn.Name.Name] || !fn.Name.IsExported() || fn.Recv != nil {
-					return false
-				}
-				exportedFuncs[fn.Name.Name] = struct{}{}
-				return false
-			})
+	for i, file := range files {
+		if strings.HasSuffix(fileNames[i], "_test.go") {
+			continue
 		}
+		ast.Inspect(file, func(n ast.Node) bool {
+			fn, ok := n.(*ast.FuncDecl)
+			if !ok {
+				return true
+			}
+			if excludeFuncs[fn.Name.Name] || !fn.Name.IsExported() || fn.Recv != nil {
+				return false
+			}
+			exportedFuncs[fn.Name.Name] = struct{}{}
+			return false
+		})
 	}
 
 	// Collect test and benchmark functions
-	for _, pkg := range pkgs {
-		for fileName, file := range pkg.Files {
-			if !strings.HasSuffix(fileName, "_test.go") {
-				continue
-			}
-			ast.Inspect(file, func(n ast.Node) bool {
-				if fn, ok := n.(*ast.FuncDecl); ok {
-					if strings.HasPrefix(fn.Name.Name, "Test") {
-						testFuncs[fn.Name.Name] = true
-					} else if strings.HasPrefix(fn.Name.Name, "Benchmark") {
-						benchmarkFuncs[fn.Name.Name] = true
-					}
-				}
-				return true
-			})
+	for i, file := range files {
+		if !strings.HasSuffix(fileNames[i], "_test.go") {
+			continue
 		}
+		ast.Inspect(file, func(n ast.Node) bool {
+			if fn, ok := n.(*ast.FuncDecl); ok {
+				if strings.HasPrefix(fn.Name.Name, "Test") {
+					testFuncs[fn.Name.Name] = true
+				} else if strings.HasPrefix(fn.Name.Name, "Benchmark") {
+					benchmarkFuncs[fn.Name.Name] = true
+				}
+			}
+			return true
+		})
 	}
 
 	// Check for corresponding test and benchmark functions
