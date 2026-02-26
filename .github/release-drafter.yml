@@ -29,6 +29,7 @@ version-resolver:
   minor:
     labels:
       - minor
+      - breaking-change
   patch:
     labels:
       - patch
@@ -68,6 +69,9 @@ autolabeler:
       - "/^fix:/i"
       - "/^sec:/i"
       - "/^chore:/i"
+      - "/^infra:/i"
+      - "/^doc:/i"
+      - "/^test:/i"
     branch:
       - '/^renovate_/'
   # Languages detection.
