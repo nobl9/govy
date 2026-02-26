@@ -19,6 +19,7 @@ linters:
     - gocyclo
     - goheader
     - goprintffuncname
+    - gosec
     - govet
     - importas
     - ineffassign
@@ -49,6 +50,11 @@ linters:
         - singleCaseSwitch
       enabled-tags:
         - opinionated
+    gosec:
+      excludes:
+        - G304 # Potential file inclusion via variable (false positives in tests)
+        - G404 # Weak random number generator (acceptable in tests)
+        - G705 # XSS via taint analysis (false positive for CLI stderr output)
     misspell:
       locale: US
     revive:

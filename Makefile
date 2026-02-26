@@ -54,9 +54,9 @@ test/coverage:
 	go test -coverprofile=coverage.out ./...
 	go tool cover -html=coverage.out
 
-.PHONY: check check/vet check/lint check/gosec check/spell check/trailing check/markdown check/generate check/vulns
+.PHONY: check check/vet check/lint check/spell check/trailing check/markdown check/generate check/vulns
 ## Run all checks.
-check: check/vet check/lint check/gosec check/spell check/trailing check/markdown check/generate check/vulns
+check: check/vet check/lint check/spell check/trailing check/markdown check/generate check/vulns
 
 ## Run 'go vet' on the whole project.
 check/vet:
@@ -67,11 +67,6 @@ check/vet:
 check/lint:
 	$(call _print_step,Running golangci-lint)
 	golangci-lint run ./... ./tests/examplemodule
-
-## Check for security problems using gosec, which inspects the Go code by scanning the AST.
-check/gosec:
-	$(call _print_step,Running gosec)
-	gosec -exclude-generated -quiet ./...
 
 ## Check spelling, rules are defined in cspell.json.
 check/spell:
