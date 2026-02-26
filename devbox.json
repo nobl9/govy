@@ -2,7 +2,6 @@
   "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/refs/heads/main/.schema/devbox.schema.json",
   "packages": [
     "govulncheck@1.1.4",
-    "gosec@2.22.11",
     "gotools@0.34.0",
     "markdownlint-cli@0.47.0",
     "cspell@9.6.4",
