@@ -19,6 +19,7 @@ categories:
       - chore
       - infrastructure
       - dependencies
+      - test
 change-template: "- $TITLE (#$NUMBER) @$AUTHOR"
 change-title-escapes: '\<*_&' # You can add # and @ to disable mentions, and add ` to disable code blocks.
 version-resolver:
@@ -52,6 +53,9 @@ autolabeler:
   - label: documentation
     title:
       - "/^doc:/i"
+  - label: test
+    title:
+      - "/^test:/i"
   - label: breaking-change
     body:
       - '/^## Breaking Changes/im'
