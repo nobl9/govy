@@ -23,6 +23,10 @@ const (
 	LTTemplate
 	LTETemplate
 	EqualPropertiesTemplate
+	GTPropertiesTemplate
+	GTEPropertiesTemplate
+	LTPropertiesTemplate
+	LTEPropertiesTemplate
 	DurationPrecisionTemplate
 	ForbiddenTemplate
 	OneOfTemplate
@@ -74,6 +78,10 @@ var rawMessageTemplates = map[templateKey]string{
 	LTTemplate:                "should be less than '{{ .ComparisonValue }}'",
 	LTETemplate:               "should be less than or equal to '{{ .ComparisonValue }}'",
 	EqualPropertiesTemplate:   `all of [{{ joinSlice .ComparisonValue "" }}] properties must be equal, but '{{ .Custom.FirstNotEqual }}' is not equal to '{{ .Custom.SecondNotEqual }}'`,
+	GTPropertiesTemplate:      `'{{ .Custom.FirstProperty }}' must be greater than '{{ .Custom.SecondProperty }}'`,
+	GTEPropertiesTemplate:     `'{{ .Custom.FirstProperty }}' must be greater than or equal to '{{ .Custom.SecondProperty }}'`,
+	LTPropertiesTemplate:      `'{{ .Custom.FirstProperty }}' must be less than '{{ .Custom.SecondProperty }}'`,
+	LTEPropertiesTemplate:     `'{{ .Custom.FirstProperty }}' must be less than or equal to '{{ .Custom.SecondProperty }}'`,
 	DurationPrecisionTemplate: "duration must be defined with {{ .ComparisonValue }} precision",
 	ForbiddenTemplate:         "property is forbidden",
 	OneOfTemplate:             `must be one of: {{ joinSlice .ComparisonValue "" }}`,

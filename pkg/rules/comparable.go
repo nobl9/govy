@@ -199,3 +199,243 @@ func EqualProperties[T, P any](compare ComparisonFunc[T], getters map[string]fun
 			)
 		}())
 }
+
+// GTProperties ensures the first property's value is greater than the second property's value.
+// It works with [cmp.Ordered] types (int, float64, string, etc.).
+func GTProperties[T cmp.Ordered, P any](
+	firstName string,
+	firstGetter func(parent P) T,
+	secondName string,
+	secondGetter func(parent P) T,
+) govy.Rule[P] {
+	tpl := messagetemplates.Get(messagetemplates.GTPropertiesTemplate)
+
+	return govy.NewRule(func(parent P) error {
+		v1 := firstGetter(parent)
+		v2 := secondGetter(parent)
+		if cmp.Compare(v1, v2) <= 0 {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				Custom: comparePropertiesTemplateVars{
+					FirstProperty:  firstName,
+					SecondProperty: secondName,
+				},
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeGTProperties).
+		WithMessageTemplate(tpl).
+		WithDescription(fmt.Sprintf("'%s' must be greater than '%s'", firstName, secondName))
+}
+
+// GTEProperties ensures the first property's value is greater than or equal to the second property's value.
+// It works with [cmp.Ordered] types (int, float64, string, etc.).
+func GTEProperties[T cmp.Ordered, P any](
+	firstName string,
+	firstGetter func(parent P) T,
+	secondName string,
+	secondGetter func(parent P) T,
+) govy.Rule[P] {
+	tpl := messagetemplates.Get(messagetemplates.GTEPropertiesTemplate)
+
+	return govy.NewRule(func(parent P) error {
+		v1 := firstGetter(parent)
+		v2 := secondGetter(parent)
+		if cmp.Compare(v1, v2) < 0 {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				Custom: comparePropertiesTemplateVars{
+					FirstProperty:  firstName,
+					SecondProperty: secondName,
+				},
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeGTEProperties).
+		WithMessageTemplate(tpl).
+		WithDescription(fmt.Sprintf("'%s' must be greater than or equal to '%s'", firstName, secondName))
+}
+
+// LTProperties ensures the first property's value is less than the second property's value.
+// It works with [cmp.Ordered] types (int, float64, string, etc.).
+func LTProperties[T cmp.Ordered, P any](
+	firstName string,
+	firstGetter func(parent P) T,
+	secondName string,
+	secondGetter func(parent P) T,
+) govy.Rule[P] {
+	tpl := messagetemplates.Get(messagetemplates.LTPropertiesTemplate)
+
+	return govy.NewRule(func(parent P) error {
+		v1 := firstGetter(parent)
+		v2 := secondGetter(parent)
+		if cmp.Compare(v1, v2) >= 0 {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				Custom: comparePropertiesTemplateVars{
+					FirstProperty:  firstName,
+					SecondProperty: secondName,
+				},
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeLTProperties).
+		WithMessageTemplate(tpl).
+		WithDescription(fmt.Sprintf("'%s' must be less than '%s'", firstName, secondName))
+}
+
+// LTEProperties ensures the first property's value is less than or equal to the second property's value.
+// It works with [cmp.Ordered] types (int, float64, string, etc.).
+func LTEProperties[T cmp.Ordered, P any](
+	firstName string,
+	firstGetter func(parent P) T,
+	secondName string,
+	secondGetter func(parent P) T,
+) govy.Rule[P] {
+	tpl := messagetemplates.Get(messagetemplates.LTEPropertiesTemplate)
+
+	return govy.NewRule(func(parent P) error {
+		v1 := firstGetter(parent)
+		v2 := secondGetter(parent)
+		if cmp.Compare(v1, v2) > 0 {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				Custom: comparePropertiesTemplateVars{
+					FirstProperty:  firstName,
+					SecondProperty: secondName,
+				},
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeLTEProperties).
+		WithMessageTemplate(tpl).
+		WithDescription(fmt.Sprintf("'%s' must be less than or equal to '%s'", firstName, secondName))
+}
+
+// Comparable is an interface for types that implement a Compare method.
+// The Compare method should return:
+//   - a negative value if the receiver is less than the argument
+//   - zero if they are equal
+//   - a positive value if the receiver is greater than the argument
+//
+// This method is implemented by types like [time.Time].
+type Comparable[T any] interface {
+	Compare(T) int
+}
+
+type comparePropertiesTemplateVars struct {
+	FirstProperty  string
+	SecondProperty string
+}
+
+// GTComparableProperties ensures the first property's value is greater than the second property's value.
+// It works with types that implement the [Comparable] interface (types with a Compare method like [time.Time]).
+func GTComparableProperties[T Comparable[T], P any](
+	firstName string,
+	firstGetter func(parent P) T,
+	secondName string,
+	secondGetter func(parent P) T,
+) govy.Rule[P] {
+	tpl := messagetemplates.Get(messagetemplates.GTPropertiesTemplate)
+
+	return govy.NewRule(func(parent P) error {
+		v1 := firstGetter(parent)
+		v2 := secondGetter(parent)
+		if v1.Compare(v2) <= 0 {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				Custom: comparePropertiesTemplateVars{
+					FirstProperty:  firstName,
+					SecondProperty: secondName,
+				},
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeGTProperties).
+		WithMessageTemplate(tpl).
+		WithDescription(fmt.Sprintf("'%s' must be greater than '%s'", firstName, secondName))
+}
+
+// GTEComparableProperties ensures the first property's value is greater than or equal to the second property's value.
+// It works with types that implement the [Comparable] interface (types with a Compare method like [time.Time]).
+func GTEComparableProperties[T Comparable[T], P any](
+	firstName string,
+	firstGetter func(parent P) T,
+	secondName string,
+	secondGetter func(parent P) T,
+) govy.Rule[P] {
+	tpl := messagetemplates.Get(messagetemplates.GTEPropertiesTemplate)
+
+	return govy.NewRule(func(parent P) error {
+		v1 := firstGetter(parent)
+		v2 := secondGetter(parent)
+		if v1.Compare(v2) < 0 {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				Custom: comparePropertiesTemplateVars{
+					FirstProperty:  firstName,
+					SecondProperty: secondName,
+				},
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeGTEProperties).
+		WithMessageTemplate(tpl).
+		WithDescription(fmt.Sprintf("'%s' must be greater than or equal to '%s'", firstName, secondName))
+}
+
+// LTComparableProperties ensures the first property's value is less than the second property's value.
+// It works with types that implement the [Comparable] interface (types with a Compare method like [time.Time]).
+func LTComparableProperties[T Comparable[T], P any](
+	firstName string,
+	firstGetter func(parent P) T,
+	secondName string,
+	secondGetter func(parent P) T,
+) govy.Rule[P] {
+	tpl := messagetemplates.Get(messagetemplates.LTPropertiesTemplate)
+
+	return govy.NewRule(func(parent P) error {
+		v1 := firstGetter(parent)
+		v2 := secondGetter(parent)
+		if v1.Compare(v2) >= 0 {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				Custom: comparePropertiesTemplateVars{
+					FirstProperty:  firstName,
+					SecondProperty: secondName,
+				},
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeLTProperties).
+		WithMessageTemplate(tpl).
+		WithDescription(fmt.Sprintf("'%s' must be less than '%s'", firstName, secondName))
+}
+
+// LTEComparableProperties ensures the first property's value is less than or equal to the second property's value.
+// It works with types that implement the [Comparable] interface (types with a Compare method like [time.Time]).
+func LTEComparableProperties[T Comparable[T], P any](
+	firstName string,
+	firstGetter func(parent P) T,
+	secondName string,
+	secondGetter func(parent P) T,
+) govy.Rule[P] {
+	tpl := messagetemplates.Get(messagetemplates.LTEPropertiesTemplate)
+
+	return govy.NewRule(func(parent P) error {
+		v1 := firstGetter(parent)
+		v2 := secondGetter(parent)
+		if v1.Compare(v2) > 0 {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				Custom: comparePropertiesTemplateVars{
+					FirstProperty:  firstName,
+					SecondProperty: secondName,
+				},
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeLTEProperties).
+		WithMessageTemplate(tpl).
+		WithDescription(fmt.Sprintf("'%s' must be less than or equal to '%s'", firstName, secondName))
+}
