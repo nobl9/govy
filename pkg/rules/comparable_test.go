@@ -1,6 +1,7 @@
 package rules
 
 import (
+	"cmp"
 	"testing"
 	"time"
 
@@ -337,14 +338,14 @@ var ltComparablePropertiesTestCases = []*struct {
 			StartTime: time.Date(2024, 1, 2, 0, 0, 0, 0, time.UTC),
 			EndTime:   time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 		},
-		expectedError: "'startTime' must be less than 'endTime'",
+		expectedError: "'startTime' must be before 'endTime'",
 	},
 	{
 		value: timeRange{
 			StartTime: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 			EndTime:   time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 		},
-		expectedError: "'startTime' must be less than 'endTime'",
+		expectedError: "'startTime' must be before 'endTime'",
 	},
 }
 
@@ -358,7 +359,7 @@ func TestLTComparableProperties(t *testing.T) {
 		if tc.expectedError != "" {
 			assert.Require(t, assert.Error(t, err))
 			assert.EqualError(t, err, tc.expectedError)
-			assert.True(t, govy.HasErrorCode(err, ErrorCodeLTProperties))
+			assert.True(t, govy.HasErrorCode(err, ErrorCodeLTComparableProperties))
 		} else {
 			assert.NoError(t, err)
 		}
@@ -430,14 +431,14 @@ var gtComparablePropertiesTestCases = []*struct {
 			StartTime: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 			EndTime:   time.Date(2024, 1, 2, 0, 0, 0, 0, time.UTC),
 		},
-		expectedError: "'startTime' must be greater than 'endTime'",
+		expectedError: "'startTime' must be after 'endTime'",
 	},
 	{
 		value: timeRange{
 			StartTime: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 			EndTime:   time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 		},
-		expectedError: "'startTime' must be greater than 'endTime'",
+		expectedError: "'startTime' must be after 'endTime'",
 	},
 }
 
@@ -451,7 +452,7 @@ func TestGTComparableProperties(t *testing.T) {
 		if tc.expectedError != "" {
 			assert.Require(t, assert.Error(t, err))
 			assert.EqualError(t, err, tc.expectedError)
-			assert.True(t, govy.HasErrorCode(err, ErrorCodeGTProperties))
+			assert.True(t, govy.HasErrorCode(err, ErrorCodeGTComparableProperties))
 		} else {
 			assert.NoError(t, err)
 		}
@@ -529,7 +530,7 @@ var lteComparablePropertiesTestCases = []*struct {
 			StartTime: time.Date(2024, 1, 2, 0, 0, 0, 0, time.UTC),
 			EndTime:   time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 		},
-		expectedError: "'startTime' must be less than or equal to 'endTime'",
+		expectedError: "'startTime' must be before or equal to 'endTime'",
 	},
 }
 
@@ -543,7 +544,7 @@ func TestLTEComparableProperties(t *testing.T) {
 		if tc.expectedError != "" {
 			assert.Require(t, assert.Error(t, err))
 			assert.EqualError(t, err, tc.expectedError)
-			assert.True(t, govy.HasErrorCode(err, ErrorCodeLTEProperties))
+			assert.True(t, govy.HasErrorCode(err, ErrorCodeLTEComparableProperties))
 		} else {
 			assert.NoError(t, err)
 		}
@@ -621,7 +622,7 @@ var gteComparablePropertiesTestCases = []*struct {
 			StartTime: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 			EndTime:   time.Date(2024, 1, 2, 0, 0, 0, 0, time.UTC),
 		},
-		expectedError: "'startTime' must be greater than or equal to 'endTime'",
+		expectedError: "'startTime' must be after or equal to 'endTime'",
 	},
 }
 
@@ -635,7 +636,7 @@ func TestGTEComparableProperties(t *testing.T) {
 		if tc.expectedError != "" {
 			assert.Require(t, assert.Error(t, err))
 			assert.EqualError(t, err, tc.expectedError)
-			assert.True(t, govy.HasErrorCode(err, ErrorCodeGTEProperties))
+			assert.True(t, govy.HasErrorCode(err, ErrorCodeGTEComparableProperties))
 		} else {
 			assert.NoError(t, err)
 		}
@@ -652,4 +653,99 @@ func BenchmarkGTEComparableProperties(b *testing.B) {
 			_ = rule.Validate(tc.value)
 		}
 	}
+}
+
+type customComparable struct {
+	value int
+}
+
+func (c customComparable) Compare(other customComparable) int {
+	return cmp.Compare(c.value, other.value)
+}
+
+type customComparableRange struct {
+	First  customComparable
+	Second customComparable
+}
+
+func TestIsTemporal(t *testing.T) {
+	now := time.Now()
+	tests := []struct {
+		name     string
+		value    any
+		expected bool
+	}{
+		{name: "time.Time", value: now, expected: true},
+		{name: "*time.Time", value: &now, expected: true},
+		{name: "int", value: 42, expected: false},
+		{name: "string", value: "test", expected: false},
+		{name: "customComparable", value: customComparable{value: 10}, expected: false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := isTemporal(tt.value)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestLTComparablePropertiesUsesBeforeForTime(t *testing.T) {
+	rule := LTComparableProperties(
+		"startTime", func(tr timeRange) time.Time { return tr.StartTime },
+		"endTime", func(tr timeRange) time.Time { return tr.EndTime },
+	)
+
+	err := rule.Validate(timeRange{
+		StartTime: time.Date(2024, 1, 2, 0, 0, 0, 0, time.UTC),
+		EndTime:   time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+	})
+
+	assert.Require(t, assert.Error(t, err))
+	assert.EqualError(t, err, "'startTime' must be before 'endTime'")
+}
+
+func TestLTComparablePropertiesUsesLessThanForCustomType(t *testing.T) {
+	rule := LTComparableProperties(
+		"first", func(r customComparableRange) customComparable { return r.First },
+		"second", func(r customComparableRange) customComparable { return r.Second },
+	)
+
+	err := rule.Validate(customComparableRange{
+		First:  customComparable{value: 10},
+		Second: customComparable{value: 5},
+	})
+
+	assert.Require(t, assert.Error(t, err))
+	assert.EqualError(t, err, "'first' must be less than 'second'")
+}
+
+func TestGTComparablePropertiesUsesAfterForTime(t *testing.T) {
+	rule := GTComparableProperties(
+		"startTime", func(tr timeRange) time.Time { return tr.StartTime },
+		"endTime", func(tr timeRange) time.Time { return tr.EndTime },
+	)
+
+	err := rule.Validate(timeRange{
+		StartTime: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+		EndTime:   time.Date(2024, 1, 2, 0, 0, 0, 0, time.UTC),
+	})
+
+	assert.Require(t, assert.Error(t, err))
+	assert.EqualError(t, err, "'startTime' must be after 'endTime'")
+}
+
+func TestGTComparablePropertiesUsesGreaterThanForCustomType(t *testing.T) {
+	rule := GTComparableProperties(
+		"first", func(r customComparableRange) customComparable { return r.First },
+		"second", func(r customComparableRange) customComparable { return r.Second },
+	)
+
+	err := rule.Validate(customComparableRange{
+		First:  customComparable{value: 5},
+		Second: customComparable{value: 10},
+	})
+
+	assert.Require(t, assert.Error(t, err))
+	assert.EqualError(t, err, "'first' must be greater than 'second'")
 }

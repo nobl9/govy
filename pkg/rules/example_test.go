@@ -201,5 +201,5 @@ func ExampleLTComparableProperties() {
 	// Output:
 	// Valid: true
 	// Validation has failed:
-	//   - 'startTime' must be less than 'endTime'
+	//   - 'startTime' must be before 'endTime'
 }
