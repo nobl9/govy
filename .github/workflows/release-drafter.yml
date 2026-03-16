@@ -31,7 +31,7 @@ jobs:
           fetch-depth: 0
       # Drafts your next Release notes as Pull Requests are merged into "main"
       - id: drafter
-        uses: release-drafter/release-drafter@v6
+        uses: release-drafter/release-drafter@v7
       - name: Add release notes to the draft
         if: github.event_name == 'push'
         run: .github/scripts/release-notes.bash ${{ steps.drafter.outputs.tag_name }}
