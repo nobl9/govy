@@ -22,12 +22,12 @@ func TestValidatorError(t *testing.T) {
 		"no_name": {
 			Errors: govy.PropertyErrors{
 				{
-					PropertyName:  "this",
+					PropertyPath:  "this",
 					PropertyValue: "123",
 					Errors:        []*govy.RuleError{{Message: "this is an error"}},
 				},
 				{
-					PropertyName: "that",
+					PropertyPath: "that",
 					Errors:       []*govy.RuleError{{Message: "that is an error"}},
 				},
 			},
@@ -36,12 +36,12 @@ func TestValidatorError(t *testing.T) {
 			Name: "Teacher",
 			Errors: govy.PropertyErrors{
 				{
-					PropertyName:  "this",
+					PropertyPath:  "this",
 					PropertyValue: "123",
 					Errors:        []*govy.RuleError{{Message: "this is an error"}},
 				},
 				{
-					PropertyName: "that",
+					PropertyPath: "that",
 					Errors:       []*govy.RuleError{{Message: "that is an error"}},
 				},
 			},
@@ -52,7 +52,7 @@ func TestValidatorError(t *testing.T) {
 					Errors: []*govy.RuleError{{Message: "no name"}},
 				},
 				{
-					PropertyName: "that",
+					PropertyPath: "that",
 					Errors:       []*govy.RuleError{{Message: "that is an error"}},
 				},
 			},
@@ -105,12 +105,12 @@ func TestValidatorErrors(t *testing.T) {
 			Name: "Teacher",
 			Errors: govy.PropertyErrors{
 				{
-					PropertyName:  "this",
+					PropertyPath:  "this",
 					PropertyValue: "123",
 					Errors:        []*govy.RuleError{{Message: "this is an error"}},
 				},
 				{
-					PropertyName: "that",
+					PropertyPath: "that",
 					Errors:       []*govy.RuleError{{Message: "that is an error"}},
 				},
 			},
@@ -119,12 +119,12 @@ func TestValidatorErrors(t *testing.T) {
 		{
 			Errors: govy.PropertyErrors{
 				{
-					PropertyName:  "this",
+					PropertyPath:  "this",
 					PropertyValue: "123",
 					Errors:        []*govy.RuleError{{Message: "this is an error"}},
 				},
 				{
-					PropertyName: "that",
+					PropertyPath: "that",
 					Errors:       []*govy.RuleError{{Message: "that is an error"}},
 				},
 			},
@@ -136,7 +136,7 @@ func TestValidatorErrors(t *testing.T) {
 					Errors: []*govy.RuleError{{Message: "no name"}},
 				},
 				{
-					PropertyName: "that",
+					PropertyPath: "that",
 					Errors:       []*govy.RuleError{{Message: "that is an error"}},
 				},
 			},
@@ -157,7 +157,7 @@ func TestNewPropertyError(t *testing.T) {
 			&govy.RuleError{Message: "top", Code: "4"},
 		)
 		assert.Equal(t, &govy.PropertyError{
-			PropertyName:  "name",
+			PropertyPath:  "name",
 			PropertyValue: "value",
 			Errors: []*govy.RuleError{
 				{Message: "top", Code: "1"},
@@ -236,7 +236,7 @@ my-table WHERE value = "abc"
 				tc.InputValue,
 				&govy.RuleError{Message: "msg"})
 			assert.Equal(t, &govy.PropertyError{
-				PropertyName:  "name",
+				PropertyPath:  "name",
 				PropertyValue: tc.ExpectedValue,
 				Errors:        []*govy.RuleError{{Message: "msg"}},
 			}, err)
@@ -281,7 +281,7 @@ func TestPropertyError(t *testing.T) {
 	for name, value := range tests {
 		t.Run(name, func(t *testing.T) {
 			err := &govy.PropertyError{
-				PropertyName:  "metadata.name",
+				PropertyPath:  "metadata.name",
 				PropertyValue: internal.PropertyValueString(value),
 				Errors: []*govy.RuleError{
 					{Message: "what a shame this happened"},

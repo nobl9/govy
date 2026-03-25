@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/nobl9/govy/internal"
+	"github.com/nobl9/govy/internal/jsonpath"
 	"github.com/nobl9/govy/internal/typeinfo"
 )
 
@@ -141,10 +142,10 @@ func (r PropertyRules[T, P]) Validate(parent P) error {
 		switch errValue := err.(type) {
 		// Same as Rule[P] as for GetSelf we'd get the same type on T and P.
 		case *PropertyError:
-			allErrors = append(allErrors, errValue.prependParentPropertyName(r.getName()))
+			allErrors = append(allErrors, errValue.prependParentPropertyPath(r.getName()))
 		case *ValidatorError:
 			for _, e := range errValue.Errors {
-				allErrors = append(allErrors, e.prependParentPropertyName(r.getName()))
+				allErrors = append(allErrors, e.prependParentPropertyPath(r.getName()))
 			}
 		default:
 			ruleErrors = append(ruleErrors, err)
@@ -167,8 +168,17 @@ func (r PropertyRules[T, P]) Validate(parent P) error {
 
 // WithName sets the name of the property.
 // If the name was inferred, it will be overridden.
+// Special characters in the name are automatically escaped using JSONPath bracket notation.
 func (r PropertyRules[T, P]) WithName(name string) PropertyRules[T, P] {
-	r.name = name
+	r.name = jsonpath.EscapeSegment(name)
+	return r
+}
+
+// WithPath sets the property path using a pre-constructed [Path].
+// This is useful when the property path contains multiple segments
+// or when you need explicit control over the path construction.
+func (r PropertyRules[T, P]) WithPath(path Path) PropertyRules[T, P] {
+	r.name = path.String()
 	return r
 }
 

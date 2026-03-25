@@ -7,7 +7,7 @@ import (
 	"github.com/nobl9/govy/internal/assert"
 )
 
-func TestPropertyError_prependPropertyName(t *testing.T) {
+func TestPropertyError_prependPropertyPath(t *testing.T) {
 	tests := []struct {
 		PropertyError *PropertyError
 		InputName     string
@@ -17,7 +17,7 @@ func TestPropertyError_prependPropertyName(t *testing.T) {
 			PropertyError: &PropertyError{},
 		},
 		{
-			PropertyError: &PropertyError{PropertyName: "test"},
+			PropertyError: &PropertyError{PropertyPath: "test"},
 			ExpectedName:  "test",
 		},
 		{
@@ -26,35 +26,45 @@ func TestPropertyError_prependPropertyName(t *testing.T) {
 			ExpectedName:  "new",
 		},
 		{
-			PropertyError: &PropertyError{PropertyName: "original"},
+			PropertyError: &PropertyError{PropertyPath: "original"},
 			InputName:     "added",
 			ExpectedName:  "added.original",
 		},
 		{
-			PropertyError: &PropertyError{PropertyName: "bar", IsSliceElementError: true},
+			PropertyError: &PropertyError{PropertyPath: "bar", IsSliceElementError: true},
 			InputName:     "foo[1]",
 			ExpectedName:  "foo[1].bar",
 		},
 		{
-			PropertyError: &PropertyError{PropertyName: "[2]", IsSliceElementError: true},
+			PropertyError: &PropertyError{PropertyPath: "[2]", IsSliceElementError: true},
 			InputName:     "foo",
 			ExpectedName:  "foo[2]",
 		},
 		{
-			PropertyError: &PropertyError{PropertyName: "foo", IsSliceElementError: true},
+			PropertyError: &PropertyError{PropertyPath: "foo", IsSliceElementError: true},
 			InputName:     "[0]",
 			ExpectedName:  "[0].foo",
 		},
 		{
-			PropertyError: &PropertyError{PropertyName: "[1]", IsSliceElementError: true},
+			PropertyError: &PropertyError{PropertyPath: "[1]", IsSliceElementError: true},
 			InputName:     "[0]",
 			ExpectedName:  "[0][1]",
+		},
+		{
+			PropertyError: &PropertyError{PropertyPath: "['foo.bar']"},
+			InputName:     "parent",
+			ExpectedName:  "parent['foo.bar']",
+		},
+		{
+			PropertyError: &PropertyError{PropertyPath: "child"},
+			InputName:     "['complex.parent']",
+			ExpectedName:  "['complex.parent'].child",
 		},
 	}
 
 	for i, tc := range tests {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
-			assert.Equal(t, tc.ExpectedName, tc.PropertyError.prependParentPropertyName(tc.InputName).PropertyName)
+			assert.Equal(t, tc.ExpectedName, tc.PropertyError.prependParentPropertyPath(tc.InputName).PropertyPath)
 		})
 	}
 }

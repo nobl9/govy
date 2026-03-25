@@ -289,11 +289,11 @@ func (n nameFinder) findNameInSelectorExpr(
 		if childStructType, isStruct := n.findStructTypeInStructField(field); isStruct {
 			structType = childStructType
 		}
-		fieldName = InferNameDefaultFunc(fieldName, tagValue)
+		fieldName = jsonpath.EscapeSegment(InferNameDefaultFunc(fieldName, tagValue))
 		if name == "" {
 			return fieldName, structType
 		}
-		return name + "." + fieldName, structType
+		return jsonpath.Join(name, fieldName), structType
 	}
 	logging.Logger().Debug(fmt.Sprintf("field matching '%s' name not found in struct type", se.Sel.Name))
 	return "", nil

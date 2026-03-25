@@ -23,9 +23,9 @@ type testingT interface {
 // ExpectedRuleError defines the expectations for the asserted error.
 // Its fields are used to find and match an actual [govy.RuleError].
 type ExpectedRuleError struct {
-	// Optional. Matched against [govy.PropertyError.PropertyName].
+	// Optional. Matched against [govy.PropertyError.PropertyPath].
 	// It should be only left empty if the validated property has no name.
-	PropertyName string `json:"propertyName"`
+	PropertyPath string `json:"propertyPath"`
 	// Optional. Matched against [govy.RuleError.Code].
 	Code govy.ErrorCode `json:"code,omitempty"`
 	// Optional. Matched against [govy.RuleError.Message].
@@ -384,7 +384,7 @@ func assertErrorMatches(
 
 	multiMatch := false
 	for i, actual := range validatorErr.Errors {
-		if actual.PropertyName != expected.PropertyName {
+		if actual.PropertyPath != expected.PropertyPath {
 			continue
 		}
 		if expected.IsKeyError != actual.IsKeyError {
