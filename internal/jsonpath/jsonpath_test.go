@@ -138,7 +138,7 @@ func TestJoinArray(t *testing.T) {
 
 func TestNewArrayIndex(t *testing.T) {
 	tests := []struct {
-		index    int
+		index    uint
 		expected string
 	}{
 		{0, "[0]"},

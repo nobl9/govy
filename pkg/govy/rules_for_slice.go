@@ -164,7 +164,7 @@ func (r PropertyRulesForSlice[S, T, P]) plan(builder planBuilder) {
 
 // getJSONPathForIndex returns a JSONPath for the given index.
 func (r PropertyRulesForSlice[S, T, P]) getJSONPathForIndex(index int) string {
-	return jsonpath.JoinArray(r.sliceRules.getName(), jsonpath.NewArrayIndex(index))
+	return jsonpath.JoinArray(r.sliceRules.getName(), jsonpath.NewArrayIndex(uint(index))) // #nosec G115
 }
 
 // getName returns the name of the property.

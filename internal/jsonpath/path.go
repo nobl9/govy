@@ -15,7 +15,7 @@ func (p Path) Name(name string) Path {
 }
 
 // Index appends an array index segment to the path.
-func (p Path) Index(index int) Path {
+func (p Path) Index(index uint) Path {
 	return Path{path: JoinArray(p.path, NewArrayIndex(index))}
 }
 

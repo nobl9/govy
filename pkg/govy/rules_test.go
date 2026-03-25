@@ -149,6 +149,36 @@ func TestPropertyRules(t *testing.T) {
 		}, errs[0])
 	})
 
+	t.Run("WithName escapes dots", func(t *testing.T) {
+		expectedErr := errors.New("bad")
+		r := govy.For(func(m mockStruct) string { return "value" }).
+			WithName("foo.bar").
+			Rules(govy.NewRule(func(v string) error { return expectedErr }))
+		errs := mustPropertyErrors(t, r.Validate(mockStruct{}))
+		assert.Require(t, assert.Len(t, errs, 1))
+		assert.Equal(t, "['foo.bar']", errs[0].PropertyPath)
+	})
+
+	t.Run("WithName escapes brackets and spaces", func(t *testing.T) {
+		expectedErr := errors.New("bad")
+		r := govy.For(func(m mockStruct) string { return "value" }).
+			WithName("key [0]").
+			Rules(govy.NewRule(func(v string) error { return expectedErr }))
+		errs := mustPropertyErrors(t, r.Validate(mockStruct{}))
+		assert.Require(t, assert.Len(t, errs, 1))
+		assert.Equal(t, "['key [0]']", errs[0].PropertyPath)
+	})
+
+	t.Run("WithName does not escape simple names", func(t *testing.T) {
+		expectedErr := errors.New("bad")
+		r := govy.For(func(m mockStruct) string { return "value" }).
+			WithName("simpleName").
+			Rules(govy.NewRule(func(v string) error { return expectedErr }))
+		errs := mustPropertyErrors(t, r.Validate(mockStruct{}))
+		assert.Require(t, assert.Len(t, errs, 1))
+		assert.Equal(t, "simpleName", errs[0].PropertyPath)
+	})
+
 	t.Run("hide value", func(t *testing.T) {
 		expectedErr := errors.New("oh no! here's the value: 'secret'")
 		r := govy.For(func(m mockStruct) string { return "secret" }).

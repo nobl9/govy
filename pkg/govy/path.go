@@ -13,4 +13,6 @@ import "github.com/nobl9/govy/internal/jsonpath"
 type Path = jsonpath.Path
 
 // NewPath creates a new empty [Path].
-var NewPath = jsonpath.NewPath
+func NewPath() Path {
+	return jsonpath.NewPath()
+}

@@ -50,6 +50,16 @@ func TestPropertyError_prependPropertyPath(t *testing.T) {
 			InputName:     "[0]",
 			ExpectedName:  "[0][1]",
 		},
+		{
+			PropertyError: &PropertyError{PropertyPath: "['foo.bar']"},
+			InputName:     "parent",
+			ExpectedName:  "parent['foo.bar']",
+		},
+		{
+			PropertyError: &PropertyError{PropertyPath: "child"},
+			InputName:     "['complex.parent']",
+			ExpectedName:  "['complex.parent'].child",
+		},
 	}
 
 	for i, tc := range tests {

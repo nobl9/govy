@@ -53,8 +53,8 @@ func JoinArray(path, segment string) string {
 // Example:
 //
 //	NewArrayIndex(2) --> "[2]"
-func NewArrayIndex(index int) string {
-	return "[" + strconv.Itoa(index) + "]"
+func NewArrayIndex(index uint) string {
+	return "[" + strconv.FormatUint(uint64(index), 10) + "]"
 }
 
 func joinPaths(pre, post, sep string) string {
