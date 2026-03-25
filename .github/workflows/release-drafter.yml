@@ -30,6 +30,8 @@ jobs:
       # write permission is required to create a github release
       contents: write
     runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.RELEASE_LABELER_TOKEN }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
