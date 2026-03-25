@@ -32,22 +32,22 @@ func TestValidator(t *testing.T) {
 				WithName("test").
 				Rules(govy.NewRule(func(v string) error { return nil })),
 			govy.For(func(m mockValidatorStruct) string { return "name" }).
-				WithName("test.name").
+				WithPath(govy.NewPath().Name("test").Name("name")).
 				Rules(govy.NewRule(func(v string) error { return err1 })),
 			govy.For(func(m mockValidatorStruct) string { return "display" }).
-				WithName("test.display").
+				WithPath(govy.NewPath().Name("test").Name("display")).
 				Rules(govy.NewRule(func(v string) error { return err2 })),
 		)
 		err := mustValidatorError(t, v.Validate(mockValidatorStruct{}))
 		assert.Require(t, assert.Len(t, err.Errors, 2))
 		assert.Equal(t, &govy.ValidatorError{Errors: govy.PropertyErrors{
 			&govy.PropertyError{
-				PropertyName:  "test.name",
+				PropertyPath:  "test.name",
 				PropertyValue: "name",
 				Errors:        []*govy.RuleError{{Message: err1.Error()}},
 			},
 			&govy.PropertyError{
-				PropertyName:  "test.display",
+				PropertyPath:  "test.display",
 				PropertyValue: "display",
 				Errors:        []*govy.RuleError{{Message: err2.Error()}},
 			},
@@ -79,7 +79,7 @@ func TestValidatorWhen(t *testing.T) {
 		assert.Require(t, assert.Len(t, err.Errors, 1))
 		assert.Equal(t, &govy.ValidatorError{Errors: govy.PropertyErrors{
 			&govy.PropertyError{
-				PropertyName:  "test",
+				PropertyPath:  "test",
 				PropertyValue: "test",
 				Errors:        []*govy.RuleError{{Message: "test"}},
 			},
@@ -176,7 +176,7 @@ func TestValidatorValidateSlice(t *testing.T) {
 				SliceIndex: ptr(1),
 				Errors: govy.PropertyErrors{
 					&govy.PropertyError{
-						PropertyName: "Field",
+						PropertyPath: "Field",
 						Errors: []*govy.RuleError{{
 							Message: internal.RequiredMessage,
 							Code:    rules.ErrorCodeRequired,
@@ -189,7 +189,7 @@ func TestValidatorValidateSlice(t *testing.T) {
 				SliceIndex: ptr(3),
 				Errors: govy.PropertyErrors{
 					&govy.PropertyError{
-						PropertyName: "Field",
+						PropertyPath: "Field",
 						Errors: []*govy.RuleError{{
 							Message: internal.RequiredMessage,
 							Code:    rules.ErrorCodeRequired,
@@ -235,17 +235,17 @@ func TestValidatorCascade(t *testing.T) {
 	)
 
 	allErrors := []govytest.ExpectedRuleError{
-		{PropertyName: "string", Message: "1"},
-		{PropertyName: "string", Message: "2"},
-		{PropertyName: "slice", Message: "1"},
-		{PropertyName: "slice", Message: "2"},
-		{PropertyName: "map", Message: "1"},
-		{PropertyName: "map", Message: "2"},
+		{PropertyPath: "string", Message: "1"},
+		{PropertyPath: "string", Message: "2"},
+		{PropertyPath: "slice", Message: "1"},
+		{PropertyPath: "slice", Message: "2"},
+		{PropertyPath: "map", Message: "1"},
+		{PropertyPath: "map", Message: "2"},
 	}
 	firstErrors := []govytest.ExpectedRuleError{
-		{PropertyName: "string", Message: "1"},
-		{PropertyName: "slice", Message: "1"},
-		{PropertyName: "map", Message: "1"},
+		{PropertyPath: "string", Message: "1"},
+		{PropertyPath: "slice", Message: "1"},
+		{PropertyPath: "map", Message: "1"},
 	}
 
 	testCases := map[string]struct {
@@ -255,7 +255,7 @@ func TestValidatorCascade(t *testing.T) {
 		"mode stop": {
 			validator.Cascade(govy.CascadeModeStop),
 			[]govytest.ExpectedRuleError{
-				{PropertyName: "string", Message: "1"},
+				{PropertyPath: "string", Message: "1"},
 			},
 		},
 		"mode continue": {
@@ -291,8 +291,8 @@ func TestValidatorCascade(t *testing.T) {
 				propertyRulesForMap.Cascade(govy.CascadeModeContinue),
 			).Cascade(govy.CascadeModeStop),
 			[]govytest.ExpectedRuleError{
-				{PropertyName: "string", Message: "1"},
-				{PropertyName: "string", Message: "2"},
+				{PropertyPath: "string", Message: "1"},
+				{PropertyPath: "string", Message: "2"},
 			},
 		},
 		"mixed inheritance": {
@@ -303,8 +303,8 @@ func TestValidatorCascade(t *testing.T) {
 				propertyRulesForMap.Cascade(govy.CascadeModeContinue),
 			).Cascade(govy.CascadeModeStop),
 			[]govytest.ExpectedRuleError{
-				{PropertyName: "string", Message: "1"},
-				{PropertyName: "string", Message: "2"},
+				{PropertyPath: "string", Message: "1"},
+				{PropertyPath: "string", Message: "2"},
 			},
 		},
 	}
@@ -475,15 +475,15 @@ func TestValidatorInferName(t *testing.T) {
 			t,
 			errs,
 			govytest.ExpectedRuleError{
-				PropertyName: "name",
+				PropertyPath: "name",
 				Message:      "should be equal to 'expected'",
 			},
 			govytest.ExpectedRuleError{
-				PropertyName: "students[0]",
+				PropertyPath: "students[0]",
 				Message:      "should be equal to 'expected'",
 			},
 			govytest.ExpectedRuleError{
-				PropertyName: "grades.actual",
+				PropertyPath: "grades.actual",
 				IsKeyError:   true,
 				Message:      "should be equal to 'expected'",
 			},
@@ -520,15 +520,15 @@ func TestValidatorInferName(t *testing.T) {
 			t,
 			errs,
 			govytest.ExpectedRuleError{
-				PropertyName: "", // Name inference is disabled.
+				PropertyPath: "", // Name inference is disabled.
 				Message:      "should be equal to 'expected'",
 			},
 			govytest.ExpectedRuleError{
-				PropertyName: "students[0]", // Runtime mode.
+				PropertyPath: "students[0]", // Runtime mode.
 				Message:      "should be equal to 'expected'",
 			},
 			govytest.ExpectedRuleError{
-				PropertyName: "generated-students.actual", // Generate mode.
+				PropertyPath: "generated-students.actual", // Generate mode.
 				IsKeyError:   true,
 				Message:      "should be equal to 'expected'",
 			},
@@ -557,10 +557,10 @@ func TestValidatorInferName(t *testing.T) {
 		govytest.AssertError(
 			t,
 			errs,
-			govytest.ExpectedRuleError{PropertyName: "name", Message: "should be equal to 'expected'"},
-			govytest.ExpectedRuleError{PropertyName: "students[0]", Message: "should be equal to 'expected'"},
+			govytest.ExpectedRuleError{PropertyPath: "name", Message: "should be equal to 'expected'"},
+			govytest.ExpectedRuleError{PropertyPath: "students[0]", Message: "should be equal to 'expected'"},
 			govytest.ExpectedRuleError{
-				PropertyName: "grades.actual",
+				PropertyPath: "grades.actual",
 				IsKeyError:   true,
 				Message:      "should be equal to 'expected'",
 			},

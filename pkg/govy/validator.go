@@ -2,6 +2,8 @@ package govy
 
 import (
 	"slices"
+
+	"github.com/nobl9/govy/internal/jsonpath"
 )
 
 // New creates a new [Validator] aggregating the provided property rules.
@@ -62,9 +64,13 @@ func (v Validator[T]) RemovePropertiesByName(names ...string) Validator[T] {
 	if len(names) == 0 {
 		return v
 	}
+	escaped := make([]string, len(names))
+	for i, name := range names {
+		escaped[i] = jsonpath.EscapeSegment(name)
+	}
 	filtered := make([]PropertyRulesInterface[T], 0, len(v.props))
 	for _, prop := range v.props {
-		if !slices.Contains(names, prop.getName()) {
+		if !slices.Contains(escaped, prop.getName()) {
 			filtered = append(filtered, prop)
 		}
 	}

@@ -28,11 +28,16 @@ func EscapeSegment(segment string) string {
 
 // Join extends the JSONPath with a new segment.
 // The segment can be a path in of itself, the segment is assumed to be escaped with [EscapeSegment].
-// Example:
+// Segments starting with "[" are joined without a dot separator (bracket notation).
+// Examples:
 //
 //	Join("foo.bar", "baz") --> "foo.bar.baz"
 //	Join("foo.bar", "baz.foo") --> "foo.bar.baz.foo"
+//	Join("parent", "['foo.bar']") --> "parent['foo.bar']"
 func Join(path, segment string) string {
+	if strings.HasPrefix(segment, "[") {
+		return joinPaths(path, segment, "")
+	}
 	return joinPaths(path, segment, jsonPathSeparator)
 }
 

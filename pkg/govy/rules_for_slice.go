@@ -57,7 +57,7 @@ func (r PropertyRulesForSlice[S, T, P]) Validate(parent P) error {
 		for _, e := range forEachErrors {
 			e.IsSliceElementError = true
 			path := r.getJSONPathForIndex(i)
-			propErrs = append(propErrs, e.prependParentPropertyName(path))
+			propErrs = append(propErrs, e.prependParentPropertyPath(path))
 		}
 	}
 	if len(propErrs) > 0 {
@@ -69,6 +69,12 @@ func (r PropertyRulesForSlice[S, T, P]) Validate(parent P) error {
 // WithName => refer to [PropertyRules.WithName] documentation.
 func (r PropertyRulesForSlice[S, T, P]) WithName(name string) PropertyRulesForSlice[S, T, P] {
 	r.sliceRules = r.sliceRules.WithName(name)
+	return r
+}
+
+// WithPath => refer to [PropertyRules.WithPath] documentation.
+func (r PropertyRulesForSlice[S, T, P]) WithPath(path Path) PropertyRulesForSlice[S, T, P] {
+	r.sliceRules = r.sliceRules.WithPath(path)
 	return r
 }
 
