@@ -61,7 +61,7 @@ func (r PropertyRulesForMap[M, K, V, P]) Validate(parent P) error {
 			if keyErrors, ok := err.(PropertyErrors); ok {
 				for _, e := range keyErrors {
 					e.IsKeyError = true
-					propErrs = append(propErrs, e.prependParentPropertyName(r.getJSONPathForKey(k)))
+					propErrs = append(propErrs, e.prependParentPropertyPath(r.getJSONPathForKey(k)))
 				}
 			} else {
 				logWrongErrorType(PropertyErrors{}, err)
@@ -70,7 +70,7 @@ func (r PropertyRulesForMap[M, K, V, P]) Validate(parent P) error {
 		if err = r.forValueRules.Validate(v); err != nil {
 			if valueErrors, ok := err.(PropertyErrors); ok {
 				for _, e := range valueErrors {
-					propErrs = append(propErrs, e.prependParentPropertyName(r.getJSONPathForKey(k)))
+					propErrs = append(propErrs, e.prependParentPropertyPath(r.getJSONPathForKey(k)))
 				}
 			} else {
 				logWrongErrorType(PropertyErrors{}, err)
@@ -82,7 +82,7 @@ func (r PropertyRulesForMap[M, K, V, P]) Validate(parent P) error {
 					// TODO: Figure out how to handle custom PropertyErrors.
 					// Custom errors' value for nested item will be overridden by the actual value.
 					e.PropertyValue = internal.PropertyValueString(v)
-					propErrs = append(propErrs, e.prependParentPropertyName(r.getJSONPathForKey(k)))
+					propErrs = append(propErrs, e.prependParentPropertyPath(r.getJSONPathForKey(k)))
 				}
 			} else {
 				logWrongErrorType(PropertyErrors{}, err)
@@ -95,9 +95,15 @@ func (r PropertyRulesForMap[M, K, V, P]) Validate(parent P) error {
 	return nil
 }
 
-// WithName => refer to [PropertyRules.When] documentation.
+// WithName => refer to [PropertyRules.WithName] documentation.
 func (r PropertyRulesForMap[M, K, V, P]) WithName(name string) PropertyRulesForMap[M, K, V, P] {
 	r.mapRules = r.mapRules.WithName(name)
+	return r
+}
+
+// WithPath => refer to [PropertyRules.WithPath] documentation.
+func (r PropertyRulesForMap[M, K, V, P]) WithPath(path Path) PropertyRulesForMap[M, K, V, P] {
+	r.mapRules = r.mapRules.WithPath(path)
 	return r
 }
 

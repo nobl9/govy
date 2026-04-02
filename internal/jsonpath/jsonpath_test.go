@@ -72,6 +72,21 @@ func TestJoin(t *testing.T) {
 			segment:  "bar.baz",
 			expected: "foo.bar.baz",
 		},
+		"bracket segment": {
+			path:     "parent",
+			segment:  "['foo.bar']",
+			expected: "parent['foo.bar']",
+		},
+		"bracket segment with empty path": {
+			path:     "",
+			segment:  "['foo.bar']",
+			expected: "['foo.bar']",
+		},
+		"array index segment": {
+			path:     "foo",
+			segment:  "[0]",
+			expected: "foo[0]",
+		},
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
@@ -123,7 +138,7 @@ func TestJoinArray(t *testing.T) {
 
 func TestNewArrayIndex(t *testing.T) {
 	tests := []struct {
-		index    int
+		index    uint
 		expected string
 	}{
 		{0, "[0]"},

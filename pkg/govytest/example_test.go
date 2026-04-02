@@ -61,7 +61,7 @@ func ExampleAssertNoError() {
 	// {
 	//   "errors": [
 	//     {
-	//       "propertyName": "name",
+	//       "propertyPath": "name",
 	//       "propertyValue": "John",
 	//       "errors": [
 	//         {
@@ -72,7 +72,7 @@ func ExampleAssertNoError() {
 	//       ]
 	//     },
 	//     {
-	//       "propertyName": "university.address",
+	//       "propertyPath": "university.address",
 	//       "errors": [
 	//         {
 	//           "error": "property is required but was empty",
@@ -124,11 +124,11 @@ func ExampleAssertError() {
 	err := teacherValidator.WithName("John").Validate(teacher)
 	govytest.AssertError(mt, err,
 		govytest.ExpectedRuleError{
-			PropertyName:    "name",
+			PropertyPath:    "name",
 			ContainsMessage: "one of",
 		},
 		govytest.ExpectedRuleError{
-			PropertyName: "university.address",
+			PropertyPath: "university.address",
 			Code:         "greater_than",
 		},
 	)
@@ -140,13 +140,13 @@ func ExampleAssertError() {
 	// Expected error was not found.
 	// EXPECTED:
 	// {
-	//   "propertyName": "university.address",
+	//   "propertyPath": "university.address",
 	//   "code": "greater_than"
 	// }
 	// ACTUAL:
 	// [
 	//   {
-	//     "propertyName": "name",
+	//     "propertyPath": "name",
 	//     "propertyValue": "John",
 	//     "errors": [
 	//       {
@@ -157,7 +157,7 @@ func ExampleAssertError() {
 	//     ]
 	//   },
 	//   {
-	//     "propertyName": "university.address",
+	//     "propertyPath": "university.address",
 	//     "errors": [
 	//       {
 	//         "error": "property is required but was empty",
@@ -223,13 +223,13 @@ func ExampleAssertError_validatorErrors() {
 	err := teacherValidator.WithNameFunc(func(s Teacher) string { return s.Name }).ValidateSlice(teachers)
 	govytest.AssertError(mt, err,
 		govytest.ExpectedRuleError{
-			PropertyName:   "university.address",
+			PropertyPath:   "university.address",
 			Code:           "greater_than",
 			ValidatorName:  "Eve",
 			ValidatorIndex: ptr(0),
 		},
 		govytest.ExpectedRuleError{
-			PropertyName:    "name",
+			PropertyPath:    "name",
 			ContainsMessage: "one of",
 			ValidatorName:   "John",
 			ValidatorIndex:  ptr(1),
@@ -243,7 +243,7 @@ func ExampleAssertError_validatorErrors() {
 	// Expected error was not found.
 	// EXPECTED:
 	// {
-	//   "propertyName": "university.address",
+	//   "propertyPath": "university.address",
 	//   "code": "greater_than",
 	//   "validatorName": "Eve",
 	//   "validatorIndex": 0
@@ -251,7 +251,7 @@ func ExampleAssertError_validatorErrors() {
 	// ACTUAL:
 	// [
 	//   {
-	//     "propertyName": "university.address",
+	//     "propertyPath": "university.address",
 	//     "errors": [
 	//       {
 	//         "error": "property is required but was empty",
@@ -299,14 +299,14 @@ func ExampleAssertErrorContains() {
 	// Match the error.
 	err := teacherValidator.WithName("John").Validate(teacher)
 	govytest.AssertErrorContains(mt, err, govytest.ExpectedRuleError{
-		PropertyName: "name",
+		PropertyPath: "name",
 		Code:         "one_of",
 	})
 
 	// Fail to match the error.
 	err = teacherValidator.WithName("John").Validate(teacher)
 	govytest.AssertErrorContains(mt, err, govytest.ExpectedRuleError{
-		PropertyName: "university.address",
+		PropertyPath: "university.address",
 		Code:         "greater_than",
 	})
 
@@ -317,13 +317,13 @@ func ExampleAssertErrorContains() {
 	// Expected error was not found.
 	// EXPECTED:
 	// {
-	//   "propertyName": "university.address",
+	//   "propertyPath": "university.address",
 	//   "code": "greater_than"
 	// }
 	// ACTUAL:
 	// [
 	//   {
-	//     "propertyName": "name",
+	//     "propertyPath": "name",
 	//     "propertyValue": "John",
 	//     "errors": [
 	//       {
@@ -334,7 +334,7 @@ func ExampleAssertErrorContains() {
 	//     ]
 	//   },
 	//   {
-	//     "propertyName": "university.address",
+	//     "propertyPath": "university.address",
 	//     "errors": [
 	//       {
 	//         "error": "property is required but was empty",

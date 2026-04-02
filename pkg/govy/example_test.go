@@ -187,7 +187,7 @@ func ExampleValidatorError() {
 	// {
 	//   "errors": [
 	//     {
-	//       "propertyName": "name",
+	//       "propertyPath": "name",
 	//       "propertyValue": "John",
 	//       "errors": [
 	//         {
@@ -202,7 +202,7 @@ func ExampleValidatorError() {
 
 // If you want to validate a slice of entities, you can combine [govy.New] with [govy.ForSlice].
 // The produced errors will contain information about the failing entity's index
-// in their [govy.PropertyError.PropertyName].
+// in their [govy.PropertyError.PropertyPath].
 func ExampleValidator_Validate_slice() {
 	teacherValidator := govy.New(
 		govy.For(func(t Teacher) string { return t.Name }).
@@ -1579,7 +1579,7 @@ func ExampleValidatorErrors() {
 	//   {
 	//     "errors": [
 	//       {
-	//         "propertyName": "name",
+	//         "propertyPath": "name",
 	//         "propertyValue": "John",
 	//         "errors": [
 	//           {
@@ -1594,7 +1594,7 @@ func ExampleValidatorErrors() {
 	//   {
 	//     "errors": [
 	//       {
-	//         "propertyName": "name",
+	//         "propertyPath": "name",
 	//         "propertyValue": "Jake",
 	//         "errors": [
 	//           {
@@ -1844,9 +1844,9 @@ func ExamplePlan_validation() {
 	// predicates without description found at: validator level, $.name
 }
 
-// This example demonstrates how to remove specific properties from a [govy.Validator] by their names.
+// This example demonstrates how to remove specific properties from a [govy.Validator] by their paths.
 // This is useful when you want to create a modified validator without certain rules.
-func ExampleValidator_RemovePropertiesByName() {
+func ExampleValidator_RemovePropertiesByPath() {
 	baseValidator := govy.New(
 		govy.For(func(t Teacher) string { return t.Name }).
 			WithName("name").
@@ -1865,7 +1865,7 @@ func ExampleValidator_RemovePropertiesByName() {
 	}
 
 	// Modified validator passes because age validation is removed
-	modifiedValidator := baseValidator.RemovePropertiesByName("age")
+	modifiedValidator := baseValidator.RemovePropertiesByPath(govy.NewPath().Name("age"))
 	err = modifiedValidator.Validate(teacher)
 	if err == nil {
 		fmt.Println("Modified validator passed")

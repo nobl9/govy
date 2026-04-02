@@ -1,8 +1,6 @@
 package govy
 
-import (
-	"slices"
-)
+import "slices"
 
 // New creates a new [Validator] aggregating the provided property rules.
 func New[T any](props ...PropertyRulesInterface[T]) Validator[T] {
@@ -54,17 +52,21 @@ func (v Validator[T]) Cascade(mode CascadeMode) Validator[T] {
 	return v
 }
 
-// RemovePropertiesByName removes any [PropertyRules] or included [Validator]
-// which match the provided property names.
+// RemovePropertiesByPath removes any [PropertyRules] or included [Validator]
+// which match the provided property paths.
 // It returns a modified [Validator] instance without these rules,
 // the original [Validator] is not changed.
-func (v Validator[T]) RemovePropertiesByName(names ...string) Validator[T] {
-	if len(names) == 0 {
+func (v Validator[T]) RemovePropertiesByPath(paths ...Path) Validator[T] {
+	if len(paths) == 0 {
 		return v
+	}
+	pathStrings := make([]string, 0, len(paths))
+	for _, p := range paths {
+		pathStrings = append(pathStrings, p.String())
 	}
 	filtered := make([]PropertyRulesInterface[T], 0, len(v.props))
 	for _, prop := range v.props {
-		if !slices.Contains(names, prop.getName()) {
+		if !slices.Contains(pathStrings, prop.getName()) {
 			filtered = append(filtered, prop)
 		}
 	}
