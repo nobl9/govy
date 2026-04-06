@@ -4,6 +4,8 @@ import (
 	"github.com/nobl9/govy/internal/jsonpath"
 )
 
+var sliceWildcardPath = jsonpath.ParsePath("[*]")
+
 // ForSlice creates a new [PropertyRulesForSlice] instance for a slice property
 // which value is extracted through [PropertyGetter] function.
 func ForSlice[S ~[]T, T, P any](getter PropertyGetter[S, P]) PropertyRulesForSlice[S, T, P] {
@@ -20,7 +22,7 @@ type PropertyRulesForSlice[S ~[]T, T, P any] struct {
 	forEachRules  PropertyRules[T, T]
 	getter        PropertyGetter[S, P]
 	cascadeMode   CascadeMode
-	inferNameMode InferNameMode
+	inferPathMode InferPathMode
 
 	predicateMatcher[P]
 }
@@ -56,8 +58,7 @@ func (r PropertyRulesForSlice[S, T, P]) Validate(parent P) error {
 		}
 		for _, e := range forEachErrors {
 			e.IsSliceElementError = true
-			path := r.getJSONPathForIndex(i)
-			propErrs = append(propErrs, e.prependParentPropertyPath(path))
+			propErrs = append(propErrs, e.prependParentPropertyPath(r.getPathForIndex(i)))
 		}
 	}
 	if len(propErrs) > 0 {
@@ -125,10 +126,10 @@ func (r PropertyRulesForSlice[S, T, P]) Cascade(mode CascadeMode) PropertyRulesF
 	return r
 }
 
-// InferName => refer to [PropertyRules.InferName] documentation.
-func (r PropertyRulesForSlice[S, T, P]) InferName(mode InferNameMode) PropertyRulesForSlice[S, T, P] {
-	r.inferNameMode = mode
-	r.sliceRules = r.sliceRules.InferName(mode)
+// InferPath => refer to [PropertyRules.InferPath] documentation.
+func (r PropertyRulesForSlice[S, T, P]) InferPath(mode InferPathMode) PropertyRulesForSlice[S, T, P] {
+	r.inferPathMode = mode
+	r.sliceRules = r.sliceRules.InferPath(mode)
 	return r
 }
 
@@ -142,34 +143,32 @@ func (r PropertyRulesForSlice[S, T, P]) cascadeInternal(mode CascadeMode) Proper
 	return r.Cascade(mode)
 }
 
-// inferNameModeInternal is an internal wrapper around [PropertyRulesForSlice.InferName] which
+// inferPathModeInternal is an internal wrapper around [PropertyRulesForSlice.InferPath] which
 // fulfills [PropertyRulesInterface] interface.
-// If the [InferNameMode] is already set, it won't change it.
-func (r PropertyRulesForSlice[S, T, P]) inferNameModeInternal(mode InferNameMode) PropertyRulesInterface[P] {
-	if r.inferNameMode != 0 {
+// If the [InferPathMode] is already set, it won't change it.
+func (r PropertyRulesForSlice[S, T, P]) inferPathModeInternal(mode InferPathMode) PropertyRulesInterface[P] {
+	if r.inferPathMode != 0 {
 		return r
 	}
-	return r.InferName(mode)
+	return r.InferPath(mode)
 }
 
 // plan generates a validation plan for the property rules.
 func (r PropertyRulesForSlice[S, T, P]) plan(builder planBuilder) {
 	builder = appendPredicatesToPlanBuilder(builder, r.predicates)
 	r.sliceRules.plan(builder.setExamples(r.sliceRules.examples...))
-	builder = builder.appendPath(r.sliceRules.getName())
+	builder = builder.appendPath(r.sliceRules.getPath())
 	if len(r.forEachRules.rules) > 0 {
-		r.forEachRules.plan(builder.appendPath("[*]"))
+		r.forEachRules.plan(builder.appendPath(sliceWildcardPath))
 	}
 }
 
-// getJSONPathForIndex returns a JSONPath for the given index.
-func (r PropertyRulesForSlice[S, T, P]) getJSONPathForIndex(index int) string {
-	return jsonpath.JoinArray(r.sliceRules.getName(), jsonpath.NewArrayIndex(uint(index))) // #nosec G115
+func (r PropertyRulesForSlice[S, T, P]) getPathForIndex(index int) Path {
+	return r.sliceRules.getPath().Index(uint(index)) // #nosec G115
 }
 
-// getName returns the name of the property.
-func (r PropertyRulesForSlice[S, T, P]) getName() string {
-	return r.sliceRules.getName()
+func (r PropertyRulesForSlice[S, T, P]) getPath() Path {
+	return r.sliceRules.getPath()
 }
 
 // isPropertyRules implements [PropertyRulesInterface].

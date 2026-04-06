@@ -1,4 +1,4 @@
-package infername
+package inferpath
 
 import (
 	"go/ast"
@@ -25,7 +25,7 @@ func NewModuleAST(root string) ModuleAST {
 		Fset:  fileSet,
 		Mode:  packagesMode,
 		Dir:   root,
-		Tests: govyconfig.GetInferNameIncludeTestFiles(),
+		Tests: govyconfig.GetInferPathIncludeTestFiles(),
 	}
 	pkgs, err := packages.Load(cfg, "./...")
 	if err != nil {

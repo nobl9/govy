@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/nobl9/govy/internal"
-	"github.com/nobl9/govy/internal/jsonpath"
 	"github.com/nobl9/govy/internal/logging"
 )
 
@@ -62,7 +61,7 @@ func (e *ValidatorError) Error() string {
 
 func (e *ValidatorError) hasAtLeastOnePropertyPath() bool {
 	for _, e := range e.Errors {
-		if e.PropertyPath != "" {
+		if !e.PropertyPath.IsEmpty() {
 			return true
 		}
 	}
@@ -109,8 +108,8 @@ func (e PropertyErrors) sort() PropertyErrors {
 	}
 	sort.Slice(e, func(i, j int) bool {
 		e1, e2 := e[i], e[j]
-		if e1.PropertyPath != e2.PropertyPath {
-			return e1.PropertyPath < e2.PropertyPath
+		if !e1.PropertyPath.Equal(e2.PropertyPath) {
+			return e1.PropertyPath.Compare(e2.PropertyPath) < 0
 		}
 		if e1.PropertyValue != e2.PropertyValue {
 			return e1.PropertyValue < e2.PropertyValue
@@ -143,8 +142,7 @@ outer:
 }
 
 // NewPropertyError constructs new [*PropertyError] instance.
-// Property path is assumed to be a valid, escaped JSONPath.
-func NewPropertyError(propertyPath string, propertyValue any, errs ...error) *PropertyError {
+func NewPropertyError(propertyPath Path, propertyValue any, errs ...error) *PropertyError {
 	return &PropertyError{
 		PropertyPath:  propertyPath,
 		PropertyValue: internal.PropertyValueString(propertyValue),
@@ -157,7 +155,7 @@ func NewPropertyError(propertyPath string, propertyValue any, errs ...error) *Pr
 type PropertyError struct {
 	// PropertyPath is the JSONPath to the property from the root of the validated object.
 	// It should uniquely identify the property within a [Validator] instance.
-	PropertyPath string `json:"propertyPath"`
+	PropertyPath Path `json:"propertyPath"`
 	// PropertyValue is a string representation of the property's value.
 	PropertyValue string `json:"propertyValue,omitempty"`
 	// IsKeyError is set to true if the error was created through map key validation.
@@ -177,7 +175,7 @@ type PropertyError struct {
 func (e *PropertyError) Error() string {
 	b := new(strings.Builder)
 	indent := ""
-	if e.PropertyPath != "" {
+	if !e.PropertyPath.IsEmpty() {
 		fmt.Fprintf(b, "'%s'", e.PropertyPath)
 		if e.PropertyValue != "" {
 			if e.IsKeyError {
@@ -195,7 +193,7 @@ func (e *PropertyError) Error() string {
 
 // Equal checks if two [PropertyError] are equal.
 func (e *PropertyError) Equal(cmp *PropertyError) bool {
-	return e.PropertyPath == cmp.PropertyPath &&
+	return e.PropertyPath.Equal(cmp.PropertyPath) &&
 		e.PropertyValue == cmp.PropertyValue &&
 		e.IsKeyError == cmp.IsKeyError &&
 		e.IsSliceElementError == cmp.IsSliceElementError
@@ -211,14 +209,12 @@ func (e *PropertyError) HideValue() *PropertyError {
 	return e
 }
 
-// prependParentPropertyPath prepends a given name to the [PropertyError.PropertyPath].
-// If the name prepended name is a JSONPath, it is assumed to be escaped.
-func (e *PropertyError) prependParentPropertyPath(name string) *PropertyError {
+func (e *PropertyError) prependParentPropertyPath(name Path) *PropertyError {
 	switch {
-	case e.IsSliceElementError && strings.HasPrefix(e.PropertyPath, "["):
-		e.PropertyPath = jsonpath.JoinArray(name, e.PropertyPath)
+	case e.IsSliceElementError && e.PropertyPath.HasBracketPrefix():
+		e.PropertyPath = name.JoinArrayPath(e.PropertyPath)
 	default:
-		e.PropertyPath = jsonpath.Join(name, e.PropertyPath)
+		e.PropertyPath = name.JoinPath(e.PropertyPath)
 	}
 	return e
 }

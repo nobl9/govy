@@ -22,35 +22,35 @@ import (
 )
 
 func init() {
-	inferredNames := map[string]govyconfig.InferredName{
+	inferredPaths := map[string]govyconfig.InferredPath{
 		"student/nested.go:13": {
-			Name: "name",
+			Path: "name",
 			File: "student/nested.go",
 			Line: 13,
 		},
 		"university/university.go:13": {
-			Name: "name",
+			Path: "name",
 			File: "university/university.go",
 			Line: 13,
 		},
 		"validation.go:11": {
-			Name: "Name",
+			Path: "Name",
 			File: "validation.go",
 			Line: 11,
 		},
 		"validation.go:13": {
-			Name: "university.name",
+			Path: "university.name",
 			File: "validation.go",
 			Line: 13,
 		},
 		"validation.go:15": {
-			Name: "university",
+			Path: "university",
 			File: "validation.go",
 			Line: 15,
 		},
 	}
-	for _, name := range inferredNames {
-		govyconfig.SetInferredName(name)
+	for _, p := range inferredPaths {
+		govyconfig.SetInferredPath(p)
 	}
 }
 `
@@ -70,7 +70,7 @@ func TestCmd_InferName(t *testing.T) {
 	fileName := "govy_inferred_names.go"
 	out := execCmd(t,
 		"go", "run", "../../cmd/govy",
-		inferNameCmdName,
+		inferPathCmdName,
 		"-dir", tmpDir,
 		"-pkg", "validation",
 		"-filename", fileName,

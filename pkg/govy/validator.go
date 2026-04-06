@@ -60,13 +60,9 @@ func (v Validator[T]) RemovePropertiesByPath(paths ...Path) Validator[T] {
 	if len(paths) == 0 {
 		return v
 	}
-	pathStrings := make([]string, 0, len(paths))
-	for _, p := range paths {
-		pathStrings = append(pathStrings, p.String())
-	}
 	filtered := make([]PropertyRulesInterface[T], 0, len(v.props))
 	for _, prop := range v.props {
-		if !slices.Contains(pathStrings, prop.getName()) {
+		if !slices.ContainsFunc(paths, prop.getPath().Equal) {
 			filtered = append(filtered, prop)
 		}
 	}
@@ -74,12 +70,12 @@ func (v Validator[T]) RemovePropertiesByPath(paths ...Path) Validator[T] {
 	return v
 }
 
-// InferName sets the [InferNameMode] for the validator,
-// which controls the name inference logic for validation rules.
-func (v Validator[T]) InferName(mode InferNameMode) Validator[T] {
+// InferPath sets the [InferPathMode] for the validator,
+// which controls the path inference logic for validation rules.
+func (v Validator[T]) InferPath(mode InferPathMode) Validator[T] {
 	props := make([]PropertyRulesInterface[T], 0, len(v.props))
 	for _, prop := range v.props {
-		props = append(props, prop.inferNameModeInternal(mode))
+		props = append(props, prop.inferPathModeInternal(mode))
 	}
 	v.props = props
 	return v

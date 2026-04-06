@@ -1,5 +1,7 @@
-// Package jsonpath provides utilities for working with [JSONPath RFC-9535],
-// which is primarily used in govy for constructing property names.
+// Package jsonpath provides utilities for working with [JSONPath],
+// which is primarily used in govy for constructing property paths.
+// It is a simplified version of [JSONPath] that does not support advanced selectors.
+// Its primary goal is to construct a proper [JSONPath] and not to allow manipulating it.
 //
-// [JSONPath RFC-9535]: https://www.rfc-editor.org/rfc/rfc9535.html
+// [JSONPath]: https://www.rfc-editor.org/rfc/rfc9535.html
 package jsonpath

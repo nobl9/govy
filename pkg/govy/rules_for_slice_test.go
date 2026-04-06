@@ -34,7 +34,7 @@ func TestPropertyRulesForEach(t *testing.T) {
 		errs := mustPropertyErrors(t, r.Validate(mockStruct{}))
 		assert.Require(t, assert.Len(t, errs, 1))
 		assert.Equal(t, &govy.PropertyError{
-			PropertyPath:        "test.path[0]",
+			PropertyPath:        govy.ParsePath("test.path[0]"),
 			PropertyValue:       "path",
 			IsSliceElementError: true,
 			Errors:              []*govy.RuleError{{Message: expectedErr.Error()}},
@@ -63,46 +63,46 @@ func TestPropertyRulesForEach(t *testing.T) {
 			RulesForEach(
 				govy.NewRule(func(v string) error { return err1 }),
 				govy.NewRule(func(v string) error {
-					return govy.NewPropertyError("nested", "made-up", err2)
+					return govy.NewPropertyError(govy.ParsePath("nested"), "made-up", err2)
 				}),
 			).
 			Rules(govy.NewRule(func(v []string) error {
-				return govy.NewPropertyError("nested", "nestedValue", err4)
+				return govy.NewPropertyError(govy.ParsePath("nested"), "nestedValue", err4)
 			}))
 
 		errs := mustPropertyErrors(t, r.Validate(mockStruct{Fields: []string{"1", "2"}}))
 		assert.Require(t, assert.Len(t, errs, 6))
 		assert.ElementsMatch(t, []*govy.PropertyError{
 			{
-				PropertyPath:  "test.path",
+				PropertyPath:  govy.ParsePath("test.path"),
 				PropertyValue: `["1","2"]`,
 				Errors:        []*govy.RuleError{{Message: err3.Error()}},
 			},
 			{
-				PropertyPath:  "test.path.nested",
+				PropertyPath:  govy.ParsePath("test.path.nested"),
 				PropertyValue: "nestedValue",
 				Errors:        []*govy.RuleError{{Message: err4.Error()}},
 			},
 			{
-				PropertyPath:        "test.path[0]",
+				PropertyPath:        govy.ParsePath("test.path[0]"),
 				PropertyValue:       "1",
 				IsSliceElementError: true,
 				Errors:              []*govy.RuleError{{Message: err1.Error()}},
 			},
 			{
-				PropertyPath:        "test.path[1]",
+				PropertyPath:        govy.ParsePath("test.path[1]"),
 				PropertyValue:       "2",
 				IsSliceElementError: true,
 				Errors:              []*govy.RuleError{{Message: err1.Error()}},
 			},
 			{
-				PropertyPath:        "test.path[0].nested",
+				PropertyPath:        govy.ParsePath("test.path[0].nested"),
 				PropertyValue:       "made-up",
 				IsSliceElementError: true,
 				Errors:              []*govy.RuleError{{Message: err2.Error()}},
 			},
 			{
-				PropertyPath:        "test.path[1].nested",
+				PropertyPath:        govy.ParsePath("test.path[1].nested"),
 				PropertyValue:       "made-up",
 				IsSliceElementError: true,
 				Errors:              []*govy.RuleError{{Message: err2.Error()}},
@@ -120,7 +120,7 @@ func TestPropertyRulesForEach(t *testing.T) {
 		errs := mustPropertyErrors(t, r.Validate(mockStruct{}))
 		assert.Require(t, assert.Len(t, errs, 1))
 		assert.Equal(t, &govy.PropertyError{
-			PropertyPath:        "test.path[0]",
+			PropertyPath:        govy.ParsePath("test.path[0]"),
 			PropertyValue:       "value",
 			IsSliceElementError: true,
 			Errors:              []*govy.RuleError{{Message: expectedErr.Error()}},
@@ -146,13 +146,13 @@ func TestPropertyRulesForEach(t *testing.T) {
 		assert.Require(t, assert.Len(t, errs, 2))
 		assert.ElementsMatch(t, []*govy.PropertyError{
 			{
-				PropertyPath:        "test.path[0]",
+				PropertyPath:        govy.ParsePath("test.path[0]"),
 				PropertyValue:       "value",
 				IsSliceElementError: true,
 				Errors:              []*govy.RuleError{{Message: err1.Error()}},
 			},
 			{
-				PropertyPath:        "test.path[0].included",
+				PropertyPath:        govy.ParsePath("test.path[0].included"),
 				PropertyValue:       "nested",
 				IsSliceElementError: true,
 				Errors: []*govy.RuleError{
@@ -172,7 +172,7 @@ func TestPropertyRulesForEach(t *testing.T) {
 					if v == "value1" {
 						return forEachErr
 					}
-					return govy.NewPropertyError("nested", "made-up", includedErr)
+					return govy.NewPropertyError(govy.ParsePath("nested"), "made-up", includedErr)
 				})),
 		)
 		r := govy.For(func(m mockStruct) []string { return m.Fields }).
@@ -183,13 +183,13 @@ func TestPropertyRulesForEach(t *testing.T) {
 		assert.Require(t, assert.Len(t, errs, 2))
 		assert.ElementsMatch(t, []*govy.PropertyError{
 			{
-				PropertyPath:        "test.path[0]",
+				PropertyPath:        govy.ParsePath("test.path[0]"),
 				PropertyValue:       "value1",
 				IsSliceElementError: true,
 				Errors:              []*govy.RuleError{{Message: forEachErr.Error()}},
 			},
 			{
-				PropertyPath:        "test.path[1].nested",
+				PropertyPath:        govy.ParsePath("test.path[1].nested"),
 				PropertyValue:       "made-up",
 				IsSliceElementError: true,
 				Errors:              []*govy.RuleError{{Message: includedErr.Error()}},
@@ -213,7 +213,7 @@ func TestPropertyRulesForEach(t *testing.T) {
 		assert.Require(t, assert.Len(t, errs, 1))
 		assert.ElementsMatch(t, []*govy.PropertyError{
 			{
-				PropertyPath:        "values[0]",
+				PropertyPath:        govy.ParsePath("values[0]"),
 				PropertyValue:       "value",
 				IsSliceElementError: true,
 				Errors: []*govy.RuleError{
@@ -226,15 +226,15 @@ func TestPropertyRulesForEach(t *testing.T) {
 }
 
 func TestPropertyRulesForSlice_InferName(t *testing.T) {
-	govyconfig.SetInferNameIncludeTestFiles(true)
-	defer govyconfig.SetInferNameIncludeTestFiles(false)
+	govyconfig.SetInferPathIncludeTestFiles(true)
+	defer govyconfig.SetInferPathIncludeTestFiles(false)
 
 	type Teacher struct {
 		Students []string `json:"students"`
 	}
 
 	r := govy.ForSlice(func(t Teacher) []string { return t.Students }).
-		InferName(govy.InferNameModeRuntime).
+		InferPath(govy.InferPathModeRuntime).
 		RulesForEach(rules.EQ("John"))
 	errs := mustPropertyErrors(t, r.Validate(Teacher{Students: []string{"Luke"}}))
 	assert.Len(t, errs, 1)

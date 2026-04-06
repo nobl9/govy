@@ -1,4 +1,4 @@
-package infername
+package inferpath
 
 import (
 	"fmt"
@@ -17,7 +17,7 @@ import (
 )
 
 // FunctionsWithGetter is a list of govy package functions that accept a property
-// getter as their first argument and thus qualify for property name inference.
+// getter as their first argument and thus qualify for property path inference.
 // These functions follow the pattern: func(getter func(S) T) where S is the
 // struct type being validated and T is the property value type.
 var FunctionsWithGetter = []string{
@@ -28,28 +28,32 @@ var FunctionsWithGetter = []string{
 	"ForMap",
 }
 
-// InferName infers the name of a field from a file and line number.
-func InferName(file string, line int) string {
+// InferPath infers the property path from a file and line number.
+func InferPath(file string, line int) jsonpath.Path {
 	parseModuleASTOnce()
 
 	pkg, astFile := modAST.FindFile(file)
 	if astFile == nil {
 		logging.Logger().Error(
-			"AST file not found for name inference",
+			"AST file not found for path inference",
 			"file", file,
 			"line", line,
 		)
-		return ""
+		return jsonpath.Path{}
 	}
-	return InferNameFromFile(modAST.FileSet, pkg, astFile, line)
+	return InferPathFromFile(modAST.FileSet, pkg, astFile, line)
 }
 
-// InferNameFromFile infers the property name from a getter function at the given line.
+// InferPathFromFile infers the property path from a getter function at the given line.
 // It traverses the AST to find a govy function call (For, ForPointer, etc.) and
-// extracts the property name from the getter's return statement by analyzing
+// extracts the property path from the getter's return statement by analyzing
 // struct field access patterns like `s.Field` or `s.Nested.Field`.
-// Returns an empty string if inference fails.
-func InferNameFromFile(fileSet *token.FileSet, pkg *packages.Package, f *ast.File, line int) string {
+func InferPathFromFile(
+	fileSet *token.FileSet,
+	pkg *packages.Package,
+	f *ast.File,
+	line int,
+) jsonpath.Path {
 	var (
 		getterNode                   ast.Node
 		previousNodeIsFuncWithGetter bool
@@ -98,7 +102,7 @@ func InferNameFromFile(fileSet *token.FileSet, pkg *packages.Package, f *ast.Fil
 	})
 
 	finder := nameFinder{pkg: pkg}
-	return finder.FindName(getterNode, nil)
+	return finder.findName(getterNode, nil)
 }
 
 // InferNameDefaultFunc is the default function for inferring field names from struct tags.
@@ -131,19 +135,15 @@ func GetGovyImportName(f *ast.File) string {
 	return importName
 }
 
-// nameFinder is a helper struct for finding the name of an inferred field.
 type nameFinder struct {
 	pkg *packages.Package
 }
 
-// FindName recursively traverses AST nodes to find and construct the property name.
-// It dispatches to type-specific handlers based on the AST node type.
-// The structType parameter carries the current struct context for nested field lookups.
-func (n nameFinder) FindName(a any, structType *types.Struct) string {
+func (n nameFinder) findName(a any, structType *types.Struct) jsonpath.Path {
 	switch v := a.(type) {
 	case *ast.SelectorExpr:
-		name, _ := n.findNameInSelectorExpr(v, structType)
-		return name
+		path, _ := n.findNameInSelectorExpr(v, structType)
+		return path
 	case *ast.Ident:
 		return n.findNameInIdent(v, structType)
 	case *ast.AssignStmt:
@@ -159,52 +159,55 @@ func (n nameFinder) FindName(a any, structType *types.Struct) string {
 	default:
 		logging.Logger().Debug(fmt.Sprintf("unexpected type: %T", v))
 	}
-	return ""
+	return jsonpath.Path{}
 }
 
-func (n nameFinder) findNameInBlockStmt(blockStmt *ast.BlockStmt, structType *types.Struct) string {
+func (n nameFinder) findNameInBlockStmt(
+	blockStmt *ast.BlockStmt,
+	structType *types.Struct,
+) jsonpath.Path {
 	if blockStmt == nil {
 		logging.Logger().Debug("*ast.BlockStmt is nil, failed to locate the getter function parent")
-		return ""
+		return jsonpath.Path{}
 	}
 	for _, stmt := range blockStmt.List {
-		if name := n.FindName(stmt, structType); name != "" {
-			return name
+		if path := n.findName(stmt, structType); !path.IsEmpty() {
+			return path
 		}
 	}
-	return ""
+	return jsonpath.Path{}
 }
 
-func (n nameFinder) findNameInIfStmt(ifStmt *ast.IfStmt, structType *types.Struct) string {
+func (n nameFinder) findNameInIfStmt(
+	ifStmt *ast.IfStmt,
+	structType *types.Struct,
+) jsonpath.Path {
 	if ifStmt == nil {
 		logging.Logger().Debug("*ast.IfStmt is nil, failed to locate the getter function parent")
-		return ""
+		return jsonpath.Path{}
 	}
-	return n.FindName(ifStmt.Body, structType)
+	return n.findName(ifStmt.Body, structType)
 }
 
-// findNameInFuncLit returns the name of the property that the getter function is supposed to return.
-// It attempts to find the return statement which lets us infer the name,
-// until it succeeds or there are no more return statements to inspect.
-func (n nameFinder) findNameInFuncLit(fl *ast.FuncLit) string {
+func (n nameFinder) findNameInFuncLit(fl *ast.FuncLit) jsonpath.Path {
 	if fl == nil {
 		logging.Logger().Debug("*ast.FuncLit is nil, failed to locate the getter function parent")
-		return ""
+		return jsonpath.Path{}
 	}
 	paramsList := fl.Type.Params.List
 	if len(paramsList) != 1 {
 		logging.Logger().Debug("*ast.FuncLit must have exactly one parameter")
-		return ""
+		return jsonpath.Path{}
 	}
 	paramIdent, ok := paramsList[0].Type.(*ast.Ident)
 	if !ok {
 		logging.Logger().Debug("parameter must be an identifier")
-		return ""
+		return jsonpath.Path{}
 	}
 	object := n.pkg.TypesInfo.ObjectOf(paramIdent)
 	if object == nil {
 		logging.Logger().Debug("failed to locate the object for the parameter identifier")
-		return ""
+		return jsonpath.Path{}
 	}
 	var structType *types.Struct
 	switch ot := object.Type().(type) {
@@ -214,70 +217,79 @@ func (n nameFinder) findNameInFuncLit(fl *ast.FuncLit) string {
 			structType = ut
 		default:
 			logging.Logger().Debug(fmt.Sprintf("unexpected type: %T", ut))
-			return ""
+			return jsonpath.Path{}
 		}
 	default:
 		logging.Logger().Debug(fmt.Sprintf("unexpected type: %T", ot))
-		return ""
+		return jsonpath.Path{}
 	}
 	for _, stmt := range fl.Body.List {
-		if name := n.FindName(stmt, structType); name != "" {
-			return name
+		if path := n.findName(stmt, structType); !path.IsEmpty() {
+			return path
 		}
 	}
-	return ""
+	return jsonpath.Path{}
 }
 
-func (n nameFinder) findNameInReturnStmt(returnStmt *ast.ReturnStmt, structType *types.Struct) string {
+func (n nameFinder) findNameInReturnStmt(
+	returnStmt *ast.ReturnStmt,
+	structType *types.Struct,
+) jsonpath.Path {
 	if returnStmt == nil {
 		logging.Logger().Debug("no return statement found in getter function")
-		return ""
+		return jsonpath.Path{}
 	}
 	if len(returnStmt.Results) != 1 {
 		logging.Logger().Debug("return statement must have exactly one result")
-		return ""
+		return jsonpath.Path{}
 	}
-	return n.FindName(returnStmt.Results[0], structType)
+	return n.findName(returnStmt.Results[0], structType)
 }
 
-func (n nameFinder) findNameInIdent(ident *ast.Ident, structType *types.Struct) string {
+func (n nameFinder) findNameInIdent(
+	ident *ast.Ident,
+	structType *types.Struct,
+) jsonpath.Path {
 	if ident.Obj == nil {
 		logging.Logger().Debug("identifier object is nil")
-		return ""
+		return jsonpath.Path{}
 	}
-	return n.FindName(ident.Obj.Decl, structType)
+	return n.findName(ident.Obj.Decl, structType)
 }
 
-func (n nameFinder) findNameInAssignStmt(assignment *ast.AssignStmt, structType *types.Struct) string {
+func (n nameFinder) findNameInAssignStmt(
+	assignment *ast.AssignStmt,
+	structType *types.Struct,
+) jsonpath.Path {
 	if len(assignment.Rhs) != 1 {
 		logging.Logger().Debug("assignment statement must have exactly one right-hand side")
-		return ""
+		return jsonpath.Path{}
 	}
-	return n.FindName(assignment.Rhs[0], structType)
+	return n.findName(assignment.Rhs[0], structType)
 }
 
 // findNameInSelectorExpr extracts the property name from a selector expression like
 // `s.Field` or `s.Nested.Field`. For nested access, it recursively processes the chain
-// and constructs a dot-separated path (e.g., "nested.field"). It uses struct tags
+// and constructs a path (e.g., "nested.field"). It uses struct tags
 // (json/yaml) to determine the final field name via [InferNameDefaultFunc].
 func (n nameFinder) findNameInSelectorExpr(
 	se *ast.SelectorExpr,
 	structType *types.Struct,
-) (string, *types.Struct) {
-	var name string
+) (jsonpath.Path, *types.Struct) {
+	var path jsonpath.Path
 	switch v := se.X.(type) {
 	case *ast.Ident:
 		break
 	case *ast.SelectorExpr:
-		name, structType = n.findNameInSelectorExpr(v, structType)
+		path, structType = n.findNameInSelectorExpr(v, structType)
 	case *ast.IndexExpr:
-		name, structType = n.findNameInIndexExpr(v, structType)
+		path, structType = n.findNameInIndexExpr(v, structType)
 	default:
 		logging.Logger().Debug(fmt.Sprintf("unexpected type: %T", v))
-		return "", nil
+		return jsonpath.Path{}, nil
 	}
 	if structType == nil {
-		return "", nil
+		return jsonpath.Path{}, nil
 	}
 	for i := range structType.NumFields() {
 		field := structType.Field(i)
@@ -289,14 +301,11 @@ func (n nameFinder) findNameInSelectorExpr(
 		if childStructType, isStruct := n.findStructTypeInStructField(field); isStruct {
 			structType = childStructType
 		}
-		fieldName = jsonpath.EscapeSegment(InferNameDefaultFunc(fieldName, tagValue))
-		if name == "" {
-			return fieldName, structType
-		}
-		return jsonpath.Join(name, fieldName), structType
+		fieldName = InferNameDefaultFunc(fieldName, tagValue)
+		return path.Name(fieldName), structType
 	}
 	logging.Logger().Debug(fmt.Sprintf("field matching '%s' name not found in struct type", se.Sel.Name))
-	return "", nil
+	return jsonpath.Path{}, nil
 }
 
 // findStructTypeInStructField returns the underlying [*types.Struct] of a field if it's a struct.
@@ -308,11 +317,9 @@ func (n nameFinder) findStructTypeInStructField(field *types.Var) (*types.Struct
 // getStructFromType extracts a struct type from a potentially wrapped type.
 // It handles pointers, named types, and collection types (slices, arrays, maps).
 func (n nameFinder) getStructFromType(t types.Type) (*types.Struct, bool) {
-	// Unwrap pointer.
 	if ptr, ok := t.(*types.Pointer); ok {
 		t = ptr.Elem()
 	}
-	// Handle named types.
 	if named, ok := t.(*types.Named); ok {
 		t = named.Underlying()
 	}
@@ -335,62 +342,51 @@ func (n nameFinder) getStructFromType(t types.Type) (*types.Struct, bool) {
 func (n nameFinder) findNameInIndexExpr(
 	ie *ast.IndexExpr,
 	structType *types.Struct,
-) (string, *types.Struct) {
-	var name string
-	// Process the base expression (ie.X).
+) (jsonpath.Path, *types.Struct) {
+	var path jsonpath.Path
 	switch v := ie.X.(type) {
 	case *ast.SelectorExpr:
-		name, structType = n.findNameInSelectorExpr(v, structType)
+		path, structType = n.findNameInSelectorExpr(v, structType)
 	case *ast.IndexExpr:
-		// Handle nested indices like matrix[0][1].
-		name, structType = n.findNameInIndexExpr(v, structType)
+		path, structType = n.findNameInIndexExpr(v, structType)
 	case *ast.Ident:
-		// Base case - just an identifier being indexed (e.g., direct variable access).
 		logging.Logger().Debug(fmt.Sprintf("index expression base is identifier: %s", v.Name))
 	default:
 		logging.Logger().Debug(fmt.Sprintf("unexpected type in IndexExpr.X: %T", v))
-		return "", nil
+		return jsonpath.Path{}, nil
 	}
-	if name == "" && structType == nil {
-		return "", nil
+	if path.IsEmpty() && structType == nil {
+		return jsonpath.Path{}, nil
 	}
-	// Format the index notation.
-	indexStr := n.formatIndexExpr(ie.Index)
-	return name + indexStr, structType
+	return n.appendIndexExpr(path, ie.Index), structType
 }
 
-const defaultIndexStr = "[]"
-
-// formatIndexExpr formats an index expression for the property path.
-// Returns [N] for integer literals, .key for simple string keys,
-// ['key.with.special'] for string keys containing dots/spaces/brackets,
-// and [] for variables or other non-literal expressions.
-func (n nameFinder) formatIndexExpr(index ast.Expr) string {
+// appendIndexExpr appends an index expression to the path.
+// For integer literals it uses [Path.Index], for string literals [Path.Key],
+// and for non-literal expressions it falls back to a raw "[]" segment.
+func (n nameFinder) appendIndexExpr(path jsonpath.Path, index ast.Expr) jsonpath.Path {
 	lit, ok := index.(*ast.BasicLit)
 	if !ok {
 		logging.Logger().Debug(fmt.Sprintf("non-literal index expression: %T", index))
-		return defaultIndexStr
+		return path.UnknownIndex()
 	}
 	switch lit.Kind {
 	case token.INT:
-		return "[" + lit.Value + "]"
+		v, err := strconv.ParseUint(lit.Value, 10, 64)
+		if err != nil {
+			logging.Logger().Debug(fmt.Sprintf("failed to parse integer literal: %v", err))
+			return path.UnknownIndex()
+		}
+		return path.Index(uint(v))
 	case token.STRING:
-		// Unquote the string literal to get the actual key value.
 		key, err := strconv.Unquote(lit.Value)
 		if err != nil {
 			logging.Logger().Debug(fmt.Sprintf("failed to unquote string literal: %v", err))
-			return defaultIndexStr
+			return path.UnknownIndex()
 		}
-		// Use jsonpath.EscapeSegment to properly escape and format the key.
-		escaped := jsonpath.EscapeSegment(key)
-		// If the key is already wrapped in brackets, return as-is for concatenation.
-		// Otherwise, prepend '.' for proper JSONPath joining.
-		if strings.HasPrefix(escaped, "[") {
-			return escaped
-		}
-		return "." + escaped
+		return path.Key(key)
 	default:
 		logging.Logger().Debug(fmt.Sprintf("unhandled BasicLit kind in index expression: %v", lit.Kind))
 	}
-	return defaultIndexStr
+	return path.UnknownIndex()
 }

@@ -20,7 +20,7 @@ func For[T, P any](getter PropertyGetter[T, P]) PropertyRules[T, P] {
 // validation will not proceed.
 func ForPointer[T, P any](getter PropertyGetter[*T, P]) PropertyRules[T, P] {
 	return PropertyRules[T, P]{
-		nameFunc: getInferNameFunc(getCallersAndProgramCounter(4)),
+		pathFunc: getInferPathFunc(getCallersAndProgramCounter(4)),
 		getter: func(parent P) (indirect T, err error) {
 			ptr := getter(parent)
 			if ptr != nil {
@@ -40,7 +40,7 @@ func ForPointer[T, P any](getter PropertyGetter[*T, P]) PropertyRules[T, P] {
 func Transform[T, N, P any](getter PropertyGetter[T, P], transform Transformer[T, N]) PropertyRules[N, P] {
 	typInfo := typeinfo.Get[T]()
 	return PropertyRules[N, P]{
-		nameFunc: getInferNameFunc(getCallersAndProgramCounter(4)),
+		pathFunc: getInferPathFunc(getCallersAndProgramCounter(4)),
 		transformGetter: func(parent P) (transformed N, original any, err error) {
 			v := getter(parent)
 			if internal.IsEmpty(v) {
@@ -57,15 +57,15 @@ func Transform[T, N, P any](getter PropertyGetter[T, P], transform Transformer[T
 }
 
 // forConstructor creates [PropertyRules].
-// It wraps the getter function in [internalPropertyGetter] and adds name inference.
+// It wraps the getter function in [internalPropertyGetter] and adds path inference.
 func forConstructor[T, P any](getter PropertyGetter[T, P]) PropertyRules[T, P] {
 	return PropertyRules[T, P]{
-		nameFunc: getInferNameFunc(getCallersAndProgramCounter(4)),
+		pathFunc: getInferPathFunc(getCallersAndProgramCounter(4)),
 		getter:   func(parent P) (v T, err error) { return getter(parent), nil },
 	}
 }
 
-// forConstructorWithoutNameInference creates [PropertyRules] without name inference.
+// forConstructorWithoutNameInference creates [PropertyRules] without path inference.
 // Used for internal rules in [ForSlice] and [ForMap] where names are managed separately.
 func forConstructorWithoutNameInference[T, P any](getter PropertyGetter[T, P]) PropertyRules[T, P] {
 	return PropertyRules[T, P]{
@@ -98,8 +98,8 @@ func (emptyErr) Error() string { return "" }
 // It is the middle-level building block of the validation process,
 // aggregated by [Validator] and aggregating [Rule].
 type PropertyRules[T, P any] struct {
-	name            string
-	nameFunc        internalInferNameFunc
+	path            Path
+	pathFunc        internalInferPathFunc
 	getter          internalPropertyGetter[T, P]
 	transformGetter internalTransformPropertyGetter[T, P]
 	rules           []validationInterface[T]
@@ -108,7 +108,7 @@ type PropertyRules[T, P any] struct {
 	hideValue       bool
 	isPointer       bool
 	cascadeMode     CascadeMode
-	inferNameMode   InferNameMode
+	inferPathMode   InferPathMode
 	examples        []string
 	originalType    *typeinfo.TypeInfo
 
@@ -142,10 +142,10 @@ func (r PropertyRules[T, P]) Validate(parent P) error {
 		switch errValue := err.(type) {
 		// Same as Rule[P] as for GetSelf we'd get the same type on T and P.
 		case *PropertyError:
-			allErrors = append(allErrors, errValue.prependParentPropertyPath(r.getName()))
+			allErrors = append(allErrors, errValue.prependParentPropertyPath(r.getPath()))
 		case *ValidatorError:
 			for _, e := range errValue.Errors {
-				allErrors = append(allErrors, e.prependParentPropertyPath(r.getName()))
+				allErrors = append(allErrors, e.prependParentPropertyPath(r.getPath()))
 			}
 		default:
 			ruleErrors = append(ruleErrors, err)
@@ -155,7 +155,7 @@ func (r PropertyRules[T, P]) Validate(parent P) error {
 		}
 	}
 	if len(ruleErrors) > 0 {
-		allErrors = append(allErrors, NewPropertyError(r.getName(), propValue, ruleErrors...))
+		allErrors = append(allErrors, NewPropertyError(r.getPath(), propValue, ruleErrors...))
 	}
 	if len(allErrors) > 0 {
 		if r.hideValue {
@@ -170,7 +170,7 @@ func (r PropertyRules[T, P]) Validate(parent P) error {
 // If the name was inferred, it will be overridden.
 // Special characters in the name are automatically escaped using JSONPath bracket notation.
 func (r PropertyRules[T, P]) WithName(name string) PropertyRules[T, P] {
-	r.name = jsonpath.EscapeSegment(name)
+	r.path = jsonpath.NewPath().Name(name)
 	return r
 }
 
@@ -178,7 +178,7 @@ func (r PropertyRules[T, P]) WithName(name string) PropertyRules[T, P] {
 // This is useful when the property path contains multiple segments
 // or when you need explicit control over the path construction.
 func (r PropertyRules[T, P]) WithPath(path Path) PropertyRules[T, P] {
-	r.name = path.String()
+	r.path = path
 	return r
 }
 
@@ -239,12 +239,12 @@ func (r PropertyRules[T, P]) Cascade(mode CascadeMode) PropertyRules[T, P] {
 	return r
 }
 
-// InferName sets the [InferNameMode] for the property,
+// InferPath sets the [InferPathMode] for the property,
 // which controls if and how the property name is inferred.
 // If you manually provide a name using [PropertyRules.WithName]
-// this setting will have no effect, acting like [InferNameModeDisable].
-func (r PropertyRules[T, P]) InferName(mode InferNameMode) PropertyRules[T, P] {
-	r.inferNameMode = mode
+// this setting will have no effect, acting like [InferPathModeDisable].
+func (r PropertyRules[T, P]) InferPath(mode InferPathMode) PropertyRules[T, P] {
+	r.inferPathMode = mode
 	return r
 }
 
@@ -258,13 +258,13 @@ func (r PropertyRules[T, P]) cascadeInternal(mode CascadeMode) PropertyRulesInte
 	return r.Cascade(mode)
 }
 
-// inferNameModeInternal is an internal wrapper around [PropertyRules.InferName] which
+// inferPathModeInternal is an internal wrapper around [PropertyRules.InferPath] which
 // fulfills [PropertyRulesInterface] interface.
-func (r PropertyRules[T, P]) inferNameModeInternal(mode InferNameMode) PropertyRulesInterface[P] {
-	if r.inferNameMode != 0 {
+func (r PropertyRules[T, P]) inferPathModeInternal(mode InferPathMode) PropertyRulesInterface[P] {
+	if r.inferPathMode != 0 {
 		return r
 	}
-	return r.InferName(mode)
+	return r.InferPath(mode)
 }
 
 // plan constructs a validation plan for the property.
@@ -275,7 +275,7 @@ func (r PropertyRules[T, P]) plan(builder planBuilder) {
 	} else {
 		builder.propertyPlan.TypeInfo = TypeInfo(typeinfo.Get[T]())
 	}
-	builder = builder.appendPath(r.getName()).setExamples(r.examples...)
+	builder = builder.appendPath(r.getPath()).setExamples(r.examples...)
 	builder = appendPredicatesToPlanBuilder(builder, r.predicates)
 	if r.required {
 		// Dummy rule to register the property as required.
@@ -325,7 +325,7 @@ func (r PropertyRules[T, P]) getValue(parent P) (v T, skip bool, propErr *Proper
 		} else {
 			propValue = v
 		}
-		return v, false, NewPropertyError(r.getName(), propValue, err)
+		return v, false, NewPropertyError(r.getPath(), propValue, err)
 	}
 	isEmpty := isEmptyError || (!r.isPointer && internal.IsEmpty(v))
 	// If the value is not empty we simply return it.
@@ -334,7 +334,7 @@ func (r PropertyRules[T, P]) getValue(parent P) (v T, skip bool, propErr *Proper
 	}
 	// If the value is empty and the property is required, we return [ErrorCodeRequired].
 	if r.required {
-		return v, false, NewPropertyError(r.getName(), nil, newRequiredError())
+		return v, false, NewPropertyError(r.getPath(), nil, newRequiredError())
 	}
 	// If the value is empty and we're skipping empty values or the value is a pointer, we skip the validation.
 	if r.omitEmpty || r.isPointer {
@@ -344,14 +344,14 @@ func (r PropertyRules[T, P]) getValue(parent P) (v T, skip bool, propErr *Proper
 }
 
 // getName returns the name of the property.
-func (r PropertyRules[T, S]) getName() string {
+func (r PropertyRules[T, S]) getPath() Path {
 	switch {
-	case r.name != "":
-		return r.name
-	case r.nameFunc != nil:
-		return r.nameFunc(r.inferNameMode)
+	case !r.path.IsEmpty():
+		return r.path
+	case r.pathFunc != nil:
+		return r.pathFunc(r.inferPathMode)
 	default:
-		return ""
+		return Path{}
 	}
 }
 

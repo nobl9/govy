@@ -7,16 +7,16 @@ import (
 )
 
 func init() {
-    inferredNames := map[string]govyconfig.InferredName{
+    inferredPaths := map[string]govyconfig.InferredPath{
     {{- range $key, $value := .Names }}
         "{{ $key }}": {
-    	    Name: "{{ $value.Name }}",
+    	    Path: "{{ $value.Path }}",
     	    File: "{{ $value.File }}",
     	    Line: {{ $value.Line }},
         },
     {{- end }}
     }
-    for _, name := range inferredNames {
-        govyconfig.SetInferredName(name)
+    for _, p := range inferredPaths {
+        govyconfig.SetInferredPath(p)
     }
 }

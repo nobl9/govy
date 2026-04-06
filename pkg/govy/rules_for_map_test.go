@@ -43,7 +43,7 @@ func TestPropertyRulesForMap(t *testing.T) {
 			"keys": {
 				Rules: baseRules.RulesForKeys(govy.NewRule(func(v string) error { return expectedErr })),
 				Expected: &govy.PropertyError{
-					PropertyPath:  "test.path.key",
+					PropertyPath:  govy.ParsePath("test.path.key"),
 					PropertyValue: "key",
 					IsKeyError:    true,
 					Errors:        []*govy.RuleError{{Message: expectedErr.Error()}},
@@ -52,7 +52,7 @@ func TestPropertyRulesForMap(t *testing.T) {
 			"values": {
 				Rules: baseRules.RulesForValues(govy.NewRule(func(v string) error { return expectedErr })),
 				Expected: &govy.PropertyError{
-					PropertyPath:  "test.path.key",
+					PropertyPath:  govy.ParsePath("test.path.key"),
 					PropertyValue: "value",
 					Errors:        []*govy.RuleError{{Message: expectedErr.Error()}},
 				},
@@ -62,7 +62,7 @@ func TestPropertyRulesForMap(t *testing.T) {
 					govy.NewRule(func(v govy.MapItem[string, string]) error { return expectedErr }),
 				),
 				Expected: &govy.PropertyError{
-					PropertyPath:  "test.path.key",
+					PropertyPath:  govy.ParsePath("test.path.key"),
 					PropertyValue: "value",
 					Errors:        []*govy.RuleError{{Message: expectedErr.Error()}},
 				},
@@ -110,23 +110,23 @@ func TestPropertyRulesForMap(t *testing.T) {
 			RulesForKeys(
 				govy.NewRule(func(v string) error { return errKey }),
 				govy.NewRule(func(v string) error {
-					return govy.NewPropertyError("nested", "nestedKey", errNestedKey)
+					return govy.NewPropertyError(govy.ParsePath("nested"), "nestedKey", errNestedKey)
 				}),
 			).
 			RulesForValues(
 				govy.NewRule(func(v string) error { return errValue }),
 				govy.NewRule(func(v string) error {
-					return govy.NewPropertyError("nested", "nestedValue", errNestedValue)
+					return govy.NewPropertyError(govy.ParsePath("nested"), "nestedValue", errNestedValue)
 				}),
 			).
 			RulesForItems(
 				govy.NewRule(func(v govy.MapItem[string, string]) error { return errItem }),
 				govy.NewRule(func(v govy.MapItem[string, string]) error {
-					return govy.NewPropertyError("nested", "nestedItem", errNestedItem)
+					return govy.NewPropertyError(govy.ParsePath("nested"), "nestedItem", errNestedItem)
 				}),
 			).
 			Rules(govy.NewRule(func(v map[string]string) error {
-				return govy.NewPropertyError("nested", "nestedRule", errNestedRule)
+				return govy.NewPropertyError(govy.ParsePath("nested"), "nestedRule", errNestedRule)
 			}))
 
 		errs := mustPropertyErrors(t, r.Validate(mockStruct{StringMap: map[string]string{
@@ -136,36 +136,36 @@ func TestPropertyRulesForMap(t *testing.T) {
 		assert.Require(t, assert.Len(t, errs, 12))
 		assert.ElementsMatch(t, []*govy.PropertyError{
 			{
-				PropertyPath:  "test.path",
+				PropertyPath:  govy.ParsePath("test.path"),
 				PropertyValue: `{"key 2":"value2","key1":"value1"}`,
 				Errors:        []*govy.RuleError{{Message: errRule.Error()}},
 			},
 			{
-				PropertyPath:  "test.path.key1",
+				PropertyPath:  govy.ParsePath("test.path.key1"),
 				PropertyValue: "key1",
 				IsKeyError:    true,
 				Errors:        []*govy.RuleError{{Message: errKey.Error()}},
 			},
 			{
-				PropertyPath:  "test.path['key 2']",
+				PropertyPath:  govy.ParsePath("test.path['key 2']"),
 				PropertyValue: "key 2",
 				IsKeyError:    true,
 				Errors:        []*govy.RuleError{{Message: errKey.Error()}},
 			},
 			{
-				PropertyPath:  "test.path.key1.nested",
+				PropertyPath:  govy.ParsePath("test.path.key1.nested"),
 				PropertyValue: "nestedKey",
 				IsKeyError:    true,
 				Errors:        []*govy.RuleError{{Message: errNestedKey.Error()}},
 			},
 			{
-				PropertyPath:  "test.path['key 2'].nested",
+				PropertyPath:  govy.ParsePath("test.path['key 2'].nested"),
 				PropertyValue: "nestedKey",
 				IsKeyError:    true,
 				Errors:        []*govy.RuleError{{Message: errNestedKey.Error()}},
 			},
 			{
-				PropertyPath:  "test.path.key1",
+				PropertyPath:  govy.ParsePath("test.path.key1"),
 				PropertyValue: "value1",
 				Errors: []*govy.RuleError{
 					{Message: errValue.Error()},
@@ -173,7 +173,7 @@ func TestPropertyRulesForMap(t *testing.T) {
 				},
 			},
 			{
-				PropertyPath:  "test.path['key 2']",
+				PropertyPath:  govy.ParsePath("test.path['key 2']"),
 				PropertyValue: "value2",
 				Errors: []*govy.RuleError{
 					{Message: errValue.Error()},
@@ -181,27 +181,27 @@ func TestPropertyRulesForMap(t *testing.T) {
 				},
 			},
 			{
-				PropertyPath:  "test.path.key1.nested",
+				PropertyPath:  govy.ParsePath("test.path.key1.nested"),
 				PropertyValue: "nestedValue",
 				Errors:        []*govy.RuleError{{Message: errNestedValue.Error()}},
 			},
 			{
-				PropertyPath:  "test.path['key 2'].nested",
+				PropertyPath:  govy.ParsePath("test.path['key 2'].nested"),
 				PropertyValue: "nestedValue",
 				Errors:        []*govy.RuleError{{Message: errNestedValue.Error()}},
 			},
 			{
-				PropertyPath:  "test.path.key1.nested",
+				PropertyPath:  govy.ParsePath("test.path.key1.nested"),
 				PropertyValue: "value1",
 				Errors:        []*govy.RuleError{{Message: errNestedItem.Error()}},
 			},
 			{
-				PropertyPath:  "test.path['key 2'].nested",
+				PropertyPath:  govy.ParsePath("test.path['key 2'].nested"),
 				PropertyValue: "value2",
 				Errors:        []*govy.RuleError{{Message: errNestedItem.Error()}},
 			},
 			{
-				PropertyPath:  "test.path.nested",
+				PropertyPath:  govy.ParsePath("test.path.nested"),
 				PropertyValue: "nestedRule",
 				Errors:        []*govy.RuleError{{Message: errNestedRule.Error()}},
 			},
@@ -220,13 +220,13 @@ func TestPropertyRulesForMap(t *testing.T) {
 		assert.Require(t, assert.Len(t, errs, 2))
 		assert.ElementsMatch(t, []*govy.PropertyError{
 			{
-				PropertyPath:  "test.path.key",
+				PropertyPath:  govy.ParsePath("test.path.key"),
 				PropertyValue: "key",
 				IsKeyError:    true,
 				Errors:        []*govy.RuleError{{Message: keyErr.Error()}},
 			},
 			{
-				PropertyPath:  "test.path.key",
+				PropertyPath:  govy.ParsePath("test.path.key"),
 				PropertyValue: "value",
 				Errors:        []*govy.RuleError{{Message: valueErr.Error()}},
 			},
@@ -274,12 +274,12 @@ func TestPropertyRulesForMap(t *testing.T) {
 		assert.Require(t, assert.Len(t, errs, 4))
 		assert.ElementsMatch(t, []*govy.PropertyError{
 			{
-				PropertyPath:  "test.path",
+				PropertyPath:  govy.ParsePath("test.path"),
 				PropertyValue: `{"key":1}`,
 				Errors:        []*govy.RuleError{{Message: errRule.Error()}},
 			},
 			{
-				PropertyPath:  "test.path.key.included_key",
+				PropertyPath:  govy.ParsePath("test.path.key.included_key"),
 				PropertyValue: "key",
 				IsKeyError:    true,
 				Errors: []*govy.RuleError{
@@ -288,7 +288,7 @@ func TestPropertyRulesForMap(t *testing.T) {
 				},
 			},
 			{
-				PropertyPath:  "test.path.key.included_value",
+				PropertyPath:  govy.ParsePath("test.path.key.included_value"),
 				PropertyValue: "1",
 				Errors: []*govy.RuleError{
 					{Message: errIncludedValue1.Error()},
@@ -296,7 +296,7 @@ func TestPropertyRulesForMap(t *testing.T) {
 				},
 			},
 			{
-				PropertyPath:  "test.path.key.included_item",
+				PropertyPath:  govy.ParsePath("test.path.key.included_item"),
 				PropertyValue: "1",
 				Errors: []*govy.RuleError{
 					{Message: errIncludedItem1.Error()},
@@ -347,12 +347,12 @@ func TestPropertyRulesForMap(t *testing.T) {
 		assert.Require(t, assert.Len(t, errs, 4))
 		assert.ElementsMatch(t, []*govy.PropertyError{
 			{
-				PropertyPath:  "test.path",
+				PropertyPath:  govy.ParsePath("test.path"),
 				PropertyValue: `{"key":"1"}`,
 				Errors:        []*govy.RuleError{{Message: errRule.Error()}},
 			},
 			{
-				PropertyPath:  "test.path.key.included_key",
+				PropertyPath:  govy.ParsePath("test.path.key.included_key"),
 				PropertyValue: "key",
 				IsKeyError:    true,
 				Errors: []*govy.RuleError{
@@ -361,7 +361,7 @@ func TestPropertyRulesForMap(t *testing.T) {
 				},
 			},
 			{
-				PropertyPath:  "test.path.key.included_value",
+				PropertyPath:  govy.ParsePath("test.path.key.included_value"),
 				PropertyValue: "1",
 				Errors: []*govy.RuleError{
 					{Message: errIncludedValue1.Error()},
@@ -369,7 +369,7 @@ func TestPropertyRulesForMap(t *testing.T) {
 				},
 			},
 			{
-				PropertyPath:  "test.path.key.included_item",
+				PropertyPath:  govy.ParsePath("test.path.key.included_item"),
 				PropertyValue: "1",
 				Errors: []*govy.RuleError{
 					{Message: errIncludedItem1.Error()},
@@ -392,7 +392,7 @@ func TestPropertyRulesForMap(t *testing.T) {
 		errs := mustPropertyErrors(t, r.Validate(mockStruct{StringMap: map[string]string{"key": "value"}}))
 		assert.Require(t, assert.Len(t, errs, 1))
 		assert.Equal(t, &govy.PropertyError{
-			PropertyPath:  "test.path.key",
+			PropertyPath:  govy.ParsePath("test.path.key"),
 			PropertyValue: "value",
 			Errors:        []*govy.RuleError{{Message: expectedErr.Error()}},
 		}, errs[0])
@@ -414,7 +414,7 @@ func TestPropertyRulesForMap(t *testing.T) {
 		assert.Require(t, assert.Len(t, errs, 2))
 		assert.ElementsMatch(t, []*govy.PropertyError{
 			{
-				PropertyPath:  "labels.key",
+				PropertyPath:  govy.ParsePath("labels.key"),
 				PropertyValue: "key",
 				IsKeyError:    true,
 				Errors: []*govy.RuleError{
@@ -422,7 +422,7 @@ func TestPropertyRulesForMap(t *testing.T) {
 				},
 			},
 			{
-				PropertyPath:  "labels.key",
+				PropertyPath:  govy.ParsePath("labels.key"),
 				PropertyValue: "value",
 				Errors: []*govy.RuleError{
 					{Message: err1.Error()},
@@ -433,15 +433,15 @@ func TestPropertyRulesForMap(t *testing.T) {
 }
 
 func TestPropertyRulesForMap_InferName(t *testing.T) {
-	govyconfig.SetInferNameIncludeTestFiles(true)
-	defer govyconfig.SetInferNameIncludeTestFiles(false)
+	govyconfig.SetInferPathIncludeTestFiles(true)
+	defer govyconfig.SetInferPathIncludeTestFiles(false)
 
 	type Teacher struct {
 		Students map[string]int `json:"students"`
 	}
 
 	r := govy.ForMap(func(t Teacher) map[string]int { return t.Students }).
-		InferName(govy.InferNameModeRuntime).
+		InferPath(govy.InferPathModeRuntime).
 		RulesForKeys(rules.EQ("John"))
 	errs := mustPropertyErrors(t, r.Validate(Teacher{Students: map[string]int{"Luke": 35}}))
 	assert.Len(t, errs, 1)

@@ -5,28 +5,28 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/nobl9/govy/internal/infername"
+	"github.com/nobl9/govy/internal/inferpath"
 	"github.com/nobl9/govy/internal/logging"
 	"github.com/nobl9/govy/pkg/govyconfig"
 )
 
-// InferNameMode defines a mode of property name's inference.
-type InferNameMode int
+// InferPathMode defines a mode of property name's inference.
+type InferPathMode int
 
 const (
-	// InferNameModeDisable disables property name's inference.
+	// InferPathModeDisable disables property name's inference.
 	// It is the default mode.
-	InferNameModeDisable InferNameMode = iota
-	// InferNameModeRuntime infers property names' during runtime,
+	InferPathModeDisable InferPathMode = iota
+	// InferPathModeRuntime infers property names' during runtime,
 	// whenever For, ForSlice, ForPointer or ForMap are created.
 	// If you're not reusing these [govy.PropertyRules], but rather creating them dynamically,
 	// beware of significant performance cost of the inference mechanism.
-	InferNameModeRuntime
-	// InferNameModeGenerate does the heavy lifting of inferring property names
+	InferPathModeRuntime
+	// InferPathModeGenerate does the heavy lifting of inferring property names
 	// in a separate step which involves code generation.
 	// When creating new [govy.PropertyRules], the only performance hit is due to the
 	// usage of [runtime] package which helps us get the caller frame details.
-	InferNameModeGenerate
+	InferPathModeGenerate
 )
 
 // InferNameFunc is a function blueprint for inferring property names.
@@ -37,20 +37,20 @@ type InferNameFunc func(fieldName, tagValue string) string
 // InferNameDefaultFunc is the default function for inferring field names from struct tags.
 // It looks for json and yaml tags, preferring json if both are set.
 func InferNameDefaultFunc(fieldName, tagValue string) string {
-	return infername.InferNameDefaultFunc(fieldName, tagValue)
+	return inferpath.InferNameDefaultFunc(fieldName, tagValue)
 }
 
-type internalInferNameFunc func(mode InferNameMode) string
+type internalInferPathFunc func(mode InferPathMode) Path
 
-// getInferNameFunc is a closure which returns an [internalInferNameFunc].
+// getInferPathFunc is a closure which returns an [internalInferNameFunc].
 // It captures the inferred name once and caches it.
 // It is safe to call this function concurrently.
-func getInferNameFunc(callers int, pc []uintptr) internalInferNameFunc {
+func getInferPathFunc(callers int, pc []uintptr) internalInferPathFunc {
 	var (
 		once sync.Once
-		name string
+		name Path
 	)
-	return func(mode InferNameMode) string {
+	return func(mode InferPathMode) Path {
 		once.Do(func() {
 			if callers < 1 {
 				return
@@ -58,18 +58,18 @@ func getInferNameFunc(callers int, pc []uintptr) internalInferNameFunc {
 			frame, _ := runtime.CallersFrames(pc).Next()
 			if frame.File == "" || frame.Line == 0 {
 				logging.Logger().Error(
-					"invalid frame captured for name inference",
+					"invalid frame captured for path inference",
 					"file", frame.File,
 					"line", frame.Line,
 				)
 				return
 			}
 			switch mode {
-			case InferNameModeGenerate:
-				name = govyconfig.GetInferredName(frame.File, frame.Line)
-			case InferNameModeRuntime:
-				name = infername.InferName(frame.File, frame.Line)
-			case InferNameModeDisable:
+			case InferPathModeGenerate:
+				name = ParsePath(govyconfig.GetInferredPath(frame.File, frame.Line))
+			case InferPathModeRuntime:
+				name = inferpath.InferPath(frame.File, frame.Line)
+			case InferPathModeDisable:
 			default:
 				logging.Logger().Error(fmt.Sprintf("unknown %T", mode), "mode", int(mode))
 			}

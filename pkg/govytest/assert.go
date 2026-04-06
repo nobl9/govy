@@ -384,7 +384,7 @@ func assertErrorMatches(
 
 	multiMatch := false
 	for i, actual := range validatorErr.Errors {
-		if actual.PropertyPath != expected.PropertyPath {
+		if actual.PropertyPath.String() != expected.PropertyPath {
 			continue
 		}
 		if expected.IsKeyError != actual.IsKeyError {
