@@ -15,4 +15,4 @@ var teacherValidation = govy.New(
 	govy.For(func(t Teacher) university.University { return t.University }).
 		Include(university.UniversityValidation),
 ).
-	InferName(govy.InferNameModeRuntime)
+	InferPath(govy.InferPathModeRuntime)

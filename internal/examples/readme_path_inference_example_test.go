@@ -8,9 +8,9 @@ import (
 	"github.com/nobl9/govy/pkg/rules"
 )
 
-func Example_nameInference() {
-	govyconfig.SetInferNameIncludeTestFiles(true) // Required for the example to run.
-	defer govyconfig.SetInferNameIncludeTestFiles(false)
+func Example_pathInference() {
+	govyconfig.SetInferPathIncludeTestFiles(true) // Required for the example to run.
+	defer govyconfig.SetInferPathIncludeTestFiles(false)
 
 	type Teacher struct {
 		Name string `json:"name"`
@@ -20,7 +20,7 @@ func Example_nameInference() {
 		govy.For(func(t Teacher) string { return t.Name }).
 			Rules(rules.EQ("Jerry")),
 	).
-		InferName(govy.InferNameModeRuntime).
+		InferPath(govy.InferPathModeRuntime).
 		WithNameFunc(govy.NameFuncFromTypeName[Teacher]())
 
 	teacher := Teacher{Name: "Tom"}

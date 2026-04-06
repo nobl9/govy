@@ -1,4 +1,4 @@
-package infername
+package inferpath
 
 import (
 	"go/ast"
@@ -12,7 +12,7 @@ import (
 	"github.com/nobl9/govy/internal/assert"
 )
 
-func TestInferNameDefaultFunc(t *testing.T) {
+func TestInferPathDefaultFunc(t *testing.T) {
 	tests := []struct {
 		name      string
 		fieldName string
@@ -376,8 +376,8 @@ var _ = govy.For(func(p Person) string {
 		t.Run(tc.name, func(t *testing.T) {
 			res := createTestPackage(t, tc.src)
 
-			result := InferNameFromFile(res.fset, res.pkg, res.f, tc.line)
-			assert.Equal(t, tc.expected, result)
+			result := InferPathFromFile(res.fset, res.pkg, res.f, tc.line)
+			assert.Equal(t, tc.expected, result.String())
 		})
 	}
 }
@@ -399,8 +399,8 @@ var _ = o.For(func(p Person) string { return p.Name })
 `
 	res := createTestPackage(t, src)
 
-	result := InferNameFromFile(res.fset, res.pkg, res.f, 13)
-	assert.Equal(t, "", result)
+	result := InferPathFromFile(res.fset, res.pkg, res.f, 13)
+	assert.Equal(t, "", result.String())
 }
 
 func TestInferNameFromFile_multipleReturns(t *testing.T) {
@@ -421,32 +421,32 @@ var _ = govy.For(func(p Person) string {
 `
 	res := createTestPackage(t, src)
 
-	result := InferNameFromFile(res.fset, res.pkg, res.f, 9)
-	assert.Equal(t, "name", result)
+	result := InferPathFromFile(res.fset, res.pkg, res.f, 9)
+	assert.Equal(t, "name", result.String())
 }
 
 func TestNameFinder_findNameInBlockStmt_nil(t *testing.T) {
 	nf := nameFinder{}
 	result := nf.findNameInBlockStmt(nil, nil)
-	assert.Equal(t, "", result)
+	assert.Equal(t, "", result.String())
 }
 
 func TestNameFinder_findNameInIfStmt_nil(t *testing.T) {
 	nf := nameFinder{}
 	result := nf.findNameInIfStmt(nil, nil)
-	assert.Equal(t, "", result)
+	assert.Equal(t, "", result.String())
 }
 
 func TestNameFinder_findNameInFuncLit_nil(t *testing.T) {
 	nf := nameFinder{}
 	result := nf.findNameInFuncLit(nil)
-	assert.Equal(t, "", result)
+	assert.Equal(t, "", result.String())
 }
 
 func TestNameFinder_findNameInReturnStmt_nil(t *testing.T) {
 	nf := nameFinder{}
 	result := nf.findNameInReturnStmt(nil, nil)
-	assert.Equal(t, "", result)
+	assert.Equal(t, "", result.String())
 }
 
 func TestNameFinder_findNameInReturnStmt_multipleResults(t *testing.T) {
@@ -458,14 +458,14 @@ func TestNameFinder_findNameInReturnStmt_multipleResults(t *testing.T) {
 		},
 	}
 	result := nf.findNameInReturnStmt(returnStmt, nil)
-	assert.Equal(t, "", result)
+	assert.Equal(t, "", result.String())
 }
 
 func TestNameFinder_findNameInIdent_nilObj(t *testing.T) {
 	nf := nameFinder{}
 	ident := &ast.Ident{Name: "test", Obj: nil}
 	result := nf.findNameInIdent(ident, nil)
-	assert.Equal(t, "", result)
+	assert.Equal(t, "", result.String())
 }
 
 func TestNameFinder_findNameInAssignStmt_multipleRhs(t *testing.T) {
@@ -477,13 +477,13 @@ func TestNameFinder_findNameInAssignStmt_multipleRhs(t *testing.T) {
 		},
 	}
 	result := nf.findNameInAssignStmt(assignStmt, nil)
-	assert.Equal(t, "", result)
+	assert.Equal(t, "", result.String())
 }
 
-func TestNameFinder_FindName_unexpectedType(t *testing.T) {
+func TestNameFinder_findName_unexpectedType(t *testing.T) {
 	nf := nameFinder{}
-	result := nf.FindName("unexpected string type", nil)
-	assert.Equal(t, "", result)
+	result := nf.findName("unexpected string type", nil)
+	assert.Equal(t, "", result.String())
 }
 
 func TestNameFinder_findNameInFuncLit_multipleParams(t *testing.T) {
@@ -500,7 +500,7 @@ func TestNameFinder_findNameInFuncLit_multipleParams(t *testing.T) {
 	}
 	nf := nameFinder{}
 	result := nf.findNameInFuncLit(funcLit)
-	assert.Equal(t, "", result)
+	assert.Equal(t, "", result.String())
 }
 
 func TestNameFinder_findNameInFuncLit_nonIdentParam(t *testing.T) {
@@ -516,7 +516,7 @@ func TestNameFinder_findNameInFuncLit_nonIdentParam(t *testing.T) {
 	}
 	nf := nameFinder{}
 	result := nf.findNameInFuncLit(funcLit)
-	assert.Equal(t, "", result)
+	assert.Equal(t, "", result.String())
 }
 
 func TestModuleAST_FindFile_notFound(t *testing.T) {
@@ -601,8 +601,8 @@ var _ = govy.For(func(p Person) string { return p.Address.Street.Name })
 `
 	res := createTestPackage(t, src)
 
-	result := InferNameFromFile(res.fset, res.pkg, res.f, 16)
-	assert.Equal(t, "address.street.streetName", result)
+	result := InferPathFromFile(res.fset, res.pkg, res.f, 16)
+	assert.Equal(t, "address.street.streetName", result.String())
 }
 
 func TestInferNameFromFile_embeddedStruct(t *testing.T) {
@@ -622,8 +622,8 @@ var _ = govy.For(func(p Person) string { return p.Name })
 `
 	res := createTestPackage(t, src)
 
-	result := InferNameFromFile(res.fset, res.pkg, res.f, 13)
-	assert.Equal(t, "name", result)
+	result := InferPathFromFile(res.fset, res.pkg, res.f, 13)
+	assert.Equal(t, "name", result.String())
 }
 
 func TestNameFinder_findNameInSelectorExpr_unexpectedXType(t *testing.T) {
@@ -642,8 +642,8 @@ var _ = govy.For(func(p Person) string { return getName().Name })
 `
 	res := createTestPackage(t, src)
 
-	result := InferNameFromFile(res.fset, res.pkg, res.f, 12)
-	assert.Equal(t, "", result)
+	result := InferPathFromFile(res.fset, res.pkg, res.f, 12)
+	assert.Equal(t, "", result.String())
 }
 
 func TestInferNameFromFile_dotImport(t *testing.T) {
@@ -658,8 +658,8 @@ var _ = For(func(p Person) string { return p.Name })
 `
 	res := createTestPackage(t, src)
 
-	result := InferNameFromFile(res.fset, res.pkg, res.f, 8)
-	assert.Equal(t, "name", result)
+	result := InferPathFromFile(res.fset, res.pkg, res.f, 8)
+	assert.Equal(t, "name", result.String())
 }
 
 func TestInferNameFromFile_indexExpression(t *testing.T) {
@@ -914,8 +914,8 @@ var _ = govy.For(func(c Container) string { return c.Items["key"].Data })
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			res := createTestPackage(t, tc.src)
-			result := InferNameFromFile(res.fset, res.pkg, res.f, tc.line)
-			assert.Equal(t, tc.expected, result)
+			result := InferPathFromFile(res.fset, res.pkg, res.f, tc.line)
+			assert.Equal(t, tc.expected, result.String())
 		})
 	}
 }
@@ -936,8 +936,8 @@ var _ = govy.For(func(_ struct{}) string { return getStudents()[0].Name })
 `
 	res := createTestPackage(t, src)
 
-	result := InferNameFromFile(res.fset, res.pkg, res.f, 12)
-	assert.Equal(t, "", result)
+	result := InferPathFromFile(res.fset, res.pkg, res.f, 12)
+	assert.Equal(t, "", result.String())
 }
 
 func TestNameFinder_getStructFromType_unhandledType(t *testing.T) {

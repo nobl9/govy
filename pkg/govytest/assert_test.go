@@ -68,7 +68,7 @@ func TestAssertError(t *testing.T) {
 		"wrong type of error": {
 			ok:             false,
 			inputError:     errors.New("foo!"),
-			expectedErrors: []govytest.ExpectedRuleError{{PropertyName: "this", Message: "test"}},
+			expectedErrors: []govytest.ExpectedRuleError{{PropertyPath: "this", Message: "test"}},
 			out: "Input error should be of type *govy.ValidatorError or govy.ValidatorErrors," +
 				" but was of type *errors.errorString.\nError: foo!",
 		},
@@ -77,30 +77,30 @@ func TestAssertError(t *testing.T) {
 			inputError: &govy.ValidatorError{Errors: []*govy.PropertyError{
 				{Errors: []*govy.RuleError{{}, {}}},
 			}},
-			expectedErrors: []govytest.ExpectedRuleError{{PropertyName: "this", Message: "test"}},
+			expectedErrors: []govytest.ExpectedRuleError{{PropertyPath: "this", Message: "test"}},
 			out:            "*govy.ValidatorError contains different number of errors than expected, expected: 1, actual: 2.",
 		},
 		"no matches": {
 			ok: false,
 			inputError: &govy.ValidatorError{Errors: []*govy.PropertyError{
 				{
-					PropertyName: "that",
+					PropertyPath: govy.ParsePath("that"),
 					Errors:       []*govy.RuleError{{Message: "test"}},
 				},
 			}},
 			expectedErrors: []govytest.ExpectedRuleError{
-				{PropertyName: "this", Message: "test"},
+				{PropertyPath: "this", Message: "test"},
 			},
 			out: `Expected error was not found.
 EXPECTED:
 {
-  "propertyName": "this",
+  "propertyPath": "this",
   "message": "test"
 }
 ACTUAL:
 [
   {
-    "propertyName": "that",
+    "propertyPath": "that",
     "errors": [
       {
         "error": "test"
@@ -113,65 +113,65 @@ ACTUAL:
 			ok: true,
 			inputError: &govy.ValidatorError{Errors: []*govy.PropertyError{
 				{
-					PropertyName: "that",
+					PropertyPath: govy.ParsePath("that"),
 					Errors:       []*govy.RuleError{{Message: "test3"}},
 				},
 				{
-					PropertyName: "this",
+					PropertyPath: govy.ParsePath("this"),
 					Errors:       []*govy.RuleError{{Message: "test2"}, {Message: "test1"}},
 				},
 			}},
 			expectedErrors: []govytest.ExpectedRuleError{
-				{PropertyName: "this", Message: "test1"},
-				{PropertyName: "this", Message: "test2"},
-				{PropertyName: "that", Message: "test3"},
+				{PropertyPath: "this", Message: "test1"},
+				{PropertyPath: "this", Message: "test2"},
+				{PropertyPath: "that", Message: "test3"},
 			},
 		},
 		"match on code": {
 			ok: true,
 			inputError: &govy.ValidatorError{Errors: []*govy.PropertyError{
 				{
-					PropertyName: "that",
+					PropertyPath: govy.ParsePath("that"),
 					Errors:       []*govy.RuleError{{Code: "test3"}},
 				},
 				{
-					PropertyName: "this",
+					PropertyPath: govy.ParsePath("this"),
 					Errors:       []*govy.RuleError{{Code: "test2"}, {Code: "test1"}},
 				},
 			}},
 			expectedErrors: []govytest.ExpectedRuleError{
-				{PropertyName: "this", Code: "test1"},
-				{PropertyName: "this", Code: "test2"},
-				{PropertyName: "that", Code: "test3"},
+				{PropertyPath: "this", Code: "test1"},
+				{PropertyPath: "this", Code: "test2"},
+				{PropertyPath: "that", Code: "test3"},
 			},
 		},
 		"match on message contains": {
 			ok: true,
 			inputError: &govy.ValidatorError{Errors: []*govy.PropertyError{
 				{
-					PropertyName: "that",
+					PropertyPath: govy.ParsePath("that"),
 					Errors:       []*govy.RuleError{{Message: "test3"}},
 				},
 				{
-					PropertyName: "this",
+					PropertyPath: govy.ParsePath("this"),
 					Errors:       []*govy.RuleError{{Message: "test2"}, {Message: "test1"}},
 				},
 			}},
 			expectedErrors: []govytest.ExpectedRuleError{
-				{PropertyName: "this", ContainsMessage: "test"},
-				{PropertyName: "this", ContainsMessage: "test"},
-				{PropertyName: "that", ContainsMessage: "test"},
+				{PropertyPath: "this", ContainsMessage: "test"},
+				{PropertyPath: "this", ContainsMessage: "test"},
+				{PropertyPath: "that", ContainsMessage: "test"},
 			},
 		},
 		"match on message and code": {
 			ok: true,
 			inputError: &govy.ValidatorError{Errors: []*govy.PropertyError{
 				{
-					PropertyName: "that",
+					PropertyPath: govy.ParsePath("that"),
 					Errors:       []*govy.RuleError{{Message: "test3", Code: "code3"}},
 				},
 				{
-					PropertyName: "this",
+					PropertyPath: govy.ParsePath("this"),
 					Errors: []*govy.RuleError{
 						{Message: "test2", Code: "code2"},
 						{Message: "test1", Code: "code1"},
@@ -179,20 +179,20 @@ ACTUAL:
 				},
 			}},
 			expectedErrors: []govytest.ExpectedRuleError{
-				{PropertyName: "this", Message: "test1", Code: "code1"},
-				{PropertyName: "this", Message: "test2", Code: "code2"},
-				{PropertyName: "that", Message: "test3", Code: "code3"},
+				{PropertyPath: "this", Message: "test1", Code: "code1"},
+				{PropertyPath: "this", Message: "test2", Code: "code2"},
+				{PropertyPath: "that", Message: "test3", Code: "code3"},
 			},
 		},
 		"fail to match on message and code": {
 			ok: false,
 			inputError: &govy.ValidatorError{Errors: []*govy.PropertyError{
 				{
-					PropertyName: "that",
+					PropertyPath: govy.ParsePath("that"),
 					Errors:       []*govy.RuleError{{Message: "test3", Code: "code3"}},
 				},
 				{
-					PropertyName: "this",
+					PropertyPath: govy.ParsePath("this"),
 					Errors: []*govy.RuleError{
 						{Message: "test2", Code: "code2"},
 						{Message: "test1", Code: "code1"},
@@ -200,21 +200,21 @@ ACTUAL:
 				},
 			}},
 			expectedErrors: []govytest.ExpectedRuleError{
-				{PropertyName: "this", Message: "test1", Code: "code1"},
-				{PropertyName: "this", Message: "test2", Code: "code2"},
-				{PropertyName: "that", Message: "test3", Code: "code4"},
+				{PropertyPath: "this", Message: "test1", Code: "code1"},
+				{PropertyPath: "this", Message: "test2", Code: "code2"},
+				{PropertyPath: "that", Message: "test3", Code: "code4"},
 			},
 			out: `Expected error was not found.
 EXPECTED:
 {
-  "propertyName": "that",
+  "propertyPath": "that",
   "code": "code4",
   "message": "test3"
 }
 ACTUAL:
 [
   {
-    "propertyName": "that",
+    "propertyPath": "that",
     "errors": [
       {
         "error": "test3",
@@ -223,7 +223,7 @@ ACTUAL:
     ]
   },
   {
-    "propertyName": "this",
+    "propertyPath": "this",
     "errors": [
       {
         "error": "test2",
@@ -241,11 +241,11 @@ ACTUAL:
 			ok: true,
 			inputError: &govy.ValidatorError{Errors: []*govy.PropertyError{
 				{
-					PropertyName: "that",
+					PropertyPath: govy.ParsePath("that"),
 					Errors:       []*govy.RuleError{{Message: "test3", Code: "code3"}},
 				},
 				{
-					PropertyName: "this",
+					PropertyPath: govy.ParsePath("this"),
 					Errors: []*govy.RuleError{
 						{Message: "test2", Code: "code2"},
 						{Message: "test1", Code: "code1"},
@@ -253,26 +253,26 @@ ACTUAL:
 				},
 			}},
 			expectedErrors: []govytest.ExpectedRuleError{
-				{PropertyName: "this", Message: "test1", Code: "code1", ContainsMessage: "test"},
-				{PropertyName: "this", Message: "test2", Code: "code2", ContainsMessage: "test"},
-				{PropertyName: "that", Message: "test3", Code: "code3", ContainsMessage: "test"},
+				{PropertyPath: "this", Message: "test1", Code: "code1", ContainsMessage: "test"},
+				{PropertyPath: "this", Message: "test2", Code: "code2", ContainsMessage: "test"},
+				{PropertyPath: "that", Message: "test3", Code: "code3", ContainsMessage: "test"},
 			},
 		},
 		"error was matched multiple times": {
 			ok: false,
 			inputError: &govy.ValidatorError{Errors: []*govy.PropertyError{
 				{
-					PropertyName: "that",
+					PropertyPath: govy.ParsePath("that"),
 					Errors:       []*govy.RuleError{{Message: "test3"}},
 				},
 				{
-					PropertyName: "this",
+					PropertyPath: govy.ParsePath("this"),
 					Errors:       []*govy.RuleError{{Message: "test2"}},
 				},
 			}},
 			expectedErrors: []govytest.ExpectedRuleError{
-				{PropertyName: "this", ContainsMessage: "test"},
-				{PropertyName: "this", ContainsMessage: "test"},
+				{PropertyPath: "this", ContainsMessage: "test"},
+				{PropertyPath: "this", ContainsMessage: "test"},
 			},
 			out: "Actual error was matched multiple times. Provide a more specific govytest.ExpectedRuleError list.",
 		},
@@ -280,50 +280,50 @@ ACTUAL:
 			ok: true,
 			inputError: &govy.ValidatorError{Errors: []*govy.PropertyError{
 				{
-					PropertyName: "that",
+					PropertyPath: govy.ParsePath("that"),
 					Errors:       []*govy.RuleError{{Message: "test3"}},
 					IsKeyError:   true,
 				},
 				{
-					PropertyName: "this",
+					PropertyPath: govy.ParsePath("this"),
 					Errors:       []*govy.RuleError{{Message: "test2"}},
 					IsKeyError:   true,
 				},
 			}},
 			expectedErrors: []govytest.ExpectedRuleError{
-				{PropertyName: "this", Message: "test2", IsKeyError: true},
-				{PropertyName: "that", Message: "test3", IsKeyError: true},
+				{PropertyPath: "this", Message: "test2", IsKeyError: true},
+				{PropertyPath: "that", Message: "test3", IsKeyError: true},
 			},
 		},
 		"failed to match key error": {
 			ok: false,
 			inputError: &govy.ValidatorError{Errors: []*govy.PropertyError{
 				{
-					PropertyName: "that",
+					PropertyPath: govy.ParsePath("that"),
 					Errors:       []*govy.RuleError{{Message: "test3"}},
 					IsKeyError:   false,
 				},
 				{
-					PropertyName: "this",
+					PropertyPath: govy.ParsePath("this"),
 					Errors:       []*govy.RuleError{{Message: "test2"}},
 					IsKeyError:   true,
 				},
 			}},
 			expectedErrors: []govytest.ExpectedRuleError{
-				{PropertyName: "this", Message: "test2", IsKeyError: true},
-				{PropertyName: "that", Message: "test3", IsKeyError: true},
+				{PropertyPath: "this", Message: "test2", IsKeyError: true},
+				{PropertyPath: "that", Message: "test3", IsKeyError: true},
 			},
 			out: `Expected error was not found.
 EXPECTED:
 {
-  "propertyName": "that",
+  "propertyPath": "that",
   "message": "test3",
   "isKeyError": true
 }
 ACTUAL:
 [
   {
-    "propertyName": "that",
+    "propertyPath": "that",
     "errors": [
       {
         "error": "test3"
@@ -331,7 +331,7 @@ ACTUAL:
     ]
   },
   {
-    "propertyName": "this",
+    "propertyPath": "this",
     "isKeyError": true,
     "errors": [
       {
@@ -461,7 +461,7 @@ govytest.ExpectedRuleError must match one of the govy.ValidatorError by either (
 - govytest.ExpectedRuleError.ValidatorIndex == govy.ValidatorError.SliceIndex
 EXPECTED:
 {
-  "propertyName": "",
+  "propertyPath": "",
   "message": "foo",
   "validatorName": "baz"
 }
@@ -483,13 +483,13 @@ ACTUAL:
 				{Name: "foo"},
 				{Name: "bar", Errors: []*govy.PropertyError{
 					{
-						PropertyName: "that",
+						PropertyPath: govy.ParsePath("that"),
 						Errors:       []*govy.RuleError{{Message: "test"}},
 					},
 				}},
 			},
 			expectedErrors: []govytest.ExpectedRuleError{
-				{PropertyName: "that", Message: "test", ValidatorName: "bar"},
+				{PropertyPath: "that", Message: "test", ValidatorName: "bar"},
 			},
 		},
 		"match by index": {
@@ -498,13 +498,13 @@ ACTUAL:
 				{SliceIndex: ptr(0)},
 				{SliceIndex: ptr(1), Errors: []*govy.PropertyError{
 					{
-						PropertyName: "that",
+						PropertyPath: govy.ParsePath("that"),
 						Errors:       []*govy.RuleError{{Message: "test"}},
 					},
 				}},
 			},
 			expectedErrors: []govytest.ExpectedRuleError{
-				{PropertyName: "that", Message: "test", ValidatorIndex: ptr(1)},
+				{PropertyPath: "that", Message: "test", ValidatorIndex: ptr(1)},
 			},
 		},
 		"match by name and index": {
@@ -513,19 +513,19 @@ ACTUAL:
 				{Name: "foo", SliceIndex: ptr(0)},
 				{Name: "bar", SliceIndex: ptr(1), Errors: []*govy.PropertyError{
 					{
-						PropertyName: "this",
+						PropertyPath: govy.ParsePath("this"),
 						Errors:       []*govy.RuleError{{Message: "test"}},
 					},
 				}},
 				{Name: "baz", SliceIndex: ptr(1), Errors: []*govy.PropertyError{
 					{
-						PropertyName: "that",
+						PropertyPath: govy.ParsePath("that"),
 						Errors:       []*govy.RuleError{{Message: "test"}},
 					},
 				}},
 			},
 			expectedErrors: []govytest.ExpectedRuleError{
-				{PropertyName: "that", Message: "test", ValidatorName: "baz", ValidatorIndex: ptr(1)},
+				{PropertyPath: "that", Message: "test", ValidatorName: "baz", ValidatorIndex: ptr(1)},
 			},
 		},
 		"match by name - fail to match property error": {
@@ -534,13 +534,13 @@ ACTUAL:
 				{Name: "foo"},
 				{Name: "bar", Errors: []*govy.PropertyError{
 					{
-						PropertyName: "that",
+						PropertyPath: govy.ParsePath("that"),
 						Errors:       []*govy.RuleError{{Message: "test"}},
 					},
 				}},
 			},
 			expectedErrors: []govytest.ExpectedRuleError{
-				{PropertyName: "that", Message: "test", ValidatorName: "foo"},
+				{PropertyPath: "that", Message: "test", ValidatorName: "foo"},
 			},
 			out: `*govy.ValidatorError contains different number of errors than expected, expected: 1, actual: 0.`,
 		},
@@ -550,13 +550,13 @@ ACTUAL:
 				Name: "bar",
 				Errors: []*govy.PropertyError{
 					{
-						PropertyName: "that",
+						PropertyPath: govy.ParsePath("that"),
 						Errors:       []*govy.RuleError{{Message: "test"}},
 					},
 				},
 			},
 			expectedErrors: []govytest.ExpectedRuleError{
-				{PropertyName: "that", Message: "test", ValidatorName: "bar"},
+				{PropertyPath: "that", Message: "test", ValidatorName: "bar"},
 			},
 		},
 		"does not match ValidatorError by name": {
@@ -565,13 +565,13 @@ ACTUAL:
 				Name: "bar",
 				Errors: []*govy.PropertyError{
 					{
-						PropertyName: "that",
+						PropertyPath: govy.ParsePath("that"),
 						Errors:       []*govy.RuleError{{Message: "test"}},
 					},
 				},
 			},
 			expectedErrors: []govytest.ExpectedRuleError{
-				{PropertyName: "that", Message: "test", ValidatorName: "baz"},
+				{PropertyPath: "that", Message: "test", ValidatorName: "baz"},
 			},
 			out: "Expected name 'baz' of *govy.ValidatorError.Name but got 'bar'",
 		},
@@ -581,13 +581,13 @@ ACTUAL:
 				SliceIndex: ptr(1),
 				Errors: []*govy.PropertyError{
 					{
-						PropertyName: "that",
+						PropertyPath: govy.ParsePath("that"),
 						Errors:       []*govy.RuleError{{Message: "test"}},
 					},
 				},
 			},
 			expectedErrors: []govytest.ExpectedRuleError{
-				{PropertyName: "that", Message: "test", ValidatorIndex: ptr(1)},
+				{PropertyPath: "that", Message: "test", ValidatorIndex: ptr(1)},
 			},
 		},
 		"does not match ValidatorError by index": {
@@ -596,13 +596,13 @@ ACTUAL:
 				SliceIndex: ptr(1),
 				Errors: []*govy.PropertyError{
 					{
-						PropertyName: "that",
+						PropertyPath: govy.ParsePath("that"),
 						Errors:       []*govy.RuleError{{Message: "test"}},
 					},
 				},
 			},
 			expectedErrors: []govytest.ExpectedRuleError{
-				{PropertyName: "that", Message: "test", ValidatorIndex: ptr(2)},
+				{PropertyPath: "that", Message: "test", ValidatorIndex: ptr(2)},
 			},
 			out: "Expected index '2' of *govy.ValidatorError.SliceIndex but got '1'",
 		},
@@ -611,13 +611,13 @@ ACTUAL:
 			inputError: &govy.ValidatorError{
 				Errors: []*govy.PropertyError{
 					{
-						PropertyName: "that",
+						PropertyPath: govy.ParsePath("that"),
 						Errors:       []*govy.RuleError{{Message: "test"}},
 					},
 				},
 			},
 			expectedErrors: []govytest.ExpectedRuleError{
-				{PropertyName: "that", Message: "test", ValidatorIndex: ptr(2)},
+				{PropertyPath: "that", Message: "test", ValidatorIndex: ptr(2)},
 			},
 			out: "Expected index '2' of *govy.ValidatorError.SliceIndex but got no index",
 		},
@@ -628,13 +628,13 @@ ACTUAL:
 				SliceIndex: ptr(1),
 				Errors: []*govy.PropertyError{
 					{
-						PropertyName: "that",
+						PropertyPath: govy.ParsePath("that"),
 						Errors:       []*govy.RuleError{{Message: "test"}},
 					},
 				},
 			},
 			expectedErrors: []govytest.ExpectedRuleError{
-				{PropertyName: "that", Message: "test", ValidatorName: "bar", ValidatorIndex: ptr(1)},
+				{PropertyPath: "that", Message: "test", ValidatorName: "bar", ValidatorIndex: ptr(1)},
 			},
 		},
 	}
@@ -673,7 +673,7 @@ func TestAssertErrorContains(t *testing.T) {
 		"wrong type of error": {
 			ok:            false,
 			inputError:    errors.New("foo!"),
-			expectedError: govytest.ExpectedRuleError{PropertyName: "this", Message: "test"},
+			expectedError: govytest.ExpectedRuleError{PropertyPath: "this", Message: "test"},
 			out: "Input error should be of type *govy.ValidatorError or govy.ValidatorErrors," +
 				" but was of type *errors.errorString.\nError: foo!",
 		},
@@ -681,21 +681,21 @@ func TestAssertErrorContains(t *testing.T) {
 			ok: false,
 			inputError: &govy.ValidatorError{Errors: []*govy.PropertyError{
 				{
-					PropertyName: "that",
+					PropertyPath: govy.ParsePath("that"),
 					Errors:       []*govy.RuleError{{Message: "test"}},
 				},
 			}},
-			expectedError: govytest.ExpectedRuleError{PropertyName: "this", Message: "test"},
+			expectedError: govytest.ExpectedRuleError{PropertyPath: "this", Message: "test"},
 			out: `Expected error was not found.
 EXPECTED:
 {
-  "propertyName": "this",
+  "propertyPath": "this",
   "message": "test"
 }
 ACTUAL:
 [
   {
-    "propertyName": "that",
+    "propertyPath": "that",
     "errors": [
       {
         "error": "test"
@@ -708,88 +708,88 @@ ACTUAL:
 			ok: true,
 			inputError: &govy.ValidatorError{Errors: []*govy.PropertyError{
 				{
-					PropertyName: "that",
+					PropertyPath: govy.ParsePath("that"),
 					Errors:       []*govy.RuleError{{Message: "test3"}},
 				},
 				{
-					PropertyName: "this",
+					PropertyPath: govy.ParsePath("this"),
 					Errors:       []*govy.RuleError{{Message: "test2"}, {Message: "test1"}},
 				},
 			}},
-			expectedError: govytest.ExpectedRuleError{PropertyName: "this", Message: "test1"},
+			expectedError: govytest.ExpectedRuleError{PropertyPath: "this", Message: "test1"},
 		},
 		"match on code": {
 			ok: true,
 			inputError: &govy.ValidatorError{Errors: []*govy.PropertyError{
 				{
-					PropertyName: "that",
+					PropertyPath: govy.ParsePath("that"),
 					Errors:       []*govy.RuleError{{Code: "test3"}},
 				},
 				{
-					PropertyName: "this",
+					PropertyPath: govy.ParsePath("this"),
 					Errors:       []*govy.RuleError{{Code: "test2"}, {Code: "test1"}},
 				},
 			}},
-			expectedError: govytest.ExpectedRuleError{PropertyName: "this", Code: "test1"},
+			expectedError: govytest.ExpectedRuleError{PropertyPath: "this", Code: "test1"},
 		},
 		"match on message contains": {
 			ok: true,
 			inputError: &govy.ValidatorError{Errors: []*govy.PropertyError{
 				{
-					PropertyName: "that",
+					PropertyPath: govy.ParsePath("that"),
 					Errors:       []*govy.RuleError{{Message: "test3"}},
 				},
 				{
-					PropertyName: "this",
+					PropertyPath: govy.ParsePath("this"),
 					Errors:       []*govy.RuleError{{Message: "test2"}, {Message: "test1"}},
 				},
 			}},
-			expectedError: govytest.ExpectedRuleError{PropertyName: "this", ContainsMessage: "test"},
+			expectedError: govytest.ExpectedRuleError{PropertyPath: "this", ContainsMessage: "test"},
 		},
 		"match on message and code": {
 			ok: true,
 			inputError: &govy.ValidatorError{Errors: []*govy.PropertyError{
 				{
-					PropertyName: "that",
+					PropertyPath: govy.ParsePath("that"),
 					Errors:       []*govy.RuleError{{Message: "test3", Code: "code3"}},
 				},
 				{
-					PropertyName: "this",
+					PropertyPath: govy.ParsePath("this"),
 					Errors: []*govy.RuleError{
 						{Message: "test2", Code: "code2"},
 						{Message: "test1", Code: "code1"},
 					},
 				},
 			}},
-			expectedError: govytest.ExpectedRuleError{PropertyName: "this", Message: "test1", Code: "code1"},
+			expectedError: govytest.ExpectedRuleError{PropertyPath: "this", Message: "test1", Code: "code1"},
 		},
 		"fail to match on message and code": {
 			ok: false,
 			inputError: &govy.ValidatorError{Errors: []*govy.PropertyError{
 				{
-					PropertyName: "that",
+					PropertyPath: govy.ParsePath("that"),
 					Errors:       []*govy.RuleError{{Message: "test3", Code: "code3"}},
 				},
 				{
-					PropertyName: "this",
+					PropertyPath: govy.ParsePath("this"),
 					Errors: []*govy.RuleError{
 						{Message: "test2", Code: "code2"},
 						{Message: "test1", Code: "code1"},
 					},
 				},
 			}},
-			expectedError: govytest.ExpectedRuleError{PropertyName: "that", Message: "test3", Code: "code4"},
+			expectedError: govytest.ExpectedRuleError{PropertyPath: "that", Message: "test3", Code: "code4"},
 			out: `Expected error was not found.
 EXPECTED:
 {
-  "propertyName": "that",
+  "propertyPath": "that",
   "code": "code4",
   "message": "test3"
 }
 ACTUAL:
 [
   {
-    "propertyName": "that",
+    "propertyPath": "that",
     "errors": [
       {
         "error": "test3",
@@ -798,7 +798,7 @@ ACTUAL:
     ]
   },
   {
-    "propertyName": "this",
+    "propertyPath": "this",
     "errors": [
       {
         "error": "test2",
@@ -816,11 +816,11 @@ ACTUAL:
 			ok: true,
 			inputError: &govy.ValidatorError{Errors: []*govy.PropertyError{
 				{
-					PropertyName: "that",
+					PropertyPath: govy.ParsePath("that"),
 					Errors:       []*govy.RuleError{{Message: "test3", Code: "code3"}},
 				},
 				{
-					PropertyName: "this",
+					PropertyPath: govy.ParsePath("this"),
 					Errors: []*govy.RuleError{
 						{Message: "test2", Code: "code2"},
 						{Message: "test1", Code: "code1"},
@@ -828,7 +828,7 @@ ACTUAL:
 				},
 			}},
 			expectedError: govytest.ExpectedRuleError{
-				PropertyName:    "this",
+				PropertyPath:    "this",
 				Message:         "test1",
 				Code:            "code1",
 				ContainsMessage: "test",
@@ -838,44 +838,44 @@ ACTUAL:
 			ok: true,
 			inputError: &govy.ValidatorError{Errors: []*govy.PropertyError{
 				{
-					PropertyName: "that",
+					PropertyPath: govy.ParsePath("that"),
 					Errors:       []*govy.RuleError{{Message: "test3"}},
 					IsKeyError:   true,
 				},
 				{
-					PropertyName: "this",
+					PropertyPath: govy.ParsePath("this"),
 					Errors:       []*govy.RuleError{{Message: "test2"}},
 					IsKeyError:   true,
 				},
 			}},
-			expectedError: govytest.ExpectedRuleError{PropertyName: "that", Message: "test3", IsKeyError: true},
+			expectedError: govytest.ExpectedRuleError{PropertyPath: "that", Message: "test3", IsKeyError: true},
 		},
 		"failed to match key error": {
 			ok: false,
 			inputError: &govy.ValidatorError{Errors: []*govy.PropertyError{
 				{
-					PropertyName: "that",
+					PropertyPath: govy.ParsePath("that"),
 					Errors:       []*govy.RuleError{{Message: "test3"}},
 					IsKeyError:   false,
 				},
 				{
-					PropertyName: "this",
+					PropertyPath: govy.ParsePath("this"),
 					Errors:       []*govy.RuleError{{Message: "test2"}},
 					IsKeyError:   true,
 				},
 			}},
-			expectedError: govytest.ExpectedRuleError{PropertyName: "that", Message: "test3", IsKeyError: true},
+			expectedError: govytest.ExpectedRuleError{PropertyPath: "that", Message: "test3", IsKeyError: true},
 			out: `Expected error was not found.
 EXPECTED:
 {
-  "propertyName": "that",
+  "propertyPath": "that",
   "message": "test3",
   "isKeyError": true
 }
 ACTUAL:
 [
   {
-    "propertyName": "that",
+    "propertyPath": "that",
     "errors": [
       {
         "error": "test3"
@@ -883,7 +883,7 @@ ACTUAL:
     ]
   },
   {
-    "propertyName": "this",
+    "propertyPath": "this",
     "isKeyError": true,
     "errors": [
       {

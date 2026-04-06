@@ -1,13 +1,13 @@
 package govy
 
 import (
-	"cmp"
 	"fmt"
 	"maps"
 	"slices"
 	"strings"
 
 	"github.com/nobl9/govy/internal/collections"
+	"github.com/nobl9/govy/internal/jsonpath"
 )
 
 // ValidatorPlan is a validation plan for a single [Validator].
@@ -21,7 +21,7 @@ type ValidatorPlan struct {
 // PropertyPlan is a validation plan for a single [PropertyRules].
 type PropertyPlan struct {
 	// Path is a JSON path to the property.
-	Path string `json:"path"`
+	Path Path `json:"path"`
 	// TypeInfo contains the type information of the property.
 	TypeInfo TypeInfo `json:"typeInfo"`
 	// IsHidden indicates if the property was marked with [PropertyRules.HideValue].
@@ -117,7 +117,7 @@ func PlanStrictMode() PlanOption {
 func Plan[T any](v Validator[T], opts ...PlanOption) (*ValidatorPlan, error) {
 	builders := make([]planBuilder, 0)
 	rootBuilder := planBuilder{
-		propertyPath:        "$",
+		propertyPath:        jsonpath.ParsePath("$"),
 		path:                &builders,
 		missingDescriptions: ptr(make([]predicateLocation, 0)),
 	}
@@ -147,9 +147,8 @@ func Plan[T any](v Validator[T], opts ...PlanOption) (*ValidatorPlan, error) {
 	}, nil
 }
 
-// predicateLocation stores information about a predicate without a description.
 type predicateLocation struct {
-	propertyPath string
+	propertyPath Path
 }
 
 // missingPredicateDescriptionsError is returned when [Plan] is called with
@@ -165,11 +164,12 @@ func newMissingPredicateDescriptionsError(locations []predicateLocation) *missin
 func (e *missingPredicateDescriptionsError) Error() string {
 	var paths []string
 	for _, loc := range e.locations {
-		switch loc.propertyPath {
+		s := loc.propertyPath.String()
+		switch s {
 		case "", "$":
 			paths = append(paths, "validator level")
 		default:
-			paths = append(paths, loc.propertyPath)
+			paths = append(paths, s)
 		}
 	}
 	return fmt.Sprintf("predicates without description found at: %s", strings.Join(paths, ", "))
@@ -178,7 +178,8 @@ func (e *missingPredicateDescriptionsError) Error() string {
 func aggregatePropertyPlans(builders []planBuilder) []*PropertyPlan {
 	propertiesMap := make(map[string]*PropertyPlan)
 	for _, b := range builders {
-		entry, ok := propertiesMap[b.propertyPath]
+		key := b.propertyPath.String()
+		entry, ok := propertiesMap[key]
 		if !ok {
 			entry = &PropertyPlan{
 				Path:     b.propertyPath,
@@ -190,11 +191,11 @@ func aggregatePropertyPlans(builders []planBuilder) []*PropertyPlan {
 		if !b.rulePlan.isEmpty() {
 			entry.Rules = append(entry.Rules, b.rulePlan)
 		}
-		propertiesMap[b.propertyPath] = entry
+		propertiesMap[key] = entry
 	}
 	return slices.SortedFunc(
 		maps.Values(propertiesMap),
-		func(a, b *PropertyPlan) int { return cmp.Compare(a.Path, b.Path) },
+		func(a, b *PropertyPlan) int { return a.Path.Compare(b.Path) },
 	)
 }
 
@@ -229,9 +230,8 @@ type planner interface {
 	plan(builder planBuilder)
 }
 
-// planBuilder is used to traverse the validation rules and build a slice of [PropertyPlan].
 type planBuilder struct {
-	propertyPath        string
+	propertyPath        Path
 	rulePlan            RulePlan
 	propertyPlan        PropertyPlan
 	path                *[]planBuilder
@@ -239,25 +239,14 @@ type planBuilder struct {
 	options             planOptions
 }
 
-func (p planBuilder) appendPath(path string) planBuilder {
+func (p planBuilder) appendPath(path Path) planBuilder {
 	builder := planBuilder{
 		path:                p.path,
 		missingDescriptions: p.missingDescriptions,
 		options:             p.options,
 		rulePlan:            p.rulePlan,
 		propertyPlan:        p.propertyPlan,
-	}
-	switch {
-	case p.propertyPath == "" && path != "":
-		builder.propertyPath = path
-	case p.propertyPath != "" && path != "":
-		if strings.HasPrefix(path, "[") {
-			builder.propertyPath = p.propertyPath + path
-		} else {
-			builder.propertyPath = p.propertyPath + "." + path
-		}
-	default:
-		builder.propertyPath = p.propertyPath
+		propertyPath:        p.propertyPath.JoinPath(path),
 	}
 	return builder
 }

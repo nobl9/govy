@@ -1,8 +1,6 @@
 package govy
 
-import (
-	"slices"
-)
+import "slices"
 
 // New creates a new [Validator] aggregating the provided property rules.
 func New[T any](props ...PropertyRulesInterface[T]) Validator[T] {
@@ -54,17 +52,17 @@ func (v Validator[T]) Cascade(mode CascadeMode) Validator[T] {
 	return v
 }
 
-// RemovePropertiesByName removes any [PropertyRules] or included [Validator]
-// which match the provided property names.
+// RemovePropertiesByPath removes any [PropertyRules] or included [Validator]
+// which match the provided property paths.
 // It returns a modified [Validator] instance without these rules,
 // the original [Validator] is not changed.
-func (v Validator[T]) RemovePropertiesByName(names ...string) Validator[T] {
-	if len(names) == 0 {
+func (v Validator[T]) RemovePropertiesByPath(paths ...Path) Validator[T] {
+	if len(paths) == 0 {
 		return v
 	}
 	filtered := make([]PropertyRulesInterface[T], 0, len(v.props))
 	for _, prop := range v.props {
-		if !slices.Contains(names, prop.getName()) {
+		if !slices.ContainsFunc(paths, prop.getPath().Equal) {
 			filtered = append(filtered, prop)
 		}
 	}
@@ -72,12 +70,12 @@ func (v Validator[T]) RemovePropertiesByName(names ...string) Validator[T] {
 	return v
 }
 
-// InferName sets the [InferNameMode] for the validator,
-// which controls the name inference logic for validation rules.
-func (v Validator[T]) InferName(mode InferNameMode) Validator[T] {
+// InferPath sets the [InferPathMode] for the validator,
+// which controls the path inference logic for validation rules.
+func (v Validator[T]) InferPath(mode InferPathMode) Validator[T] {
 	props := make([]PropertyRulesInterface[T], 0, len(v.props))
 	for _, prop := range v.props {
-		props = append(props, prop.inferNameModeInternal(mode))
+		props = append(props, prop.inferPathModeInternal(mode))
 	}
 	v.props = props
 	return v

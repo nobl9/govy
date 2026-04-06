@@ -20,7 +20,7 @@ func TestPropertyRules(t *testing.T) {
 
 	t.Run("no predicates, no error", func(t *testing.T) {
 		r := govy.For(func(m mockStruct) string { return "path" }).
-			WithName("test.path").
+			WithPath(govy.NewPath().Name("test").Name("path")).
 			Rules(govy.NewRule(func(v string) error { return nil }))
 		err := r.Validate(mockStruct{})
 		assert.NoError(t, err)
@@ -29,12 +29,12 @@ func TestPropertyRules(t *testing.T) {
 	t.Run("no predicates, validate", func(t *testing.T) {
 		expectedErr := errors.New("ops!")
 		r := govy.For(func(m mockStruct) string { return "path" }).
-			WithName("test.path").
+			WithPath(govy.NewPath().Name("test").Name("path")).
 			Rules(govy.NewRule(func(v string) error { return expectedErr }))
 		errs := mustPropertyErrors(t, r.Validate(mockStruct{}))
 		assert.Require(t, assert.Len(t, errs, 1))
 		assert.Equal(t, &govy.PropertyError{
-			PropertyName:  "test.path",
+			PropertyPath:  govy.ParsePath("test.path"),
 			PropertyValue: "path",
 			Errors:        []*govy.RuleError{{Message: expectedErr.Error()}},
 		}, errs[0])
@@ -42,7 +42,7 @@ func TestPropertyRules(t *testing.T) {
 
 	t.Run("predicate matches, don't validate", func(t *testing.T) {
 		r := govy.For(func(m mockStruct) string { return "value" }).
-			WithName("test.path").
+			WithPath(govy.NewPath().Name("test").Name("path")).
 			When(func(mockStruct) bool { return true }).
 			When(func(mockStruct) bool { return true }).
 			When(func(st mockStruct) bool { return st.Field == "" }).
@@ -54,12 +54,12 @@ func TestPropertyRules(t *testing.T) {
 	t.Run("multiple rules", func(t *testing.T) {
 		err1 := errors.New("oh no!")
 		r := govy.For(func(m mockStruct) string { return "value" }).
-			WithName("test.path").
+			WithPath(govy.NewPath().Name("test").Name("path")).
 			Rules(govy.NewRule(func(v string) error { return nil })).
 			Rules(govy.NewRule(func(v string) error { return err1 })).
 			Rules(govy.NewRule(func(v string) error { return nil })).
 			Rules(govy.NewRule(func(v string) error {
-				return govy.NewPropertyError("nested", "nestedValue", &govy.RuleError{
+				return govy.NewPropertyError(govy.ParsePath("nested"), "nestedValue", &govy.RuleError{
 					Message: "property is required",
 					Code:    rules.ErrorCodeRequired,
 				})
@@ -68,12 +68,12 @@ func TestPropertyRules(t *testing.T) {
 		assert.Require(t, assert.Len(t, errs, 2))
 		assert.ElementsMatch(t, govy.PropertyErrors{
 			&govy.PropertyError{
-				PropertyName:  "test.path",
+				PropertyPath:  govy.ParsePath("test.path"),
 				PropertyValue: "value",
 				Errors:        []*govy.RuleError{{Message: err1.Error()}},
 			},
 			&govy.PropertyError{
-				PropertyName:  "test.path.nested",
+				PropertyPath:  govy.ParsePath("test.path.nested"),
 				PropertyValue: "nestedValue",
 				Errors: []*govy.RuleError{{
 					Message: "property is required",
@@ -86,14 +86,14 @@ func TestPropertyRules(t *testing.T) {
 	t.Run("cascade mode stop", func(t *testing.T) {
 		expectedErr := errors.New("oh no!")
 		r := govy.For(func(m mockStruct) string { return "value" }).
-			WithName("test.path").
+			WithPath(govy.NewPath().Name("test").Name("path")).
 			Cascade(govy.CascadeModeStop).
 			Rules(govy.NewRule(func(v string) error { return expectedErr })).
 			Rules(govy.NewRule(func(v string) error { return errors.New("no") }))
 		errs := mustPropertyErrors(t, r.Validate(mockStruct{}))
 		assert.Require(t, assert.Len(t, errs, 1))
 		assert.Equal(t, &govy.PropertyError{
-			PropertyName:  "test.path",
+			PropertyPath:  govy.ParsePath("test.path"),
 			PropertyValue: "value",
 			Errors:        []*govy.RuleError{{Message: expectedErr.Error()}},
 		}, errs[0])
@@ -104,30 +104,30 @@ func TestPropertyRules(t *testing.T) {
 		err2 := errors.New("included")
 		err3 := errors.New("included again")
 		r := govy.For(func(m mockStruct) mockStruct { return m }).
-			WithName("test.path").
+			WithPath(govy.NewPath().Name("test").Name("path")).
 			Rules(govy.NewRule(func(v mockStruct) error { return err1 })).
 			Include(govy.New(
 				govy.For(func(s mockStruct) string { return "value" }).
 					WithName("included").
 					Rules(govy.NewRule(func(v string) error { return err2 })).
 					Rules(govy.NewRule(func(v string) error {
-						return govy.NewPropertyError("nested", "nestedValue", err3)
+						return govy.NewPropertyError(govy.ParsePath("nested"), "nestedValue", err3)
 					})),
 			))
 		errs := mustPropertyErrors(t, r.Validate(mockStruct{}))
 		assert.Require(t, assert.Len(t, errs, 3))
 		assert.ElementsMatch(t, govy.PropertyErrors{
 			{
-				PropertyName: "test.path",
+				PropertyPath: govy.ParsePath("test.path"),
 				Errors:       []*govy.RuleError{{Message: err1.Error()}},
 			},
 			{
-				PropertyName:  "test.path.included",
+				PropertyPath:  govy.ParsePath("test.path.included"),
 				PropertyValue: "value",
 				Errors:        []*govy.RuleError{{Message: err2.Error()}},
 			},
 			{
-				PropertyName:  "test.path.included.nested",
+				PropertyPath:  govy.ParsePath("test.path.included.nested"),
 				PropertyValue: "nestedValue",
 				Errors:        []*govy.RuleError{{Message: err3.Error()}},
 			},
@@ -137,28 +137,58 @@ func TestPropertyRules(t *testing.T) {
 	t.Run("get self", func(t *testing.T) {
 		expectedErrs := errors.New("self error")
 		r := govy.For(govy.GetSelf[mockStruct]()).
-			WithName("test.path").
+			WithPath(govy.NewPath().Name("test").Name("path")).
 			Rules(govy.NewRule(func(v mockStruct) error { return expectedErrs }))
 		object := mockStruct{Field: "this"}
 		errs := mustPropertyErrors(t, r.Validate(object))
 		assert.Require(t, assert.Len(t, errs, 1))
 		assert.Equal(t, &govy.PropertyError{
-			PropertyName:  "test.path",
+			PropertyPath:  govy.ParsePath("test.path"),
 			PropertyValue: internal.PropertyValueString(object),
 			Errors:        []*govy.RuleError{{Message: expectedErrs.Error()}},
 		}, errs[0])
 	})
 
+	t.Run("WithName escapes dots", func(t *testing.T) {
+		expectedErr := errors.New("bad")
+		r := govy.For(func(m mockStruct) string { return "value" }).
+			WithName("foo.bar").
+			Rules(govy.NewRule(func(v string) error { return expectedErr }))
+		errs := mustPropertyErrors(t, r.Validate(mockStruct{}))
+		assert.Require(t, assert.Len(t, errs, 1))
+		assert.Equal(t, govy.ParsePath("['foo.bar']"), errs[0].PropertyPath)
+	})
+
+	t.Run("WithName escapes brackets and spaces", func(t *testing.T) {
+		expectedErr := errors.New("bad")
+		r := govy.For(func(m mockStruct) string { return "value" }).
+			WithName("key [0]").
+			Rules(govy.NewRule(func(v string) error { return expectedErr }))
+		errs := mustPropertyErrors(t, r.Validate(mockStruct{}))
+		assert.Require(t, assert.Len(t, errs, 1))
+		assert.Equal(t, govy.ParsePath("['key [0]']"), errs[0].PropertyPath)
+	})
+
+	t.Run("WithName does not escape simple names", func(t *testing.T) {
+		expectedErr := errors.New("bad")
+		r := govy.For(func(m mockStruct) string { return "value" }).
+			WithName("simpleName").
+			Rules(govy.NewRule(func(v string) error { return expectedErr }))
+		errs := mustPropertyErrors(t, r.Validate(mockStruct{}))
+		assert.Require(t, assert.Len(t, errs, 1))
+		assert.Equal(t, govy.ParsePath("simpleName"), errs[0].PropertyPath)
+	})
+
 	t.Run("hide value", func(t *testing.T) {
 		expectedErr := errors.New("oh no! here's the value: 'secret'")
 		r := govy.For(func(m mockStruct) string { return "secret" }).
-			WithName("test.path").
+			WithPath(govy.NewPath().Name("test").Name("path")).
 			HideValue().
 			Rules(govy.NewRule(func(v string) error { return expectedErr }))
 		errs := mustPropertyErrors(t, r.Validate(mockStruct{}))
 		assert.Require(t, assert.Len(t, errs, 1))
 		assert.Equal(t, &govy.PropertyError{
-			PropertyName:  "test.path",
+			PropertyPath:  govy.ParsePath("test.path"),
 			PropertyValue: "",
 			Errors:        []*govy.RuleError{{Message: "oh no! here's the value: '[hidden]'"}},
 		}, errs[0])
@@ -301,8 +331,8 @@ func TestTransform(t *testing.T) {
 }
 
 func TestPropertyRules_InferName(t *testing.T) {
-	govyconfig.SetInferNameIncludeTestFiles(true)
-	defer govyconfig.SetInferNameIncludeTestFiles(false)
+	govyconfig.SetInferPathIncludeTestFiles(true)
+	defer govyconfig.SetInferPathIncludeTestFiles(false)
 
 	type Age struct {
 		Years int `json:"years"`
@@ -319,7 +349,7 @@ func TestPropertyRules_InferName(t *testing.T) {
 
 	t.Run("inline getter", func(t *testing.T) {
 		r := govy.For(func(t Teacher) string { return t.Name }).
-			InferName(govy.InferNameModeRuntime).
+			InferPath(govy.InferPathModeRuntime).
 			Rules(rules.EQ("John"))
 		errs := mustPropertyErrors(t, r.Validate(Teacher{Name: "Luke"}))
 		assert.Len(t, errs, 1)
@@ -328,7 +358,7 @@ func TestPropertyRules_InferName(t *testing.T) {
 	t.Run("selector expression getter", func(t *testing.T) {
 		r := govy.
 			For(func(t Teacher) string { return t.Name }).
-			InferName(govy.InferNameModeRuntime).
+			InferPath(govy.InferPathModeRuntime).
 			Rules(rules.EQ("John"))
 		errs := mustPropertyErrors(t, r.Validate(Teacher{Name: "Luke"}))
 		assert.Len(t, errs, 1)
@@ -337,7 +367,7 @@ func TestPropertyRules_InferName(t *testing.T) {
 	t.Run("nested selector expression getter", func(t *testing.T) {
 		r := govy.
 			For(func(t Teacher) int { return t.Details.Age.Years }).
-			InferName(govy.InferNameModeRuntime).
+			InferPath(govy.InferPathModeRuntime).
 			Rules(rules.EQ(29))
 		errs := mustPropertyErrors(t, r.Validate(Teacher{Name: "Luke", Details: Details{Age: Age{Years: 30}}}))
 		assert.Len(t, errs, 1)
@@ -349,7 +379,7 @@ func TestPropertyRules_InferName(t *testing.T) {
 				teacherName := t.Name
 				return teacherName
 			}).
-			InferName(govy.InferNameModeRuntime).
+			InferPath(govy.InferPathModeRuntime).
 			Rules(rules.EQ("John"))
 		errs := mustPropertyErrors(t, r.Validate(Teacher{Name: "Luke"}))
 		assert.Len(t, errs, 1)
@@ -361,7 +391,7 @@ func TestPropertyRules_InferName(t *testing.T) {
 				teacherAge := t.Details.Age.Years
 				return teacherAge
 			}).
-			InferName(govy.InferNameModeRuntime).
+			InferPath(govy.InferPathModeRuntime).
 			Rules(rules.EQ(29))
 		errs := mustPropertyErrors(t, r.Validate(Teacher{Name: "Luke", Details: Details{Age: Age{Years: 30}}}))
 		assert.Len(t, errs, 1)
@@ -374,7 +404,7 @@ func TestPropertyRules_InferName(t *testing.T) {
 		}
 		r := govy.
 			For(getter).
-			InferName(govy.InferNameModeRuntime).
+			InferPath(govy.InferPathModeRuntime).
 			Rules(rules.EQ(29))
 		errs := mustPropertyErrors(t, r.Validate(Teacher{Name: "Luke", Details: Details{Age: Age{Years: 30}}}))
 		assert.Len(t, errs, 1)
@@ -383,7 +413,7 @@ func TestPropertyRules_InferName(t *testing.T) {
 	t.Run("pointer", func(t *testing.T) {
 		r := govy.
 			For(func(t Teacher) *string { return t.Remarks }).
-			InferName(govy.InferNameModeRuntime).
+			InferPath(govy.InferPathModeRuntime).
 			Rules(rules.EQ(ptr("No remarks")))
 		errs := mustPropertyErrors(t, r.Validate(Teacher{Name: "Luke", Remarks: ptr("Some remarks")}))
 		assert.Len(t, errs, 1)
@@ -397,7 +427,7 @@ func TestPropertyRules_InferName(t *testing.T) {
 				}
 				return t.Remarks
 			}).
-			InferName(govy.InferNameModeRuntime).
+			InferPath(govy.InferPathModeRuntime).
 			Rules(rules.EQ(ptr("No remarks")))
 		errs := mustPropertyErrors(t, r.Validate(Teacher{Name: "Luke", Remarks: ptr("Some remarks")}))
 		assert.Len(t, errs, 1)
@@ -411,7 +441,7 @@ func TestPropertyRules_InferName(t *testing.T) {
 				}
 				return nil
 			}).
-			InferName(govy.InferNameModeRuntime).
+			InferPath(govy.InferPathModeRuntime).
 			Rules(rules.EQ(ptr("No remarks")))
 		errs := mustPropertyErrors(t, r.Validate(Teacher{Name: "Luke", Remarks: ptr("Some remarks")}))
 		assert.Len(t, errs, 1)
@@ -420,7 +450,7 @@ func TestPropertyRules_InferName(t *testing.T) {
 	t.Run("no json tag", func(t *testing.T) {
 		r := govy.
 			For(func(t Teacher) string { return t.Surname }).
-			InferName(govy.InferNameModeRuntime).
+			InferPath(govy.InferPathModeRuntime).
 			Rules(rules.EQ("Cormack"))
 		errs := mustPropertyErrors(t, r.Validate(Teacher{Surname: "Ellis"}))
 		assert.Len(t, errs, 1)
