@@ -8,7 +8,7 @@ import (
 
 func init() {
     inferredPaths := map[string]govyconfig.InferredPath{
-    {{- range $key, $value := .Names }}
+    {{- range $key, $value := .Paths }}
         "{{ $key }}": {
     	    Path: "{{ $value.Path }}",
     	    File: "{{ $value.File }}",

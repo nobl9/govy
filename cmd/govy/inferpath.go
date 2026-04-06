@@ -22,14 +22,14 @@ import (
 type inferPathTemplateData struct {
 	ProgramInvocation string
 	Package           string
-	Names             map[string]govyconfig.InferredPath
+	Paths             map[string]govyconfig.InferredPath
 }
 
-//go:embed inferred_names.go.tmpl
-var inferredNamesTemplateStr string
+//go:embed inferred_paths.go.tmpl
+var inferredPathsTemplateStr string
 
-var inferredNamesTemplate = template.Must(
-	template.New("inferred_names").Parse(inferredNamesTemplateStr))
+var inferredPathsTemplate = template.Must(
+	template.New("inferred_paths").Parse(inferredPathsTemplateStr))
 
 func newInferPathCommand() *inferPathCommand {
 	fset := flag.NewFlagSet(inferPathCmdName, flag.ExitOnError)
@@ -42,7 +42,7 @@ func newInferPathCommand() *inferPathCommand {
 	}
 	fset.StringVar(&cmd.outputDir, "dir", "", "directory path to save the generated file")
 	fset.StringVar(&cmd.pkg, "pkg", "", "package name of the generated file")
-	fset.StringVar(&cmd.fileName, "filename", "govy_inferred_names.go", "generated file name")
+	fset.StringVar(&cmd.fileName, "filename", "govy_inferred_paths.go", "generated file name")
 	return cmd
 }
 
@@ -69,7 +69,7 @@ func (n *inferPathCommand) Run() error {
 
 	modAST := inferpath.NewModuleAST(root)
 
-	names := make(map[string]govyconfig.InferredPath)
+	paths := make(map[string]govyconfig.InferredPath)
 	for _, pkg := range modAST.Packages {
 		for i, f := range pkg.Syntax {
 			importName := inferpath.GetGovyImportName(f)
@@ -88,28 +88,28 @@ func (n *inferPathCommand) Run() error {
 				}
 				line := modAST.FileSet.Position(selectorExpr.Pos()).Line
 				inferredPath := inferpath.InferPathFromFile(modAST.FileSet, pkg, f, line)
-				name := govyconfig.InferredPath{
+				path := govyconfig.InferredPath{
 					Path: inferredPath.String(),
 					File: strings.TrimPrefix(pkg.GoFiles[i], root+"/"),
 					Line: line,
 				}
-				fmt.Printf("Found 'govy.%s' function at: %s:%d\n", selectorExpr.Sel.Name, name.File, name.Line)
-				key := fmt.Sprintf("%s:%d", name.File, name.Line)
-				names[key] = name
+				fmt.Printf("Found 'govy.%s' function at: %s:%d\n", selectorExpr.Sel.Name, path.File, path.Line)
+				key := fmt.Sprintf("%s:%d", path.File, path.Line)
+				paths[key] = path
 				return false
 			})
 		}
 	}
 
-	if len(names) == 0 {
-		errFatal("no names inferred")
+	if len(paths) == 0 {
+		errFatal("no paths inferred")
 	}
 
 	buf := new(bytes.Buffer)
-	if err := inferredNamesTemplate.Execute(buf, inferPathTemplateData{
+	if err := inferredPathsTemplate.Execute(buf, inferPathTemplateData{
 		ProgramInvocation: fmt.Sprintf("%s %s", govyCmdName, strings.Join(os.Args[1:], " ")),
 		Package:           n.pkg,
-		Names:             names,
+		Paths:             paths,
 	}); err != nil {
 		return fmt.Errorf("failed to execute template: %w", err)
 	}

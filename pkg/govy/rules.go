@@ -65,9 +65,9 @@ func forConstructor[T, P any](getter PropertyGetter[T, P]) PropertyRules[T, P] {
 	}
 }
 
-// forConstructorWithoutNameInference creates [PropertyRules] without path inference.
+// forConstructorWithoutPathInference creates [PropertyRules] without path inference.
 // Used for internal rules in [ForSlice] and [ForMap] where names are managed separately.
-func forConstructorWithoutNameInference[T, P any](getter PropertyGetter[T, P]) PropertyRules[T, P] {
+func forConstructorWithoutPathInference[T, P any](getter PropertyGetter[T, P]) PropertyRules[T, P] {
 	return PropertyRules[T, P]{
 		getter: func(parent P) (v T, err error) { return getter(parent), nil },
 	}

@@ -11,7 +11,7 @@ var sliceWildcardPath = jsonpath.ParsePath("[*]")
 func ForSlice[S ~[]T, T, P any](getter PropertyGetter[S, P]) PropertyRulesForSlice[S, T, P] {
 	return PropertyRulesForSlice[S, T, P]{
 		sliceRules:   forConstructor(GetSelf[S]()),
-		forEachRules: forConstructorWithoutNameInference(GetSelf[T]()),
+		forEachRules: forConstructorWithoutPathInference(GetSelf[T]()),
 		getter:       getter,
 	}
 }

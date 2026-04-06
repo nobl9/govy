@@ -13,7 +13,7 @@ import (
 
 const (
 	govyCmdName      = "govy"
-	inferPathCmdName = "nameinfer"
+	inferPathCmdName = "pathinfer"
 )
 
 var subcommands = []string{

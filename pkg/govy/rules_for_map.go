@@ -15,9 +15,9 @@ var (
 func ForMap[M ~map[K]V, K comparable, V, P any](getter PropertyGetter[M, P]) PropertyRulesForMap[M, K, V, P] {
 	return PropertyRulesForMap[M, K, V, P]{
 		mapRules:      forConstructor(getter),
-		forKeyRules:   forConstructorWithoutNameInference(GetSelf[K]()),
-		forValueRules: forConstructorWithoutNameInference(GetSelf[V]()),
-		forItemRules:  forConstructorWithoutNameInference(GetSelf[MapItem[K, V]]()),
+		forKeyRules:   forConstructorWithoutPathInference(GetSelf[K]()),
+		forValueRules: forConstructorWithoutPathInference(GetSelf[V]()),
+		forItemRules:  forConstructorWithoutPathInference(GetSelf[MapItem[K, V]]()),
 		getter:        getter,
 	}
 }
