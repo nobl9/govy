@@ -66,13 +66,6 @@ func (p Path) JoinPath(other Path) Path {
 	return Path{segments: joined}
 }
 
-// JoinArrayPath appends another Path using array notation (no dot separator).
-// With a segment-based Path this is equivalent to [Path.JoinPath],
-// since the separator is determined by segment kind during rendering.
-func (p Path) JoinArrayPath(other Path) Path {
-	return p.JoinPath(other)
-}
-
 // Equal reports whether two paths have identical segments.
 func (p Path) Equal(other Path) bool {
 	return slices.Equal(p.segments, other.segments)

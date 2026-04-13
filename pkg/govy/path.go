@@ -17,7 +17,7 @@ func NewPath() Path {
 	return jsonpath.NewPath()
 }
 
-// ParsePath wraps an already-escaped path string into a [Path].
+// ParsePath parses a JSONPath string into a structured [Path].
 func ParsePath(s string) Path {
 	return jsonpath.ParsePath(s)
 }

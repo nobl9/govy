@@ -89,7 +89,7 @@ func TestInferPathDefaultFunc(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			result := InferNameDefaultFunc(tc.fieldName, tc.tagValue)
+			result := InferPathDefaultFunc(tc.fieldName, tc.tagValue)
 			assert.Equal(t, tc.expected, result)
 		})
 	}
@@ -183,7 +183,7 @@ func TestFunctionsWithGetter(t *testing.T) {
 	assert.ElementsMatch(t, expected, FunctionsWithGetter)
 }
 
-func TestInferNameFromFile(t *testing.T) {
+func TestInferPathFromFile(t *testing.T) {
 	tests := []struct {
 		name     string
 		src      string
@@ -382,7 +382,7 @@ var _ = govy.For(func(p Person) string {
 	}
 }
 
-func TestInferNameFromFile_nonGovySelector(t *testing.T) {
+func TestInferPathFromFile_nonGovySelector(t *testing.T) {
 	src := `package test
 import "github.com/nobl9/govy/pkg/govy"
 
@@ -403,7 +403,7 @@ var _ = o.For(func(p Person) string { return p.Name })
 	assert.Equal(t, "", result.String())
 }
 
-func TestInferNameFromFile_multipleReturns(t *testing.T) {
+func TestInferPathFromFile_multipleReturns(t *testing.T) {
 	src := `package test
 import "github.com/nobl9/govy/pkg/govy"
 
@@ -425,68 +425,68 @@ var _ = govy.For(func(p Person) string {
 	assert.Equal(t, "name", result.String())
 }
 
-func TestNameFinder_findNameInBlockStmt_nil(t *testing.T) {
-	nf := nameFinder{}
-	result := nf.findNameInBlockStmt(nil, nil)
+func TestPathFinder_findNameInBlockStmt_nil(t *testing.T) {
+	nf := pathFinder{}
+	result := nf.findPathInBlockStmt(nil, nil)
 	assert.Equal(t, "", result.String())
 }
 
-func TestNameFinder_findNameInIfStmt_nil(t *testing.T) {
-	nf := nameFinder{}
-	result := nf.findNameInIfStmt(nil, nil)
+func TestPathFinder_findNameInIfStmt_nil(t *testing.T) {
+	nf := pathFinder{}
+	result := nf.findPathInIfStmt(nil, nil)
 	assert.Equal(t, "", result.String())
 }
 
-func TestNameFinder_findNameInFuncLit_nil(t *testing.T) {
-	nf := nameFinder{}
-	result := nf.findNameInFuncLit(nil)
+func TestPathFinder_findNameInFuncLit_nil(t *testing.T) {
+	nf := pathFinder{}
+	result := nf.findPathInFuncLit(nil)
 	assert.Equal(t, "", result.String())
 }
 
-func TestNameFinder_findNameInReturnStmt_nil(t *testing.T) {
-	nf := nameFinder{}
-	result := nf.findNameInReturnStmt(nil, nil)
+func TestPathFinder_findNameInReturnStmt_nil(t *testing.T) {
+	nf := pathFinder{}
+	result := nf.findPathInReturnStmt(nil, nil)
 	assert.Equal(t, "", result.String())
 }
 
-func TestNameFinder_findNameInReturnStmt_multipleResults(t *testing.T) {
-	nf := nameFinder{}
+func TestPathFinder_findNameInReturnStmt_multipleResults(t *testing.T) {
+	nf := pathFinder{}
 	returnStmt := &ast.ReturnStmt{
 		Results: []ast.Expr{
 			&ast.Ident{Name: "a"},
 			&ast.Ident{Name: "b"},
 		},
 	}
-	result := nf.findNameInReturnStmt(returnStmt, nil)
+	result := nf.findPathInReturnStmt(returnStmt, nil)
 	assert.Equal(t, "", result.String())
 }
 
-func TestNameFinder_findNameInIdent_nilObj(t *testing.T) {
-	nf := nameFinder{}
+func TestPathFinder_findNameInIdent_nilObj(t *testing.T) {
+	nf := pathFinder{}
 	ident := &ast.Ident{Name: "test", Obj: nil}
-	result := nf.findNameInIdent(ident, nil)
+	result := nf.findPathInIdent(ident, nil)
 	assert.Equal(t, "", result.String())
 }
 
-func TestNameFinder_findNameInAssignStmt_multipleRhs(t *testing.T) {
-	nf := nameFinder{}
+func TestPathFinder_findNameInAssignStmt_multipleRhs(t *testing.T) {
+	nf := pathFinder{}
 	assignStmt := &ast.AssignStmt{
 		Rhs: []ast.Expr{
 			&ast.Ident{Name: "a"},
 			&ast.Ident{Name: "b"},
 		},
 	}
-	result := nf.findNameInAssignStmt(assignStmt, nil)
+	result := nf.findPathInAssignStmt(assignStmt, nil)
 	assert.Equal(t, "", result.String())
 }
 
-func TestNameFinder_findName_unexpectedType(t *testing.T) {
-	nf := nameFinder{}
-	result := nf.findName("unexpected string type", nil)
+func TestPathFinder_findName_unexpectedType(t *testing.T) {
+	nf := pathFinder{}
+	result := nf.findPath("unexpected string type", nil)
 	assert.Equal(t, "", result.String())
 }
 
-func TestNameFinder_findNameInFuncLit_multipleParams(t *testing.T) {
+func TestPathFinder_findNameInFuncLit_multipleParams(t *testing.T) {
 	funcLit := &ast.FuncLit{
 		Type: &ast.FuncType{
 			Params: &ast.FieldList{
@@ -498,12 +498,12 @@ func TestNameFinder_findNameInFuncLit_multipleParams(t *testing.T) {
 		},
 		Body: &ast.BlockStmt{},
 	}
-	nf := nameFinder{}
-	result := nf.findNameInFuncLit(funcLit)
+	nf := pathFinder{}
+	result := nf.findPathInFuncLit(funcLit)
 	assert.Equal(t, "", result.String())
 }
 
-func TestNameFinder_findNameInFuncLit_nonIdentParam(t *testing.T) {
+func TestPathFinder_findNameInFuncLit_nonIdentParam(t *testing.T) {
 	funcLit := &ast.FuncLit{
 		Type: &ast.FuncType{
 			Params: &ast.FieldList{
@@ -514,8 +514,8 @@ func TestNameFinder_findNameInFuncLit_nonIdentParam(t *testing.T) {
 		},
 		Body: &ast.BlockStmt{},
 	}
-	nf := nameFinder{}
-	result := nf.findNameInFuncLit(funcLit)
+	nf := pathFinder{}
+	result := nf.findPathInFuncLit(funcLit)
 	assert.Equal(t, "", result.String())
 }
 
@@ -581,7 +581,7 @@ func createTestPackage(t *testing.T, src string) testPackageResult {
 	return testPackageResult{pkg: pkg, fset: fset, f: f}
 }
 
-func TestInferNameFromFile_deeplyNestedStruct(t *testing.T) {
+func TestInferPathFromFile_deeplyNestedStruct(t *testing.T) {
 	src := `package test
 import "github.com/nobl9/govy/pkg/govy"
 
@@ -605,7 +605,7 @@ var _ = govy.For(func(p Person) string { return p.Address.Street.Name })
 	assert.Equal(t, "address.street.streetName", result.String())
 }
 
-func TestInferNameFromFile_embeddedStruct(t *testing.T) {
+func TestInferPathFromFile_embeddedStruct(t *testing.T) {
 	src := `package test
 import "github.com/nobl9/govy/pkg/govy"
 
@@ -626,7 +626,7 @@ var _ = govy.For(func(p Person) string { return p.Name })
 	assert.Equal(t, "name", result.String())
 }
 
-func TestNameFinder_findNameInSelectorExpr_unexpectedXType(t *testing.T) {
+func TestPathFinder_findNameInSelectorExpr_unexpectedXType(t *testing.T) {
 	src := `package test
 import "github.com/nobl9/govy/pkg/govy"
 
@@ -646,7 +646,7 @@ var _ = govy.For(func(p Person) string { return getName().Name })
 	assert.Equal(t, "", result.String())
 }
 
-func TestInferNameFromFile_dotImport(t *testing.T) {
+func TestInferPathFromFile_dotImport(t *testing.T) {
 	src := `package test
 import . "github.com/nobl9/govy/pkg/govy"
 
@@ -662,7 +662,7 @@ var _ = For(func(p Person) string { return p.Name })
 	assert.Equal(t, "name", result.String())
 }
 
-func TestInferNameFromFile_indexExpression(t *testing.T) {
+func TestInferPathFromFile_indexExpression(t *testing.T) {
 	tests := []struct {
 		name     string
 		src      string
@@ -920,7 +920,7 @@ var _ = govy.For(func(c Container) string { return c.Items["key"].Data })
 	}
 }
 
-func TestInferNameFromFile_indexExpressionWithFunctionCall(t *testing.T) {
+func TestInferPathFromFile_indexExpressionWithFunctionCall(t *testing.T) {
 	src := `package test
 import "github.com/nobl9/govy/pkg/govy"
 
@@ -940,8 +940,8 @@ var _ = govy.For(func(_ struct{}) string { return getStudents()[0].Name })
 	assert.Equal(t, "", result.String())
 }
 
-func TestNameFinder_getStructFromType_unhandledType(t *testing.T) {
-	nf := nameFinder{}
+func TestPathFinder_getStructFromType_unhandledType(t *testing.T) {
+	nf := pathFinder{}
 	// Test with a basic type that is not a struct, slice, array, or map.
 	basicType := types.Typ[types.Int]
 	result, ok := nf.getStructFromType(basicType)

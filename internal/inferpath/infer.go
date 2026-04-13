@@ -101,13 +101,13 @@ func InferPathFromFile(
 		return true
 	})
 
-	finder := nameFinder{pkg: pkg}
-	return finder.findName(getterNode, nil)
+	finder := pathFinder{pkg: pkg}
+	return finder.findPath(getterNode, nil)
 }
 
-// InferNameDefaultFunc is the default function for inferring field names from struct tags.
+// InferPathDefaultFunc is the default function for inferring field paths from struct tags.
 // It looks for json and yaml tags, preferring json if both are set.
-func InferNameDefaultFunc(fieldName, tagValue string) string {
+func InferPathDefaultFunc(fieldName, tagValue string) string {
 	for _, tagKey := range []string{"json", "yaml"} {
 		tagValues := strings.Split(
 			reflect.StructTag(strings.Trim(tagValue, "`")).Get(tagKey),
@@ -135,34 +135,34 @@ func GetGovyImportName(f *ast.File) string {
 	return importName
 }
 
-type nameFinder struct {
+type pathFinder struct {
 	pkg *packages.Package
 }
 
-func (n nameFinder) findName(a any, structType *types.Struct) jsonpath.Path {
+func (n pathFinder) findPath(a any, structType *types.Struct) jsonpath.Path {
 	switch v := a.(type) {
 	case *ast.SelectorExpr:
-		path, _ := n.findNameInSelectorExpr(v, structType)
+		path, _ := n.findPathInSelectorExpr(v, structType)
 		return path
 	case *ast.Ident:
-		return n.findNameInIdent(v, structType)
+		return n.findPathInIdent(v, structType)
 	case *ast.AssignStmt:
-		return n.findNameInAssignStmt(v, structType)
+		return n.findPathInAssignStmt(v, structType)
 	case *ast.FuncLit:
-		return n.findNameInFuncLit(v)
+		return n.findPathInFuncLit(v)
 	case *ast.ReturnStmt:
-		return n.findNameInReturnStmt(v, structType)
+		return n.findPathInReturnStmt(v, structType)
 	case *ast.IfStmt:
-		return n.findNameInIfStmt(v, structType)
+		return n.findPathInIfStmt(v, structType)
 	case *ast.BlockStmt:
-		return n.findNameInBlockStmt(v, structType)
+		return n.findPathInBlockStmt(v, structType)
 	default:
 		logging.Logger().Debug(fmt.Sprintf("unexpected type: %T", v))
 	}
 	return jsonpath.Path{}
 }
 
-func (n nameFinder) findNameInBlockStmt(
+func (n pathFinder) findPathInBlockStmt(
 	blockStmt *ast.BlockStmt,
 	structType *types.Struct,
 ) jsonpath.Path {
@@ -171,14 +171,14 @@ func (n nameFinder) findNameInBlockStmt(
 		return jsonpath.Path{}
 	}
 	for _, stmt := range blockStmt.List {
-		if path := n.findName(stmt, structType); !path.IsEmpty() {
+		if path := n.findPath(stmt, structType); !path.IsEmpty() {
 			return path
 		}
 	}
 	return jsonpath.Path{}
 }
 
-func (n nameFinder) findNameInIfStmt(
+func (n pathFinder) findPathInIfStmt(
 	ifStmt *ast.IfStmt,
 	structType *types.Struct,
 ) jsonpath.Path {
@@ -186,10 +186,10 @@ func (n nameFinder) findNameInIfStmt(
 		logging.Logger().Debug("*ast.IfStmt is nil, failed to locate the getter function parent")
 		return jsonpath.Path{}
 	}
-	return n.findName(ifStmt.Body, structType)
+	return n.findPath(ifStmt.Body, structType)
 }
 
-func (n nameFinder) findNameInFuncLit(fl *ast.FuncLit) jsonpath.Path {
+func (n pathFinder) findPathInFuncLit(fl *ast.FuncLit) jsonpath.Path {
 	if fl == nil {
 		logging.Logger().Debug("*ast.FuncLit is nil, failed to locate the getter function parent")
 		return jsonpath.Path{}
@@ -224,14 +224,14 @@ func (n nameFinder) findNameInFuncLit(fl *ast.FuncLit) jsonpath.Path {
 		return jsonpath.Path{}
 	}
 	for _, stmt := range fl.Body.List {
-		if path := n.findName(stmt, structType); !path.IsEmpty() {
+		if path := n.findPath(stmt, structType); !path.IsEmpty() {
 			return path
 		}
 	}
 	return jsonpath.Path{}
 }
 
-func (n nameFinder) findNameInReturnStmt(
+func (n pathFinder) findPathInReturnStmt(
 	returnStmt *ast.ReturnStmt,
 	structType *types.Struct,
 ) jsonpath.Path {
@@ -243,10 +243,10 @@ func (n nameFinder) findNameInReturnStmt(
 		logging.Logger().Debug("return statement must have exactly one result")
 		return jsonpath.Path{}
 	}
-	return n.findName(returnStmt.Results[0], structType)
+	return n.findPath(returnStmt.Results[0], structType)
 }
 
-func (n nameFinder) findNameInIdent(
+func (n pathFinder) findPathInIdent(
 	ident *ast.Ident,
 	structType *types.Struct,
 ) jsonpath.Path {
@@ -254,10 +254,10 @@ func (n nameFinder) findNameInIdent(
 		logging.Logger().Debug("identifier object is nil")
 		return jsonpath.Path{}
 	}
-	return n.findName(ident.Obj.Decl, structType)
+	return n.findPath(ident.Obj.Decl, structType)
 }
 
-func (n nameFinder) findNameInAssignStmt(
+func (n pathFinder) findPathInAssignStmt(
 	assignment *ast.AssignStmt,
 	structType *types.Struct,
 ) jsonpath.Path {
@@ -265,14 +265,14 @@ func (n nameFinder) findNameInAssignStmt(
 		logging.Logger().Debug("assignment statement must have exactly one right-hand side")
 		return jsonpath.Path{}
 	}
-	return n.findName(assignment.Rhs[0], structType)
+	return n.findPath(assignment.Rhs[0], structType)
 }
 
-// findNameInSelectorExpr extracts the property name from a selector expression like
+// findPathInSelectorExpr extracts the property path from a selector expression like
 // `s.Field` or `s.Nested.Field`. For nested access, it recursively processes the chain
 // and constructs a path (e.g., "nested.field"). It uses struct tags
-// (json/yaml) to determine the final field name via [InferNameDefaultFunc].
-func (n nameFinder) findNameInSelectorExpr(
+// (json/yaml) to determine the final field path via [InferPathDefaultFunc].
+func (n pathFinder) findPathInSelectorExpr(
 	se *ast.SelectorExpr,
 	structType *types.Struct,
 ) (jsonpath.Path, *types.Struct) {
@@ -281,9 +281,9 @@ func (n nameFinder) findNameInSelectorExpr(
 	case *ast.Ident:
 		break
 	case *ast.SelectorExpr:
-		path, structType = n.findNameInSelectorExpr(v, structType)
+		path, structType = n.findPathInSelectorExpr(v, structType)
 	case *ast.IndexExpr:
-		path, structType = n.findNameInIndexExpr(v, structType)
+		path, structType = n.findPathInIndexExpr(v, structType)
 	default:
 		logging.Logger().Debug(fmt.Sprintf("unexpected type: %T", v))
 		return jsonpath.Path{}, nil
@@ -301,7 +301,7 @@ func (n nameFinder) findNameInSelectorExpr(
 		if childStructType, isStruct := n.findStructTypeInStructField(field); isStruct {
 			structType = childStructType
 		}
-		fieldName = InferNameDefaultFunc(fieldName, tagValue)
+		fieldName = InferPathDefaultFunc(fieldName, tagValue)
 		return path.Name(fieldName), structType
 	}
 	logging.Logger().Debug(fmt.Sprintf("field matching '%s' name not found in struct type", se.Sel.Name))
@@ -310,13 +310,13 @@ func (n nameFinder) findNameInSelectorExpr(
 
 // findStructTypeInStructField returns the underlying [*types.Struct] of a field if it's a struct.
 // For collection types (slice, array, map), it extracts the element type first.
-func (n nameFinder) findStructTypeInStructField(field *types.Var) (*types.Struct, bool) {
+func (n pathFinder) findStructTypeInStructField(field *types.Var) (*types.Struct, bool) {
 	return n.getStructFromType(field.Type())
 }
 
 // getStructFromType extracts a struct type from a potentially wrapped type.
 // It handles pointers, named types, and collection types (slices, arrays, maps).
-func (n nameFinder) getStructFromType(t types.Type) (*types.Struct, bool) {
+func (n pathFinder) getStructFromType(t types.Type) (*types.Struct, bool) {
 	if ptr, ok := t.(*types.Pointer); ok {
 		t = ptr.Elem()
 	}
@@ -337,18 +337,18 @@ func (n nameFinder) getStructFromType(t types.Type) (*types.Struct, bool) {
 	}
 }
 
-// findNameInIndexExpr handles index expressions like p.Students[0] or p.Items[i].
-// It extracts the indexed property name and appends the index notation.
-func (n nameFinder) findNameInIndexExpr(
+// findPathInIndexExpr handles index expressions like p.Students[0] or p.Items[i].
+// It extracts the indexed property path and appends the index notation.
+func (n pathFinder) findPathInIndexExpr(
 	ie *ast.IndexExpr,
 	structType *types.Struct,
 ) (jsonpath.Path, *types.Struct) {
 	var path jsonpath.Path
 	switch v := ie.X.(type) {
 	case *ast.SelectorExpr:
-		path, structType = n.findNameInSelectorExpr(v, structType)
+		path, structType = n.findPathInSelectorExpr(v, structType)
 	case *ast.IndexExpr:
-		path, structType = n.findNameInIndexExpr(v, structType)
+		path, structType = n.findPathInIndexExpr(v, structType)
 	case *ast.Ident:
 		logging.Logger().Debug(fmt.Sprintf("index expression base is identifier: %s", v.Name))
 	default:
@@ -364,7 +364,7 @@ func (n nameFinder) findNameInIndexExpr(
 // appendIndexExpr appends an index expression to the path.
 // For integer literals it uses [Path.Index], for string literals [Path.Key],
 // and for non-literal expressions it falls back to a raw "[]" segment.
-func (n nameFinder) appendIndexExpr(path jsonpath.Path, index ast.Expr) jsonpath.Path {
+func (n pathFinder) appendIndexExpr(path jsonpath.Path, index ast.Expr) jsonpath.Path {
 	lit, ok := index.(*ast.BasicLit)
 	if !ok {
 		logging.Logger().Debug(fmt.Sprintf("non-literal index expression: %T", index))

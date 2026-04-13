@@ -330,7 +330,7 @@ func TestTransform(t *testing.T) {
 	})
 }
 
-func TestPropertyRules_InferName(t *testing.T) {
+func TestPropertyRules_InferPath(t *testing.T) {
 	govyconfig.SetInferPathIncludeTestFiles(true)
 	defer govyconfig.SetInferPathIncludeTestFiles(false)
 

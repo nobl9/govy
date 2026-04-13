@@ -160,35 +160,6 @@ func TestPath_JoinPath(t *testing.T) {
 	}
 }
 
-func TestPath_JoinArrayPath(t *testing.T) {
-	tests := map[string]struct {
-		base     jsonpath.Path
-		other    jsonpath.Path
-		expected string
-	}{
-		"both empty": {
-			base:     jsonpath.NewPath(),
-			other:    jsonpath.NewPath(),
-			expected: "",
-		},
-		"simple join without dot": {
-			base:     jsonpath.NewPath().Name("foo"),
-			other:    jsonpath.NewPath().Index(0),
-			expected: "foo[0]",
-		},
-		"join name segments (equivalent to JoinPath)": {
-			base:     jsonpath.NewPath().Name("foo"),
-			other:    jsonpath.NewPath().Name("bar"),
-			expected: "foo.bar",
-		},
-	}
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			assert.Equal(t, tc.expected, tc.base.JoinArrayPath(tc.other).String())
-		})
-	}
-}
-
 func TestPath_UnknownIndex(t *testing.T) {
 	assert.Equal(t, "[]", jsonpath.NewPath().UnknownIndex().String())
 	assert.Equal(t, "items[]", jsonpath.NewPath().Name("items").UnknownIndex().String())

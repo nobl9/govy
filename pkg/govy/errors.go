@@ -159,13 +159,13 @@ type PropertyError struct {
 	// PropertyValue is a string representation of the property's value.
 	PropertyValue string `json:"propertyValue,omitempty"`
 	// IsKeyError is set to true if the error was created through map key validation.
-	// PropertyValue in this scenario will be the key value, equal to the last element of PropertyPath path.
+	// PropertyValue in this scenario will be the key value, equal to the last segment of the PropertyPath.
 	IsKeyError bool `json:"isKeyError,omitempty"`
 	// IsSliceElementError is set to true if the error was created through slice element validation.
 	IsSliceElementError bool `json:"isSliceElementError,omitempty"`
 	// Errors are all rule errors reported for this property.
 	//
-	// Note: You can have multiple [PropertyRules] with the same name and value,
+	// Note: You can have multiple [PropertyRules] with the same path and value,
 	// in this scenario, all these instances will be aggregated into a single [PropertyError].
 	// See [PropertyError.Equal] for details on the equality conditions for [PropertyError].
 	Errors []*RuleError `json:"errors"`
@@ -210,12 +210,7 @@ func (e *PropertyError) HideValue() *PropertyError {
 }
 
 func (e *PropertyError) prependParentPropertyPath(name Path) *PropertyError {
-	switch {
-	case e.IsSliceElementError && e.PropertyPath.HasBracketPrefix():
-		e.PropertyPath = name.JoinArrayPath(e.PropertyPath)
-	default:
-		e.PropertyPath = name.JoinPath(e.PropertyPath)
-	}
+	e.PropertyPath = name.JoinPath(e.PropertyPath)
 	return e
 }
 

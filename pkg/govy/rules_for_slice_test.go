@@ -225,7 +225,7 @@ func TestPropertyRulesForEach(t *testing.T) {
 	})
 }
 
-func TestPropertyRulesForSlice_InferName(t *testing.T) {
+func TestPropertyRulesForSlice_InferPath(t *testing.T) {
 	govyconfig.SetInferPathIncludeTestFiles(true)
 	defer govyconfig.SetInferPathIncludeTestFiles(false)
 

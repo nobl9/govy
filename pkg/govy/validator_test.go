@@ -482,21 +482,21 @@ func TestValidatorRemovePropertiesByPath(t *testing.T) {
 	})
 }
 
-func TestValidatorInferName(t *testing.T) {
+func TestValidatorInferPath(t *testing.T) {
 	govyconfig.SetInferPathIncludeTestFiles(true)
 	defer govyconfig.SetInferPathIncludeTestFiles(false)
 
-	type mockInferNameStruct struct {
+	type mockInferPathStruct struct {
 		Name     string         `json:"name"`
 		Students []string       `json:"students"`
 		Grades   map[string]int `json:"grades"`
 	}
 
-	propertyRules := govy.For(func(m mockInferNameStruct) string { return m.Name }).
+	propertyRules := govy.For(func(m mockInferPathStruct) string { return m.Name }).
 		Rules(rules.EQ("expected"))
-	propertyRulesForSlice := govy.ForSlice(func(m mockInferNameStruct) []string { return m.Students }).
+	propertyRulesForSlice := govy.ForSlice(func(m mockInferPathStruct) []string { return m.Students }).
 		RulesForEach(rules.EQ("expected"))
-	propertyRulesForMap := govy.ForMap(func(m mockInferNameStruct) map[string]int { return m.Grades }).
+	propertyRulesForMap := govy.ForMap(func(m mockInferPathStruct) map[string]int { return m.Grades }).
 		RulesForKeys(rules.EQ("expected"))
 
 	t.Run("propagates mode to all properties", func(t *testing.T) {
@@ -507,7 +507,7 @@ func TestValidatorInferName(t *testing.T) {
 		).
 			InferPath(govy.InferPathModeRuntime)
 
-		err := v.Validate(mockInferNameStruct{
+		err := v.Validate(mockInferPathStruct{
 			Name:     "actual",
 			Students: []string{"actual"},
 			Grades:   map[string]int{"actual": 1},
@@ -540,19 +540,19 @@ func TestValidatorInferName(t *testing.T) {
 		})
 
 		v := govy.New(
-			govy.For(func(m mockInferNameStruct) string { return m.Name }).
+			govy.For(func(m mockInferPathStruct) string { return m.Name }).
 				InferPath(govy.InferPathModeDisable).
 				Rules(rules.EQ("expected")),
-			govy.ForSlice(func(m mockInferNameStruct) []string { return m.Students }).
+			govy.ForSlice(func(m mockInferPathStruct) []string { return m.Students }).
 				InferPath(govy.InferPathModeRuntime).
 				RulesForEach(rules.EQ("expected")),
-			govy.ForMap(func(m mockInferNameStruct) map[string]int { return m.Grades }).
+			govy.ForMap(func(m mockInferPathStruct) map[string]int { return m.Grades }).
 				// InferPath(govy.InferPathModeRuntime). -- Inference mode should be inherited from Validator.
 				RulesForKeys(rules.EQ("expected")),
 		).
 			InferPath(govy.InferPathModeGenerate)
 
-		err := v.Validate(mockInferNameStruct{
+		err := v.Validate(mockInferPathStruct{
 			Name:     "actual",
 			Students: []string{"actual"},
 			Grades:   map[string]int{"actual": 1},
@@ -581,15 +581,15 @@ func TestValidatorInferName(t *testing.T) {
 		// Properties don't set any mode (defaults to InferPathModeDisable = 0).
 		// Validator.InferPath(InferPathModeRuntime) should propagate to all properties.
 		v := govy.New(
-			govy.For(func(m mockInferNameStruct) string { return m.Name }).
+			govy.For(func(m mockInferPathStruct) string { return m.Name }).
 				Rules(rules.EQ("expected")),
-			govy.ForSlice(func(m mockInferNameStruct) []string { return m.Students }).
+			govy.ForSlice(func(m mockInferPathStruct) []string { return m.Students }).
 				RulesForEach(rules.EQ("expected")),
-			govy.ForMap(func(m mockInferNameStruct) map[string]int { return m.Grades }).
+			govy.ForMap(func(m mockInferPathStruct) map[string]int { return m.Grades }).
 				RulesForKeys(rules.EQ("expected")),
 		).InferPath(govy.InferPathModeRuntime)
 
-		err := v.Validate(mockInferNameStruct{
+		err := v.Validate(mockInferPathStruct{
 			Name:     "actual",
 			Students: []string{"actual"},
 			Grades:   map[string]int{"actual": 1},

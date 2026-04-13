@@ -24,7 +24,7 @@ type testingT interface {
 // Its fields are used to find and match an actual [govy.RuleError].
 type ExpectedRuleError struct {
 	// Optional. Matched against [govy.PropertyError.PropertyPath].
-	// It should be only left empty if the validated property has no name.
+	// It should only be left empty if the validated property has no path.
 	PropertyPath string `json:"propertyPath"`
 	// Optional. Matched against [govy.RuleError.Code].
 	Code govy.ErrorCode `json:"code,omitempty"`

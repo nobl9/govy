@@ -10,45 +10,45 @@ import (
 	"github.com/nobl9/govy/pkg/govyconfig"
 )
 
-// InferPathMode defines a mode of property name's inference.
+// InferPathMode defines a mode of property path inference.
 type InferPathMode int
 
 const (
-	// InferPathModeDisable disables property name's inference.
+	// InferPathModeDisable disables property path inference.
 	// It is the default mode.
 	InferPathModeDisable InferPathMode = iota
-	// InferPathModeRuntime infers property names' during runtime,
+	// InferPathModeRuntime infers property paths during runtime,
 	// whenever For, ForSlice, ForPointer or ForMap are created.
 	// If you're not reusing these [govy.PropertyRules], but rather creating them dynamically,
 	// beware of significant performance cost of the inference mechanism.
 	InferPathModeRuntime
-	// InferPathModeGenerate does the heavy lifting of inferring property names
+	// InferPathModeGenerate does the heavy lifting of inferring property paths
 	// in a separate step which involves code generation.
 	// When creating new [govy.PropertyRules], the only performance hit is due to the
 	// usage of [runtime] package which helps us get the caller frame details.
 	InferPathModeGenerate
 )
 
-// InferNameFunc is a function blueprint for inferring property names.
+// InferPathFunc is a function blueprint for inferring property paths.
 // It is only called for struct fields.
 // Tag value is the raw value of the struct tag, it needs to be parsed with [reflect.StructTag].
-type InferNameFunc func(fieldName, tagValue string) string
+type InferPathFunc func(fieldName, tagValue string) string
 
-// InferNameDefaultFunc is the default function for inferring field names from struct tags.
+// InferPathDefaultFunc is the default function for inferring field paths from struct tags.
 // It looks for json and yaml tags, preferring json if both are set.
-func InferNameDefaultFunc(fieldName, tagValue string) string {
-	return inferpath.InferNameDefaultFunc(fieldName, tagValue)
+func InferPathDefaultFunc(fieldName, tagValue string) string {
+	return inferpath.InferPathDefaultFunc(fieldName, tagValue)
 }
 
 type internalInferPathFunc func(mode InferPathMode) Path
 
-// getInferPathFunc is a closure which returns an [internalInferNameFunc].
-// It captures the inferred name once and caches it.
+// getInferPathFunc is a closure which returns an [internalInferPathFunc].
+// It captures the inferred path once and caches it.
 // It is safe to call this function concurrently.
 func getInferPathFunc(callers int, pc []uintptr) internalInferPathFunc {
 	var (
 		once sync.Once
-		name Path
+		path Path
 	)
 	return func(mode InferPathMode) Path {
 		once.Do(func() {
@@ -66,21 +66,21 @@ func getInferPathFunc(callers int, pc []uintptr) internalInferPathFunc {
 			}
 			switch mode {
 			case InferPathModeGenerate:
-				name = ParsePath(govyconfig.GetInferredPath(frame.File, frame.Line))
+				path = ParsePath(govyconfig.GetInferredPath(frame.File, frame.Line))
 			case InferPathModeRuntime:
-				name = inferpath.InferPath(frame.File, frame.Line)
+				path = inferpath.InferPath(frame.File, frame.Line)
 			case InferPathModeDisable:
 			default:
 				logging.Logger().Error(fmt.Sprintf("unknown %T", mode), "mode", int(mode))
 			}
 		})
-		return name
+		return path
 	}
 }
 
 // getCallersAndProgramCounter returns number of callers and program counters
 // of function invocations on the calling goroutine's stack.
-// Its results are intended to be passed directly to [getInferNameFunc].
+// Its results are intended to be passed directly to [getInferPathFunc].
 func getCallersAndProgramCounter(skipFrames int) (callers int, pc []uintptr) {
 	pc = make([]uintptr, 1)
 	callers = runtime.Callers(skipFrames, pc)

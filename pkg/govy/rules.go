@@ -66,7 +66,7 @@ func forConstructor[T, P any](getter PropertyGetter[T, P]) PropertyRules[T, P] {
 }
 
 // forConstructorWithoutPathInference creates [PropertyRules] without path inference.
-// Used for internal rules in [ForSlice] and [ForMap] where names are managed separately.
+// Used for internal rules in [ForSlice] and [ForMap] where paths are managed separately.
 func forConstructorWithoutPathInference[T, P any](getter PropertyGetter[T, P]) PropertyRules[T, P] {
 	return PropertyRules[T, P]{
 		getter: func(parent P) (v T, err error) { return getter(parent), nil },
@@ -240,8 +240,8 @@ func (r PropertyRules[T, P]) Cascade(mode CascadeMode) PropertyRules[T, P] {
 }
 
 // InferPath sets the [InferPathMode] for the property,
-// which controls if and how the property name is inferred.
-// If you manually provide a name using [PropertyRules.WithName]
+// which controls if and how the property path is inferred.
+// If you manually provide a path using [PropertyRules.WithName] or [PropertyRules.WithPath],
 // this setting will have no effect, acting like [InferPathModeDisable].
 func (r PropertyRules[T, P]) InferPath(mode InferPathMode) PropertyRules[T, P] {
 	r.inferPathMode = mode
@@ -343,7 +343,7 @@ func (r PropertyRules[T, P]) getValue(parent P) (v T, skip bool, propErr *Proper
 	return v, false, nil
 }
 
-// getName returns the name of the property.
+// getPath returns the path of the property.
 func (r PropertyRules[T, S]) getPath() Path {
 	switch {
 	case !r.path.IsEmpty():

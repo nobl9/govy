@@ -432,7 +432,7 @@ func TestPropertyRulesForMap(t *testing.T) {
 	})
 }
 
-func TestPropertyRulesForMap_InferName(t *testing.T) {
+func TestPropertyRulesForMap_InferPath(t *testing.T) {
 	govyconfig.SetInferPathIncludeTestFiles(true)
 	defer govyconfig.SetInferPathIncludeTestFiles(false)
 
