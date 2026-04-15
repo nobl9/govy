@@ -49,8 +49,8 @@ func init() {
 			Line: 15,
 		},
 	}
-	for _, p := range inferredPaths {
-		govyconfig.SetInferredPath(p)
+	for _, path := range inferredPaths {
+		govyconfig.SetInferredPath(path)
 	}
 }
 `
