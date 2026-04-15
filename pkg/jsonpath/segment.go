@@ -19,8 +19,8 @@ const (
 // segment is a single component of a [Path].
 type segment struct {
 	kind  segmentKind
-	name  string // used by segmentName, segmentWildcard
-	index uint   // used by segmentIndex
+	name  string // used by [segmentName], [segmentWildcard]
+	index uint   // used by [segmentIndex]
 }
 
 // EscapeSegment accepts a path segment and escapes any special characters.

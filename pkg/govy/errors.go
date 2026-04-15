@@ -9,6 +9,7 @@ import (
 
 	"github.com/nobl9/govy/internal"
 	"github.com/nobl9/govy/internal/logging"
+	"github.com/nobl9/govy/pkg/jsonpath"
 )
 
 const (
@@ -142,7 +143,7 @@ outer:
 }
 
 // NewPropertyError constructs new [*PropertyError] instance.
-func NewPropertyError(propertyPath Path, propertyValue any, errs ...error) *PropertyError {
+func NewPropertyError(propertyPath jsonpath.Path, propertyValue any, errs ...error) *PropertyError {
 	return &PropertyError{
 		PropertyPath:  propertyPath,
 		PropertyValue: internal.PropertyValueString(propertyValue),
@@ -155,7 +156,7 @@ func NewPropertyError(propertyPath Path, propertyValue any, errs ...error) *Prop
 type PropertyError struct {
 	// PropertyPath is the JSONPath to the property from the root of the validated object.
 	// It should uniquely identify the property within a [Validator] instance.
-	PropertyPath Path `json:"propertyPath"`
+	PropertyPath jsonpath.Path `json:"propertyPath"`
 	// PropertyValue is a string representation of the property's value.
 	PropertyValue string `json:"propertyValue,omitempty"`
 	// IsKeyError is set to true if the error was created through map key validation.
@@ -209,8 +210,8 @@ func (e *PropertyError) HideValue() *PropertyError {
 	return e
 }
 
-func (e *PropertyError) prependParentPropertyPath(name Path) *PropertyError {
-	e.PropertyPath = name.JoinPath(e.PropertyPath)
+func (e *PropertyError) prependParentPropertyPath(name jsonpath.Path) *PropertyError {
+	e.PropertyPath = name.Join(e.PropertyPath)
 	return e
 }
 

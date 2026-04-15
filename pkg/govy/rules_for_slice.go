@@ -1,10 +1,10 @@
 package govy
 
 import (
-	"github.com/nobl9/govy/internal/jsonpath"
+	"github.com/nobl9/govy/pkg/jsonpath"
 )
 
-var sliceWildcardPath = jsonpath.ParsePath("[*]")
+var sliceWildcardPath = jsonpath.Parse("[*]")
 
 // ForSlice creates a new [PropertyRulesForSlice] instance for a slice property
 // which value is extracted through [PropertyGetter] function.
@@ -74,7 +74,7 @@ func (r PropertyRulesForSlice[S, T, P]) WithName(name string) PropertyRulesForSl
 }
 
 // WithPath => refer to [PropertyRules.WithPath] documentation.
-func (r PropertyRulesForSlice[S, T, P]) WithPath(path Path) PropertyRulesForSlice[S, T, P] {
+func (r PropertyRulesForSlice[S, T, P]) WithPath(path jsonpath.Path) PropertyRulesForSlice[S, T, P] {
 	r.sliceRules = r.sliceRules.WithPath(path)
 	return r
 }
@@ -163,11 +163,11 @@ func (r PropertyRulesForSlice[S, T, P]) plan(builder planBuilder) {
 	}
 }
 
-func (r PropertyRulesForSlice[S, T, P]) getPathForIndex(index int) Path {
+func (r PropertyRulesForSlice[S, T, P]) getPathForIndex(index int) jsonpath.Path {
 	return r.sliceRules.getPath().Index(uint(index)) // #nosec G115
 }
 
-func (r PropertyRulesForSlice[S, T, P]) getPath() Path {
+func (r PropertyRulesForSlice[S, T, P]) getPath() jsonpath.Path {
 	return r.sliceRules.getPath()
 }
 

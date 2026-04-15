@@ -12,8 +12,8 @@ import (
 
 	"golang.org/x/tools/go/packages"
 
-	"github.com/nobl9/govy/internal/jsonpath"
 	"github.com/nobl9/govy/internal/logging"
+	"github.com/nobl9/govy/pkg/jsonpath"
 )
 
 // FunctionsWithGetter is a list of govy package functions that accept a property

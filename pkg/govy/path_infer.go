@@ -8,6 +8,7 @@ import (
 	"github.com/nobl9/govy/internal/inferpath"
 	"github.com/nobl9/govy/internal/logging"
 	"github.com/nobl9/govy/pkg/govyconfig"
+	"github.com/nobl9/govy/pkg/jsonpath"
 )
 
 // InferPathMode defines a mode of property path inference.
@@ -40,7 +41,7 @@ func InferPathDefaultFunc(fieldName, tagValue string) string {
 	return inferpath.InferPathDefaultFunc(fieldName, tagValue)
 }
 
-type internalInferPathFunc func(mode InferPathMode) Path
+type internalInferPathFunc func(mode InferPathMode) jsonpath.Path
 
 // getInferPathFunc is a closure which returns an [internalInferPathFunc].
 // It captures the inferred path once and caches it.
@@ -48,9 +49,9 @@ type internalInferPathFunc func(mode InferPathMode) Path
 func getInferPathFunc(callers int, pc []uintptr) internalInferPathFunc {
 	var (
 		once sync.Once
-		path Path
+		path jsonpath.Path
 	)
-	return func(mode InferPathMode) Path {
+	return func(mode InferPathMode) jsonpath.Path {
 		once.Do(func() {
 			if callers < 1 {
 				return
@@ -66,7 +67,7 @@ func getInferPathFunc(callers int, pc []uintptr) internalInferPathFunc {
 			}
 			switch mode {
 			case InferPathModeGenerate:
-				path = ParsePath(govyconfig.GetInferredPath(frame.File, frame.Line))
+				path = govyconfig.GetInferredPath(frame.File, frame.Line)
 			case InferPathModeRuntime:
 				path = inferpath.InferPath(frame.File, frame.Line)
 			case InferPathModeDisable:

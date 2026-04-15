@@ -13,23 +13,32 @@ const (
 	escapedChars      = string(jsonPathSeparator) + "[]' \t\n\r"
 )
 
-// Path is a builder for constructing valid JSONPath property paths.
+// Path is a builder for constructing valid [JSONPath] property paths.
 // It ensures proper escaping and formatting of path segments.
 // Internally it stores a sequence of typed segments; the string form
 // is computed on demand by [Path.String].
+//
+// Examples:
+//
+//	jsonpath.Parse("metadata.name")            							// metadata.name
+//	jsonpath.New().Name("metadata").Name("name")            // metadata.name
+//	jsonpath.New().Name("metadata").Name("labels").Index(0) // metadata.labels[0]
+//	jsonpath.New().Name("complex.key")                      // ['complex.key']
+//
+// [JSONPath]: https://www.rfc-editor.org/rfc/rfc9535.html
 type Path struct {
 	segments []segment
 }
 
-// NewPath creates a new empty Path.
-func NewPath() Path {
+// New creates a new empty [Path].
+func New() Path {
 	return Path{}
 }
 
-// ParsePath parses a JSONPath string into a structured [Path].
+// Parse parses a JSONPath string into a structured [Path].
 // It handles dotted names, bracket notation, array indices, and wildcards.
 // Malformed input is treated gracefully: unparsable content becomes a name segment.
-func ParsePath(s string) Path {
+func Parse(s string) Path {
 	if s == "" {
 		return Path{}
 	}
@@ -52,8 +61,8 @@ func (p Path) Key(key any) Path {
 	return p.appendSegment(segment{kind: segmentName, name: fmt.Sprint(key)})
 }
 
-// JoinPath appends another Path to this one.
-func (p Path) JoinPath(other Path) Path {
+// Join appends another [Path] to this one.
+func (p Path) Join(other Path) Path {
 	if len(other.segments) == 0 {
 		return p
 	}
@@ -83,33 +92,9 @@ func (p Path) UnknownIndex() Path {
 	return p.appendSegment(segment{kind: segmentUnknownIndex})
 }
 
-// HasBracketPrefix reports whether the path starts with "[".
-// This is used to distinguish array/bracket-notation segments from named segments.
-func (p Path) HasBracketPrefix() bool {
-	if len(p.segments) == 0 {
-		return false
-	}
-	s := p.segments[0]
-	switch s.kind {
-	case segmentIndex, segmentUnknownIndex:
-		return true
-	case segmentWildcard:
-		return strings.HasPrefix(s.name, "[")
-	case segmentName:
-		return needsBracketNotation(s.name)
-	default:
-		return false
-	}
-}
-
 // IsEmpty returns true if the path contains no segments.
 func (p Path) IsEmpty() bool {
 	return len(p.segments) == 0
-}
-
-// Len returns the number of segments in the path.
-func (p Path) Len() int {
-	return len(p.segments)
 }
 
 // String returns the string representation of the path.
@@ -150,7 +135,7 @@ func (p Path) MarshalText() ([]byte, error) {
 
 // UnmarshalText implements [encoding.TextUnmarshaler].
 func (p *Path) UnmarshalText(data []byte) error {
-	*p = ParsePath(string(data))
+	*p = Parse(string(data))
 	return nil
 }
 
@@ -160,12 +145,6 @@ func (p Path) appendSegment(s segment) Path {
 	copy(result, p.segments)
 	result[len(p.segments)] = s
 	return Path{segments: result}
-}
-
-// needsBracketNotation reports whether a name requires bracket notation
-// (i.e., it is empty or contains special characters).
-func needsBracketNotation(name string) bool {
-	return name == "" || strings.ContainsAny(name, escapedChars)
 }
 
 // parseSegments tokenizes a JSONPath string into segments.

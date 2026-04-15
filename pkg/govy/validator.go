@@ -1,6 +1,10 @@
 package govy
 
-import "slices"
+import (
+	"slices"
+
+	"github.com/nobl9/govy/pkg/jsonpath"
+)
 
 // New creates a new [Validator] aggregating the provided property rules.
 func New[T any](props ...PropertyRulesInterface[T]) Validator[T] {
@@ -56,7 +60,7 @@ func (v Validator[T]) Cascade(mode CascadeMode) Validator[T] {
 // which match the provided property paths.
 // It returns a modified [Validator] instance without these rules,
 // the original [Validator] is not changed.
-func (v Validator[T]) RemovePropertiesByPath(paths ...Path) Validator[T] {
+func (v Validator[T]) RemovePropertiesByPath(paths ...jsonpath.Path) Validator[T] {
 	if len(paths) == 0 {
 		return v
 	}

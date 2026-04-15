@@ -8,6 +8,7 @@ import (
 	"github.com/nobl9/govy/internal/assert"
 	"github.com/nobl9/govy/pkg/govy"
 	"github.com/nobl9/govy/pkg/govytest"
+	"github.com/nobl9/govy/pkg/jsonpath"
 )
 
 func TestAssertNoError(t *testing.T) {
@@ -84,7 +85,7 @@ func TestAssertError(t *testing.T) {
 			ok: false,
 			inputError: &govy.ValidatorError{Errors: []*govy.PropertyError{
 				{
-					PropertyPath: govy.ParsePath("that"),
+					PropertyPath: jsonpath.Parse("that"),
 					Errors:       []*govy.RuleError{{Message: "test"}},
 				},
 			}},
@@ -113,11 +114,11 @@ ACTUAL:
 			ok: true,
 			inputError: &govy.ValidatorError{Errors: []*govy.PropertyError{
 				{
-					PropertyPath: govy.ParsePath("that"),
+					PropertyPath: jsonpath.Parse("that"),
 					Errors:       []*govy.RuleError{{Message: "test3"}},
 				},
 				{
-					PropertyPath: govy.ParsePath("this"),
+					PropertyPath: jsonpath.Parse("this"),
 					Errors:       []*govy.RuleError{{Message: "test2"}, {Message: "test1"}},
 				},
 			}},
@@ -131,11 +132,11 @@ ACTUAL:
 			ok: true,
 			inputError: &govy.ValidatorError{Errors: []*govy.PropertyError{
 				{
-					PropertyPath: govy.ParsePath("that"),
+					PropertyPath: jsonpath.Parse("that"),
 					Errors:       []*govy.RuleError{{Code: "test3"}},
 				},
 				{
-					PropertyPath: govy.ParsePath("this"),
+					PropertyPath: jsonpath.Parse("this"),
 					Errors:       []*govy.RuleError{{Code: "test2"}, {Code: "test1"}},
 				},
 			}},
@@ -149,11 +150,11 @@ ACTUAL:
 			ok: true,
 			inputError: &govy.ValidatorError{Errors: []*govy.PropertyError{
 				{
-					PropertyPath: govy.ParsePath("that"),
+					PropertyPath: jsonpath.Parse("that"),
 					Errors:       []*govy.RuleError{{Message: "test3"}},
 				},
 				{
-					PropertyPath: govy.ParsePath("this"),
+					PropertyPath: jsonpath.Parse("this"),
 					Errors:       []*govy.RuleError{{Message: "test2"}, {Message: "test1"}},
 				},
 			}},
@@ -167,11 +168,11 @@ ACTUAL:
 			ok: true,
 			inputError: &govy.ValidatorError{Errors: []*govy.PropertyError{
 				{
-					PropertyPath: govy.ParsePath("that"),
+					PropertyPath: jsonpath.Parse("that"),
 					Errors:       []*govy.RuleError{{Message: "test3", Code: "code3"}},
 				},
 				{
-					PropertyPath: govy.ParsePath("this"),
+					PropertyPath: jsonpath.Parse("this"),
 					Errors: []*govy.RuleError{
 						{Message: "test2", Code: "code2"},
 						{Message: "test1", Code: "code1"},
@@ -188,11 +189,11 @@ ACTUAL:
 			ok: false,
 			inputError: &govy.ValidatorError{Errors: []*govy.PropertyError{
 				{
-					PropertyPath: govy.ParsePath("that"),
+					PropertyPath: jsonpath.Parse("that"),
 					Errors:       []*govy.RuleError{{Message: "test3", Code: "code3"}},
 				},
 				{
-					PropertyPath: govy.ParsePath("this"),
+					PropertyPath: jsonpath.Parse("this"),
 					Errors: []*govy.RuleError{
 						{Message: "test2", Code: "code2"},
 						{Message: "test1", Code: "code1"},
@@ -241,11 +242,11 @@ ACTUAL:
 			ok: true,
 			inputError: &govy.ValidatorError{Errors: []*govy.PropertyError{
 				{
-					PropertyPath: govy.ParsePath("that"),
+					PropertyPath: jsonpath.Parse("that"),
 					Errors:       []*govy.RuleError{{Message: "test3", Code: "code3"}},
 				},
 				{
-					PropertyPath: govy.ParsePath("this"),
+					PropertyPath: jsonpath.Parse("this"),
 					Errors: []*govy.RuleError{
 						{Message: "test2", Code: "code2"},
 						{Message: "test1", Code: "code1"},
@@ -262,11 +263,11 @@ ACTUAL:
 			ok: false,
 			inputError: &govy.ValidatorError{Errors: []*govy.PropertyError{
 				{
-					PropertyPath: govy.ParsePath("that"),
+					PropertyPath: jsonpath.Parse("that"),
 					Errors:       []*govy.RuleError{{Message: "test3"}},
 				},
 				{
-					PropertyPath: govy.ParsePath("this"),
+					PropertyPath: jsonpath.Parse("this"),
 					Errors:       []*govy.RuleError{{Message: "test2"}},
 				},
 			}},
@@ -280,12 +281,12 @@ ACTUAL:
 			ok: true,
 			inputError: &govy.ValidatorError{Errors: []*govy.PropertyError{
 				{
-					PropertyPath: govy.ParsePath("that"),
+					PropertyPath: jsonpath.Parse("that"),
 					Errors:       []*govy.RuleError{{Message: "test3"}},
 					IsKeyError:   true,
 				},
 				{
-					PropertyPath: govy.ParsePath("this"),
+					PropertyPath: jsonpath.Parse("this"),
 					Errors:       []*govy.RuleError{{Message: "test2"}},
 					IsKeyError:   true,
 				},
@@ -299,12 +300,12 @@ ACTUAL:
 			ok: false,
 			inputError: &govy.ValidatorError{Errors: []*govy.PropertyError{
 				{
-					PropertyPath: govy.ParsePath("that"),
+					PropertyPath: jsonpath.Parse("that"),
 					Errors:       []*govy.RuleError{{Message: "test3"}},
 					IsKeyError:   false,
 				},
 				{
-					PropertyPath: govy.ParsePath("this"),
+					PropertyPath: jsonpath.Parse("this"),
 					Errors:       []*govy.RuleError{{Message: "test2"}},
 					IsKeyError:   true,
 				},
@@ -483,7 +484,7 @@ ACTUAL:
 				{Name: "foo"},
 				{Name: "bar", Errors: []*govy.PropertyError{
 					{
-						PropertyPath: govy.ParsePath("that"),
+						PropertyPath: jsonpath.Parse("that"),
 						Errors:       []*govy.RuleError{{Message: "test"}},
 					},
 				}},
@@ -498,7 +499,7 @@ ACTUAL:
 				{SliceIndex: ptr(0)},
 				{SliceIndex: ptr(1), Errors: []*govy.PropertyError{
 					{
-						PropertyPath: govy.ParsePath("that"),
+						PropertyPath: jsonpath.Parse("that"),
 						Errors:       []*govy.RuleError{{Message: "test"}},
 					},
 				}},
@@ -513,13 +514,13 @@ ACTUAL:
 				{Name: "foo", SliceIndex: ptr(0)},
 				{Name: "bar", SliceIndex: ptr(1), Errors: []*govy.PropertyError{
 					{
-						PropertyPath: govy.ParsePath("this"),
+						PropertyPath: jsonpath.Parse("this"),
 						Errors:       []*govy.RuleError{{Message: "test"}},
 					},
 				}},
 				{Name: "baz", SliceIndex: ptr(1), Errors: []*govy.PropertyError{
 					{
-						PropertyPath: govy.ParsePath("that"),
+						PropertyPath: jsonpath.Parse("that"),
 						Errors:       []*govy.RuleError{{Message: "test"}},
 					},
 				}},
@@ -534,7 +535,7 @@ ACTUAL:
 				{Name: "foo"},
 				{Name: "bar", Errors: []*govy.PropertyError{
 					{
-						PropertyPath: govy.ParsePath("that"),
+						PropertyPath: jsonpath.Parse("that"),
 						Errors:       []*govy.RuleError{{Message: "test"}},
 					},
 				}},
@@ -550,7 +551,7 @@ ACTUAL:
 				Name: "bar",
 				Errors: []*govy.PropertyError{
 					{
-						PropertyPath: govy.ParsePath("that"),
+						PropertyPath: jsonpath.Parse("that"),
 						Errors:       []*govy.RuleError{{Message: "test"}},
 					},
 				},
@@ -565,7 +566,7 @@ ACTUAL:
 				Name: "bar",
 				Errors: []*govy.PropertyError{
 					{
-						PropertyPath: govy.ParsePath("that"),
+						PropertyPath: jsonpath.Parse("that"),
 						Errors:       []*govy.RuleError{{Message: "test"}},
 					},
 				},
@@ -581,7 +582,7 @@ ACTUAL:
 				SliceIndex: ptr(1),
 				Errors: []*govy.PropertyError{
 					{
-						PropertyPath: govy.ParsePath("that"),
+						PropertyPath: jsonpath.Parse("that"),
 						Errors:       []*govy.RuleError{{Message: "test"}},
 					},
 				},
@@ -596,7 +597,7 @@ ACTUAL:
 				SliceIndex: ptr(1),
 				Errors: []*govy.PropertyError{
 					{
-						PropertyPath: govy.ParsePath("that"),
+						PropertyPath: jsonpath.Parse("that"),
 						Errors:       []*govy.RuleError{{Message: "test"}},
 					},
 				},
@@ -611,7 +612,7 @@ ACTUAL:
 			inputError: &govy.ValidatorError{
 				Errors: []*govy.PropertyError{
 					{
-						PropertyPath: govy.ParsePath("that"),
+						PropertyPath: jsonpath.Parse("that"),
 						Errors:       []*govy.RuleError{{Message: "test"}},
 					},
 				},
@@ -628,7 +629,7 @@ ACTUAL:
 				SliceIndex: ptr(1),
 				Errors: []*govy.PropertyError{
 					{
-						PropertyPath: govy.ParsePath("that"),
+						PropertyPath: jsonpath.Parse("that"),
 						Errors:       []*govy.RuleError{{Message: "test"}},
 					},
 				},
@@ -681,7 +682,7 @@ func TestAssertErrorContains(t *testing.T) {
 			ok: false,
 			inputError: &govy.ValidatorError{Errors: []*govy.PropertyError{
 				{
-					PropertyPath: govy.ParsePath("that"),
+					PropertyPath: jsonpath.Parse("that"),
 					Errors:       []*govy.RuleError{{Message: "test"}},
 				},
 			}},
@@ -708,11 +709,11 @@ ACTUAL:
 			ok: true,
 			inputError: &govy.ValidatorError{Errors: []*govy.PropertyError{
 				{
-					PropertyPath: govy.ParsePath("that"),
+					PropertyPath: jsonpath.Parse("that"),
 					Errors:       []*govy.RuleError{{Message: "test3"}},
 				},
 				{
-					PropertyPath: govy.ParsePath("this"),
+					PropertyPath: jsonpath.Parse("this"),
 					Errors:       []*govy.RuleError{{Message: "test2"}, {Message: "test1"}},
 				},
 			}},
@@ -722,11 +723,11 @@ ACTUAL:
 			ok: true,
 			inputError: &govy.ValidatorError{Errors: []*govy.PropertyError{
 				{
-					PropertyPath: govy.ParsePath("that"),
+					PropertyPath: jsonpath.Parse("that"),
 					Errors:       []*govy.RuleError{{Code: "test3"}},
 				},
 				{
-					PropertyPath: govy.ParsePath("this"),
+					PropertyPath: jsonpath.Parse("this"),
 					Errors:       []*govy.RuleError{{Code: "test2"}, {Code: "test1"}},
 				},
 			}},
@@ -736,11 +737,11 @@ ACTUAL:
 			ok: true,
 			inputError: &govy.ValidatorError{Errors: []*govy.PropertyError{
 				{
-					PropertyPath: govy.ParsePath("that"),
+					PropertyPath: jsonpath.Parse("that"),
 					Errors:       []*govy.RuleError{{Message: "test3"}},
 				},
 				{
-					PropertyPath: govy.ParsePath("this"),
+					PropertyPath: jsonpath.Parse("this"),
 					Errors:       []*govy.RuleError{{Message: "test2"}, {Message: "test1"}},
 				},
 			}},
@@ -750,11 +751,11 @@ ACTUAL:
 			ok: true,
 			inputError: &govy.ValidatorError{Errors: []*govy.PropertyError{
 				{
-					PropertyPath: govy.ParsePath("that"),
+					PropertyPath: jsonpath.Parse("that"),
 					Errors:       []*govy.RuleError{{Message: "test3", Code: "code3"}},
 				},
 				{
-					PropertyPath: govy.ParsePath("this"),
+					PropertyPath: jsonpath.Parse("this"),
 					Errors: []*govy.RuleError{
 						{Message: "test2", Code: "code2"},
 						{Message: "test1", Code: "code1"},
@@ -767,11 +768,11 @@ ACTUAL:
 			ok: false,
 			inputError: &govy.ValidatorError{Errors: []*govy.PropertyError{
 				{
-					PropertyPath: govy.ParsePath("that"),
+					PropertyPath: jsonpath.Parse("that"),
 					Errors:       []*govy.RuleError{{Message: "test3", Code: "code3"}},
 				},
 				{
-					PropertyPath: govy.ParsePath("this"),
+					PropertyPath: jsonpath.Parse("this"),
 					Errors: []*govy.RuleError{
 						{Message: "test2", Code: "code2"},
 						{Message: "test1", Code: "code1"},
@@ -816,11 +817,11 @@ ACTUAL:
 			ok: true,
 			inputError: &govy.ValidatorError{Errors: []*govy.PropertyError{
 				{
-					PropertyPath: govy.ParsePath("that"),
+					PropertyPath: jsonpath.Parse("that"),
 					Errors:       []*govy.RuleError{{Message: "test3", Code: "code3"}},
 				},
 				{
-					PropertyPath: govy.ParsePath("this"),
+					PropertyPath: jsonpath.Parse("this"),
 					Errors: []*govy.RuleError{
 						{Message: "test2", Code: "code2"},
 						{Message: "test1", Code: "code1"},
@@ -838,12 +839,12 @@ ACTUAL:
 			ok: true,
 			inputError: &govy.ValidatorError{Errors: []*govy.PropertyError{
 				{
-					PropertyPath: govy.ParsePath("that"),
+					PropertyPath: jsonpath.Parse("that"),
 					Errors:       []*govy.RuleError{{Message: "test3"}},
 					IsKeyError:   true,
 				},
 				{
-					PropertyPath: govy.ParsePath("this"),
+					PropertyPath: jsonpath.Parse("this"),
 					Errors:       []*govy.RuleError{{Message: "test2"}},
 					IsKeyError:   true,
 				},
@@ -854,12 +855,12 @@ ACTUAL:
 			ok: false,
 			inputError: &govy.ValidatorError{Errors: []*govy.PropertyError{
 				{
-					PropertyPath: govy.ParsePath("that"),
+					PropertyPath: jsonpath.Parse("that"),
 					Errors:       []*govy.RuleError{{Message: "test3"}},
 					IsKeyError:   false,
 				},
 				{
-					PropertyPath: govy.ParsePath("this"),
+					PropertyPath: jsonpath.Parse("this"),
 					Errors:       []*govy.RuleError{{Message: "test2"}},
 					IsKeyError:   true,
 				},

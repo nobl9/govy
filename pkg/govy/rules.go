@@ -4,8 +4,8 @@ import (
 	"errors"
 
 	"github.com/nobl9/govy/internal"
-	"github.com/nobl9/govy/internal/jsonpath"
 	"github.com/nobl9/govy/internal/typeinfo"
+	"github.com/nobl9/govy/pkg/jsonpath"
 )
 
 // For creates a new [PropertyRules] instance for the property
@@ -98,7 +98,7 @@ func (emptyErr) Error() string { return "" }
 // It is the middle-level building block of the validation process,
 // aggregated by [Validator] and aggregating [Rule].
 type PropertyRules[T, P any] struct {
-	path            Path
+	path            jsonpath.Path
 	pathFunc        internalInferPathFunc
 	getter          internalPropertyGetter[T, P]
 	transformGetter internalTransformPropertyGetter[T, P]
@@ -170,14 +170,14 @@ func (r PropertyRules[T, P]) Validate(parent P) error {
 // If the name was inferred, it will be overridden.
 // Special characters in the name are automatically escaped using JSONPath bracket notation.
 func (r PropertyRules[T, P]) WithName(name string) PropertyRules[T, P] {
-	r.path = jsonpath.NewPath().Name(name)
+	r.path = jsonpath.New().Name(name)
 	return r
 }
 
 // WithPath sets the property path using a pre-constructed [Path].
 // This is useful when the property path contains multiple segments
 // or when you need explicit control over the path construction.
-func (r PropertyRules[T, P]) WithPath(path Path) PropertyRules[T, P] {
+func (r PropertyRules[T, P]) WithPath(path jsonpath.Path) PropertyRules[T, P] {
 	r.path = path
 	return r
 }
@@ -344,14 +344,14 @@ func (r PropertyRules[T, P]) getValue(parent P) (v T, skip bool, propErr *Proper
 }
 
 // getPath returns the path of the property.
-func (r PropertyRules[T, S]) getPath() Path {
+func (r PropertyRules[T, S]) getPath() jsonpath.Path {
 	switch {
 	case !r.path.IsEmpty():
 		return r.path
 	case r.pathFunc != nil:
 		return r.pathFunc(r.inferPathMode)
 	default:
-		return Path{}
+		return jsonpath.Path{}
 	}
 }
 

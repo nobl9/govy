@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/nobl9/govy/internal/assert"
-	"github.com/nobl9/govy/internal/jsonpath"
+	"github.com/nobl9/govy/pkg/jsonpath"
 )
 
 func TestEscapeSegment(t *testing.T) {

@@ -2,12 +2,12 @@ package govy
 
 import (
 	"github.com/nobl9/govy/internal"
-	"github.com/nobl9/govy/internal/jsonpath"
+	"github.com/nobl9/govy/pkg/jsonpath"
 )
 
 var (
-	mapKeyWildcardPath   = jsonpath.ParsePath("~")
-	mapValueWildcardPath = jsonpath.ParsePath("*")
+	mapKeyWildcardPath   = jsonpath.Parse("~")
+	mapValueWildcardPath = jsonpath.Parse("*")
 )
 
 // ForMap creates a new [PropertyRulesForMap] instance for a map property
@@ -106,7 +106,7 @@ func (r PropertyRulesForMap[M, K, V, P]) WithName(name string) PropertyRulesForM
 }
 
 // WithPath => refer to [PropertyRules.WithPath] documentation.
-func (r PropertyRulesForMap[M, K, V, P]) WithPath(path Path) PropertyRulesForMap[M, K, V, P] {
+func (r PropertyRulesForMap[M, K, V, P]) WithPath(path jsonpath.Path) PropertyRulesForMap[M, K, V, P] {
 	r.mapRules = r.mapRules.WithPath(path)
 	return r
 }
@@ -243,11 +243,11 @@ func (r PropertyRulesForMap[M, K, V, P]) plan(builder planBuilder) {
 	}
 }
 
-func (r PropertyRulesForMap[M, K, V, P]) getPathForKey(key any) Path {
+func (r PropertyRulesForMap[M, K, V, P]) getPathForKey(key any) jsonpath.Path {
 	return r.mapRules.getPath().Key(key)
 }
 
-func (r PropertyRulesForMap[M, K, V, P]) getPath() Path {
+func (r PropertyRulesForMap[M, K, V, P]) getPath() jsonpath.Path {
 	return r.mapRules.getPath()
 }
 

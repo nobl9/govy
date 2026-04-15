@@ -8,6 +8,7 @@ import (
 
 	"github.com/nobl9/govy/internal"
 	"github.com/nobl9/govy/internal/logging"
+	"github.com/nobl9/govy/pkg/jsonpath"
 )
 
 var (
@@ -19,7 +20,7 @@ var (
 // InferredPath represents an inferred property path.
 type InferredPath struct {
 	// Path is the inferred property path.
-	Path string
+	Path jsonpath.Path
 	// File is the relative path to the file where the [govy.PropertyRules.For] is detected.
 	File string
 	// Line is the line number in the File where the [govy.PropertyRules.For] is detected.
@@ -48,7 +49,7 @@ func SetInferredPath(loc InferredPath) {
 // GetInferredPath returns the inferred property path for the given file and line.
 // The path has to be first set using [SetInferredPath].
 // It is primarily exported for govy to utilize when [InferPathModeGenerate] mode is set.
-func GetInferredPath(file string, line int) string {
+func GetInferredPath(file string, line int) jsonpath.Path {
 	mu.RLock()
 	defer mu.RUnlock()
 	p, ok := inferredPaths[getterLocationKey(file, line)]
@@ -58,7 +59,7 @@ func GetInferredPath(file string, line int) string {
 			slog.String("file", file),
 			slog.Int("line", line),
 		)
-		return ""
+		return jsonpath.Path{}
 	}
 	return p.Path
 }

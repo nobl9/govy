@@ -87,9 +87,8 @@ func (n *inferPathCommand) Run() error {
 					return true
 				}
 				line := modAST.FileSet.Position(selectorExpr.Pos()).Line
-				inferredPath := inferpath.InferPathFromFile(modAST.FileSet, pkg, f, line)
 				path := govyconfig.InferredPath{
-					Path: inferredPath.String(),
+					Path: inferpath.InferPathFromFile(modAST.FileSet, pkg, f, line),
 					File: strings.TrimPrefix(pkg.GoFiles[i], root+"/"),
 					Line: line,
 				}

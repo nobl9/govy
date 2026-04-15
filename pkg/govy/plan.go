@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/nobl9/govy/internal/collections"
-	"github.com/nobl9/govy/internal/jsonpath"
+	"github.com/nobl9/govy/pkg/jsonpath"
 )
 
 // ValidatorPlan is a validation plan for a single [Validator].
@@ -21,7 +21,7 @@ type ValidatorPlan struct {
 // PropertyPlan is a validation plan for a single [PropertyRules].
 type PropertyPlan struct {
 	// Path is a JSON path to the property.
-	Path Path `json:"path"`
+	Path jsonpath.Path `json:"path"`
 	// TypeInfo contains the type information of the property.
 	TypeInfo TypeInfo `json:"typeInfo"`
 	// IsHidden indicates if the property was marked with [PropertyRules.HideValue].
@@ -117,7 +117,7 @@ func PlanStrictMode() PlanOption {
 func Plan[T any](v Validator[T], opts ...PlanOption) (*ValidatorPlan, error) {
 	builders := make([]planBuilder, 0)
 	rootBuilder := planBuilder{
-		propertyPath:        jsonpath.ParsePath("$"),
+		propertyPath:        jsonpath.Parse("$"),
 		path:                &builders,
 		missingDescriptions: ptr(make([]predicateLocation, 0)),
 	}
@@ -148,7 +148,7 @@ func Plan[T any](v Validator[T], opts ...PlanOption) (*ValidatorPlan, error) {
 }
 
 type predicateLocation struct {
-	propertyPath Path
+	propertyPath jsonpath.Path
 }
 
 // missingPredicateDescriptionsError is returned when [Plan] is called with
@@ -231,7 +231,7 @@ type planner interface {
 }
 
 type planBuilder struct {
-	propertyPath        Path
+	propertyPath        jsonpath.Path
 	rulePlan            RulePlan
 	propertyPlan        PropertyPlan
 	path                *[]planBuilder
@@ -239,14 +239,14 @@ type planBuilder struct {
 	options             planOptions
 }
 
-func (p planBuilder) appendPath(path Path) planBuilder {
+func (p planBuilder) appendPath(path jsonpath.Path) planBuilder {
 	builder := planBuilder{
 		path:                p.path,
 		missingDescriptions: p.missingDescriptions,
 		options:             p.options,
 		rulePlan:            p.rulePlan,
 		propertyPlan:        p.propertyPlan,
-		propertyPath:        p.propertyPath.JoinPath(path),
+		propertyPath:        p.propertyPath.Join(path),
 	}
 	return builder
 }

@@ -11,6 +11,7 @@ import (
 
 	"github.com/nobl9/govy/pkg/govy"
 	"github.com/nobl9/govy/pkg/govyconfig"
+	"github.com/nobl9/govy/pkg/jsonpath"
 	"github.com/nobl9/govy/pkg/rules"
 )
 
@@ -263,6 +264,81 @@ func ExamplePropertyRules_WithName() {
 	// Validation for Teacher has failed for the following properties:
 	//   - 'name' with value 'Jake':
 	//     - should be equal to 'Tom'
+}
+
+// Beware that anything passed into `WithName` is being treated as a single property name.
+// This means, If you try passing dot-separated path-like strings into this function,
+// it will escape them.
+// For constructing proper paths, see [ExamplePropertyRules_WithPath].
+//
+// Note: Prior to version v0.25.0, `WithName` treated every string as a path,
+// and the presented usage was back then valid.
+func ExamplePropertyRules_WithName_wrongUsage() {
+	v := govy.New(
+		govy.For(func(t Teacher) string { return t.University.Name }).
+			WithName("university.name"). // WRONG USAGE!
+			Rules(rules.EQ("Tom").WithMessage("yikes, looks like you used WithName instead of WithPath!")),
+	).WithName("Teacher")
+
+	teacher := Teacher{
+		Name: "Jake",
+		University: University{
+			Name: "Poznan University of Technology",
+		},
+	}
+
+	err := v.Validate(teacher)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	// Output:
+	// Validation for Teacher has failed for the following properties:
+	//   - '['university.name']' with value 'Poznan University of Technology':
+	//     - yikes, looks like you used WithName instead of WithPath!
+}
+
+// While [govy.PropertyRules.WithName] is convenient and we recommend using it,
+// sometimes you might want to define rules that access nested fields directly.
+// That's what [govy.PropertyRules.WithPath] is for.
+//
+// [govy.PropertyRules.WithName] which accepts a single [jsonpath.Path],
+// which is what [govy.PropertyRules.WithName] constructs under the hood anyway!
+//
+// You can either:
+//   - pass a string representation of path directly with [jsonpath.Parse]
+//   - construct the path with a builder API, starting with [jsonpath.New]
+func ExamplePropertyRules_WithPath() {
+	v := govy.New(
+		govy.For(func(t Teacher) string { return t.University.Name }).
+			WithPath(jsonpath.Parse("university.name")).
+			Rules(rules.EQ("Tom")),
+		govy.For(func(t Teacher) string { return t.Students[0].Index }).
+			WithPath(jsonpath.New().Name("students").Index(0)).
+			Rules(rules.EQ("2")),
+	).WithName("Teacher")
+
+	teacher := Teacher{
+		Name: "Jake",
+		University: University{
+			Name: "Poznan University of Technology",
+		},
+		Students: []Student{
+			{Index: "1"},
+		},
+	}
+
+	err := v.Validate(teacher)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	// Output:
+	// Validation for Teacher has failed for the following properties:
+	//   - 'university.name' with value 'Poznan University of Technology':
+	//     - should be equal to 'Tom'
+	//   - 'students[0]' with value '1':
+	//     - should be equal to '2'
 }
 
 // [govy.For] constructor creates new [govy.PropertyRules] instance.
@@ -1120,7 +1196,7 @@ func ExampleNewPropertyError() {
 			Rules(govy.NewRule(func(t Teacher) error {
 				if t.Name == "Jake" {
 					return govy.NewPropertyError(
-						govy.ParsePath("name"),
+						jsonpath.Parse("name"),
 						t.Name,
 						govy.NewRuleError("name cannot be Jake", "error_code_jake"),
 						govy.NewRuleError("you can pass me too!"))
@@ -1865,7 +1941,7 @@ func ExampleValidator_RemovePropertiesByPath() {
 	}
 
 	// Modified validator passes because age validation is removed
-	modifiedValidator := baseValidator.RemovePropertiesByPath(govy.NewPath().Name("age"))
+	modifiedValidator := baseValidator.RemovePropertiesByPath(jsonpath.New().Name("age"))
 	err = modifiedValidator.Validate(teacher)
 	if err == nil {
 		fmt.Println("Modified validator passed")
@@ -1956,9 +2032,9 @@ func ExampleInferPathModeGenerate() {
 		WithName("Teacher")
 
 	govyconfig.SetInferredPath(govyconfig.InferredPath{
-		Path: "name",
+		Path: jsonpath.New().Name("name"),
 		File: "pkg/govy/example_test.go",
-		Line: 1965,
+		Line: 2041,
 	})
 
 	v2 := govy.New(
