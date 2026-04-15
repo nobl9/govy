@@ -11,31 +11,33 @@ import (
 	"github.com/nobl9/govy/pkg/jsonpath"
 )
 
-// InferPathMode defines a mode of property path inference.
+// InferPathMode defines how govy infers relative property paths from getter expressions.
 type InferPathMode int
 
 const (
 	// InferPathModeDisable disables property path inference.
 	// It is the default mode.
 	InferPathModeDisable InferPathMode = iota
-	// InferPathModeRuntime infers property paths during runtime,
-	// whenever For, ForSlice, ForPointer or ForMap are created.
-	// If you're not reusing these [govy.PropertyRules], but rather creating them dynamically,
+	// InferPathModeRuntime infers relative property paths from getter expressions at runtime.
+	// The inferred path does not include `$`; parent validators and collection rules prepend
+	// their own segments when composing nested paths.
+	// If you're not reusing these [PropertyRules], but rather creating them dynamically,
 	// beware of significant performance cost of the inference mechanism.
 	InferPathModeRuntime
-	// InferPathModeGenerate does the heavy lifting of inferring property paths
+	// InferPathModeGenerate does the heavy lifting of inferring relative property paths
 	// in a separate step which involves code generation.
-	// When creating new [govy.PropertyRules], the only performance hit is due to the
+	// When creating new [PropertyRules], the only performance hit is due to the
 	// usage of [runtime] package which helps us get the caller frame details.
 	InferPathModeGenerate
 )
 
-// InferPathFunc is a function blueprint for inferring property paths.
+// InferPathFunc is a function blueprint for inferring a single named path segment.
 // It is only called for struct fields.
 // Tag value is the raw value of the struct tag, it needs to be parsed with [reflect.StructTag].
 type InferPathFunc func(fieldName, tagValue string) string
 
-// InferPathDefaultFunc is the default function for inferring field paths from struct tags.
+// InferPathDefaultFunc is the default function for inferring a single named path segment
+// from struct tags.
 // It looks for json and yaml tags, preferring json if both are set.
 func InferPathDefaultFunc(fieldName, tagValue string) string {
 	return inferpath.InferPathDefaultFunc(fieldName, tagValue)

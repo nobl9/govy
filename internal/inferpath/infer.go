@@ -28,7 +28,9 @@ var FunctionsWithGetter = []string{
 	"ForMap",
 }
 
-// InferPath infers the property path from a file and line number.
+// InferPath infers the relative property path for the govy getter constructor call
+// recorded at the given file and line.
+// The returned [jsonpath.Path] does not include a leading `$` segment.
 func InferPath(file string, line int) jsonpath.Path {
 	parseModuleASTOnce()
 
@@ -44,10 +46,11 @@ func InferPath(file string, line int) jsonpath.Path {
 	return InferPathFromFile(modAST.FileSet, pkg, astFile, line)
 }
 
-// InferPathFromFile infers the property path from a getter function at the given line.
+// InferPathFromFile infers the relative property path from a getter function at the given line.
 // It traverses the AST to find a govy function call (For, ForPointer, etc.) and
 // extracts the property path from the getter's return statement by analyzing
 // struct field access patterns like `s.Field` or `s.Nested.Field`.
+// The returned path is rooted at the getter parameter, not at `$`.
 func InferPathFromFile(
 	fileSet *token.FileSet,
 	pkg *packages.Package,
@@ -105,7 +108,8 @@ func InferPathFromFile(
 	return finder.findPath(getterNode, nil)
 }
 
-// InferPathDefaultFunc is the default function for inferring field paths from struct tags.
+// InferPathDefaultFunc is the default function for inferring a single named path segment
+// from a struct field and its raw tag value.
 // It looks for json and yaml tags, preferring json if both are set.
 func InferPathDefaultFunc(fieldName, tagValue string) string {
 	for _, tagKey := range []string{"json", "yaml"} {
@@ -268,10 +272,11 @@ func (n pathFinder) findPathInAssignStmt(
 	return n.findPath(assignment.Rhs[0], structType)
 }
 
-// findPathInSelectorExpr extracts the property path from a selector expression like
-// `s.Field` or `s.Nested.Field`. For nested access, it recursively processes the chain
-// and constructs a path (e.g., "nested.field"). It uses struct tags
-// (json/yaml) to determine the final field path via [InferPathDefaultFunc].
+// findPathInSelectorExpr extracts a relative property path from a selector expression like
+// `s.Field` or `s.Nested.Field`.
+// For nested access, it recursively processes the chain and constructs a multi-segment path
+// such as `nested.field`.
+// It uses struct tags (json/yaml) to determine each named segment via [InferPathDefaultFunc].
 func (n pathFinder) findPathInSelectorExpr(
 	se *ast.SelectorExpr,
 	structType *types.Struct,
@@ -338,7 +343,7 @@ func (n pathFinder) getStructFromType(t types.Type) (*types.Struct, bool) {
 }
 
 // findPathInIndexExpr handles index expressions like p.Students[0] or p.Items[i].
-// It extracts the indexed property path and appends the index notation.
+// It extracts the indexed relative property path and appends the index or key segment.
 func (n pathFinder) findPathInIndexExpr(
 	ie *ast.IndexExpr,
 	structType *types.Struct,

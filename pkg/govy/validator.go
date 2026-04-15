@@ -58,6 +58,7 @@ func (v Validator[T]) Cascade(mode CascadeMode) Validator[T] {
 
 // RemovePropertiesByPath removes any [PropertyRules] or included [Validator]
 // which match the provided property paths.
+// Paths are interpreted relative to this validator's root.
 // It returns a modified [Validator] instance without these rules,
 // the original [Validator] is not changed.
 func (v Validator[T]) RemovePropertiesByPath(paths ...jsonpath.Path) Validator[T] {
@@ -75,7 +76,7 @@ func (v Validator[T]) RemovePropertiesByPath(paths ...jsonpath.Path) Validator[T
 }
 
 // InferPath sets the [InferPathMode] for the validator,
-// which controls the path inference logic for validation rules.
+// which controls relative property path inference for validation rules.
 func (v Validator[T]) InferPath(mode InferPathMode) Validator[T] {
 	props := make([]PropertyRulesInterface[T], 0, len(v.props))
 	for _, prop := range v.props {

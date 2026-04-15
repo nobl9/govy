@@ -13,7 +13,9 @@ const (
 	escapedChars      = string(jsonPathSeparator) + "[]' \t\n\r"
 )
 
-// Path is a builder for constructing valid [JSONPath] property paths.
+// Path is a builder for constructing valid [JSONPath] path fragments.
+// In govy a [Path] usually identifies a property relative to a validator or parent property,
+// so its string form typically does not start with `$`.
 // It ensures proper escaping and formatting of path segments.
 // Internally it stores a sequence of typed segments; the string form
 // is computed on demand by [Path.String].
@@ -35,7 +37,7 @@ func New() Path {
 	return Path{}
 }
 
-// Parse parses a JSONPath string into a structured [Path].
+// Parse parses a JSONPath string or relative path fragment into a structured [Path].
 // It handles dotted names, bracket notation, array indices, and wildcards.
 // Malformed input is treated gracefully: unparsable content becomes a name segment.
 func Parse(s string) Path {
@@ -62,6 +64,7 @@ func (p Path) Key(key any) Path {
 }
 
 // Join appends another [Path] to this one.
+// This is primarily used to combine parent and child path fragments while building nested govy paths.
 func (p Path) Join(other Path) Path {
 	if len(other.segments) == 0 {
 		return p
@@ -97,7 +100,7 @@ func (p Path) IsEmpty() bool {
 	return len(p.segments) == 0
 }
 
-// String returns the string representation of the path.
+// String returns the string representation of the path fragment.
 func (p Path) String() string {
 	if len(p.segments) == 0 {
 		return ""

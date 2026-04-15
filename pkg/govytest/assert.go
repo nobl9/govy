@@ -95,7 +95,7 @@ func AssertNoError(t testingT, err error) bool {
 //   - the expected number of [govy.RuleError] equal to the number of provided [ExpectedRuleError]
 //   - at least one error which matches each of the provided [ExpectedRuleError]
 //
-// [ExpectedRuleError] and actual error are considered equal if they have the same property name and:
+// [ExpectedRuleError] and actual error are considered equal if they have the same property path and:
 //   - [ExpectedRuleError.Code] is equal to [govy.RuleError.Code]
 //   - [ExpectedRuleError.Message] is equal to [govy.RuleError.Message]
 //   - [ExpectedRuleError.ContainsMessage] is part of [govy.RuleError.Message]
@@ -131,7 +131,7 @@ func AssertError(
 // Unlike [AssertError], it checks only a single error.
 // The actual error may contain other errors, If you want to match them all, use [AssertError].
 //
-// [ExpectedRuleError] and actual error are considered equal if they have the same property name and:
+// [ExpectedRuleError] and actual error are considered equal if they have the same property path and:
 //   - [ExpectedRuleError.Code] is equal to [govy.RuleError.Code]
 //   - [ExpectedRuleError.Message] is equal to [govy.RuleError.Message]
 //   - [ExpectedRuleError.ContainsMessage] is part of [govy.RuleError.Message]

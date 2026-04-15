@@ -265,8 +265,10 @@ Govy components are largely immutable and lazily loaded:
 Default `govy` error messages are verbose and provide a clear indication both
 of the error cause and the property context in which they occurred.
 
-The property paths are evaluated relative to the root `Validator` and follow
-[JSON path](https://datatracker.ietf.org/doc/html/rfc9535) standard.
+The property paths are evaluated relative to the root `Validator`.
+They follow a
+[JSONPath](https://datatracker.ietf.org/doc/html/rfc9535)-compatible syntax,
+but error messages omit the leading `$` root segment for better human readability.
 
 ```text
 Validation for Teacher has failed for the following properties:
@@ -671,15 +673,16 @@ func Example_validationPlan() {
 
 ### Properties path inference
 
-Govy provides a way to automatically infer property paths from the code itself.
-This way, there's no need to manually provide properties' paths with
+Govy provides a way to automatically infer relative property paths
+from the code itself.
+This way, there's no need to manually provide property paths with
 either `WithName` or `WithPath` functions.
 
 Checkout [example_test.go](./pkg/govy/example_test.go) for an interactive
 introduction to this feature (see `ExampleInferPathMode` and related examples).
 
 Documentation for the path inference code generator is available
-[here](cmd/govy/README.md#pathinfer).
+[here](cmd/govy/README.md#inferpath).
 
 [//]: # (embed: internal/examples/readme_path_inference_example_test.go)
 

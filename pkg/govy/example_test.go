@@ -238,7 +238,7 @@ func ExampleValidator_Validate_slice() {
 //
 // The error message returned by this property rule does not tell us
 // which property is failing.
-// Let's change that by adding property name using [govy.PropertyRules.WithName].
+// Let's change that by adding an explicit path segment using [govy.PropertyRules.WithName].
 //
 // We can also change the [govy.Rule] to be something more real.
 // govy comes with a number of predefined [govy.Rule], we'll use
@@ -266,8 +266,8 @@ func ExamplePropertyRules_WithName() {
 	//     - should be equal to 'Tom'
 }
 
-// Beware that anything passed into `WithName` is being treated as a single property name.
-// This means, If you try passing dot-separated path-like strings into this function,
+// Beware that anything passed into `WithName` is treated as a single path segment.
+// This means that if you pass a dot-separated path-like string into this function,
 // it will escape them.
 // For constructing proper paths, see [ExamplePropertyRules_WithPath].
 //
@@ -302,8 +302,9 @@ func ExamplePropertyRules_WithName_wrongUsage() {
 // sometimes you might want to define rules that access nested fields directly.
 // That's what [govy.PropertyRules.WithPath] is for.
 //
-// [govy.PropertyRules.WithName] which accepts a single [jsonpath.Path],
-// which is what [govy.PropertyRules.WithName] constructs under the hood anyway!
+// Unlike [govy.PropertyRules.WithName], [govy.PropertyRules.WithPath] accepts a
+// [jsonpath.Path] with one or more segments.
+// [govy.PropertyRules.WithName] is just shorthand for `jsonpath.New().Name(...)`.
 //
 // You can either:
 //   - pass a string representation of path directly with [jsonpath.Parse]
@@ -1550,7 +1551,7 @@ func ExamplePropertyRules_Cascade() {
 // [govy.Validator.ValidateSlice] is designed to be used for processing independent values.
 //
 // Note: Since each element is validated in isolation,
-// the property names will not start with the slice index,
+// the reported property paths will not start with the slice index,
 // they will instead start at the element's root.
 func ExampleValidator_ValidateSlice() {
 	v := govy.New(
@@ -1953,35 +1954,35 @@ func ExampleValidator_RemovePropertiesByPath() {
 }
 
 // In the interactive tutorial for govy, we've been using
-// [govy.PropertyRules.WithName] to provide the name for our properties.
+// [govy.PropertyRules.WithName] to provide explicit path segments for our properties.
 //
-// Ideally, we'd want to make sure the names govy assigns to each property
-// match the name of the struct fields' names that the user defines the validation for.
+// Ideally, we'd want govy to derive those paths directly from the getter expressions,
+// matching the struct fields selected by the user.
 // Go uses struct tags to achieve that,
 // and libraries like [encoding/json] use these tags to encode/decode structs.
 // Unfortunately, there's no easy way to tell what exact property we're returning from [govy.PropertyGetter].
 //
-// To solve this problem, govy provides a way to infer the name of the property (with a catch).
+// To solve this problem, govy provides a way to infer the property path (with a catch).
 // The catch being that the path inference mechanism needs to parse the whole modules' AST.
 // This can be a performance hit, especially for large projects if not done properly.
 //
-// By default govy **WILL NOT** attempt to infer **ANY** property names.
+// By default govy will not attempt to infer any property paths.
 //
 // So, how do we do that properly?
 // Both [govy.Validator] and [govy.PropertyRules] (including variants) have a dedicated method
-// to configure how property names are inferred.
+// to configure how property paths are inferred.
 //
 // It depends on the [govy.InferPathMode] used:
 //   - [govy.InferPathModeDisable], path inference is disabled (default), nothing to do here
-//   - [govy.InferPathModeRuntime], the name is inferred during runtime, whenever [govy.For] is called.
+//   - [govy.InferPathModeRuntime], the path is inferred during runtime from the getter expression.
 //     This is the most flexible option, but also the slowest, although the slowdown
 //     is incurred only once, whenever [govy.PropertyRules.Validate] is first called.
 //     If you make sure that [govy.PropertyRules] is created only once and don't mind
 //     the one-time performance hit, this should be enough for you.
-//   - [govy.InferPathModeGenerate], the name is inferred during separate code generation phase.
-//     This mode requires you to run 'cmd/govy infername' BEFORE you run your code.
-//     It will generate a file with inferred names for your structs which automatically
-//     registers these names using [govyconfig.SetInferredPath].
+//   - [govy.InferPathModeGenerate], the path is inferred during a separate code generation phase.
+//     This mode requires you to run `govy inferpath` before you run your code.
+//     It generates a file with inferred relative paths for your getter call sites,
+//     which automatically registers them using [govyconfig.SetInferredPath].
 //
 // Since this tutorial is run as a test,
 // we need to explicitly instruct govy to infer paths from test files.
@@ -2019,7 +2020,7 @@ func ExampleInferPathMode() {
 // We'll use this very function in this example to simulate the code generation step.
 // The first validator, 'v1', is created with [govy.InferPathModeDisable],
 // the second validator, 'v2' is created with [govy.InferPathModeGenerate].
-// As you can see in the output, only the second validator, 'v2' has the inferred name.
+// As you can see in the output, only the second validator, 'v2' has the inferred path.
 func ExampleInferPathModeGenerate() {
 	govyconfig.SetInferPathIncludeTestFiles(true)
 	defer govyconfig.SetInferPathIncludeTestFiles(false)
@@ -2034,7 +2035,7 @@ func ExampleInferPathModeGenerate() {
 	govyconfig.SetInferredPath(govyconfig.InferredPath{
 		Path: jsonpath.New().Name("name"),
 		File: "pkg/govy/example_test.go",
-		Line: 2041,
+		Line: 2042,
 	})
 
 	v2 := govy.New(
@@ -2062,12 +2063,12 @@ func ExampleInferPathModeGenerate() {
 
 // Knowing when to call [govy.Validator.InferPath] is important.
 // The path inference runs only once per [govy.PropertyRules] instance, on the first validation.
-// Once this happens, the result is cached - even if that result is an empty string.
+// Once this happens, the result is cached, even if that result is an empty path.
 //
 // This example demonstrates that changing the mode after the first validation has no effect.
-// The first validation runs with [govy.InferPathModeDisable], which produces an empty name.
+// The first validation runs with [govy.InferPathModeDisable], which produces an empty path.
 // This empty result is then cached. Even after switching to [govy.InferPathModeRuntime],
-// the cached empty result persists, so no property name appears in the output.
+// the cached empty result persists, so no property path appears in the output.
 func ExampleValidator_InferPath_changeModeInRuntime() {
 	govyconfig.SetInferPathIncludeTestFiles(true)
 	defer govyconfig.SetInferPathIncludeTestFiles(false)

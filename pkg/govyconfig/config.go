@@ -17,13 +17,15 @@ var (
 	mu               sync.RWMutex
 )
 
-// InferredPath represents an inferred property path.
+// InferredPath represents an inferred relative property path for a specific getter call site.
 type InferredPath struct {
-	// Path is the inferred property path.
+	// Path is the inferred relative property path fragment.
+	// It does not include a leading `$` segment.
 	Path jsonpath.Path
-	// File is the relative path to the file where the [govy.PropertyRules.For] is detected.
+	// File is the path, relative to the module root, to the file where a govy property
+	// constructor call was detected.
 	File string
-	// Line is the line number in the File where the [govy.PropertyRules.For] is detected.
+	// Line is the line number in File where that constructor call was detected.
 	Line int
 }
 
@@ -37,7 +39,7 @@ func SetLogLevel(level slog.Level) {
 	logging.SetLogLevel(level)
 }
 
-// SetInferredPath sets the inferred property path for the given file and line.
+// SetInferredPath sets the inferred relative property path for the given file and line.
 // Once it's registered it can be retrieved using [GetInferredPath].
 // It is primarily exported for code generation utility of govy which runs in [InferPathModeGenerate].
 func SetInferredPath(loc InferredPath) {
@@ -46,7 +48,7 @@ func SetInferredPath(loc InferredPath) {
 	mu.Unlock()
 }
 
-// GetInferredPath returns the inferred property path for the given file and line.
+// GetInferredPath returns the inferred relative property path for the given file and line.
 // The path has to be first set using [SetInferredPath].
 // It is primarily exported for govy to utilize when [InferPathModeGenerate] mode is set.
 func GetInferredPath(file string, line int) jsonpath.Path {
@@ -64,14 +66,14 @@ func GetInferredPath(file string, line int) jsonpath.Path {
 	return p.Path
 }
 
-// SetInferPathIncludeTestFiles sets whether to include test files in path inference mechanism.
+// SetInferPathIncludeTestFiles sets whether test files participate in path inference.
 func SetInferPathIncludeTestFiles(inc bool) {
 	mu.Lock()
 	includeTestFiles = inc
 	mu.Unlock()
 }
 
-// GetInferPathIncludeTestFiles returns whether to include test files in path inference mechanism.
+// GetInferPathIncludeTestFiles returns whether test files participate in path inference.
 func GetInferPathIncludeTestFiles() bool {
 	mu.RLock()
 	defer mu.RUnlock()

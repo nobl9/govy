@@ -166,15 +166,18 @@ func (r PropertyRules[T, P]) Validate(parent P) error {
 	return nil
 }
 
-// WithName sets the name of the property.
-// If the name was inferred, it will be overridden.
-// Special characters in the name are automatically escaped using JSONPath bracket notation.
+// WithName sets a single named path segment for the property.
+// If the path was inferred, it will be overridden.
+// Special characters in the segment are automatically escaped using JSONPath bracket notation.
+// Dotted or bracketed multi-segment paths must be provided with [PropertyRules.WithPath].
 func (r PropertyRules[T, P]) WithName(name string) PropertyRules[T, P] {
 	r.path = jsonpath.New().Name(name)
 	return r
 }
 
-// WithPath sets the property path using a pre-constructed [Path].
+// WithPath sets the property path using a pre-constructed [jsonpath.Path].
+// The provided path is a fragment relative to the current validator or parent property,
+// not an absolute `$.`-prefixed JSONPath expression.
 // This is useful when the property path contains multiple segments
 // or when you need explicit control over the path construction.
 func (r PropertyRules[T, P]) WithPath(path jsonpath.Path) PropertyRules[T, P] {
@@ -240,7 +243,7 @@ func (r PropertyRules[T, P]) Cascade(mode CascadeMode) PropertyRules[T, P] {
 }
 
 // InferPath sets the [InferPathMode] for the property,
-// which controls if and how the property path is inferred.
+// which controls if and how a relative property path is inferred from the getter expression.
 // If you manually provide a path using [PropertyRules.WithName] or [PropertyRules.WithPath],
 // this setting will have no effect, acting like [InferPathModeDisable].
 func (r PropertyRules[T, P]) InferPath(mode InferPathMode) PropertyRules[T, P] {

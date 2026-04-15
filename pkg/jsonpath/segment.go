@@ -6,7 +6,7 @@ import "strings"
 type segmentKind uint8
 
 const (
-	// segmentName is a property name or map key, e.g. "metadata".
+	// segmentName is a named path segment or map key, e.g. "metadata".
 	segmentName segmentKind = iota
 	// segmentIndex is an array index, e.g. [0].
 	segmentIndex
@@ -23,7 +23,7 @@ type segment struct {
 	index uint   // used by [segmentIndex]
 }
 
-// EscapeSegment accepts a path segment and escapes any special characters.
+// EscapeSegment accepts a single named path segment and escapes any special characters.
 // Examples:
 //
 //	EscapeSegment("foo") --> "foo"
