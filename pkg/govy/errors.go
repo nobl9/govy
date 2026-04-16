@@ -210,8 +210,8 @@ func (e *PropertyError) HideValue() *PropertyError {
 	return e
 }
 
-func (e *PropertyError) prependParentPropertyPath(name jsonpath.Path) *PropertyError {
-	e.PropertyPath = name.Join(e.PropertyPath)
+func (e *PropertyError) prependParentPropertyPath(path jsonpath.Path) *PropertyError {
+	e.PropertyPath = path.Join(e.PropertyPath)
 	return e
 }
 
