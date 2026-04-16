@@ -11,62 +11,62 @@ import (
 func TestPropertyError_prependPropertyPath(t *testing.T) {
 	tests := []struct {
 		PropertyError *PropertyError
-		InputName     jsonpath.Path
-		ExpectedName  string
+		InputPath     jsonpath.Path
+		ExpectedPath  string
 	}{
 		{
 			PropertyError: &PropertyError{},
 		},
 		{
 			PropertyError: &PropertyError{PropertyPath: jsonpath.Parse("test")},
-			ExpectedName:  "test",
+			ExpectedPath:  "test",
 		},
 		{
 			PropertyError: &PropertyError{},
-			InputName:     jsonpath.Parse("new"),
-			ExpectedName:  "new",
+			InputPath:     jsonpath.Parse("new"),
+			ExpectedPath:  "new",
 		},
 		{
 			PropertyError: &PropertyError{PropertyPath: jsonpath.Parse("original")},
-			InputName:     jsonpath.Parse("added"),
-			ExpectedName:  "added.original",
+			InputPath:     jsonpath.Parse("added"),
+			ExpectedPath:  "added.original",
 		},
 		{
 			PropertyError: &PropertyError{PropertyPath: jsonpath.Parse("bar"), IsSliceElementError: true},
-			InputName:     jsonpath.Parse("foo[1]"),
-			ExpectedName:  "foo[1].bar",
+			InputPath:     jsonpath.Parse("foo[1]"),
+			ExpectedPath:  "foo[1].bar",
 		},
 		{
 			PropertyError: &PropertyError{PropertyPath: jsonpath.Parse("[2]"), IsSliceElementError: true},
-			InputName:     jsonpath.Parse("foo"),
-			ExpectedName:  "foo[2]",
+			InputPath:     jsonpath.Parse("foo"),
+			ExpectedPath:  "foo[2]",
 		},
 		{
 			PropertyError: &PropertyError{PropertyPath: jsonpath.Parse("foo"), IsSliceElementError: true},
-			InputName:     jsonpath.Parse("[0]"),
-			ExpectedName:  "[0].foo",
+			InputPath:     jsonpath.Parse("[0]"),
+			ExpectedPath:  "[0].foo",
 		},
 		{
 			PropertyError: &PropertyError{PropertyPath: jsonpath.Parse("[1]"), IsSliceElementError: true},
-			InputName:     jsonpath.Parse("[0]"),
-			ExpectedName:  "[0][1]",
+			InputPath:     jsonpath.Parse("[0]"),
+			ExpectedPath:  "[0][1]",
 		},
 		{
 			PropertyError: &PropertyError{PropertyPath: jsonpath.Parse("['foo.bar']")},
-			InputName:     jsonpath.Parse("parent"),
-			ExpectedName:  "parent['foo.bar']",
+			InputPath:     jsonpath.Parse("parent"),
+			ExpectedPath:  "parent['foo.bar']",
 		},
 		{
 			PropertyError: &PropertyError{PropertyPath: jsonpath.Parse("child")},
-			InputName:     jsonpath.Parse("['complex.parent']"),
-			ExpectedName:  "['complex.parent'].child",
+			InputPath:     jsonpath.Parse("['complex.parent']"),
+			ExpectedPath:  "['complex.parent'].child",
 		},
 	}
 
 	for i, tc := range tests {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
-			result := tc.PropertyError.prependParentPropertyPath(tc.InputName)
-			assert.Equal(t, tc.ExpectedName, result.PropertyPath.String())
+			result := tc.PropertyError.prependParentPropertyPath(tc.InputPath)
+			assert.Equal(t, tc.ExpectedPath, result.PropertyPath.String())
 		})
 	}
 }
