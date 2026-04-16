@@ -12,7 +12,7 @@ import (
 	"github.com/nobl9/govy/internal/assert"
 )
 
-func TestInferPathDefaultFunc(t *testing.T) {
+func TestResolveFieldPathSegment(t *testing.T) {
 	tests := []struct {
 		name      string
 		fieldName string
@@ -89,7 +89,7 @@ func TestInferPathDefaultFunc(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			result := InferPathDefaultFunc(tc.fieldName, tc.tagValue)
+			result := resolveFieldPathSegment(tc.fieldName, tc.tagValue)
 			assert.Equal(t, tc.expected, result)
 		})
 	}

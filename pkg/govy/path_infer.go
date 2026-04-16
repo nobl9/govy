@@ -31,24 +31,12 @@ const (
 	InferPathModeGenerate
 )
 
-// InferPathFunc is a function blueprint for inferring a single named path segment.
-// It is only called for struct fields.
-// Tag value is the raw value of the struct tag, it needs to be parsed with [reflect.StructTag].
-type InferPathFunc func(fieldName, tagValue string) string
+type inferPathFunc = func(mode InferPathMode) jsonpath.Path
 
-// InferPathDefaultFunc is the default function for inferring a single named path segment
-// from struct tags.
-// It looks for json and yaml tags, preferring json if both are set.
-func InferPathDefaultFunc(fieldName, tagValue string) string {
-	return inferpath.InferPathDefaultFunc(fieldName, tagValue)
-}
-
-type internalInferPathFunc func(mode InferPathMode) jsonpath.Path
-
-// getInferPathFunc is a closure which returns an [internalInferPathFunc].
+// getInferPathFunc returns a closure which infers and caches a property path.
 // It captures the inferred path once and caches it.
 // It is safe to call this function concurrently.
-func getInferPathFunc(callers int, pc []uintptr) internalInferPathFunc {
+func getInferPathFunc(callers int, pc []uintptr) inferPathFunc {
 	var (
 		once sync.Once
 		path jsonpath.Path

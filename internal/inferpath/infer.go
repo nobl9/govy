@@ -108,18 +108,12 @@ func InferPathFromFile(
 	return finder.findPath(getterNode, nil)
 }
 
-// InferPathDefaultFunc is the default function for inferring a single named path segment
-// from a struct field and its raw tag value.
-// It looks for json and yaml tags, preferring json if both are set.
-func InferPathDefaultFunc(fieldName, tagValue string) string {
-	for _, tagKey := range []string{"json", "yaml"} {
-		tagValues := strings.Split(
-			reflect.StructTag(strings.Trim(tagValue, "`")).Get(tagKey),
-			",",
-		)
-		if len(tagValues) > 0 && tagValues[0] != "" {
-			fieldName = tagValues[0]
-			break
+func resolveFieldPathSegment(fieldName, tagValue string) string {
+	tag := reflect.StructTag(strings.Trim(tagValue, "`"))
+	for _, value := range []string{tag.Get("json"), tag.Get("yaml")} {
+		name, _, _ := strings.Cut(value, ",")
+		if name != "" {
+			return name
 		}
 	}
 	return fieldName
@@ -276,7 +270,7 @@ func (n pathFinder) findPathInAssignStmt(
 // `s.Field` or `s.Nested.Field`.
 // For nested access, it recursively processes the chain and constructs a multi-segment path
 // such as `nested.field`.
-// It uses struct tags (json/yaml) to determine each named segment via [InferPathDefaultFunc].
+// It uses struct tags (json/yaml) to determine each named segment.
 func (n pathFinder) findPathInSelectorExpr(
 	se *ast.SelectorExpr,
 	structType *types.Struct,
@@ -306,7 +300,7 @@ func (n pathFinder) findPathInSelectorExpr(
 		if childStructType, isStruct := n.findStructTypeInStructField(field); isStruct {
 			structType = childStructType
 		}
-		fieldName = InferPathDefaultFunc(fieldName, tagValue)
+		fieldName = resolveFieldPathSegment(fieldName, tagValue)
 		return path.Name(fieldName), structType
 	}
 	logging.Logger().Debug(fmt.Sprintf("field matching '%s' name not found in struct type", se.Sel.Name))

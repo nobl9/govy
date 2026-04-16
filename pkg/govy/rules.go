@@ -99,7 +99,7 @@ func (emptyErr) Error() string { return "" }
 // aggregated by [Validator] and aggregating [Rule].
 type PropertyRules[T, P any] struct {
 	path            jsonpath.Path
-	pathFunc        internalInferPathFunc
+	pathFunc        inferPathFunc
 	getter          internalPropertyGetter[T, P]
 	transformGetter internalTransformPropertyGetter[T, P]
 	rules           []validationInterface[T]
