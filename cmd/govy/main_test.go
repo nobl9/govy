@@ -19,32 +19,33 @@ package validation
 
 import (
 	"github.com/nobl9/govy/pkg/govyconfig"
+	"github.com/nobl9/govy/pkg/jsonpath"
 )
 
 func init() {
 	inferredPaths := map[string]govyconfig.InferredPath{
 		"student/nested.go:13": {
-			Path: "name",
+			Path: jsonpath.Parse("name"),
 			File: "student/nested.go",
 			Line: 13,
 		},
 		"university/university.go:13": {
-			Path: "name",
+			Path: jsonpath.Parse("name"),
 			File: "university/university.go",
 			Line: 13,
 		},
 		"validation.go:11": {
-			Path: "Name",
+			Path: jsonpath.Parse("Name"),
 			File: "validation.go",
 			Line: 11,
 		},
 		"validation.go:13": {
-			Path: "university.name",
+			Path: jsonpath.Parse("university.name"),
 			File: "validation.go",
 			Line: 13,
 		},
 		"validation.go:15": {
-			Path: "university",
+			Path: jsonpath.Parse("university"),
 			File: "validation.go",
 			Line: 15,
 		},
@@ -80,6 +81,7 @@ func TestCmd_InferPath(t *testing.T) {
 	data, err := os.ReadFile(generatedFilePath)
 	assert.Require(t, assert.NoError(t, err))
 	assert.Equal(t, fmt.Sprintf(expectedGeneratedFile, tmpDir), string(data))
+	execCmd(t, "go", "test", generatedFilePath)
 }
 
 func execCmd(t *testing.T, name string, arg ...string) *bytes.Buffer {

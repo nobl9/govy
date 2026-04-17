@@ -4,15 +4,16 @@ package {{ .Package }}
 
 import (
     "github.com/nobl9/govy/pkg/govyconfig"
+    "github.com/nobl9/govy/pkg/jsonpath"
 )
 
 func init() {
     inferredPaths := map[string]govyconfig.InferredPath{
     {{- range $key, $value := .Paths }}
         "{{ $key }}": {
-    	    Path: "{{ $value.Path }}",
-    	    File: "{{ $value.File }}",
-    	    Line: {{ $value.Line }},
+            Path: jsonpath.Parse({{ printf "%q" $value.Path }}),
+            File: "{{ $value.File }}",
+            Line: {{ $value.Line }},
         },
     {{- end }}
     }
