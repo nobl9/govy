@@ -110,6 +110,11 @@ func (p Path) IsEmpty() bool {
 	return len(p.segments) == 0
 }
 
+// IsRoot returns true if the path contains ONLY the '$' root segment.
+func (p Path) IsRoot() bool {
+	return len(p.segments) == 1 && p.segments[0].kind == segmentRoot
+}
+
 // String returns the string representation of the path fragment.
 func (p Path) String() string {
 	if len(p.segments) == 0 {

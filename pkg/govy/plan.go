@@ -164,12 +164,10 @@ func newMissingPredicateDescriptionsError(locations []predicateLocation) *missin
 func (e *missingPredicateDescriptionsError) Error() string {
 	var paths []string
 	for _, loc := range e.locations {
-		s := loc.propertyPath.String()
-		switch s {
-		case "", "$":
+		if loc.propertyPath.IsEmpty() || loc.propertyPath.IsRoot() {
 			paths = append(paths, "validator level")
-		default:
-			paths = append(paths, s)
+		} else {
+			paths = append(paths, loc.propertyPath.String())
 		}
 	}
 	return fmt.Sprintf("predicates without description found at: %s", strings.Join(paths, ", "))
