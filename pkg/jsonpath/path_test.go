@@ -49,6 +49,18 @@ func TestPath(t *testing.T) {
 			path:     jsonpath.New().Name("parent").Name("foo.bar").Index(3),
 			expected: "parent['foo.bar'][3]",
 		},
+		"root only": {
+			path:     jsonpath.NewRoot(),
+			expected: "$",
+		},
+		"root then name": {
+			path:     jsonpath.NewRoot().Name("metadata"),
+			expected: "$.metadata",
+		},
+		"name with dollar": {
+			path:     jsonpath.New().Name("$"),
+			expected: "['$']",
+		},
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
@@ -77,6 +89,18 @@ func TestParsePath(t *testing.T) {
 		"array index": {
 			input:    "items[0]",
 			expected: "items[0]",
+		},
+		"root only": {
+			input:    "$",
+			expected: "$",
+		},
+		"absolute path": {
+			input:    "$.items[0]",
+			expected: "$.items[0]",
+		},
+		"dollar in middle is a name": {
+			input:    "items.$.name",
+			expected: "items['$'].name",
 		},
 	}
 	for name, tc := range tests {
@@ -151,6 +175,16 @@ func TestPath_JoinPath(t *testing.T) {
 			base:     jsonpath.New().Name("items"),
 			other:    jsonpath.New().Index(0),
 			expected: "items[0]",
+		},
+		"starts with root": {
+			base:     jsonpath.NewRoot().Name("items"),
+			other:    jsonpath.New().Name("name"),
+			expected: "$.items.name",
+		},
+		"other starts with root": {
+			base:     jsonpath.New().Name("items"),
+			other:    jsonpath.NewRoot().Name("name"),
+			expected: "$.name.items",
 		},
 	}
 	for name, tc := range tests {

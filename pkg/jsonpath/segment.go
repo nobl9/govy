@@ -8,11 +8,13 @@ type segmentKind uint8
 const (
 	// segmentName is a named path segment or map key, e.g. "metadata".
 	segmentName segmentKind = iota
+	// segmentRoot is the JSONPath root selector, rendered as $.
+	segmentRoot
 	// segmentIndex is an array index, e.g. [0].
 	segmentIndex
 	// segmentUnknownIndex is an unknown array index, rendered as [].
 	segmentUnknownIndex
-	// segmentWildcard covers [*], *, and ~ wildcard selectors.
+	// segmentWildcard covers [*], *, and ~ selectors.
 	segmentWildcard
 )
 

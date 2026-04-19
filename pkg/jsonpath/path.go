@@ -10,7 +10,7 @@ import (
 
 const (
 	jsonPathSeparator = '.'
-	escapedChars      = string(jsonPathSeparator) + "[]' \t\n\r"
+	escapedChars      = string(jsonPathSeparator) + "[]'$ \t\n\r"
 )
 
 // Path is a builder for constructing valid [JSONPath] path fragments.
@@ -26,6 +26,7 @@ const (
 //	jsonpath.New().Name("metadata").Name("name")            // metadata.name
 //	jsonpath.New().Name("metadata").Name("labels").Index(0) // metadata.labels[0]
 //	jsonpath.New().Name("complex.key")                      // ['complex.key']
+//	jsonpath.NewRoot().Name("metadata")                     // $.metadata
 //
 // [JSONPath]: https://www.rfc-editor.org/rfc/rfc9535.html
 type Path struct {
@@ -37,8 +38,13 @@ func New() Path {
 	return Path{}
 }
 
+// NewRoot creates a new [Path] rooted at the JSON document root ($).
+func NewRoot() Path {
+	return Path{segments: []segment{{kind: segmentRoot}}}
+}
+
 // Parse parses a JSONPath string or relative path fragment into a structured [Path].
-// It handles dotted names, bracket notation, array indices, and wildcards.
+// It handles dotted names, bracket notation, array indices, wildcards, and leading root ($).
 // Malformed input is treated gracefully: unparsable content becomes a name segment.
 func Parse(s string) Path {
 	if s == "" {
@@ -65,9 +71,13 @@ func (p Path) Key(key any) Path {
 
 // Join appends another [Path] to this one.
 // This is primarily used to combine parent and child path fragments while building nested govy paths.
+// If other starts with '$' root segment, and the path does not, the path will be appended to the other.
 func (p Path) Join(other Path) Path {
 	if len(other.segments) == 0 {
 		return p
+	}
+	if other.isRooted() {
+		return other.Join(p)
 	}
 	if len(p.segments) == 0 {
 		return other
@@ -114,6 +124,8 @@ func (p Path) String() string {
 				b.WriteByte(jsonPathSeparator)
 			}
 			b.WriteString(rendered)
+		case segmentRoot:
+			b.WriteByte('$')
 		case segmentIndex:
 			b.WriteByte('[')
 			b.WriteString(strconv.FormatUint(uint64(s.index), 10))
@@ -151,6 +163,7 @@ func (p Path) appendSegment(s segment) Path {
 }
 
 // parseSegments tokenizes a JSONPath string into segments.
+// The root selector ($) is recognized only as the first segment.
 func parseSegments(s string) []segment {
 	var segments []segment
 	i := 0
@@ -169,8 +182,14 @@ func parseSegments(s string) []segment {
 			segments = append(segments, segment{kind: segmentWildcard, name: "*"})
 			i++
 		case '$':
-			segments = append(segments, segment{kind: segmentWildcard, name: "$"})
-			i++
+			if i == 0 && len(segments) == 0 {
+				segments = append(segments, segment{kind: segmentRoot})
+				i++
+				continue
+			}
+			seg, end := parseNameSegment(s, i)
+			segments = append(segments, seg)
+			i = end
 		default:
 			seg, end := parseNameSegment(s, i)
 			segments = append(segments, seg)
@@ -178,6 +197,10 @@ func parseSegments(s string) []segment {
 		}
 	}
 	return segments
+}
+
+func (p Path) isRooted() bool {
+	return len(p.segments) > 0 && p.segments[0].kind == segmentRoot
 }
 
 // parseBracketSegment parses a bracket-delimited segment starting at position i.

@@ -117,7 +117,7 @@ func PlanStrictMode() PlanOption {
 func Plan[T any](v Validator[T], opts ...PlanOption) (*ValidatorPlan, error) {
 	builders := make([]planBuilder, 0)
 	rootBuilder := planBuilder{
-		propertyPath:        jsonpath.Parse("$"),
+		propertyPath:        jsonpath.NewRoot(),
 		path:                &builders,
 		missingDescriptions: ptr(make([]predicateLocation, 0)),
 	}
