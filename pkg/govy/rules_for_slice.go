@@ -4,8 +4,6 @@ import (
 	"github.com/nobl9/govy/pkg/jsonpath"
 )
 
-var sliceWildcardPath = jsonpath.Parse("[*]")
-
 // ForSlice creates a new [PropertyRulesForSlice] instance for a slice property
 // which value is extracted through [PropertyGetter] function.
 func ForSlice[S ~[]T, T, P any](getter PropertyGetter[S, P]) PropertyRulesForSlice[S, T, P] {
@@ -159,7 +157,7 @@ func (r PropertyRulesForSlice[S, T, P]) plan(builder planBuilder) {
 	r.sliceRules.plan(builder.setExamples(r.sliceRules.examples...))
 	builder = builder.appendPath(r.sliceRules.getPath())
 	if len(r.forEachRules.rules) > 0 {
-		r.forEachRules.plan(builder.appendPath(sliceWildcardPath))
+		r.forEachRules.plan(builder.appendPath(jsonpath.New().IndexWildcard()))
 	}
 }
 

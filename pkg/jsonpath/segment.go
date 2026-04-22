@@ -8,20 +8,24 @@ type segmentKind uint8
 const (
 	// segmentName is a named path segment or map key, e.g. "metadata".
 	segmentName segmentKind = iota
-	// segmentRoot is the JSONPath root selector, rendered as $.
+	// segmentRoot is the JSONPath root selector, rendered as `$`.
 	segmentRoot
-	// segmentIndex is an array index, e.g. [0].
+	// segmentIndex is an array index, e.g. `[0]`.
 	segmentIndex
-	// segmentUnknownIndex is an unknown array index, rendered as [].
+	// segmentUnknownIndex is an unknown array index, rendered as `[]`.
 	segmentUnknownIndex
-	// segmentWildcard covers [*], *, and ~ selectors.
-	segmentWildcard
+	// segmentValueWildcard represents value wildcard selectors: `*` and `[*]`.
+	segmentValueWildcard
+	// segmentKeyWildcard is an internal marker for map key selectors.
+	// It renders as `*` because standard JSONPath does not define
+	// a dedicated wildcard for object member names.
+	segmentKeyWildcard
 )
 
 // segment is a single component of a [Path].
 type segment struct {
 	kind  segmentKind
-	name  string // used by [segmentName], [segmentWildcard]
+	name  string // used by [segmentName], [segmentValueWildcard]
 	index uint   // used by [segmentIndex]
 }
 

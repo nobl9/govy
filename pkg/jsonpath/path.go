@@ -10,7 +10,9 @@ import (
 
 const (
 	jsonPathSeparator = '.'
-	escapedChars      = string(jsonPathSeparator) + "[]'$ \t\n\r"
+	escapedChars      = string(jsonPathSeparator) + "[]'*$ \t\n\r"
+	valueWildcard     = "*"
+	indexWildcard     = "[*]"
 )
 
 // Path is a builder for constructing valid [JSONPath] path fragments.
@@ -44,7 +46,8 @@ func NewRoot() Path {
 }
 
 // Parse parses a JSONPath string or relative path fragment into a structured [Path].
-// It handles dotted names, bracket notation, array indices, wildcards, and leading root ($).
+// It handles dotted names, bracket notation, array indices, standard wildcard selectors (`*`, `[*]`),
+// and leading root ($).
 // Malformed input is treated gracefully: unparsable content becomes a name segment.
 func Parse(s string) Path {
 	if s == "" {
@@ -61,6 +64,23 @@ func (p Path) Name(name string) Path {
 // Index appends an array index segment to the path.
 func (p Path) Index(index uint) Path {
 	return p.appendSegment(segment{kind: segmentIndex, index: index})
+}
+
+// ValueWildcard appends a value wildcard segment (`*`) to the path.
+func (p Path) ValueWildcard() Path {
+	return p.appendSegment(segment{kind: segmentValueWildcard, name: valueWildcard})
+}
+
+// KeyWildcard appends an internal map key wildcard segment.
+// It renders as the standard wildcard selector (`*`) because JSONPath
+// does not define a dedicated wildcard selector for object member names.
+func (p Path) KeyWildcard() Path {
+	return p.appendSegment(segment{kind: segmentKeyWildcard})
+}
+
+// IndexWildcard appends an array wildcard segment to the path.
+func (p Path) IndexWildcard() Path {
+	return p.appendSegment(segment{kind: segmentValueWildcard, name: indexWildcard})
 }
 
 // Key appends a map key segment to the path, escaping special characters as needed.
@@ -137,11 +157,20 @@ func (p Path) String() string {
 			b.WriteByte(']')
 		case segmentUnknownIndex:
 			b.WriteString("[]")
-		case segmentWildcard:
-			if i > 0 && !strings.HasPrefix(s.name, "[") {
+		case segmentValueWildcard:
+			rendered := s.name
+			if rendered == "" {
+				rendered = valueWildcard
+			}
+			if i > 0 && !strings.HasPrefix(rendered, "[") {
 				b.WriteByte(jsonPathSeparator)
 			}
-			b.WriteString(s.name)
+			b.WriteString(rendered)
+		case segmentKeyWildcard:
+			if i > 0 {
+				b.WriteByte(jsonPathSeparator)
+			}
+			b.WriteString(valueWildcard)
 		}
 	}
 	return b.String()
@@ -180,12 +209,15 @@ func parseSegments(s string) []segment {
 			seg, end := parseBracketSegment(s, i)
 			segments = append(segments, seg)
 			i = end
-		case '~':
-			segments = append(segments, segment{kind: segmentWildcard, name: "~"})
-			i++
 		case '*':
-			segments = append(segments, segment{kind: segmentWildcard, name: "*"})
-			i++
+			if isStandaloneWildcard(s, i) {
+				segments = append(segments, segment{kind: segmentValueWildcard, name: valueWildcard})
+				i++
+				continue
+			}
+			seg, end := parseNameSegment(s, i)
+			segments = append(segments, seg)
+			i = end
 		case '$':
 			if i == 0 && len(segments) == 0 {
 				segments = append(segments, segment{kind: segmentRoot})
@@ -206,6 +238,11 @@ func parseSegments(s string) []segment {
 
 func (p Path) isRooted() bool {
 	return len(p.segments) > 0 && p.segments[0].kind == segmentRoot
+}
+
+func isStandaloneWildcard(s string, i int) bool {
+	next := i + 1
+	return next >= len(s) || s[next] == jsonPathSeparator || s[next] == '['
 }
 
 // parseBracketSegment parses a bracket-delimited segment starting at position i.
@@ -242,7 +279,7 @@ func parseBracketSegment(s string, i int) (seg segment, end int) {
 	case "":
 		return segment{kind: segmentUnknownIndex}, end
 	case "*":
-		return segment{kind: segmentWildcard, name: "[*]"}, end
+		return segment{kind: segmentValueWildcard, name: indexWildcard}, end
 	default:
 		v, err := strconv.ParseUint(inner, 10, 64)
 		if err == nil {

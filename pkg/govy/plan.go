@@ -24,6 +24,10 @@ type PropertyPlan struct {
 	Path jsonpath.Path `json:"path"`
 	// TypeInfo contains the type information of the property.
 	TypeInfo TypeInfo `json:"typeInfo"`
+	// IsKey indicates that this plan entry targets map keys rather than values.
+	// Standard JSONPath does not have a dedicated key wildcard syntax,
+	// so key-targeted plans use the same rendered path as value wildcards.
+	IsKey bool `json:"isKey,omitempty"`
 	// IsHidden indicates if the property was marked with [PropertyRules.HideValue].
 	IsHidden bool `json:"isHidden,omitempty"`
 	// Examples lists example, valid values for this property.
@@ -174,14 +178,25 @@ func (e *missingPredicateDescriptionsError) Error() string {
 }
 
 func aggregatePropertyPlans(builders []planBuilder) []*PropertyPlan {
-	propertiesMap := make(map[string]*PropertyPlan)
+	type propertyPlanKey struct {
+		path     string
+		typeInfo TypeInfo
+		isKey    bool
+	}
+
+	propertiesMap := make(map[propertyPlanKey]*PropertyPlan)
 	for _, b := range builders {
-		key := b.propertyPath.String()
+		key := propertyPlanKey{
+			path:     b.propertyPath.String(),
+			typeInfo: b.propertyPlan.TypeInfo,
+			isKey:    b.propertyPlan.IsKey,
+		}
 		entry, ok := propertiesMap[key]
 		if !ok {
 			entry = &PropertyPlan{
 				Path:     b.propertyPath,
 				TypeInfo: b.propertyPlan.TypeInfo,
+				IsKey:    b.propertyPlan.IsKey,
 				Examples: b.propertyPlan.Examples,
 				IsHidden: b.propertyPlan.IsHidden,
 			}
@@ -193,7 +208,24 @@ func aggregatePropertyPlans(builders []planBuilder) []*PropertyPlan {
 	}
 	return slices.SortedFunc(
 		maps.Values(propertiesMap),
-		func(a, b *PropertyPlan) int { return a.Path.Compare(b.Path) },
+		func(a, b *PropertyPlan) int {
+			if cmp := a.Path.Compare(b.Path); cmp != 0 {
+				return cmp
+			}
+			if a.IsKey != b.IsKey {
+				if a.IsKey {
+					return -1
+				}
+				return 1
+			}
+			if cmp := strings.Compare(a.TypeInfo.Package, b.TypeInfo.Package); cmp != 0 {
+				return cmp
+			}
+			if cmp := strings.Compare(a.TypeInfo.Name, b.TypeInfo.Name); cmp != 0 {
+				return cmp
+			}
+			return strings.Compare(a.TypeInfo.Kind, b.TypeInfo.Kind)
+		},
 	)
 }
 

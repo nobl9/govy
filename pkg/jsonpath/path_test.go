@@ -33,6 +33,18 @@ func TestPath(t *testing.T) {
 			path:     jsonpath.New().Name("metadata").Name("labels").Index(0),
 			expected: "metadata.labels[0]",
 		},
+		"name then wildcard index": {
+			path:     jsonpath.New().Name("metadata").Name("labels").IndexWildcard(),
+			expected: "metadata.labels[*]",
+		},
+		"name then wildcard value": {
+			path:     jsonpath.New().Name("metadata").ValueWildcard(),
+			expected: "metadata.*",
+		},
+		"name then wildcard key": {
+			path:     jsonpath.New().Name("metadata").KeyWildcard(),
+			expected: "metadata.*",
+		},
 		"index only": {
 			path:     jsonpath.New().Index(2),
 			expected: "[2]",
@@ -101,6 +113,30 @@ func TestParsePath(t *testing.T) {
 		"dollar in middle is a name": {
 			input:    "items.$.name",
 			expected: "items['$'].name",
+		},
+		"wildcard index": {
+			input:    "items[*]",
+			expected: "items[*]",
+		},
+		"legacy key wildcard is a literal name": {
+			input:    "items.*~",
+			expected: "items['*~']",
+		},
+		"legacy key wildcard at root is a literal name": {
+			input:    "*~",
+			expected: "['*~']",
+		},
+		"standard wildcard": {
+			input:    "items.*",
+			expected: "items.*",
+		},
+		"tilde is a literal name": {
+			input:    "~",
+			expected: "~",
+		},
+		"tilde child segment is a literal name": {
+			input:    "items.~",
+			expected: "items.~",
 		},
 	}
 	for name, tc := range tests {

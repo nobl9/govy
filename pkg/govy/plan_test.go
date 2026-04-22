@@ -141,6 +141,55 @@ func TestPlan(t *testing.T) {
 	assert.Equal(t, readExpectedPlan(t, "expected_pod_plan.json"), actual)
 }
 
+func TestPlan_mapKeyRulesUseStandardWildcardPath(t *testing.T) {
+	type Labels map[string]string
+	type PodMetadata struct {
+		Labels Labels `json:"labels"`
+	}
+
+	validator := govy.New(
+		govy.ForMap(func(p PodMetadata) Labels { return p.Labels }).
+			WithName("labels").
+			RulesForKeys(
+				govy.NewRule(func(v string) error { return nil }).
+					WithDescription("key rule"),
+			).
+			RulesForValues(
+				govy.NewRule(func(v string) error { return nil }).
+					WithDescription("value rule"),
+			),
+	)
+
+	plan, err := govy.Plan(validator)
+	assert.Require(t, assert.NoError(t, err))
+
+	var keyPlan, valuePlan *govy.PropertyPlan
+	for _, property := range plan.Properties {
+		if property.Path.String() != "$.labels.*" {
+			continue
+		}
+		if property.IsKey {
+			keyPlan = property
+			continue
+		}
+		valuePlan = property
+	}
+
+	if keyPlan == nil {
+		t.Fatal("expected a map key property plan for $.labels.*")
+	}
+	if valuePlan == nil {
+		t.Fatal("expected a map value property plan for $.labels.*")
+	}
+
+	assert.True(t, keyPlan.IsKey)
+	assert.False(t, valuePlan.IsKey)
+	assert.Equal(t, govy.TypeInfo{Name: "string", Kind: "string"}, keyPlan.TypeInfo)
+	assert.Equal(t, govy.TypeInfo{Name: "string", Kind: "string"}, valuePlan.TypeInfo)
+	assert.Equal(t, []govy.RulePlan{{Description: "key rule"}}, keyPlan.Rules)
+	assert.Equal(t, []govy.RulePlan{{Description: "value rule"}}, valuePlan.Rules)
+}
+
 func TestPlan_validValuesIntersection(t *testing.T) {
 	validator := govy.New(
 		govy.For(func(p PodMetadata) string { return p.Name }).

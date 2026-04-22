@@ -5,11 +5,6 @@ import (
 	"github.com/nobl9/govy/pkg/jsonpath"
 )
 
-var (
-	mapKeyWildcardPath   = jsonpath.Parse("~")
-	mapValueWildcardPath = jsonpath.Parse("*")
-)
-
 // ForMap creates a new [PropertyRulesForMap] instance for a map property
 // which value is extracted through [PropertyGetter] function.
 func ForMap[M ~map[K]V, K comparable, V, P any](getter PropertyGetter[M, P]) PropertyRulesForMap[M, K, V, P] {
@@ -233,13 +228,15 @@ func (r PropertyRulesForMap[M, K, V, P]) plan(builder planBuilder) {
 	r.mapRules.plan(builder.setExamples(r.mapRules.examples...))
 	builder = builder.appendPath(r.mapRules.getPath())
 	if len(r.forKeyRules.rules) > 0 {
-		r.forKeyRules.plan(builder.appendPath(mapKeyWildcardPath))
+		keyBuilder := builder.appendPath(jsonpath.New().KeyWildcard())
+		keyBuilder.propertyPlan.IsKey = true
+		r.forKeyRules.plan(keyBuilder)
 	}
 	if len(r.forValueRules.rules) > 0 {
-		r.forValueRules.plan(builder.appendPath(mapValueWildcardPath))
+		r.forValueRules.plan(builder.appendPath(jsonpath.New().ValueWildcard()))
 	}
 	if len(r.forItemRules.rules) > 0 {
-		r.forItemRules.plan(builder.appendPath(mapValueWildcardPath))
+		r.forItemRules.plan(builder.appendPath(jsonpath.New().ValueWildcard()))
 	}
 }
 
