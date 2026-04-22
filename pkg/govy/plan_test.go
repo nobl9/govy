@@ -13,6 +13,7 @@ import (
 	"github.com/nobl9/govy/internal/assert"
 
 	"github.com/nobl9/govy/pkg/govy"
+	"github.com/nobl9/govy/pkg/jsonpath"
 	"github.com/nobl9/govy/pkg/rules"
 )
 
@@ -188,6 +189,85 @@ func TestPlan_mapKeyRulesUseStandardWildcardPath(t *testing.T) {
 	assert.Equal(t, govy.TypeInfo{Name: "string", Kind: "string"}, valuePlan.TypeInfo)
 	assert.Equal(t, []govy.RulePlan{{Description: "key rule"}}, keyPlan.Rules)
 	assert.Equal(t, []govy.RulePlan{{Description: "value rule"}}, valuePlan.Rules)
+}
+
+func TestPropertyPlan_Compare(t *testing.T) {
+	tests := map[string]struct {
+		left     *govy.PropertyPlan
+		right    *govy.PropertyPlan
+		expected int
+	}{
+		"path comes first": {
+			left:     &govy.PropertyPlan{Path: jsonpath.Parse("$.a")},
+			right:    &govy.PropertyPlan{Path: jsonpath.Parse("$.b")},
+			expected: -1,
+		},
+		"key entries sort before value entries": {
+			left: &govy.PropertyPlan{
+				Path:     jsonpath.Parse("$.labels.*"),
+				IsKey:    true,
+				TypeInfo: govy.TypeInfo{Name: "string", Kind: "string"},
+			},
+			right: &govy.PropertyPlan{
+				Path:     jsonpath.Parse("$.labels.*"),
+				TypeInfo: govy.TypeInfo{Name: "string", Kind: "string"},
+			},
+			expected: -1,
+		},
+		"type package breaks ties": {
+			left: &govy.PropertyPlan{
+				Path:     jsonpath.Parse("$.labels.*"),
+				TypeInfo: govy.TypeInfo{Name: "Alpha", Kind: "string", Package: "a/pkg"},
+			},
+			right: &govy.PropertyPlan{
+				Path:     jsonpath.Parse("$.labels.*"),
+				TypeInfo: govy.TypeInfo{Name: "Alpha", Kind: "string", Package: "b/pkg"},
+			},
+			expected: -1,
+		},
+		"type name breaks ties": {
+			left: &govy.PropertyPlan{
+				Path:     jsonpath.Parse("$.labels.*"),
+				TypeInfo: govy.TypeInfo{Name: "Alpha", Kind: "string"},
+			},
+			right: &govy.PropertyPlan{
+				Path:     jsonpath.Parse("$.labels.*"),
+				TypeInfo: govy.TypeInfo{Name: "Beta", Kind: "string"},
+			},
+			expected: -1,
+		},
+		"type kind breaks final ties": {
+			left: &govy.PropertyPlan{
+				Path:     jsonpath.Parse("$.labels.*"),
+				TypeInfo: govy.TypeInfo{Name: "Alpha", Kind: "map"},
+			},
+			right: &govy.PropertyPlan{
+				Path:     jsonpath.Parse("$.labels.*"),
+				TypeInfo: govy.TypeInfo{Name: "Alpha", Kind: "string"},
+			},
+			expected: -1,
+		},
+		"equal plans compare equal": {
+			left: &govy.PropertyPlan{
+				Path:     jsonpath.Parse("$.labels.*"),
+				IsKey:    true,
+				TypeInfo: govy.TypeInfo{Name: "Alpha", Kind: "string", Package: "pkg"},
+			},
+			right: &govy.PropertyPlan{
+				Path:     jsonpath.Parse("$.labels.*"),
+				IsKey:    true,
+				TypeInfo: govy.TypeInfo{Name: "Alpha", Kind: "string", Package: "pkg"},
+			},
+			expected: 0,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, tc.expected, tc.left.Compare(tc.right))
+			assert.Equal(t, -tc.expected, tc.right.Compare(tc.left))
+		})
+	}
 }
 
 func TestPlan_validValuesIntersection(t *testing.T) {

@@ -41,6 +41,27 @@ type PropertyPlan struct {
 	Rules []RulePlan `json:"rules,omitempty"`
 }
 
+// Compare returns -1, 0, or 1 comparing p and other using the
+// ordering used for validation plans.
+func (p *PropertyPlan) Compare(other *PropertyPlan) int {
+	if cmp := p.Path.Compare(other.Path); cmp != 0 {
+		return cmp
+	}
+	if p.IsKey != other.IsKey {
+		if p.IsKey {
+			return -1
+		}
+		return 1
+	}
+	if cmp := strings.Compare(p.TypeInfo.Package, other.TypeInfo.Package); cmp != 0 {
+		return cmp
+	}
+	if cmp := strings.Compare(p.TypeInfo.Name, other.TypeInfo.Name); cmp != 0 {
+		return cmp
+	}
+	return strings.Compare(p.TypeInfo.Kind, other.TypeInfo.Kind)
+}
+
 // TypeInfo contains the type information of a property.
 type TypeInfo struct {
 	// Name is a Go type name.
@@ -208,24 +229,7 @@ func aggregatePropertyPlans(builders []planBuilder) []*PropertyPlan {
 	}
 	return slices.SortedFunc(
 		maps.Values(propertiesMap),
-		func(a, b *PropertyPlan) int {
-			if cmp := a.Path.Compare(b.Path); cmp != 0 {
-				return cmp
-			}
-			if a.IsKey != b.IsKey {
-				if a.IsKey {
-					return -1
-				}
-				return 1
-			}
-			if cmp := strings.Compare(a.TypeInfo.Package, b.TypeInfo.Package); cmp != 0 {
-				return cmp
-			}
-			if cmp := strings.Compare(a.TypeInfo.Name, b.TypeInfo.Name); cmp != 0 {
-				return cmp
-			}
-			return strings.Compare(a.TypeInfo.Kind, b.TypeInfo.Kind)
-		},
+		func(a, b *PropertyPlan) int { return a.Compare(b) },
 	)
 }
 
