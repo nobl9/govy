@@ -193,51 +193,51 @@
         }
       }
     },
-    "govulncheck@1.1.4": {
-      "last_modified": "2025-10-22T20:59:19Z",
-      "resolved": "github:NixOS/nixpkgs/01b6809f7f9d1183a2b3e081f0a1e6f8f415cb09#govulncheck",
+    "govulncheck@1.2.0": {
+      "last_modified": "2026-04-16T08:46:55Z",
+      "resolved": "github:NixOS/nixpkgs/b86751bc4085f48661017fa226dee99fab6c651b#govulncheck",
       "source": "devbox-search",
-      "version": "1.1.4",
+      "version": "1.2.0",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/d98frya3iv286mdg6fb4d2qgqs36ryli-govulncheck-1.1.4",
+              "path": "/nix/store/63ziclxd26falrxhkmqic7z5haa2w5xc-govulncheck-1.2.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/d98frya3iv286mdg6fb4d2qgqs36ryli-govulncheck-1.1.4"
+          "store_path": "/nix/store/63ziclxd26falrxhkmqic7z5haa2w5xc-govulncheck-1.2.0"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/vzxhv5yf0r89hlvncb4pmmcdzrp4snj1-govulncheck-1.1.4",
+              "path": "/nix/store/5zz82yyfl4ic0vznbxq8p1r6zpv21y6m-govulncheck-1.2.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/vzxhv5yf0r89hlvncb4pmmcdzrp4snj1-govulncheck-1.1.4"
+          "store_path": "/nix/store/5zz82yyfl4ic0vznbxq8p1r6zpv21y6m-govulncheck-1.2.0"
         },
         "x86_64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/2nq5v1mj29kzfbyyl17ynvgnaprqcc4z-govulncheck-1.1.4",
+              "path": "/nix/store/bch9ahwcjn58vw3cz6y6k90wns9sxrjr-govulncheck-1.2.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/2nq5v1mj29kzfbyyl17ynvgnaprqcc4z-govulncheck-1.1.4"
+          "store_path": "/nix/store/bch9ahwcjn58vw3cz6y6k90wns9sxrjr-govulncheck-1.2.0"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/nfvnqqylsv45fd7qi5ip5r0apblkpgg1-govulncheck-1.1.4",
+              "path": "/nix/store/na4nk79la8nxwiz81x6hffngih4jjk94-govulncheck-1.2.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/nfvnqqylsv45fd7qi5ip5r0apblkpgg1-govulncheck-1.1.4"
+          "store_path": "/nix/store/na4nk79la8nxwiz81x6hffngih4jjk94-govulncheck-1.2.0"
         }
       }
     },
