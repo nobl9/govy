@@ -222,6 +222,16 @@ func TestPath_JoinPath(t *testing.T) {
 			other:    jsonpath.NewRoot().Name("name"),
 			expected: "$.name.items",
 		},
+		"both rooted keeps left root": {
+			base:     jsonpath.NewRoot().Name("items"),
+			other:    jsonpath.NewRoot().Name("name"),
+			expected: "$.items.name",
+		},
+		"both rooted root only": {
+			base:     jsonpath.NewRoot(),
+			other:    jsonpath.NewRoot(),
+			expected: "$",
+		},
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {

@@ -315,7 +315,7 @@ func ExamplePropertyRules_WithPath() {
 			WithPath(jsonpath.Parse("university.name")).
 			Rules(rules.EQ("Tom")),
 		govy.For(func(t Teacher) string { return t.Students[0].Index }).
-			WithPath(jsonpath.New().Name("students").Index(0)).
+			WithPath(jsonpath.New().Name("students").Index(0).Name("index")).
 			Rules(rules.EQ("2")),
 	).WithName("Teacher")
 
@@ -338,7 +338,7 @@ func ExamplePropertyRules_WithPath() {
 	// Validation for Teacher has failed for the following properties:
 	//   - 'university.name' with value 'Poznan University of Technology':
 	//     - should be equal to 'Tom'
-	//   - 'students[0]' with value '1':
+	//   - 'students[0].index' with value '1':
 	//     - should be equal to '2'
 }
 

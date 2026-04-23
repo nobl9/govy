@@ -96,7 +96,13 @@ func (p Path) Join(other Path) Path {
 		return p
 	}
 	if other.isRooted() {
-		return other.Join(p)
+		if !p.isRooted() {
+			return other.Join(p)
+		}
+		if len(other.segments) == 1 {
+			return p
+		}
+		other = Path{segments: slices.Clone(other.segments[1:])}
 	}
 	if len(p.segments) == 0 {
 		return other
