@@ -104,7 +104,19 @@
         "name": "string",
         "kind": "string"
       },
-      "isKey": true,
+      "rules": [
+        {
+          "description": "length must be less than or equal to 120",
+          "errorCode": "string_max_length"
+        }
+      ]
+    },
+    {
+      "path": "$.metadata.labels.*~",
+      "typeInfo": {
+        "name": "string",
+        "kind": "string"
+      },
       "rules": [
         {
           "description": "length must be between 1 and 63",
@@ -118,19 +130,6 @@
             "my-name",
             "123-abc"
           ]
-        }
-      ]
-    },
-    {
-      "path": "$.metadata.labels.*",
-      "typeInfo": {
-        "name": "string",
-        "kind": "string"
-      },
-      "rules": [
-        {
-          "description": "length must be less than or equal to 120",
-          "errorCode": "string_max_length"
         }
       ]
     },

@@ -166,28 +166,24 @@ func TestPlan_mapKeyRulesUseStandardWildcardPath(t *testing.T) {
 
 	var keyPlan, valuePlan *govy.PropertyPlan
 	for _, property := range plan.Properties {
-		if property.Path.String() != "$.labels.*" {
-			continue
-		}
-		if property.IsKey {
+		switch property.Path.String() {
+		case "$.labels.*~":
 			keyPlan = property
-			continue
+		case "$.labels.*":
+			valuePlan = property
 		}
-		valuePlan = property
 	}
 
 	if keyPlan == nil {
-		t.Fatal("expected a map key property plan for $.labels.*")
+		t.Fatal("expected a property plan for $.labels.*~")
 	}
 	if valuePlan == nil {
-		t.Fatal("expected a map value property plan for $.labels.*")
+		t.Fatal("expected a property plan for $.labels.*")
 	}
 
-	assert.True(t, keyPlan.IsKey)
-	assert.False(t, valuePlan.IsKey)
 	assert.Equal(t, govy.TypeInfo{Name: "string", Kind: "string"}, keyPlan.TypeInfo)
-	assert.Equal(t, govy.TypeInfo{Name: "string", Kind: "string"}, valuePlan.TypeInfo)
 	assert.Equal(t, []govy.RulePlan{{Description: "key rule"}}, keyPlan.Rules)
+	assert.Equal(t, govy.TypeInfo{Name: "string", Kind: "string"}, valuePlan.TypeInfo)
 	assert.Equal(t, []govy.RulePlan{{Description: "value rule"}}, valuePlan.Rules)
 }
 
@@ -200,18 +196,6 @@ func TestPropertyPlan_Compare(t *testing.T) {
 		"path comes first": {
 			left:     &govy.PropertyPlan{Path: jsonpath.Parse("$.a")},
 			right:    &govy.PropertyPlan{Path: jsonpath.Parse("$.b")},
-			expected: -1,
-		},
-		"key entries sort before value entries": {
-			left: &govy.PropertyPlan{
-				Path:     jsonpath.Parse("$.labels.*"),
-				IsKey:    true,
-				TypeInfo: govy.TypeInfo{Name: "string", Kind: "string"},
-			},
-			right: &govy.PropertyPlan{
-				Path:     jsonpath.Parse("$.labels.*"),
-				TypeInfo: govy.TypeInfo{Name: "string", Kind: "string"},
-			},
 			expected: -1,
 		},
 		"type package breaks ties": {
@@ -250,12 +234,10 @@ func TestPropertyPlan_Compare(t *testing.T) {
 		"equal plans compare equal": {
 			left: &govy.PropertyPlan{
 				Path:     jsonpath.Parse("$.labels.*"),
-				IsKey:    true,
 				TypeInfo: govy.TypeInfo{Name: "Alpha", Kind: "string", Package: "pkg"},
 			},
 			right: &govy.PropertyPlan{
 				Path:     jsonpath.Parse("$.labels.*"),
-				IsKey:    true,
 				TypeInfo: govy.TypeInfo{Name: "Alpha", Kind: "string", Package: "pkg"},
 			},
 			expected: 0,

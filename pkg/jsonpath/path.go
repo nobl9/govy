@@ -12,6 +12,7 @@ const (
 	jsonPathSeparator = '.'
 	escapedChars      = string(jsonPathSeparator) + "[]'*$ \t\n\r"
 	valueWildcard     = "*"
+	keyWildcard       = "*~"
 	indexWildcard     = "[*]"
 )
 
@@ -46,7 +47,7 @@ func NewRoot() Path {
 }
 
 // Parse parses a JSONPath string or relative path fragment into a structured [Path].
-// It handles dotted names, bracket notation, array indices, standard wildcard selectors (`*`, `[*]`),
+// It handles dotted names, bracket notation, array indices, wildcard selectors (`*`, `*~`, `[*]`),
 // and leading root ($).
 // Malformed input is treated gracefully: unparsable content becomes a name segment.
 func Parse(s string) Path {
@@ -71,9 +72,7 @@ func (p Path) ValueWildcard() Path {
 	return p.appendSegment(segment{kind: segmentValueWildcard, name: valueWildcard})
 }
 
-// KeyWildcard appends an internal map key wildcard segment.
-// It renders as the standard wildcard selector (`*`) because JSONPath
-// does not define a dedicated wildcard selector for object member names.
+// KeyWildcard appends the govy map key wildcard segment (`*~`).
 func (p Path) KeyWildcard() Path {
 	return p.appendSegment(segment{kind: segmentKeyWildcard})
 }
@@ -170,7 +169,7 @@ func (p Path) String() string {
 			if i > 0 {
 				b.WriteByte(jsonPathSeparator)
 			}
-			b.WriteString(valueWildcard)
+			b.WriteString(keyWildcard)
 		}
 	}
 	return b.String()
@@ -210,6 +209,11 @@ func parseSegments(s string) []segment {
 			segments = append(segments, seg)
 			i = end
 		case '*':
+			if isStandaloneKeyWildcard(s, i) {
+				segments = append(segments, segment{kind: segmentKeyWildcard})
+				i += len(keyWildcard)
+				continue
+			}
 			if isStandaloneWildcard(s, i) {
 				segments = append(segments, segment{kind: segmentValueWildcard, name: valueWildcard})
 				i++
@@ -242,6 +246,14 @@ func (p Path) isRooted() bool {
 
 func isStandaloneWildcard(s string, i int) bool {
 	next := i + 1
+	return next >= len(s) || s[next] == jsonPathSeparator || s[next] == '['
+}
+
+func isStandaloneKeyWildcard(s string, i int) bool {
+	if !strings.HasPrefix(s[i:], keyWildcard) {
+		return false
+	}
+	next := i + len(keyWildcard)
 	return next >= len(s) || s[next] == jsonPathSeparator || s[next] == '['
 }
 

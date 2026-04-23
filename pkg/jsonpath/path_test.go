@@ -43,7 +43,7 @@ func TestPath(t *testing.T) {
 		},
 		"name then wildcard key": {
 			path:     jsonpath.New().Name("metadata").KeyWildcard(),
-			expected: "metadata.*",
+			expected: "metadata.*~",
 		},
 		"index only": {
 			path:     jsonpath.New().Index(2),
@@ -118,13 +118,13 @@ func TestParsePath(t *testing.T) {
 			input:    "items[*]",
 			expected: "items[*]",
 		},
-		"legacy key wildcard is a literal name": {
+		"key wildcard": {
 			input:    "items.*~",
-			expected: "items['*~']",
+			expected: "items.*~",
 		},
-		"legacy key wildcard at root is a literal name": {
+		"key wildcard at root": {
 			input:    "*~",
-			expected: "['*~']",
+			expected: "*~",
 		},
 		"standard wildcard": {
 			input:    "items.*",

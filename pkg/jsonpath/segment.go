@@ -16,9 +16,7 @@ const (
 	segmentUnknownIndex
 	// segmentValueWildcard represents value wildcard selectors: `*` and `[*]`.
 	segmentValueWildcard
-	// segmentKeyWildcard is an internal marker for map key selectors.
-	// It renders as `*` because standard JSONPath does not define
-	// a dedicated wildcard for object member names.
+	// segmentKeyWildcard represents the govy map key wildcard selector `*~`.
 	segmentKeyWildcard
 )
 

@@ -228,9 +228,7 @@ func (r PropertyRulesForMap[M, K, V, P]) plan(builder planBuilder) {
 	r.mapRules.plan(builder.setExamples(r.mapRules.examples...))
 	builder = builder.appendPath(r.mapRules.getPath())
 	if len(r.forKeyRules.rules) > 0 {
-		keyBuilder := builder.appendPath(jsonpath.New().KeyWildcard())
-		keyBuilder.propertyPlan.IsKey = true
-		r.forKeyRules.plan(keyBuilder)
+		r.forKeyRules.plan(builder.appendPath(jsonpath.New().KeyWildcard()))
 	}
 	if len(r.forValueRules.rules) > 0 {
 		r.forValueRules.plan(builder.appendPath(jsonpath.New().ValueWildcard()))
