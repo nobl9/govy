@@ -20,7 +20,7 @@ jobs:
       pull-requests: write
     runs-on: ubuntu-latest
     steps:
-      - uses: release-drafter/release-drafter/autolabeler@v7.2.0
+      - uses: release-drafter/release-drafter/autolabeler@v7.2.1
         with:
           token: ${{ secrets.RELEASE_LABELER_TOKEN }}
 
@@ -35,7 +35,7 @@ jobs:
     steps:
       # Drafts your next Release notes as Pull Requests are merged into "main"
       - id: drafter
-        uses: release-drafter/release-drafter@v7.2.0
+        uses: release-drafter/release-drafter@v7.2.1
         with:
           token: ${{ secrets.RELEASE_LABELER_TOKEN }}
 
