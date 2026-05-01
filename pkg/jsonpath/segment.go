@@ -1,17 +1,33 @@
 package jsonpath
 
-import (
-	"strconv"
-	"strings"
-)
+import "strings"
+
+// segmentKind identifies the type of a path segment.
+type segmentKind uint8
 
 const (
-	jsonPathSeparator = "."
-	escapedChars      = jsonPathSeparator + "[]' \t\n\r"
-	slashEscapedChars = ""
+	// segmentName is a named path segment or map key, e.g. "metadata".
+	segmentName segmentKind = iota
+	// segmentRoot is the JSONPath root selector, rendered as `$`.
+	segmentRoot
+	// segmentIndex is an array index, e.g. `[0]`.
+	segmentIndex
+	// segmentUnknownIndex is an unknown array index, rendered as `[]`.
+	segmentUnknownIndex
+	// segmentValueWildcard represents value wildcard selectors: `*` and `[*]`.
+	segmentValueWildcard
+	// segmentKeyWildcard represents the govy map key wildcard selector `*~`.
+	segmentKeyWildcard
 )
 
-// EscapeSegment accepts a path segment (not the entire path!) and escapes any special characters.
+// segment is a single component of a [Path].
+type segment struct {
+	kind  segmentKind
+	name  string // used by [segmentName], [segmentValueWildcard]
+	index uint   // used by [segmentIndex]
+}
+
+// EscapeSegment accepts a single named path segment and escapes any special characters.
 // Examples:
 //
 //	EscapeSegment("foo") --> "foo"
@@ -24,42 +40,6 @@ func EscapeSegment(segment string) string {
 		segment = "['" + segment + "']"
 	}
 	return segment
-}
-
-// Join extends the JSONPath with a new segment.
-// The segment can be a path in of itself, the segment is assumed to be escaped with [EscapeSegment].
-// Example:
-//
-//	Join("foo.bar", "baz") --> "foo.bar.baz"
-//	Join("foo.bar", "baz.foo") --> "foo.bar.baz.foo"
-func Join(path, segment string) string {
-	return joinPaths(path, segment, jsonPathSeparator)
-}
-
-// JoinArray extends the JSONPath with a new array segment.
-// Example:
-//
-//	JoinArray("foo.bar", "[2]") --> "foo.bar[2]"
-func JoinArray(path, segment string) string {
-	return joinPaths(path, segment, "")
-}
-
-// NewArrayIndex creates a new array index path segment for the given index.
-// Example:
-//
-//	NewArrayIndex(2) --> "[2]"
-func NewArrayIndex(index int) string {
-	return "[" + strconv.Itoa(index) + "]"
-}
-
-func joinPaths(pre, post, sep string) string {
-	if pre == "" {
-		return post
-	}
-	if post == "" {
-		return pre
-	}
-	return pre + sep + post
 }
 
 // escapeCharacters has been based on the [net/url] package.

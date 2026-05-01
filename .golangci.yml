@@ -63,6 +63,8 @@ linters:
           disabled: true
   exclusions:
     generated: strict
+    paths:
+      - node_modules
     rules:
       - linters:
           - revive

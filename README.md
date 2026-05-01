@@ -36,7 +36,7 @@ for upcoming, planned features.
     6. [Predefined rules](#predefined-rules)
     7. [Custom rules](#custom-rules)
     8. [Validation plan](#validation-plan)
-    9. [Properties name inference](#properties-name-inference)
+    9. [Properties path inference](#properties-path-inference)
     10. [Testing helpers](#testing-helpers)
 4. [Rationale](#rationale)
     1. [Reflection](#reflection)
@@ -265,8 +265,10 @@ Govy components are largely immutable and lazily loaded:
 Default `govy` error messages are verbose and provide a clear indication both
 of the error cause and the property context in which they occurred.
 
-The property paths are evaluated relative to the root `Validator` and follow
-[JSON path](https://datatracker.ietf.org/doc/html/rfc9535) standard.
+The property paths are evaluated relative to the root `Validator`.
+They follow a
+[JSONPath](https://datatracker.ietf.org/doc/html/rfc9535)-compatible syntax,
+but error messages omit the leading `$` root segment for better human readability.
 
 ```text
 Validation for Teacher has failed for the following properties:
@@ -669,19 +671,20 @@ func Example_validationPlan() {
 }
 ```
 
-### Properties name inference
+### Properties path inference
 
-Govy provides a way to automatically infer property names from the code itself.
-This way, there's no need to manually provide properties' names with
-`WithName` function.
+Govy provides a way to automatically infer relative property paths
+from the code itself.
+This way, there's no need to manually provide property paths with
+either `WithName` or `WithPath` functions.
 
 Checkout [example_test.go](./pkg/govy/example_test.go) for an interactive
-introduction to this feature (see `ExampleInferNameMode` and related examples).
+introduction to this feature (see `ExampleInferPathMode` and related examples).
 
-Documentation for the name inference code generator is available
-[here](cmd/govy/README.md#nameinfer).
+Documentation for the path inference code generator is available
+[here](cmd/govy/README.md#inferpath).
 
-[//]: # (embed: internal/examples/readme_name_inference_example_test.go)
+[//]: # (embed: internal/examples/readme_path_inference_example_test.go)
 
 ```go
 package examples
@@ -694,9 +697,9 @@ import (
 	"github.com/nobl9/govy/pkg/rules"
 )
 
-func Example_nameInference() {
-	govyconfig.SetInferNameIncludeTestFiles(true) // Required for the example to run.
-	defer govyconfig.SetInferNameIncludeTestFiles(false)
+func Example_pathInference() {
+	govyconfig.SetInferPathIncludeTestFiles(true) // Required for the example to run.
+	defer govyconfig.SetInferPathIncludeTestFiles(false)
 
 	type Teacher struct {
 		Name string `json:"name"`
@@ -706,7 +709,7 @@ func Example_nameInference() {
 		govy.For(func(t Teacher) string { return t.Name }).
 			Rules(rules.EQ("Jerry")),
 	).
-		InferName(govy.InferNameModeRuntime).
+		InferPath(govy.InferPathModeRuntime).
 		WithNameFunc(govy.NameFuncFromTypeName[Teacher]())
 
 	teacher := Teacher{Name: "Tom"}

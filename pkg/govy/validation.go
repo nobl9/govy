@@ -1,5 +1,7 @@
 package govy
 
+import "github.com/nobl9/govy/pkg/jsonpath"
+
 // ValidatorInterface defines validation entities which group properties,
 // such as [Validator].
 type ValidatorInterface[T any] interface {
@@ -16,8 +18,8 @@ type ValidatorInterface[T any] interface {
 type PropertyRulesInterface[T any] interface {
 	validationInterface[T]
 	cascadeInternal(mode CascadeMode) PropertyRulesInterface[T]
-	getName() string
-	inferNameModeInternal(mode InferNameMode) PropertyRulesInterface[T]
+	getPath() jsonpath.Path
+	inferPathModeInternal(mode InferPathMode) PropertyRulesInterface[T]
 	isPropertyRules()
 }
 
