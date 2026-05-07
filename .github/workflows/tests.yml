@@ -27,7 +27,7 @@ jobs:
           path: ./cache
           key: ${{ runner.os }}-benchmark
       - name: Store benchmark result
-        uses: benchmark-action/github-action-benchmark@v1.22.0
+        uses: benchmark-action/github-action-benchmark@v1.22.1
         with:
           name: Govy Go Benchmark
           tool: 'go'
