@@ -572,7 +572,7 @@ func TestValidatorInferPath(t *testing.T) {
 				Message:      "should be equal to 'expected'",
 			},
 			govytest.ExpectedRuleError{
-				PropertyPath: "generated-students.actual", // Generate mode.
+				PropertyPath: "['generated-students'].actual", // Generate mode.
 				IsKeyError:   true,
 				Message:      "should be equal to 'expected'",
 			},
