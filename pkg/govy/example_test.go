@@ -1469,11 +1469,11 @@ func ExampleForMap() {
 	// Validation has failed for the following properties:
 	//   - 'students' with value '{"9182300123":{"name":"Eve","age":0,"students":null,"university":{"name":"","address":""}},"91823001...':
 	//     - length must be less than or equal to 2
-	//   - 'students.9182300123' with key '9182300123':
+	//   - 'students['9182300123']' with key '9182300123':
 	//     - length must be between 9 and 9
-	//   - 'students.9182300123.name' with value 'Eve':
+	//   - 'students['9182300123'].name' with value 'Eve':
 	//     - should be not equal to 'Eve'
-	//   - 'students.918230013' with value '{"name":"Joan","age":0,"students":null,"university":{"name":"","address":""}}':
+	//   - 'students['918230013']' with value '{"name":"Joan","age":0,"students":null,"university":{"name":"","address":""}}':
 	//     - Joan cannot be a teacher for student with index 918230013
 }
 

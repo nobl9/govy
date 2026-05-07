@@ -73,6 +73,18 @@ func TestPath(t *testing.T) {
 			path:     jsonpath.New().Name("$"),
 			expected: "['$']",
 		},
+		"name with leading digit": {
+			path:     jsonpath.New().Name("1metadata"),
+			expected: "['1metadata']",
+		},
+		"name with hyphen": {
+			path:     jsonpath.New().Name("metadata-name"),
+			expected: "['metadata-name']",
+		},
+		"name with unicode": {
+			path:     jsonpath.New().Name("東京"),
+			expected: "東京",
+		},
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
@@ -132,11 +144,19 @@ func TestParsePath(t *testing.T) {
 		},
 		"tilde is a literal name": {
 			input:    "~",
-			expected: "~",
+			expected: "['~']",
 		},
 		"tilde child segment is a literal name": {
 			input:    "items.~",
-			expected: "items.~",
+			expected: "items['~']",
+		},
+		"hyphen child segment is a literal name": {
+			input:    "items.foo-bar",
+			expected: "items['foo-bar']",
+		},
+		"digit-leading child segment is a literal name": {
+			input:    "items.42",
+			expected: "items['42']",
 		},
 	}
 	for name, tc := range tests {
@@ -162,7 +182,7 @@ func TestPath_Key(t *testing.T) {
 		},
 		"integer key": {
 			path:     jsonpath.New().Name("map").Key(42),
-			expected: "map.42",
+			expected: "map['42']",
 		},
 		"key only": {
 			path:     jsonpath.New().Key("solo"),

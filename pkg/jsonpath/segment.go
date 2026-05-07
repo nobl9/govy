@@ -1,6 +1,9 @@
 package jsonpath
 
-import "strings"
+import (
+	"fmt"
+	"unicode/utf8"
+)
 
 // segmentKind identifies the type of a path segment.
 type segmentKind uint8
@@ -34,7 +37,7 @@ type segment struct {
 //	EscapeSegment("'foo'") --> "['\'foo\'']"
 //	EscapeSegment("foo.bar") --> "['foo.bar']"
 func EscapeSegment(segment string) string {
-	shouldWrap := segment == "" || strings.ContainsAny(segment, escapedChars)
+	shouldWrap := !isMemberNameShorthand(segment)
 	segment = escapeCharacters(segment)
 	if shouldWrap {
 		segment = "['" + segment + "']"
@@ -45,9 +48,9 @@ func EscapeSegment(segment string) string {
 // escapeCharacters has been based on the [net/url] package.
 func escapeCharacters(s string) string {
 	escapedCount := 0
-	for i := range s {
-		if shouldEscape(s[i]) {
-			escapedCount++
+	for _, r := range s {
+		if shouldEscape(r) {
+			escapedCount += escapeSize(r) - utf8.RuneLen(r)
 		}
 	}
 	if escapedCount == 0 {
@@ -65,33 +68,87 @@ func escapeCharacters(s string) string {
 	}
 
 	j := 0
-	for i := range len(s) {
-		switch c := s[i]; {
-		case shouldEscape(c):
+	for _, r := range s {
+		switch {
+		case shouldEscape(r):
 			t[j] = '\\'
 			j++
-			switch c {
+			switch r {
+			case '\b':
+				t[j] = 'b'
+			case '\f':
+				t[j] = 'f'
 			case '\n':
 				t[j] = 'n'
 			case '\t':
 				t[j] = 't'
 			case '\r':
 				t[j] = 'r'
+			case '\'', '\\':
+				t[j] = byte(r)
 			default:
-				t[j] = c
+				copy(t[j:], fmt.Sprintf("u%04X", r))
+				j += 4
 			}
 			j++
 		default:
-			t[j] = s[i]
-			j++
+			j += utf8.EncodeRune(t[j:], r)
 		}
 	}
 	return string(t)
 }
 
-func shouldEscape(r byte) bool {
+func shouldEscape(r rune) bool {
 	switch r {
-	case '\'', '\n', '\t', '\r':
+	case '\'', '\\', '\b', '\f', '\n', '\t', '\r':
+		return true
+	default:
+		return r >= 0 && r < ' '
+	}
+}
+
+func escapeSize(r rune) int {
+	switch r {
+	case '\'', '\\', '\b', '\f', '\n', '\t', '\r':
+		return 2
+	default:
+		return 6
+	}
+}
+
+func isMemberNameShorthand(s string) bool {
+	if s == "" {
+		return false
+	}
+	i := 0
+	for _, r := range s {
+		if i == 0 {
+			if !isNameFirst(r) {
+				return false
+			}
+		} else if !isNameChar(r) {
+			return false
+		}
+		i++
+	}
+	return true
+}
+
+func isNameChar(r rune) bool {
+	return isNameFirst(r) || r >= '0' && r <= '9'
+}
+
+func isNameFirst(r rune) bool {
+	switch {
+	case r >= 'A' && r <= 'Z':
+		return true
+	case r >= 'a' && r <= 'z':
+		return true
+	case r == '_':
+		return true
+	case r >= 0x80 && r <= 0xD7FF:
+		return true
+	case r >= 0xE000 && r <= 0x10FFFF:
 		return true
 	default:
 		return false
