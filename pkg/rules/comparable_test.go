@@ -16,7 +16,7 @@ var eqTestCases = []*struct {
 	expectedError string
 }{
 	{value: 1, input: 1},
-	{value: 1.1, input: 1.3, expectedError: "should be equal to '1.1'"},
+	{value: 1.1, input: 1.3, expectedError: "must be equal to '1.1'"},
 }
 
 func TestEQ(t *testing.T) {
@@ -47,7 +47,7 @@ var neqTestCases = []*struct {
 	expectedError string
 }{
 	{value: 1.1, input: 1.3},
-	{value: 1.1, input: 1.1, expectedError: "should be not equal to '1.1'"},
+	{value: 1.1, input: 1.1, expectedError: "must not be equal to '1.1'"},
 }
 
 func TestNEQ(t *testing.T) {
@@ -78,8 +78,8 @@ var gtTestCases = []*struct {
 	expectedError string
 }{
 	{value: 1, input: 2},
-	{value: 1, input: 1, expectedError: "should be greater than '1'"},
-	{value: 4, input: 2, expectedError: "should be greater than '4'"},
+	{value: 1, input: 1, expectedError: "must be greater than '1'"},
+	{value: 4, input: 2, expectedError: "must be greater than '4'"},
 }
 
 func TestGT(t *testing.T) {
@@ -111,7 +111,7 @@ var gteTestCases = []*struct {
 }{
 	{value: 1, input: 1},
 	{value: 2, input: 4},
-	{value: 4, input: 2, expectedError: "should be greater than or equal to '4'"},
+	{value: 4, input: 2, expectedError: "must be greater than or equal to '4'"},
 }
 
 func TestGTE(t *testing.T) {
@@ -142,8 +142,8 @@ var ltTestCases = []*struct {
 	expectedError string
 }{
 	{value: 4, input: 2},
-	{value: 1, input: 1, expectedError: "should be less than '1'"},
-	{value: 2, input: 4, expectedError: "should be less than '2'"},
+	{value: 1, input: 1, expectedError: "must be less than '1'"},
+	{value: 2, input: 4, expectedError: "must be less than '2'"},
 }
 
 func TestLT(t *testing.T) {
@@ -175,7 +175,7 @@ var lteTestCases = []*struct {
 }{
 	{value: 1, input: 1},
 	{value: 4, input: 2},
-	{value: 2, input: 4, expectedError: "should be less than or equal to '2'"},
+	{value: 2, input: 4, expectedError: "must be less than or equal to '2'"},
 }
 
 func TestLTE(t *testing.T) {

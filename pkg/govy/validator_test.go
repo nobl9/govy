@@ -519,16 +519,16 @@ func TestValidatorInferPath(t *testing.T) {
 			errs,
 			govytest.ExpectedRuleError{
 				PropertyPath: "name",
-				Message:      "should be equal to 'expected'",
+				Message:      "must be equal to 'expected'",
 			},
 			govytest.ExpectedRuleError{
 				PropertyPath: "students[0]",
-				Message:      "should be equal to 'expected'",
+				Message:      "must be equal to 'expected'",
 			},
 			govytest.ExpectedRuleError{
 				PropertyPath: "grades.actual",
 				IsKeyError:   true,
-				Message:      "should be equal to 'expected'",
+				Message:      "must be equal to 'expected'",
 			},
 		)
 	})
@@ -565,16 +565,16 @@ func TestValidatorInferPath(t *testing.T) {
 			errs,
 			govytest.ExpectedRuleError{
 				PropertyPath: "", // Path inference is disabled.
-				Message:      "should be equal to 'expected'",
+				Message:      "must be equal to 'expected'",
 			},
 			govytest.ExpectedRuleError{
 				PropertyPath: "students[0]", // Runtime mode.
-				Message:      "should be equal to 'expected'",
+				Message:      "must be equal to 'expected'",
 			},
 			govytest.ExpectedRuleError{
 				PropertyPath: "['generated-students'].actual", // Generate mode.
 				IsKeyError:   true,
-				Message:      "should be equal to 'expected'",
+				Message:      "must be equal to 'expected'",
 			},
 		)
 	})
@@ -601,12 +601,12 @@ func TestValidatorInferPath(t *testing.T) {
 		govytest.AssertError(
 			t,
 			errs,
-			govytest.ExpectedRuleError{PropertyPath: "name", Message: "should be equal to 'expected'"},
-			govytest.ExpectedRuleError{PropertyPath: "students[0]", Message: "should be equal to 'expected'"},
+			govytest.ExpectedRuleError{PropertyPath: "name", Message: "must be equal to 'expected'"},
+			govytest.ExpectedRuleError{PropertyPath: "students[0]", Message: "must be equal to 'expected'"},
 			govytest.ExpectedRuleError{
 				PropertyPath: "grades.actual",
 				IsKeyError:   true,
-				Message:      "should be equal to 'expected'",
+				Message:      "must be equal to 'expected'",
 			},
 		)
 	})

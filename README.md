@@ -315,7 +315,7 @@ func Example_messageTemplates() {
 		Name string `json:"name"`
 	}
 
-	templateString := "name length should be between {{ .MinLength }} and {{ .MaxLength }} {{ formatExamples .Examples }}"
+	templateString := "name length must be between {{ .MinLength }} and {{ .MaxLength }} {{ formatExamples .Examples }}"
 
 	v := govy.New(
 		govy.For(func(t Teacher) string { return t.Name }).
@@ -336,7 +336,7 @@ func Example_messageTemplates() {
 	// Output:
 	// Validation for Teacher has failed for the following properties:
 	//   - 'name' with value 'Tom':
-	//     - name length should be between 5 and 10 (e.g. 'Joanna', 'Jerry')
+	//     - name length must be between 5 and 10 (e.g. 'Joanna', 'Jerry')
 }
 ```
 
@@ -589,7 +589,7 @@ func Example_validationPlan() {
 	//       ],
 	//       "rules": [
 	//         {
-	//           "description": "string cannot be empty",
+	//           "description": "string must not be empty",
 	//           "errorCode": "string_not_empty"
 	//         },
 	//         {
@@ -721,7 +721,7 @@ func Example_pathInference() {
 	// Output:
 	// Validation for Teacher has failed for the following properties:
 	//   - 'name' with value 'Tom':
-	//     - should be equal to 'Jerry'
+	//     - must be equal to 'Jerry'
 }
 ```
 

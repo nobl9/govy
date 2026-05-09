@@ -446,5 +446,5 @@ func TestPropertyRulesForMap_InferPath(t *testing.T) {
 		RulesForKeys(rules.EQ("John"))
 	errs := mustPropertyErrors(t, r.Validate(Teacher{Students: map[string]int{"Luke": 35}}))
 	assert.Len(t, errs, 1)
-	assert.EqualError(t, errs, "- 'students.Luke' with key 'Luke':\n  - should be equal to 'John'")
+	assert.EqualError(t, errs, "- 'students.Luke' with key 'Luke':\n  - must be equal to 'John'")
 }

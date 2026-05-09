@@ -38,7 +38,7 @@
           "errorCode": "required"
         },
         {
-          "description": "should be equal to 'Pod'",
+          "description": "must be equal to 'Pod'",
           "errorCode": "equal_to"
         }
       ]
@@ -145,7 +145,7 @@
           "errorCode": "required"
         },
         {
-          "description": "string cannot be empty",
+          "description": "string must not be empty",
           "errorCode": "string_not_empty"
         }
       ]
@@ -228,7 +228,7 @@
           "errorCode": "required"
         },
         {
-          "description": "string cannot be empty",
+          "description": "string must not be empty",
           "errorCode": "string_not_empty"
         }
       ]
