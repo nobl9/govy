@@ -266,13 +266,13 @@ func ExamplePropertyRules_WithName() {
 	//     - should be equal to 'Tom'
 }
 
-// Beware that anything passed into `WithName` is treated as a single path segment.
-// This means that if you pass a dot-separated path-like string into this function,
-// it will escape them.
-// For constructing proper paths, see [ExamplePropertyRules_WithPath].
+// Beware that anything passed into [govy.PropertyRules.WithName] is treated as a single path segment.
+// If you pass a dot-separated path-like string into this method, govy renders
+// the dots as escaped characters inside one bracket-quoted segment.
+// For multi-segment paths, use [govy.PropertyRules.WithPath] instead.
 //
-// Note: Prior to version v0.25.0, `WithName` treated every string as a path,
-// and the presented usage was back then valid.
+// Note: Prior to v0.25.0, [govy.PropertyRules.WithName] treated every string
+// as a path, so this usage was valid then.
 func ExamplePropertyRules_WithName_wrongUsage() {
 	v := govy.New(
 		govy.For(func(t Teacher) string { return t.University.Name }).
