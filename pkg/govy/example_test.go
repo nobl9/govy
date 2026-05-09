@@ -263,7 +263,7 @@ func ExamplePropertyRules_WithName() {
 	// Output:
 	// Validation for Teacher has failed for the following properties:
 	//   - 'name' with value 'Jake':
-	//     - should be equal to 'Tom'
+	//     - must be equal to 'Tom'
 }
 
 // Beware that anything passed into [govy.PropertyRules.WithName] is treated as a single path segment.
@@ -337,9 +337,9 @@ func ExamplePropertyRules_WithPath() {
 	// Output:
 	// Validation for Teacher has failed for the following properties:
 	//   - 'university.name' with value 'Poznan University of Technology':
-	//     - should be equal to 'Tom'
+	//     - must be equal to 'Tom'
 	//   - 'students[0].index' with value '1':
-	//     - should be equal to '2'
+	//     - must be equal to '2'
 }
 
 // [govy.For] constructor creates new [govy.PropertyRules] instance.
@@ -1028,7 +1028,7 @@ func ExampleRuleToPointer() {
 	// Output:
 	// Validation has failed for the following properties:
 	//   - 'pointer' with value 'bar':
-	//     - should be equal to 'foo'
+	//     - must be equal to 'foo'
 }
 
 // Sometimes it's useful to aggregate multiple [govy.Rule] into a single, composite rule.
@@ -1269,7 +1269,7 @@ func ExamplePropertyRules_Include() {
 	// Output:
 	// Validation for Teacher has failed for the following properties:
 	//   - 'name' with value 'Jerry':
-	//     - should be equal to 'Tom'
+	//     - must be equal to 'Tom'
 	//   - 'university.address':
 	//     - property is required but was empty
 }
@@ -1472,7 +1472,7 @@ func ExampleForMap() {
 	//   - 'students['9182300123']' with key '9182300123':
 	//     - length must be between 9 and 9
 	//   - 'students['9182300123'].name' with value 'Eve':
-	//     - should be not equal to 'Eve'
+	//     - must not be equal to 'Eve'
 	//   - 'students['918230013']' with value '{"name":"Joan","age":0,"students":null,"university":{"name":"","address":""}}':
 	//     - Joan cannot be a teacher for student with index 918230013
 }
@@ -1501,7 +1501,7 @@ func ExamplePropertyRules_When() {
 	// Output:
 	// Validation for Teacher has failed for the following properties:
 	//   - 'name' with value 'Jerry':
-	//     - should be not equal to 'Jerry'
+	//     - must not be equal to 'Jerry'
 }
 
 // To customize how [govy.Rule] are evaluated use [govy.PropertyRules.Cascade].
@@ -1538,7 +1538,7 @@ func ExamplePropertyRules_Cascade() {
 	//     - always fails
 	// Validation for Teacher has failed for the following properties:
 	//   - 'name' with value 'Jerry':
-	//     - should be not equal to 'Jerry'
+	//     - must not be equal to 'Jerry'
 }
 
 // If combining [govy.New] with [govy.ForSlice] is not verbose enough for you,
@@ -1617,11 +1617,11 @@ func ExampleValidator_Cascade() {
 	// Output:
 	// Validation for Tom has failed for the following properties:
 	//   - 'age' with value '148920h0m0s':
-	//     - should be greater than '157680h0m0s'
+	//     - must be greater than '157680h0m0s'
 	// Validation for Jerry has failed for the following properties:
 	//   - 'name' with value 'Jerry':
-	//     - should be not equal to 'Jerry'
-	//     - should be equal to 'Tom'
+	//     - must not be equal to 'Jerry'
+	//     - must be equal to 'Tom'
 }
 
 // [govy.Validator.ValidateSlice] outputs [govy.ValidatorErrors] which is a slice of [govy.ValidatorError].
@@ -1872,7 +1872,7 @@ func ExamplePlan() {
 	//       ],
 	//       "rules": [
 	//         {
-	//           "description": "should be not equal to 'Jerry'",
+	//           "description": "must not be equal to 'Jerry'",
 	//           "details": "Jerry is just a name!",
 	//           "errorCode": "not_equal_to",
 	//           "conditions": [
@@ -2008,7 +2008,7 @@ func ExampleInferPathMode() {
 	// Output:
 	// Validation for Teacher has failed for the following properties:
 	//   - 'name' with value 'Tom':
-	//     - should be equal to 'Jerry'
+	//     - must be equal to 'Jerry'
 }
 
 // In the previous example we've seen [govy.InferPathModeRuntime] in action.
@@ -2055,10 +2055,10 @@ func ExampleInferPathModeGenerate() {
 
 	// Output:
 	// Validation for Teacher has failed:
-	//   - should be equal to 'Jerry'
+	//   - must be equal to 'Jerry'
 	// Validation for NotTeacher has failed for the following properties:
 	//   - 'name' with value 'Tom':
-	//     - should be equal to 'Thomas'
+	//     - must be equal to 'Thomas'
 }
 
 // Knowing when to call [govy.Validator.InferPath] is important.
@@ -2094,10 +2094,10 @@ func ExampleValidator_InferPath_changeModeInRuntime() {
 
 	// Output:
 	// Validation for Teacher has failed:
-	//   - should be equal to 'Jerry'
+	//   - must be equal to 'Jerry'
 	// ---
 	// After setting Runtime infer mode.
 	// ---
 	// Validation for Teacher has failed:
-	//   - should be equal to 'Jerry'
+	//   - must be equal to 'Jerry'
 }

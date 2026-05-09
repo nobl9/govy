@@ -354,7 +354,7 @@ func TestPropertyRules_InferPath(t *testing.T) {
 			Rules(rules.EQ("John"))
 		errs := mustPropertyErrors(t, r.Validate(Teacher{Name: "Luke"}))
 		assert.Len(t, errs, 1)
-		assert.EqualError(t, errs, "- 'name' with value 'Luke':\n  - should be equal to 'John'")
+		assert.EqualError(t, errs, "- 'name' with value 'Luke':\n  - must be equal to 'John'")
 	})
 	t.Run("selector expression getter", func(t *testing.T) {
 		r := govy.
@@ -363,7 +363,7 @@ func TestPropertyRules_InferPath(t *testing.T) {
 			Rules(rules.EQ("John"))
 		errs := mustPropertyErrors(t, r.Validate(Teacher{Name: "Luke"}))
 		assert.Len(t, errs, 1)
-		assert.EqualError(t, errs, "- 'name' with value 'Luke':\n  - should be equal to 'John'")
+		assert.EqualError(t, errs, "- 'name' with value 'Luke':\n  - must be equal to 'John'")
 	})
 	t.Run("nested selector expression getter", func(t *testing.T) {
 		r := govy.
@@ -372,7 +372,7 @@ func TestPropertyRules_InferPath(t *testing.T) {
 			Rules(rules.EQ(29))
 		errs := mustPropertyErrors(t, r.Validate(Teacher{Name: "Luke", Details: Details{Age: Age{Years: 30}}}))
 		assert.Len(t, errs, 1)
-		assert.EqualError(t, errs, "- 'details.age.years' with value '30':\n  - should be equal to '29'")
+		assert.EqualError(t, errs, "- 'details.age.years' with value '30':\n  - must be equal to '29'")
 	})
 	t.Run("variable assignment", func(t *testing.T) {
 		r := govy.
@@ -384,7 +384,7 @@ func TestPropertyRules_InferPath(t *testing.T) {
 			Rules(rules.EQ("John"))
 		errs := mustPropertyErrors(t, r.Validate(Teacher{Name: "Luke"}))
 		assert.Len(t, errs, 1)
-		assert.EqualError(t, errs, "- 'name' with value 'Luke':\n  - should be equal to 'John'")
+		assert.EqualError(t, errs, "- 'name' with value 'Luke':\n  - must be equal to 'John'")
 	})
 	t.Run("nested selector variable assignment", func(t *testing.T) {
 		r := govy.
@@ -396,7 +396,7 @@ func TestPropertyRules_InferPath(t *testing.T) {
 			Rules(rules.EQ(29))
 		errs := mustPropertyErrors(t, r.Validate(Teacher{Name: "Luke", Details: Details{Age: Age{Years: 30}}}))
 		assert.Len(t, errs, 1)
-		assert.EqualError(t, errs, "- 'details.age.years' with value '30':\n  - should be equal to '29'")
+		assert.EqualError(t, errs, "- 'details.age.years' with value '30':\n  - must be equal to '29'")
 	})
 	t.Run("external function", func(t *testing.T) {
 		getter := func(t Teacher) int {
@@ -409,7 +409,7 @@ func TestPropertyRules_InferPath(t *testing.T) {
 			Rules(rules.EQ(29))
 		errs := mustPropertyErrors(t, r.Validate(Teacher{Name: "Luke", Details: Details{Age: Age{Years: 30}}}))
 		assert.Len(t, errs, 1)
-		assert.EqualError(t, errs, "- 'details.age.years' with value '30':\n  - should be equal to '29'")
+		assert.EqualError(t, errs, "- 'details.age.years' with value '30':\n  - must be equal to '29'")
 	})
 	t.Run("pointer", func(t *testing.T) {
 		r := govy.
@@ -418,7 +418,7 @@ func TestPropertyRules_InferPath(t *testing.T) {
 			Rules(rules.EQ(ptr("No remarks")))
 		errs := mustPropertyErrors(t, r.Validate(Teacher{Name: "Luke", Remarks: ptr("Some remarks")}))
 		assert.Len(t, errs, 1)
-		assert.ErrorContains(t, errs, "- 'remarks' with value 'Some remarks':\n  - should be equal to '")
+		assert.ErrorContains(t, errs, "- 'remarks' with value 'Some remarks':\n  - must be equal to '")
 	})
 	t.Run("multiple return statements, infer from top level", func(t *testing.T) {
 		r := govy.
@@ -432,7 +432,7 @@ func TestPropertyRules_InferPath(t *testing.T) {
 			Rules(rules.EQ(ptr("No remarks")))
 		errs := mustPropertyErrors(t, r.Validate(Teacher{Name: "Luke", Remarks: ptr("Some remarks")}))
 		assert.Len(t, errs, 1)
-		assert.ErrorContains(t, errs, "- 'remarks' with value 'Some remarks':\n  - should be equal to '")
+		assert.ErrorContains(t, errs, "- 'remarks' with value 'Some remarks':\n  - must be equal to '")
 	})
 	t.Run("multiple return statements, infer from nested if", func(t *testing.T) {
 		r := govy.
@@ -446,7 +446,7 @@ func TestPropertyRules_InferPath(t *testing.T) {
 			Rules(rules.EQ(ptr("No remarks")))
 		errs := mustPropertyErrors(t, r.Validate(Teacher{Name: "Luke", Remarks: ptr("Some remarks")}))
 		assert.Len(t, errs, 1)
-		assert.ErrorContains(t, errs, "- 'remarks' with value 'Some remarks':\n  - should be equal to '")
+		assert.ErrorContains(t, errs, "- 'remarks' with value 'Some remarks':\n  - must be equal to '")
 	})
 	t.Run("no json tag", func(t *testing.T) {
 		r := govy.
@@ -455,7 +455,7 @@ func TestPropertyRules_InferPath(t *testing.T) {
 			Rules(rules.EQ("Cormack"))
 		errs := mustPropertyErrors(t, r.Validate(Teacher{Surname: "Ellis"}))
 		assert.Len(t, errs, 1)
-		assert.EqualError(t, errs, "- 'Surname' with value 'Ellis':\n  - should be equal to 'Cormack'")
+		assert.EqualError(t, errs, "- 'Surname' with value 'Ellis':\n  - must be equal to 'Cormack'")
 	})
 }
 

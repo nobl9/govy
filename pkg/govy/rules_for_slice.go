@@ -16,11 +16,12 @@ func ForSlice[S ~[]T, T, P any](getter PropertyGetter[S, P]) PropertyRulesForSli
 
 // PropertyRulesForSlice is responsible for validating a single property.
 type PropertyRulesForSlice[S ~[]T, T, P any] struct {
-	sliceRules    PropertyRules[S, S]
-	forEachRules  PropertyRules[T, T]
-	getter        PropertyGetter[S, P]
-	cascadeMode   CascadeMode
-	inferPathMode InferPathMode
+	sliceRules       PropertyRules[S, S]
+	forEachRules     PropertyRules[T, T]
+	getter           PropertyGetter[S, P]
+	cascadeMode      CascadeMode
+	inferPathMode    InferPathMode
+	inferPathModeSet bool
 
 	predicateMatcher[P]
 }
@@ -127,6 +128,7 @@ func (r PropertyRulesForSlice[S, T, P]) Cascade(mode CascadeMode) PropertyRulesF
 // InferPath => refer to [PropertyRules.InferPath] documentation.
 func (r PropertyRulesForSlice[S, T, P]) InferPath(mode InferPathMode) PropertyRulesForSlice[S, T, P] {
 	r.inferPathMode = mode
+	r.inferPathModeSet = true
 	r.sliceRules = r.sliceRules.InferPath(mode)
 	return r
 }
@@ -145,7 +147,7 @@ func (r PropertyRulesForSlice[S, T, P]) cascadeInternal(mode CascadeMode) Proper
 // fulfills [PropertyRulesInterface] interface.
 // If the [InferPathMode] is already set, it won't change it.
 func (r PropertyRulesForSlice[S, T, P]) inferPathModeInternal(mode InferPathMode) PropertyRulesInterface[P] {
-	if r.inferPathMode != 0 {
+	if r.inferPathModeSet {
 		return r
 	}
 	return r.InferPath(mode)

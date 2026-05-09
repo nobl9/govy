@@ -19,13 +19,14 @@ func ForMap[M ~map[K]V, K comparable, V, P any](getter PropertyGetter[M, P]) Pro
 
 // PropertyRulesForMap is responsible for validating a single property.
 type PropertyRulesForMap[M ~map[K]V, K comparable, V, P any] struct {
-	mapRules      PropertyRules[M, P]
-	forKeyRules   PropertyRules[K, K]
-	forValueRules PropertyRules[V, V]
-	forItemRules  PropertyRules[MapItem[K, V], MapItem[K, V]]
-	getter        PropertyGetter[M, P]
-	cascadeMode   CascadeMode
-	inferPathMode InferPathMode
+	mapRules         PropertyRules[M, P]
+	forKeyRules      PropertyRules[K, K]
+	forValueRules    PropertyRules[V, V]
+	forItemRules     PropertyRules[MapItem[K, V], MapItem[K, V]]
+	getter           PropertyGetter[M, P]
+	cascadeMode      CascadeMode
+	inferPathMode    InferPathMode
+	inferPathModeSet bool
 
 	predicateMatcher[P]
 }
@@ -198,6 +199,7 @@ func (r PropertyRulesForMap[M, K, V, P]) Cascade(mode CascadeMode) PropertyRules
 // InferPath => refer to [PropertyRules.InferPath] documentation.
 func (r PropertyRulesForMap[M, K, V, P]) InferPath(mode InferPathMode) PropertyRulesForMap[M, K, V, P] {
 	r.inferPathMode = mode
+	r.inferPathModeSet = true
 	r.mapRules = r.mapRules.InferPath(mode)
 	return r
 }
@@ -216,7 +218,7 @@ func (r PropertyRulesForMap[M, K, V, P]) cascadeInternal(mode CascadeMode) Prope
 // fulfills [PropertyRulesInterface] interface.
 // If the [InferPathMode] is already set, it won't change it.
 func (r PropertyRulesForMap[M, K, V, P]) inferPathModeInternal(mode InferPathMode) PropertyRulesInterface[P] {
-	if r.inferPathMode != 0 {
+	if r.inferPathModeSet {
 		return r
 	}
 	return r.InferPath(mode)

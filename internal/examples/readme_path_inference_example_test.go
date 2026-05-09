@@ -32,5 +32,5 @@ func Example_pathInference() {
 	// Output:
 	// Validation for Teacher has failed for the following properties:
 	//   - 'name' with value 'Tom':
-	//     - should be equal to 'Jerry'
+	//     - must be equal to 'Jerry'
 }

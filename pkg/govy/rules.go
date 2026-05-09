@@ -98,19 +98,20 @@ func (emptyErr) Error() string { return "" }
 // It is the middle-level building block of the validation process,
 // aggregated by [Validator] and aggregating [Rule].
 type PropertyRules[T, P any] struct {
-	path            jsonpath.Path
-	pathFunc        inferPathFunc
-	getter          internalPropertyGetter[T, P]
-	transformGetter internalTransformPropertyGetter[T, P]
-	rules           []validationInterface[T]
-	required        bool
-	omitEmpty       bool
-	hideValue       bool
-	isPointer       bool
-	cascadeMode     CascadeMode
-	inferPathMode   InferPathMode
-	examples        []string
-	originalType    *typeinfo.TypeInfo
+	path             jsonpath.Path
+	pathFunc         inferPathFunc
+	getter           internalPropertyGetter[T, P]
+	transformGetter  internalTransformPropertyGetter[T, P]
+	rules            []validationInterface[T]
+	required         bool
+	omitEmpty        bool
+	hideValue        bool
+	isPointer        bool
+	cascadeMode      CascadeMode
+	inferPathMode    InferPathMode
+	inferPathModeSet bool
+	examples         []string
+	originalType     *typeinfo.TypeInfo
 
 	predicateMatcher[P]
 }
@@ -248,6 +249,7 @@ func (r PropertyRules[T, P]) Cascade(mode CascadeMode) PropertyRules[T, P] {
 // this setting will have no effect, acting like [InferPathModeDisable].
 func (r PropertyRules[T, P]) InferPath(mode InferPathMode) PropertyRules[T, P] {
 	r.inferPathMode = mode
+	r.inferPathModeSet = true
 	return r
 }
 
@@ -264,7 +266,7 @@ func (r PropertyRules[T, P]) cascadeInternal(mode CascadeMode) PropertyRulesInte
 // inferPathModeInternal is an internal wrapper around [PropertyRules.InferPath] which
 // fulfills [PropertyRulesInterface] interface.
 func (r PropertyRules[T, P]) inferPathModeInternal(mode InferPathMode) PropertyRulesInterface[P] {
-	if r.inferPathMode != 0 {
+	if r.inferPathModeSet {
 		return r
 	}
 	return r.InferPath(mode)

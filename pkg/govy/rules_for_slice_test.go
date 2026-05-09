@@ -239,5 +239,5 @@ func TestPropertyRulesForSlice_InferPath(t *testing.T) {
 		RulesForEach(rules.EQ("John"))
 	errs := mustPropertyErrors(t, r.Validate(Teacher{Students: []string{"Luke"}}))
 	assert.Len(t, errs, 1)
-	assert.EqualError(t, errs, "- 'students[0]' with value 'Luke':\n  - should be equal to 'John'")
+	assert.EqualError(t, errs, "- 'students[0]' with value 'Luke':\n  - must be equal to 'John'")
 }
