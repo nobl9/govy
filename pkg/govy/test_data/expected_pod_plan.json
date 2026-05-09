@@ -112,7 +112,7 @@
       ]
     },
     {
-      "path": "$.metadata.labels.~",
+      "path": "$.metadata.labels.*~",
       "typeInfo": {
         "name": "string",
         "kind": "string"

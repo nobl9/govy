@@ -8,25 +8,28 @@ import (
 
 	"github.com/nobl9/govy/internal"
 	"github.com/nobl9/govy/internal/logging"
+	"github.com/nobl9/govy/pkg/jsonpath"
 )
 
 var (
 	includeTestFiles = false
-	inferredNames    = make(map[string]InferredName)
+	inferredPaths    = make(map[string]InferredPath)
 	mu               sync.RWMutex
 )
 
-// InferredName represents an inferred property name.
-type InferredName struct {
-	// Name is the inferred property name.
-	Name string
-	// File is the relative path to the file where the [govy.PropertyRules.For] is detected.
+// InferredPath represents an inferred relative property path for a specific getter call site.
+type InferredPath struct {
+	// Path is the inferred relative property path fragment.
+	// It does not include a leading `$` segment.
+	Path jsonpath.Path
+	// File is the path, relative to the module root, to the file where a govy property
+	// constructor call was detected.
 	File string
-	// Line is the line number in the File where the [govy.PropertyRules.For] is detected.
+	// Line is the line number in File where that constructor call was detected.
 	Line int
 }
 
-func (g InferredName) key() string {
+func (g InferredPath) key() string {
 	return getterLocationKey(g.File, g.Line)
 }
 
@@ -36,42 +39,42 @@ func SetLogLevel(level slog.Level) {
 	logging.SetLogLevel(level)
 }
 
-// SetInferredName sets the inferred property name for the given file and line.
-// Once it's registered it can be retrieved using [GetInferredName].
-// It is primarily exported for code generation utility of govy which runs in [InferNameModeGenerate].
-func SetInferredName(loc InferredName) {
+// SetInferredPath sets the inferred relative property path for the given file and line.
+// Once it's registered it can be retrieved using [GetInferredPath].
+// It is primarily exported for code generation utility of govy which runs in [InferPathModeGenerate].
+func SetInferredPath(loc InferredPath) {
 	mu.Lock()
-	inferredNames[loc.key()] = loc
+	inferredPaths[loc.key()] = loc
 	mu.Unlock()
 }
 
-// GetInferredName returns the inferred property name for the given file and line.
-// The name has to be first set using [SetInferredName].
-// It is primarily exported for govy to utilize when [InferNameModeGenerate] mode is set.
-func GetInferredName(file string, line int) string {
+// GetInferredPath returns the inferred relative property path for the given file and line.
+// The path has to be first set using [SetInferredPath].
+// It is primarily exported for govy to utilize when [InferPathModeGenerate] mode is set.
+func GetInferredPath(file string, line int) jsonpath.Path {
 	mu.RLock()
 	defer mu.RUnlock()
-	name, ok := inferredNames[getterLocationKey(file, line)]
+	p, ok := inferredPaths[getterLocationKey(file, line)]
 	if !ok {
 		logging.Logger().Error(
-			"inferred name was not found",
+			"inferred path was not found",
 			slog.String("file", file),
 			slog.Int("line", line),
 		)
-		return ""
+		return jsonpath.Path{}
 	}
-	return name.Name
+	return p.Path
 }
 
-// SetInferNameIncludeTestFiles sets whether to include test files in name inference mechanism.
-func SetInferNameIncludeTestFiles(inc bool) {
+// SetInferPathIncludeTestFiles sets whether test files participate in path inference.
+func SetInferPathIncludeTestFiles(inc bool) {
 	mu.Lock()
 	includeTestFiles = inc
 	mu.Unlock()
 }
 
-// GetInferNameIncludeTestFiles returns whether to include test files in name inference mechanism.
-func GetInferNameIncludeTestFiles() bool {
+// GetInferPathIncludeTestFiles returns whether test files participate in path inference.
+func GetInferPathIncludeTestFiles() bool {
 	mu.RLock()
 	defer mu.RUnlock()
 	return includeTestFiles
