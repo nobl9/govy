@@ -30,7 +30,7 @@ func Get[T any]() TypeInfo {
 	if typ == nil {
 		return TypeInfo{}
 	}
-	if typ.Kind() == reflect.Ptr {
+	if typ.Kind() == reflect.Pointer {
 		typ = typ.Elem()
 	}
 	result := TypeInfo{
