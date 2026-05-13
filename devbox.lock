@@ -145,51 +145,51 @@
         }
       }
     },
-    "gotools@0.34.0": {
-      "last_modified": "2025-10-22T20:59:19Z",
-      "resolved": "github:NixOS/nixpkgs/01b6809f7f9d1183a2b3e081f0a1e6f8f415cb09#gotools",
+    "gotools@0.44.0": {
+      "last_modified": "2026-04-23T13:07:47Z",
+      "resolved": "github:NixOS/nixpkgs/01fbdeef22b76df85ea168fbfe1bfd9e63681b30#gotools",
       "source": "devbox-search",
-      "version": "0.34.0",
+      "version": "0.44.0",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/32rb5avsad08bkcxpjbhcr8n7gjzsz1a-gotools-0.34.0",
+              "path": "/nix/store/v4ydl55gm80rj9lky6qrinj5df1vi8lv-gotools-0.44.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/32rb5avsad08bkcxpjbhcr8n7gjzsz1a-gotools-0.34.0"
+          "store_path": "/nix/store/v4ydl55gm80rj9lky6qrinj5df1vi8lv-gotools-0.44.0"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/9ypq7cwvyv7zdm63fb0g0hzdvmk8pnx9-gotools-0.34.0",
+              "path": "/nix/store/wqhapxzcq77zv0c867k0991m3vv0r3g3-gotools-0.44.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/9ypq7cwvyv7zdm63fb0g0hzdvmk8pnx9-gotools-0.34.0"
+          "store_path": "/nix/store/wqhapxzcq77zv0c867k0991m3vv0r3g3-gotools-0.44.0"
         },
         "x86_64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/07yyxbbpql5ppx8kxv81c28yqwm6pi37-gotools-0.34.0",
+              "path": "/nix/store/7w1qflv2b0mgfia3xjnkghhyanv1rgzk-gotools-0.44.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/07yyxbbpql5ppx8kxv81c28yqwm6pi37-gotools-0.34.0"
+          "store_path": "/nix/store/7w1qflv2b0mgfia3xjnkghhyanv1rgzk-gotools-0.44.0"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/pydkhsylb9n1dwjn78j8gnvg9hbrgza3-gotools-0.34.0",
+              "path": "/nix/store/mip3wvnnvakhk9q3jjr9b169lq6v60ln-gotools-0.44.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/pydkhsylb9n1dwjn78j8gnvg9hbrgza3-gotools-0.34.0"
+          "store_path": "/nix/store/mip3wvnnvakhk9q3jjr9b169lq6v60ln-gotools-0.44.0"
         }
       }
     },
