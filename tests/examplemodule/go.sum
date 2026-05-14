@@ -1,7 +1,10 @@
 github.com/google/go-cmp v0.6.0 h1:ofyhxvXcZhMsU5ulbFiLKl/XBFqE1GSq7atu8tAmTRI=
 github.com/google/go-cmp v0.6.0/go.mod h1:17dUlkBOakJ0+DkrSSNjCkIjxS6bF9zb3elmeNGIjoY=
-github.com/nobl9/govy v0.24.0 h1:xPJj1x4yQcGRt2iVdKuC4tKS6O6hTpXidd58oqJWJy4=
-github.com/nobl9/govy v0.24.0/go.mod h1:Uj5y21Hg0D/UGwI7nEpd6hL7OdHZAERjnHRksUJn2kg=
+github.com/nobl9/govy v0.25.0 h1:oOWNLnO4ZgGMxa96lDCFIWkrQTRYgRfrG8DqwL0I3Fc=
+github.com/nobl9/govy v0.25.0/go.mod h1:fExiIzXORe0ktwg2bWasOAmCZtEFMQkR4PpgzhHcZSA=
 golang.org/x/mod v0.36.0 h1:JJjpVx6myfUsUdAzZuOSTTmRE0PfZeNWzzvKrP7amb4=
+golang.org/x/mod v0.36.0/go.mod h1:moc6ELqsWcOw5Ef3xVprK5ul/MvtVvkIXLziUOICjUQ=
 golang.org/x/sync v0.20.0 h1:e0PTpb7pjO8GAtTs2dQ6jYa5BWYlMuX047Dco/pItO4=
+golang.org/x/sync v0.20.0/go.mod h1:9xrNwdLfx4jkKbNva9FpL6vEN7evnE43NNNJQ2LF3+0=
 golang.org/x/tools v0.45.0 h1:18qN3FAooORvApf5XjCXgsuayZOEtXf6JK18I3+ONa8=
+golang.org/x/tools v0.45.0/go.mod h1:LuUGqqaXcXMEFEruIVJVm5mgDD8vww/z/SR1gQ4uE/0=
