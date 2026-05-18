@@ -2,7 +2,6 @@ package jsonpath
 
 import (
 	"cmp"
-	"fmt"
 	"slices"
 	"strconv"
 	"strings"
@@ -80,12 +79,6 @@ func (p Path) KeyWildcard() Path {
 // IndexWildcard appends an array wildcard segment to the path.
 func (p Path) IndexWildcard() Path {
 	return p.appendSegment(segment{kind: segmentValueWildcard, name: indexWildcard})
-}
-
-// Key appends a map key segment to the path, escaping special characters as needed.
-// Keys are stored as name segments since they render identically.
-func (p Path) Key(key any) Path {
-	return p.appendSegment(segment{kind: segmentName, name: fmt.Sprint(key)})
 }
 
 // Join appends another [Path] to this one.
