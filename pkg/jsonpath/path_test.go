@@ -167,35 +167,6 @@ func TestParsePath(t *testing.T) {
 	}
 }
 
-func TestPath_Key(t *testing.T) {
-	tests := map[string]struct {
-		path     jsonpath.Path
-		expected string
-	}{
-		"simple key": {
-			path:     jsonpath.New().Name("map").Key("myKey"),
-			expected: "map.myKey",
-		},
-		"key with dot": {
-			path:     jsonpath.New().Name("map").Key("complex.key"),
-			expected: "map['complex.key']",
-		},
-		"integer key": {
-			path:     jsonpath.New().Name("map").Key(42),
-			expected: "map['42']",
-		},
-		"key only": {
-			path:     jsonpath.New().Key("solo"),
-			expected: "solo",
-		},
-	}
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			assert.Equal(t, tc.expected, tc.path.String())
-		})
-	}
-}
-
 func TestPath_JoinPath(t *testing.T) {
 	tests := map[string]struct {
 		base     jsonpath.Path

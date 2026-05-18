@@ -361,7 +361,7 @@ func (n pathFinder) findPathInIndexExpr(
 }
 
 // appendIndexExpr appends an index expression to the path.
-// For integer literals it uses [Path.Index], for string literals [Path.Key],
+// For integer literals it uses [Path.Index], for string literals [Path.Name],
 // and for non-literal expressions it falls back to a raw "[]" segment.
 func (n pathFinder) appendIndexExpr(path jsonpath.Path, index ast.Expr) jsonpath.Path {
 	lit, ok := index.(*ast.BasicLit)
@@ -383,7 +383,7 @@ func (n pathFinder) appendIndexExpr(path jsonpath.Path, index ast.Expr) jsonpath
 			logging.Logger().Debug(fmt.Sprintf("failed to unquote string literal: %v", err))
 			return path.UnknownIndex()
 		}
-		return path.Key(key)
+		return path.Name(key)
 	default:
 		logging.Logger().Debug(fmt.Sprintf("unhandled BasicLit kind in index expression: %v", lit.Kind))
 	}
