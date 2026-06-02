@@ -4,27 +4,26 @@ Nested validators, slice and map property rules, slice pointers, and validator v
 
 ## Examples
 
-- [Include nested validators](#examplepropertyrules_include)
-- [Validate each slice element](#exampleforslice)
-- [Validate slices of pointers](#exampleforslice_sliceofpointers)
-- [Validate each map value](#exampleformap)
-- [Remove properties by path](#examplevalidator_removepropertiesbypath)
+- [Include nested validators](#include-nested-validators)
+- [Validate each slice element](#validate-each-slice-element)
+- [Validate slices of pointers](#validate-slices-of-pointers)
+- [Validate each map value](#validate-each-map-value)
+- [Remove properties by path](#remove-properties-by-path)
 
-## ExamplePropertyRules_Include
-
-So far we've defined validation rules for simple, top-level properties.
-What If we want to define validation rules for nested properties?
-We can use [govy.PropertyRules.Include] to include another [govy.Validator] in our [govy.PropertyRules].
-
-Let's extend our [Teacher] struct to include a nested [University] property.
-[University] in of itself is another struct with its own validation rules.
-
-Notice how the nested property path is automatically built for you,
-each segment separated by a dot.
+## Include nested validators
 
 [//]: # (embed: ExamplePropertyRules_Include)
 
 ```go
+// So far we've defined validation rules for simple, top-level properties.
+// What If we want to define validation rules for nested properties?
+// We can use [govy.PropertyRules.Include] to include another [govy.Validator] in our [govy.PropertyRules].
+//
+// Let's extend our [Teacher] struct to include a nested [University] property.
+// [University] in of itself is another struct with its own validation rules.
+//
+// Notice how the nested property path is automatically built for you,
+// each segment separated by a dot.
 func ExamplePropertyRules_Include() {
 	universityValidation := govy.New(
 		govy.For(func(u University) string { return u.Address }).
@@ -63,34 +62,33 @@ func ExamplePropertyRules_Include() {
 }
 ```
 
-## ExampleForSlice
-
-When dealing with slices we often want to both validate the whole slice
-and each of its elements.
-You can use [govy.ForSlice] function to do just that.
-It returns a new struct [govy.PropertyRulesForSlice] which behaves exactly
-the same as [govy.PropertyRules], but extends its API slightly.
-
-To define rules for each element use:
-  - [govy.PropertyRulesForSlice.RulesForEach]
-  - [govy.PropertyRulesForSlice.IncludeForEach]
-
-These work exactly the same way as [govy.PropertyRules.Rules] and [govy.PropertyRules.Include]
-verifying each slice element.
-
-[govy.PropertyRulesForSlice.Rules] is in turn used to define rules for the whole slice.
-
-Note: [govy.PropertyRulesForSlice] does not implement Include function for the whole slice.
-
-In the below example, we're defining that students slice must have at most 2 elements
-and that each element's index must be unique.
-For each element we're also including [Student] [govy.Validator].
-Notice that property path for slices has the following format:
-<slice_name>[<index>].<slice_property_name>
+## Validate each slice element
 
 [//]: # (embed: ExampleForSlice)
 
 ```go
+// When dealing with slices we often want to both validate the whole slice
+// and each of its elements.
+// You can use [govy.ForSlice] function to do just that.
+// It returns a new struct [govy.PropertyRulesForSlice] which behaves exactly
+// the same as [govy.PropertyRules], but extends its API slightly.
+//
+// To define rules for each element use:
+//   - [govy.PropertyRulesForSlice.RulesForEach]
+//   - [govy.PropertyRulesForSlice.IncludeForEach]
+//
+// These work exactly the same way as [govy.PropertyRules.Rules] and [govy.PropertyRules.Include]
+// verifying each slice element.
+//
+// [govy.PropertyRulesForSlice.Rules] is in turn used to define rules for the whole slice.
+//
+// Note: [govy.PropertyRulesForSlice] does not implement Include function for the whole slice.
+//
+// In the below example, we're defining that students slice must have at most 2 elements
+// and that each element's index must be unique.
+// For each element we're also including [Student] [govy.Validator].
+// Notice that property path for slices has the following format:
+// <slice_name>[<index>].<slice_property_name>
 func ExampleForSlice() {
 	studentValidator := govy.New(
 		govy.For(func(s Student) string { return s.Index }).
@@ -130,26 +128,25 @@ func ExampleForSlice() {
 }
 ```
 
-## ExampleForSlice_sliceOfPointers
-
-When dealing with slices of pointers you may find it problematic to add [govy.Rule]
-with [govy.PropertyRulesForSlice.RulesForEach].
-The builtin rules, and most likely your custom rules as well, all operate on non-pointer values.
-This means you cannot use them on your slice's pointer elements.
-
-To solve this problem you can use [govy.ForPointer] constructor and convert any [govy.Rule]
-to work on pointers.
-
-In the below example we're defining two [govy.Validator] instances:
-  - 'faultyValidator' which will not fail for 'nil' value
-  - 'goodValidator' which will fail for 'nil' value by using [rules.Required] rule
-
-This behavior is consistent with [govy.ForPointer] constructor, which will skip the validation
-unless you add [govy.PropertyRules.Required] to enforce the value to be a non-nil pointer.
+## Validate slices of pointers
 
 [//]: # (embed: ExampleForSlice_sliceOfPointers)
 
 ```go
+// When dealing with slices of pointers you may find it problematic to add [govy.Rule]
+// with [govy.PropertyRulesForSlice.RulesForEach].
+// The builtin rules, and most likely your custom rules as well, all operate on non-pointer values.
+// This means you cannot use them on your slice's pointer elements.
+//
+// To solve this problem you can use [govy.ForPointer] constructor and convert any [govy.Rule]
+// to work on pointers.
+//
+// In the below example we're defining two [govy.Validator] instances:
+//   - 'faultyValidator' which will not fail for 'nil' value
+//   - 'goodValidator' which will fail for 'nil' value by using [rules.Required] rule
+//
+// This behavior is consistent with [govy.ForPointer] constructor, which will skip the validation
+// unless you add [govy.PropertyRules.Required] to enforce the value to be a non-nil pointer.
 func ExampleForSlice_sliceOfPointers() {
 	type Pointers struct {
 		Pointers []*string `json:"pointers"`
@@ -196,44 +193,43 @@ func ExampleForSlice_sliceOfPointers() {
 }
 ```
 
-## ExampleForMap
-
-When dealing with maps there are three forms of iteration:
-  - keys
-  - values
-  - key-value pairs (items)
-
-You can use [govy.ForMap] function to define rules for all the aforementioned iterators.
-It returns a new struct [govy.PropertyRulesForMap] which behaves similar to
-[govy.PropertyRulesForSlice]..
-
-To define rules for keys use:
-  - [govy.PropertyRulesForMap.RulesForKeys]
-  - [govy.PropertyRulesForMap.IncludeForKeys]
-  - [govy.PropertyRulesForMap.RulesForValues]
-  - [govy.PropertyRulesForMap.IncludeForValues]
-  - [govy.PropertyRulesForMap.RulesForItems]
-  - [govy.PropertyRulesForMap.IncludeForItems]
-
-These work exactly the same way as [govy.PropertyRules.Rules] and [govy.PropertyRules.Include]
-verifying each map's key, value or [govy.MapItem].
-
-[govy.PropertyRulesForMap.Rules] is in turn used to define rules for the whole map.
-
-Note: [govy.PropertyRulesForMap] does not implement Include function for the whole map.
-
-In the below example, we're defining that student index to [Teacher] map:
-  - Must have at most 2 elements (map).
-  - Keys must have a length of 9 (keys).
-  - Eve cannot be a teacher for any student (values).
-  - Joan cannot be a teacher for student with index 918230013 (items).
-
-Notice that property path for maps has the following format:
-<map_name>.<key>.<map_property_name>
+## Validate each map value
 
 [//]: # (embed: ExampleForMap)
 
 ```go
+// When dealing with maps there are three forms of iteration:
+//   - keys
+//   - values
+//   - key-value pairs (items)
+//
+// You can use [govy.ForMap] function to define rules for all the aforementioned iterators.
+// It returns a new struct [govy.PropertyRulesForMap] which behaves similar to
+// [govy.PropertyRulesForSlice]..
+//
+// To define rules for keys use:
+//   - [govy.PropertyRulesForMap.RulesForKeys]
+//   - [govy.PropertyRulesForMap.IncludeForKeys]
+//   - [govy.PropertyRulesForMap.RulesForValues]
+//   - [govy.PropertyRulesForMap.IncludeForValues]
+//   - [govy.PropertyRulesForMap.RulesForItems]
+//   - [govy.PropertyRulesForMap.IncludeForItems]
+//
+// These work exactly the same way as [govy.PropertyRules.Rules] and [govy.PropertyRules.Include]
+// verifying each map's key, value or [govy.MapItem].
+//
+// [govy.PropertyRulesForMap.Rules] is in turn used to define rules for the whole map.
+//
+// Note: [govy.PropertyRulesForMap] does not implement Include function for the whole map.
+//
+// In the below example, we're defining that student index to [Teacher] map:
+//   - Must have at most 2 elements (map).
+//   - Keys must have a length of 9 (keys).
+//   - Eve cannot be a teacher for any student (values).
+//   - Joan cannot be a teacher for student with index 918230013 (items).
+//
+// Notice that property path for maps has the following format:
+// <map_name>.<key>.<map_property_name>
 func ExampleForMap() {
 	teacherValidator := govy.New(
 		govy.For(func(t Teacher) string { return t.Name }).
@@ -287,14 +283,13 @@ func ExampleForMap() {
 }
 ```
 
-## ExampleValidator_RemovePropertiesByPath
-
-This example demonstrates how to remove specific properties from a [govy.Validator] by their paths.
-This is useful when you want to create a modified validator without certain rules.
+## Remove properties by path
 
 [//]: # (embed: ExampleValidator_RemovePropertiesByPath)
 
 ```go
+// This example demonstrates how to remove specific properties from a [govy.Validator] by their paths.
+// This is useful when you want to create a modified validator without certain rules.
 func ExampleValidator_RemovePropertiesByPath() {
 	baseValidator := govy.New(
 		govy.For(func(t Teacher) string { return t.Name }).

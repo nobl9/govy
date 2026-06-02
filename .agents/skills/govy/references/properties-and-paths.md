@@ -4,36 +4,35 @@ Property getters, names, explicit JSON paths, pointers, transforms, required and
 
 ## Examples
 
-- [Name property rules](#examplepropertyrules_withname)
-- [Avoid dotted property names](#examplepropertyrules_withname_wrongusage)
-- [Set nested property paths](#examplepropertyrules_withpath)
-- [Validate optional pointer properties](#exampleforpointer)
-- [Transform values before validation](#exampletransform)
-- [Require non-empty property values](#examplepropertyrules_required)
-- [Skip validation for empty values](#examplepropertyrules_omitempty)
-- [Hide sensitive values in errors](#examplepropertyrules_hidevalue)
-- [Validate the current object](#examplegetself)
-- [Run property rules conditionally](#examplepropertyrules_when)
-- [Cascade failures within property rules](#examplepropertyrules_cascade)
+- [Name property rules](#name-property-rules)
+- [Avoid dotted property names](#avoid-dotted-property-names)
+- [Set nested property paths](#set-nested-property-paths)
+- [Validate optional pointer properties](#validate-optional-pointer-properties)
+- [Transform values before validation](#transform-values-before-validation)
+- [Require non-empty property values](#require-non-empty-property-values)
+- [Skip validation for empty values](#skip-validation-for-empty-values)
+- [Hide sensitive values in errors](#hide-sensitive-values-in-errors)
+- [Validate the current object](#validate-the-current-object)
+- [Run property rules conditionally](#run-property-rules-conditionally)
+- [Cascade failures within property rules](#cascade-failures-within-property-rules)
 
-## ExamplePropertyRules_WithName
-
-So far we've been using a very simple [govy.PropertyRules] instance:
-
-	validation.For(func(t Teacher) string { return t.Name }).
-		Rules(validation.NewRule(func(name string) error { return fmt.Errorf("always fails") }))
-
-The error message returned by this property rule does not tell us
-which property is failing.
-Let's change that by adding an explicit path segment using [govy.PropertyRules.WithName].
-
-We can also change the [govy.Rule] to be something more real.
-govy comes with a number of predefined [govy.Rule], we'll use
-[rules.EQ] which accepts a single argument, value to compare with.
+## Name property rules
 
 [//]: # (embed: ExamplePropertyRules_WithName)
 
 ```go
+// So far we've been using a very simple [govy.PropertyRules] instance:
+//
+//	validation.For(func(t Teacher) string { return t.Name }).
+//		Rules(validation.NewRule(func(name string) error { return fmt.Errorf("always fails") }))
+//
+// The error message returned by this property rule does not tell us
+// which property is failing.
+// Let's change that by adding an explicit path segment using [govy.PropertyRules.WithName].
+//
+// We can also change the [govy.Rule] to be something more real.
+// govy comes with a number of predefined [govy.Rule], we'll use
+// [rules.EQ] which accepts a single argument, value to compare with.
 func ExamplePropertyRules_WithName() {
 	v := govy.New(
 		govy.For(func(t Teacher) string { return t.Name }).
@@ -58,19 +57,18 @@ func ExamplePropertyRules_WithName() {
 }
 ```
 
-## ExamplePropertyRules_WithName_wrongUsage
-
-Beware that anything passed into [govy.PropertyRules.WithName] is treated as a single path segment.
-If you pass a dot-separated path-like string into this method, govy renders
-the dots as escaped characters inside one bracket-quoted segment.
-For multi-segment paths, use [govy.PropertyRules.WithPath] instead.
-
-Note: Prior to v0.25.0, [govy.PropertyRules.WithName] treated every string
-as a path, so this usage was valid then.
+## Avoid dotted property names
 
 [//]: # (embed: ExamplePropertyRules_WithName_wrongUsage)
 
 ```go
+// Beware that anything passed into [govy.PropertyRules.WithName] is treated as a single path segment.
+// If you pass a dot-separated path-like string into this method, govy renders
+// the dots as escaped characters inside one bracket-quoted segment.
+// For multi-segment paths, use [govy.PropertyRules.WithPath] instead.
+//
+// Note: Prior to v0.25.0, [govy.PropertyRules.WithName] treated every string
+// as a path, so this usage was valid then.
 func ExamplePropertyRules_WithName_wrongUsage() {
 	v := govy.New(
 		govy.For(func(t Teacher) string { return t.University.Name }).
@@ -97,23 +95,22 @@ func ExamplePropertyRules_WithName_wrongUsage() {
 }
 ```
 
-## ExamplePropertyRules_WithPath
-
-While [govy.PropertyRules.WithName] is convenient and we recommend using it,
-sometimes you might want to define rules that access nested fields directly.
-That's what [govy.PropertyRules.WithPath] is for.
-
-Unlike [govy.PropertyRules.WithName], [govy.PropertyRules.WithPath] accepts a
-[jsonpath.Path] with one or more segments.
-[govy.PropertyRules.WithName] is just shorthand for `jsonpath.New().Name(...)`.
-
-You can either:
-  - pass a string representation of path directly with [jsonpath.Parse]
-  - construct the path with a builder API, starting with [jsonpath.New]
+## Set nested property paths
 
 [//]: # (embed: ExamplePropertyRules_WithPath)
 
 ```go
+// While [govy.PropertyRules.WithName] is convenient and we recommend using it,
+// sometimes you might want to define rules that access nested fields directly.
+// That's what [govy.PropertyRules.WithPath] is for.
+//
+// Unlike [govy.PropertyRules.WithName], [govy.PropertyRules.WithPath] accepts a
+// [jsonpath.Path] with one or more segments.
+// [govy.PropertyRules.WithName] is just shorthand for `jsonpath.New().Name(...)`.
+//
+// You can either:
+//   - pass a string representation of path directly with [jsonpath.Parse]
+//   - construct the path with a builder API, starting with [jsonpath.New]
 func ExamplePropertyRules_WithPath() {
 	v := govy.New(
 		govy.For(func(t Teacher) string { return t.University.Name }).
@@ -148,32 +145,31 @@ func ExamplePropertyRules_WithPath() {
 }
 ```
 
-## ExampleForPointer
-
-[govy.For] constructor creates new [govy.PropertyRules] instance.
-It's only argument, [govy.PropertyGetter] is used to extract the property value.
-It works fine for direct values, but falls short when working with pointers.
-Often times we use pointers to indicate that a property is optional,
-or we want to discern between nil and zero values.
-In either case we want our validation rules to work on direct values,
-not the pointer, otherwise we'd have to always check if pointer != nil.
-
-[govy.ForPointer] constructor can be used to solve this problem and allow
-us to work with the underlying value in our rules.
-Under the hood it wraps [govy.PropertyGetter] and safely extracts the underlying value.
-If the value was nil, it will not attempt to evaluate any rules for this property.
-The rationale for that is it doesn't make sense to evaluate any rules for properties
-which are essentially empty. The only rule that makes sense in this context is to
-ensure the property is required.
-We'll learn about a way to achieve that in the next example: [ExamplePropertyRules_Required].
-
-Let's define a rule for [Teacher.MiddleName] property.
-Not everyone has to have a middle name, that's why we've defined this field
-as a pointer to string, rather than a string itself.
+## Validate optional pointer properties
 
 [//]: # (embed: ExampleForPointer)
 
 ```go
+// [govy.For] constructor creates new [govy.PropertyRules] instance.
+// It's only argument, [govy.PropertyGetter] is used to extract the property value.
+// It works fine for direct values, but falls short when working with pointers.
+// Often times we use pointers to indicate that a property is optional,
+// or we want to discern between nil and zero values.
+// In either case we want our validation rules to work on direct values,
+// not the pointer, otherwise we'd have to always check if pointer != nil.
+//
+// [govy.ForPointer] constructor can be used to solve this problem and allow
+// us to work with the underlying value in our rules.
+// Under the hood it wraps [govy.PropertyGetter] and safely extracts the underlying value.
+// If the value was nil, it will not attempt to evaluate any rules for this property.
+// The rationale for that is it doesn't make sense to evaluate any rules for properties
+// which are essentially empty. The only rule that makes sense in this context is to
+// ensure the property is required.
+// We'll learn about a way to achieve that in the next example: [ExamplePropertyRules_Required].
+//
+// Let's define a rule for [Teacher.MiddleName] property.
+// Not everyone has to have a middle name, that's why we've defined this field
+// as a pointer to string, rather than a string itself.
 func ExampleForPointer() {
 	v := govy.New(
 		govy.ForPointer(func(t Teacher) *string { return t.MiddleName }).
@@ -200,25 +196,24 @@ func ExampleForPointer() {
 }
 ```
 
-## ExampleTransform
-
-[govy.Transform] constructor can be used to transform the property's value
-before it's passed to the rules' evaluation.
-It's useful when you want to use rules that operate on a different type than the property's.
-
-Along with the standard [govy.PropertyGetter] it accepts a [govy.Transformer] function
-which takes the property value and returns the transformed value along with an error.
-If the error is not nil, the validation will fail with the error message returned by [govy.Transformer] error.
-
-In this example we'll use [time.ParseDuration] to transform the string value of [Clock.Duration] to [time.Duration].
-The first value we'll validate will force [govy.Transformer] to return an error,
-the second will succeed transformation, but it will fail the validation for [rules.DurationPrecision].
-
-Notice how the [govy.Transformer] shape adheres to a lot of standard library conversion/parsing functions.
+## Transform values before validation
 
 [//]: # (embed: ExampleTransform)
 
 ```go
+// [govy.Transform] constructor can be used to transform the property's value
+// before it's passed to the rules' evaluation.
+// It's useful when you want to use rules that operate on a different type than the property's.
+//
+// Along with the standard [govy.PropertyGetter] it accepts a [govy.Transformer] function
+// which takes the property value and returns the transformed value along with an error.
+// If the error is not nil, the validation will fail with the error message returned by [govy.Transformer] error.
+//
+// In this example we'll use [time.ParseDuration] to transform the string value of [Clock.Duration] to [time.Duration].
+// The first value we'll validate will force [govy.Transformer] to return an error,
+// the second will succeed transformation, but it will fail the validation for [rules.DurationPrecision].
+//
+// Notice how the [govy.Transformer] shape adheres to a lot of standard library conversion/parsing functions.
 func ExampleTransform() {
 	type Clock struct {
 		Duration string `json:"duration"`
@@ -249,36 +244,35 @@ func ExampleTransform() {
 }
 ```
 
-## ExamplePropertyRules_Required
-
-By default, when [govy.PropertyRules] is constructed using [govy.ForPointer]
-it will skip validation of the property if the pointer is nil.
-To enforce a value is set for pointer use [govy.PropertyRules.Required].
-
-You may ask yourself why not just use [rules.Required] rule instead?
-If we were to do that, we'd be forced to operate on pointer in all of our rules.
-Other than checking if the pointer is nil, there aren't any rules which would
-benefit from working on the pointer instead of the underlying value.
-
-If you want to also make sure the underlying value is filled,
-i.e. it's not a zero value, you can also use [rules.Required] rule
-on top of [govy.PropertyRules.Required].
-
-[govy.PropertyRules.Required] when used with [govy.For] constructor, will ensure
-the property does not contain a zero value.
-
-Note: [govy.PropertyRules.Required] is introducing a short circuit.
-If the assertion fails, validation will stop and return [govy.govy.ErrorCodeRequired].
-None of the rules you've defined would be evaluated.
-
-Note: Placement of [govy.PropertyRules.Required] does not matter,
-it's not evaluated in a sequential loop, unlike standard [govy.Rule].
-However, we recommend you always place it below [govy.PropertyRules.WithName]
-to make your rules more readable.
+## Require non-empty property values
 
 [//]: # (embed: ExamplePropertyRules_Required)
 
 ```go
+// By default, when [govy.PropertyRules] is constructed using [govy.ForPointer]
+// it will skip validation of the property if the pointer is nil.
+// To enforce a value is set for pointer use [govy.PropertyRules.Required].
+//
+// You may ask yourself why not just use [rules.Required] rule instead?
+// If we were to do that, we'd be forced to operate on pointer in all of our rules.
+// Other than checking if the pointer is nil, there aren't any rules which would
+// benefit from working on the pointer instead of the underlying value.
+//
+// If you want to also make sure the underlying value is filled,
+// i.e. it's not a zero value, you can also use [rules.Required] rule
+// on top of [govy.PropertyRules.Required].
+//
+// [govy.PropertyRules.Required] when used with [govy.For] constructor, will ensure
+// the property does not contain a zero value.
+//
+// Note: [govy.PropertyRules.Required] is introducing a short circuit.
+// If the assertion fails, validation will stop and return [govy.govy.ErrorCodeRequired].
+// None of the rules you've defined would be evaluated.
+//
+// Note: Placement of [govy.PropertyRules.Required] does not matter,
+// it's not evaluated in a sequential loop, unlike standard [govy.Rule].
+// However, we recommend you always place it below [govy.PropertyRules.WithName]
+// to make your rules more readable.
 func ExamplePropertyRules_Required() {
 	alwaysFailingRule := govy.NewRule(func(string) error {
 		return fmt.Errorf("always fails")
@@ -315,19 +309,18 @@ func ExamplePropertyRules_Required() {
 }
 ```
 
-## ExamplePropertyRules_OmitEmpty
-
-While [govy.ForPointer] will by default omit validation for nil pointers,
-it might be useful to have a similar behavior for optional properties
-which are direct values.
-[govy.PropertyRules.OmitEmpty] will do the trick.
-
-Note: [govy.PropertyRules.OmitEmpty] will have no effect on pointers handled
-by [govy.ForPointer], as they already behave in the same way.
+## Skip validation for empty values
 
 [//]: # (embed: ExamplePropertyRules_OmitEmpty)
 
 ```go
+// While [govy.ForPointer] will by default omit validation for nil pointers,
+// it might be useful to have a similar behavior for optional properties
+// which are direct values.
+// [govy.PropertyRules.OmitEmpty] will do the trick.
+//
+// Note: [govy.PropertyRules.OmitEmpty] will have no effect on pointers handled
+// by [govy.ForPointer], as they already behave in the same way.
 func ExamplePropertyRules_OmitEmpty() {
 	alwaysFailingRule := govy.NewRule(func(string) error {
 		return fmt.Errorf("always fails")
@@ -359,18 +352,17 @@ func ExamplePropertyRules_OmitEmpty() {
 }
 ```
 
-## ExamplePropertyRules_HideValue
-
-Sometimes you want to hide the value of the property in the error message.
-It can contain sensitive information, like a secret access key.
-You can use [govy.PropertyRules.HideValue] to achieve that.
-
-You can see that the error message now contains "[hidden]" instead of the actual value,
-and the property value is not included in the property bullet point (- 'name').
+## Hide sensitive values in errors
 
 [//]: # (embed: ExamplePropertyRules_HideValue)
 
 ```go
+// Sometimes you want to hide the value of the property in the error message.
+// It can contain sensitive information, like a secret access key.
+// You can use [govy.PropertyRules.HideValue] to achieve that.
+//
+// You can see that the error message now contains "[hidden]" instead of the actual value,
+// and the property value is not included in the property bullet point (- 'name').
 func ExamplePropertyRules_HideValue() {
 	v := govy.New(
 		govy.For(func(t Teacher) string { return t.Name }).
@@ -396,19 +388,18 @@ func ExamplePropertyRules_HideValue() {
 }
 ```
 
-## ExampleGetSelf
-
-If you want to access the value of the entity you're writing the [govy.Validator] for,
-you can use [govy.GetSelf] function which is a convenience [govy.PropertyGetter] that returns self.
-Note that we don't call [govy.PropertyRules.WithName] here,
-as we're comparing two properties in our top level, [Teacher] scope.
-
-You can provide your own rules using [govy.NewRule] constructor.
-It returns new [govy.Rule] instance which wraps your validation function.
+## Validate the current object
 
 [//]: # (embed: ExampleGetSelf)
 
 ```go
+// If you want to access the value of the entity you're writing the [govy.Validator] for,
+// you can use [govy.GetSelf] function which is a convenience [govy.PropertyGetter] that returns self.
+// Note that we don't call [govy.PropertyRules.WithName] here,
+// as we're comparing two properties in our top level, [Teacher] scope.
+//
+// You can provide your own rules using [govy.NewRule] constructor.
+// It returns new [govy.Rule] instance which wraps your validation function.
 func ExampleGetSelf() {
 	customRule := govy.NewRule(func(v Teacher) error {
 		return fmt.Errorf("now I have access to the whole teacher")
@@ -435,17 +426,16 @@ func ExampleGetSelf() {
 }
 ```
 
-## ExamplePropertyRules_When
-
-To only run property validation on condition, use [govy.PropertyRules.When].
-Predicates set through [govy.PropertyRules.When] are evaluated in the order they are provided.
-If any predicate is not met, validation rules are not evaluated for the whole [govy.PropertyRules].
-
-It's recommended to define [govy.PropertyRules.When] before [govy.PropertyRules.Rules] declaration.
+## Run property rules conditionally
 
 [//]: # (embed: ExamplePropertyRules_When)
 
 ```go
+// To only run property validation on condition, use [govy.PropertyRules.When].
+// Predicates set through [govy.PropertyRules.When] are evaluated in the order they are provided.
+// If any predicate is not met, validation rules are not evaluated for the whole [govy.PropertyRules].
+//
+// It's recommended to define [govy.PropertyRules.When] before [govy.PropertyRules.Rules] declaration.
 func ExamplePropertyRules_When() {
 	v := govy.New(
 		govy.For(func(t Teacher) string { return t.Name }).
@@ -469,19 +459,18 @@ func ExamplePropertyRules_When() {
 }
 ```
 
-## ExamplePropertyRules_Cascade
-
-To customize how [govy.Rule] are evaluated use [govy.PropertyRules.Cascade].
-Use [govy.CascadeModeStop] to stop validation after the first error.
-If you wish to revert to the default behavior, use [govy.CascadeModeContinue].
-
-Note: the cascade mode change only applies to the given [govy.PropertyRules] instance
-and not the parent [govy.Validator] or neighboring [govy.PropertyRules].
-It does however override the [govy.CascadeMode] set for [govy.Validator].
+## Cascade failures within property rules
 
 [//]: # (embed: ExamplePropertyRules_Cascade)
 
 ```go
+// To customize how [govy.Rule] are evaluated use [govy.PropertyRules.Cascade].
+// Use [govy.CascadeModeStop] to stop validation after the first error.
+// If you wish to revert to the default behavior, use [govy.CascadeModeContinue].
+//
+// Note: the cascade mode change only applies to the given [govy.PropertyRules] instance
+// and not the parent [govy.Validator] or neighboring [govy.PropertyRules].
+// It does however override the [govy.CascadeMode] set for [govy.Validator].
 func ExamplePropertyRules_Cascade() {
 	alwaysFailingRule := govy.NewRule(func(string) error {
 		return fmt.Errorf("always fails")

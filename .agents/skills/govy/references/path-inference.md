@@ -4,51 +4,50 @@ Runtime and generated path inference, govyconfig registration, and inference cac
 
 ## Examples
 
-- [Configure path inference modes](#exampleinferpathmode)
-- [Generate inferred paths](#exampleinferpathmodegenerate)
-- [Change path inference at runtime](#examplevalidator_inferpath_changemodeinruntime)
+- [Configure path inference modes](#configure-path-inference-modes)
+- [Generate inferred paths](#generate-inferred-paths)
+- [Change path inference at runtime](#change-path-inference-at-runtime)
 
-## ExampleInferPathMode
-
-In the interactive tutorial for govy, we've been using
-[govy.PropertyRules.WithName] to provide explicit path segments for our properties.
-
-Ideally, we'd want govy to derive those paths directly from the getter expressions,
-matching the struct fields selected by the user.
-Go uses struct tags to achieve that,
-and libraries like [encoding/json] use these tags to encode/decode structs.
-Unfortunately, there's no easy way to tell what exact property we're returning from [govy.PropertyGetter].
-
-To solve this problem, govy provides a way to infer the property path (with a catch).
-The catch being that the path inference mechanism needs to parse the whole modules' AST.
-This can be a performance hit, especially for large projects if not done properly.
-
-By default govy will not attempt to infer any property paths.
-
-So, how do we do that properly?
-Both [govy.Validator] and [govy.PropertyRules] (including variants) have a dedicated method
-to configure how property paths are inferred.
-
-It depends on the [govy.InferPathMode] used:
-  - [govy.InferPathModeDisable], path inference is disabled (default), nothing to do here
-  - [govy.InferPathModeRuntime], the path is inferred during runtime from the getter expression.
-    This is the most flexible option, but also the slowest, although the slowdown
-    is incurred only once, whenever [govy.PropertyRules.Validate] is first called.
-    If you make sure that [govy.PropertyRules] is created only once and don't mind
-    the one-time performance hit, this should be enough for you.
-  - [govy.InferPathModeGenerate], the path is inferred during a separate code generation phase.
-    This mode requires you to run `govy inferpath` before you run your code.
-    It generates a file with inferred relative paths for your getter call sites,
-    which automatically registers them using [govyconfig.SetInferredPath].
-
-Since this tutorial is run as a test,
-we need to explicitly instruct govy to infer paths from test files.
-By default, test files are not parsed to improve performance.
-In order to do that, we use [govyconfig.SetInferPathIncludeTestFiles].
+## Configure path inference modes
 
 [//]: # (embed: ExampleInferPathMode)
 
 ```go
+// In the interactive tutorial for govy, we've been using
+// [govy.PropertyRules.WithName] to provide explicit path segments for our properties.
+//
+// Ideally, we'd want govy to derive those paths directly from the getter expressions,
+// matching the struct fields selected by the user.
+// Go uses struct tags to achieve that,
+// and libraries like [encoding/json] use these tags to encode/decode structs.
+// Unfortunately, there's no easy way to tell what exact property we're returning from [govy.PropertyGetter].
+//
+// To solve this problem, govy provides a way to infer the property path (with a catch).
+// The catch being that the path inference mechanism needs to parse the whole modules' AST.
+// This can be a performance hit, especially for large projects if not done properly.
+//
+// By default govy will not attempt to infer any property paths.
+//
+// So, how do we do that properly?
+// Both [govy.Validator] and [govy.PropertyRules] (including variants) have a dedicated method
+// to configure how property paths are inferred.
+//
+// It depends on the [govy.InferPathMode] used:
+//   - [govy.InferPathModeDisable], path inference is disabled (default), nothing to do here
+//   - [govy.InferPathModeRuntime], the path is inferred during runtime from the getter expression.
+//     This is the most flexible option, but also the slowest, although the slowdown
+//     is incurred only once, whenever [govy.PropertyRules.Validate] is first called.
+//     If you make sure that [govy.PropertyRules] is created only once and don't mind
+//     the one-time performance hit, this should be enough for you.
+//   - [govy.InferPathModeGenerate], the path is inferred during a separate code generation phase.
+//     This mode requires you to run `govy inferpath` before you run your code.
+//     It generates a file with inferred relative paths for your getter call sites,
+//     which automatically registers them using [govyconfig.SetInferredPath].
+//
+// Since this tutorial is run as a test,
+// we need to explicitly instruct govy to infer paths from test files.
+// By default, test files are not parsed to improve performance.
+// In order to do that, we use [govyconfig.SetInferPathIncludeTestFiles].
 func ExampleInferPathMode() {
 	govyconfig.SetInferPathIncludeTestFiles(true)
 	defer govyconfig.SetInferPathIncludeTestFiles(false)
@@ -73,22 +72,21 @@ func ExampleInferPathMode() {
 }
 ```
 
-## ExampleInferPathModeGenerate
-
-In the previous example we've seen [govy.InferPathModeRuntime] in action.
-An alternative for the aforementioned mode which offers better runtime performance
-is [govy.InferPathModeGenerate].
-
-It comes at a cost of having to run the code generation utility before running your code.
-The utility generates code which uses [govyconfig.SetInferredPath].
-We'll use this very function in this example to simulate the code generation step.
-The first validator, 'v1', is created with [govy.InferPathModeDisable],
-the second validator, 'v2' is created with [govy.InferPathModeGenerate].
-As you can see in the output, only the second validator, 'v2' has the inferred path.
+## Generate inferred paths
 
 [//]: # (embed: ExampleInferPathModeGenerate)
 
 ```go
+// In the previous example we've seen [govy.InferPathModeRuntime] in action.
+// An alternative for the aforementioned mode which offers better runtime performance
+// is [govy.InferPathModeGenerate].
+//
+// It comes at a cost of having to run the code generation utility before running your code.
+// The utility generates code which uses [govyconfig.SetInferredPath].
+// We'll use this very function in this example to simulate the code generation step.
+// The first validator, 'v1', is created with [govy.InferPathModeDisable],
+// the second validator, 'v2' is created with [govy.InferPathModeGenerate].
+// As you can see in the output, only the second validator, 'v2' has the inferred path.
 func ExampleInferPathModeGenerate() {
 	govyconfig.SetInferPathIncludeTestFiles(true)
 	defer govyconfig.SetInferPathIncludeTestFiles(false)
@@ -130,20 +128,19 @@ func ExampleInferPathModeGenerate() {
 }
 ```
 
-## ExampleValidator_InferPath_changeModeInRuntime
-
-Knowing when to call [govy.Validator.InferPath] is important.
-The path inference runs only once per [govy.PropertyRules] instance, on the first validation.
-Once this happens, the result is cached, even if that result is an empty path.
-
-This example demonstrates that changing the mode after the first validation has no effect.
-The first validation runs with [govy.InferPathModeDisable], which produces an empty path.
-This empty result is then cached. Even after switching to [govy.InferPathModeRuntime],
-the cached empty result persists, so no property path appears in the output.
+## Change path inference at runtime
 
 [//]: # (embed: ExampleValidator_InferPath_changeModeInRuntime)
 
 ```go
+// Knowing when to call [govy.Validator.InferPath] is important.
+// The path inference runs only once per [govy.PropertyRules] instance, on the first validation.
+// Once this happens, the result is cached, even if that result is an empty path.
+//
+// This example demonstrates that changing the mode after the first validation has no effect.
+// The first validation runs with [govy.InferPathModeDisable], which produces an empty path.
+// This empty result is then cached. Even after switching to [govy.InferPathModeRuntime],
+// the cached empty result persists, so no property path appears in the output.
 func ExampleValidator_InferPath_changeModeInRuntime() {
 	govyconfig.SetInferPathIncludeTestFiles(true)
 	defer govyconfig.SetInferPathIncludeTestFiles(false)

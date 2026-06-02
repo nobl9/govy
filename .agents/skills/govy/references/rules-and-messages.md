@@ -4,40 +4,39 @@ Custom rules, details, examples, error codes, messages, message templates, templ
 
 ## Examples
 
-- [Create a custom rule](#examplerule)
-- [Attach static rule details](#examplerule_withdetails)
-- [Attach formatted rule details](#examplerule_withdetailsf)
-- [Attach rule examples](#examplerule_withexamples)
-- [Attach rule error codes](#examplerule_witherrorcode)
-- [Override rule messages](#examplerule_withmessage)
-- [Override rule messages dynamically](#examplerule_withmessagef)
-- [Use string message templates](#examplerule_withmessagetemplatestring)
-- [Use parsed message templates](#examplerule_withmessagetemplate)
-- [Add custom template functions](#exampleaddtemplatefunctions)
-- [Format example lists in templates](#exampleaddtemplatefunctions_formatexamples)
-- [Join slices in templates](#exampleaddtemplatefunctions_joinslice)
-- [Indent template output](#exampleaddtemplatefunctions_indent)
-- [Describe rules for validation plans](#examplerule_withdescription)
-- [Convert rules to pointer rules](#exampleruletopointer)
-- [Group rules into reusable sets](#exampleruleset)
-- [Convert rule sets to pointer rule sets](#examplerulesettopointer)
-- [Cascade failures within rule sets](#exampleruleset_cascade)
+- [Create a custom rule](#create-a-custom-rule)
+- [Attach static rule details](#attach-static-rule-details)
+- [Attach formatted rule details](#attach-formatted-rule-details)
+- [Attach rule examples](#attach-rule-examples)
+- [Attach rule error codes](#attach-rule-error-codes)
+- [Override rule messages](#override-rule-messages)
+- [Override rule messages dynamically](#override-rule-messages-dynamically)
+- [Use string message templates](#use-string-message-templates)
+- [Use parsed message templates](#use-parsed-message-templates)
+- [Add custom template functions](#add-custom-template-functions)
+- [Format example lists in templates](#format-example-lists-in-templates)
+- [Join slices in templates](#join-slices-in-templates)
+- [Indent template output](#indent-template-output)
+- [Describe rules for validation plans](#describe-rules-for-validation-plans)
+- [Convert rules to pointer rules](#convert-rules-to-pointer-rules)
+- [Group rules into reusable sets](#group-rules-into-reusable-sets)
+- [Convert rule sets to pointer rule sets](#convert-rule-sets-to-pointer-rule-sets)
+- [Cascade failures within rule sets](#cascade-failures-within-rule-sets)
 
-## ExampleRule
-
-Govy comes with a set of predefined rules,
-which you can use out of the box by importing [rules] package.
-
-However, you can also create your own rules by using [govy.NewRule] constructor.
-It accepts a simple validation function which takes in a value
-and returns an error if the validation failed.
-
-Note: the [govy.Rule] struct has all its fields private,
-so you can only create and modify them using exported constructor and methods.
+## Create a custom rule
 
 [//]: # (embed: ExampleRule)
 
 ```go
+// Govy comes with a set of predefined rules,
+// which you can use out of the box by importing [rules] package.
+//
+// However, you can also create your own rules by using [govy.NewRule] constructor.
+// It accepts a simple validation function which takes in a value
+// and returns an error if the validation failed.
+//
+// Note: the [govy.Rule] struct has all its fields private,
+// so you can only create and modify them using exported constructor and methods.
 func ExampleRule() {
 	myRule := govy.NewRule(func(name string) error {
 		if name != "Tom" {
@@ -65,15 +64,14 @@ func ExampleRule() {
 }
 ```
 
-## ExampleRule_WithDetails
-
-You can use [govy.Rule.WithDetails] to add additional details to the error message.
-This allows you to extend existing rules by adding your use case context.
-Let's give a regex validation some more clarity.
+## Attach static rule details
 
 [//]: # (embed: ExampleRule_WithDetails)
 
 ```go
+// You can use [govy.Rule.WithDetails] to add additional details to the error message.
+// This allows you to extend existing rules by adding your use case context.
+// Let's give a regex validation some more clarity.
 func ExampleRule_WithDetails() {
 	v := govy.New(
 		govy.For(func(t Teacher) string { return t.Name }).
@@ -99,13 +97,12 @@ func ExampleRule_WithDetails() {
 }
 ```
 
-## ExampleRule_WithDetailsf
-
-You can use [govy.Rule.WithDetailsf] to add formatted details to the returned [govy.RuleError] error message.
+## Attach formatted rule details
 
 [//]: # (embed: ExampleRule_WithDetailsf)
 
 ```go
+// You can use [govy.Rule.WithDetailsf] to add formatted details to the returned [govy.RuleError] error message.
 func ExampleRule_WithDetailsf() {
 	minLen := 3
 	maxLen := 10
@@ -133,19 +130,18 @@ func ExampleRule_WithDetailsf() {
 }
 ```
 
-## ExampleRule_WithExamples
-
-You can use [govy.Rule.WithExamples] to add examples of valid inputs
-which pass the [govy.Rule].
-This can be useful for more complex rules, especially regex based, where
-it might not be immediately obvious how a valid value should look like.
-
-Note: examples are added between the error message and details
-(configured with [govy.Rule.WithDetails]).
+## Attach rule examples
 
 [//]: # (embed: ExampleRule_WithExamples)
 
 ```go
+// You can use [govy.Rule.WithExamples] to add examples of valid inputs
+// which pass the [govy.Rule].
+// This can be useful for more complex rules, especially regex based, where
+// it might not be immediately obvious how a valid value should look like.
+//
+// Note: examples are added between the error message and details
+// (configured with [govy.Rule.WithDetails]).
 func ExampleRule_WithExamples() {
 	v := govy.New(
 		govy.For(func(t Teacher) string { return t.Name }).
@@ -172,19 +168,18 @@ func ExampleRule_WithExamples() {
 }
 ```
 
-## ExampleRule_WithErrorCode
-
-When testing, it can be tedious to always rely on error messages as these can change over time.
-Enter [govy.ErrorCode], which is a simple string type alias used to ease testing,
-but also potentially allow third parties to integrate with your validation results.
-Use [govy.Rule.WithErrorCode] to associate [govy.ErrorCode] with a [govy.Rule].
-Notice that our modified version of [rules.StringMatchRegexp] will now return a new [govy.ErrorCode].
-Predefined rules have [govy.ErrorCode] already associated with them.
-To view the list of predefined [govy.ErrorCode] checkout error_codes.go file.
+## Attach rule error codes
 
 [//]: # (embed: ExampleRule_WithErrorCode)
 
 ```go
+// When testing, it can be tedious to always rely on error messages as these can change over time.
+// Enter [govy.ErrorCode], which is a simple string type alias used to ease testing,
+// but also potentially allow third parties to integrate with your validation results.
+// Use [govy.Rule.WithErrorCode] to associate [govy.ErrorCode] with a [govy.Rule].
+// Notice that our modified version of [rules.StringMatchRegexp] will now return a new [govy.ErrorCode].
+// Predefined rules have [govy.ErrorCode] already associated with them.
+// To view the list of predefined [govy.ErrorCode] checkout error_codes.go file.
 func ExampleRule_WithErrorCode() {
 	v := govy.New(
 		govy.For(func(t Teacher) string { return t.Name }).
@@ -211,13 +206,12 @@ func ExampleRule_WithErrorCode() {
 }
 ```
 
-## ExampleRule_WithMessage
-
-If you want to override the default error message, you can use [govy.Rule.WithMessage].
+## Override rule messages
 
 [//]: # (embed: ExampleRule_WithMessage)
 
 ```go
+// If you want to override the default error message, you can use [govy.Rule.WithMessage].
 func ExampleRule_WithMessage() {
 	v := govy.New(
 		govy.For(func(t Teacher) string { return t.Name }).
@@ -244,13 +238,12 @@ func ExampleRule_WithMessage() {
 }
 ```
 
-## ExampleRule_WithMessagef
-
-You can use [govy.Rule.WithMessagef] to override the default error message using printf-like formatting.
+## Override rule messages dynamically
 
 [//]: # (embed: ExampleRule_WithMessagef)
 
 ```go
+// You can use [govy.Rule.WithMessagef] to override the default error message using printf-like formatting.
 func ExampleRule_WithMessagef() {
 	allowedNames := []string{"Tom", "Jerry"}
 	v := govy.New(
@@ -277,22 +270,21 @@ func ExampleRule_WithMessagef() {
 }
 ```
 
-## ExampleRule_WithMessageTemplateString
-
-If you want to have more control over the resulting error message, but [govy.Rule.WithMessage]
-is not enough, you can utilize a template string which is parsed by [govy.Rule] into
-[template.Template] to construct a custom error message.
-
-Each builtin rule supports different variables.
-For instance, [rules.StringLength] supports 'MinLength' and 'MaxLength' variables.
-Refer to the rule's documentation to see which variables are supported.
-
-Note: Builtin functions provided by [govy.AddTemplateFunctions], like 'formatExamples',
-are automatically added to the parsed [template.Template].
+## Use string message templates
 
 [//]: # (embed: ExampleRule_WithMessageTemplateString)
 
 ```go
+// If you want to have more control over the resulting error message, but [govy.Rule.WithMessage]
+// is not enough, you can utilize a template string which is parsed by [govy.Rule] into
+// [template.Template] to construct a custom error message.
+//
+// Each builtin rule supports different variables.
+// For instance, [rules.StringLength] supports 'MinLength' and 'MaxLength' variables.
+// Refer to the rule's documentation to see which variables are supported.
+//
+// Note: Builtin functions provided by [govy.AddTemplateFunctions], like 'formatExamples',
+// are automatically added to the parsed [template.Template].
 func ExampleRule_WithMessageTemplateString() {
 	tplString := `Teacher's name must be between {{ .MinLength }} and {{ .MaxLength }} characters {{ formatExamples .Examples }}.`
 
@@ -320,20 +312,19 @@ func ExampleRule_WithMessageTemplateString() {
 }
 ```
 
-## ExampleRule_WithMessageTemplate
-
-If you want to have more control over the [template.Template] used for error message creation,
-for instance, add custom functions, use [govy.Rule.WithMessageTemplate].
-
-In the example below, we're defining a custom template function 'join' which calls [strings.Join]
-under the hood to join a slice of strings with a comma.
-
-Note: 'Examples' field is a plain slice of strings, If you wish to format it the same way
-as the default message does, use 'formatExamples' function provided by [govy.AddTemplateFunctions].
+## Use parsed message templates
 
 [//]: # (embed: ExampleRule_WithMessageTemplate)
 
 ```go
+// If you want to have more control over the [template.Template] used for error message creation,
+// for instance, add custom functions, use [govy.Rule.WithMessageTemplate].
+//
+// In the example below, we're defining a custom template function 'join' which calls [strings.Join]
+// under the hood to join a slice of strings with a comma.
+//
+// Note: 'Examples' field is a plain slice of strings, If you wish to format it the same way
+// as the default message does, use 'formatExamples' function provided by [govy.AddTemplateFunctions].
 func ExampleRule_WithMessageTemplate() {
 	tplString := `Teacher's name '{{ .PropertyValue }}' is not supported. {{ .Details }} (e.g. {{ join .Examples ", " }}).`
 	tpl := template.New("").Funcs(template.FuncMap{"join": strings.Join})
@@ -364,24 +355,23 @@ func ExampleRule_WithMessageTemplate() {
 }
 ```
 
-## ExampleAddTemplateFunctions
-
-Under the hood builtin rules' message templates utilize a set of custom template functions.
-If you want to use them in your custom templates, you can add them to your [template.Template]
-instance by calling [govy.AddTemplateFunctions].
-
-An example of such function is 'formatExamples' which takes in a slice of strings
-and returns a formatted string.
-
-Note: Builtin functions are automatically added to the parsed [template.Template] if you're using
-[govy.Rule.WithMessageTemplateString].
-
-Note: [govy.AddTemplateFunctions] calls [template.Template.Funcs], which will not add the functions
-to your template If it was already parsed.
+## Add custom template functions
 
 [//]: # (embed: ExampleAddTemplateFunctions)
 
 ```go
+// Under the hood builtin rules' message templates utilize a set of custom template functions.
+// If you want to use them in your custom templates, you can add them to your [template.Template]
+// instance by calling [govy.AddTemplateFunctions].
+//
+// An example of such function is 'formatExamples' which takes in a slice of strings
+// and returns a formatted string.
+//
+// Note: Builtin functions are automatically added to the parsed [template.Template] if you're using
+// [govy.Rule.WithMessageTemplateString].
+//
+// Note: [govy.AddTemplateFunctions] calls [template.Template.Funcs], which will not add the functions
+// to your template If it was already parsed.
 func ExampleAddTemplateFunctions() {
 	tplString := `Teacher's name '{{ .PropertyValue }}' is not supported {{ formatExamples .Examples }}.`
 	tpl := template.New("")
@@ -412,7 +402,7 @@ func ExampleAddTemplateFunctions() {
 }
 ```
 
-## ExampleAddTemplateFunctions_formatExamples
+## Format example lists in templates
 
 [//]: # (embed: ExampleAddTemplateFunctions_formatExamples)
 
@@ -436,7 +426,7 @@ func ExampleAddTemplateFunctions_formatExamples() {
 }
 ```
 
-## ExampleAddTemplateFunctions_joinSlice
+## Join slices in templates
 
 [//]: # (embed: ExampleAddTemplateFunctions_joinSlice)
 
@@ -460,7 +450,7 @@ func ExampleAddTemplateFunctions_joinSlice() {
 }
 ```
 
-## ExampleAddTemplateFunctions_indent
+## Indent template output
 
 [//]: # (embed: ExampleAddTemplateFunctions_indent)
 
@@ -485,24 +475,23 @@ func ExampleAddTemplateFunctions_indent() {
 }
 ```
 
-## ExampleRule_WithDescription
-
-[govy.Rule] error might be static, i.e. a single [govy.Rule] always returns
-the same exact error message, but they don't have to.
-For instance, consider a rule which parses a URL using [net/url] package.
-
-This makes it very hard to infer error message for [govy.RulePlan], if not
-impossible, since the exact error might only be known during runtime.
-
-To solve this problem, you can use [govy.Rule.WithDescription] to provide a
-verbose and informative rule description.
-It will be only included in the [govy.RulePlan] and otherwise not displayed in
-the default [govy.RuleError.Error].
-However, it is available in the structured [govy.RuleError].
+## Describe rules for validation plans
 
 [//]: # (embed: ExampleRule_WithDescription)
 
 ```go
+// [govy.Rule] error might be static, i.e. a single [govy.Rule] always returns
+// the same exact error message, but they don't have to.
+// For instance, consider a rule which parses a URL using [net/url] package.
+//
+// This makes it very hard to infer error message for [govy.RulePlan], if not
+// impossible, since the exact error might only be known during runtime.
+//
+// To solve this problem, you can use [govy.Rule.WithDescription] to provide a
+// verbose and informative rule description.
+// It will be only included in the [govy.RulePlan] and otherwise not displayed in
+// the default [govy.RuleError.Error].
+// However, it is available in the structured [govy.RuleError].
 func ExampleRule_WithDescription() {
 	v := govy.New(
 		govy.For(func(t Teacher) string { return t.Name }).
@@ -529,22 +518,21 @@ func ExampleRule_WithDescription() {
 }
 ```
 
-## ExampleRuleToPointer
-
-The builtin rules, and most likely your custom rules as well, all operate on non-pointer values.
-This means you cannot use them on pointers to the same type.
-
-If for whatever reason you don't want to use [govy.ForPointer] constructor,
-you can use [govy.RuleToPointer] constructor and convert any [govy.Rule] to work on pointers.
-
-Note: [govy.RuleToPointer] will skip validation for nil pointers.
-If you want to enforce the value to be non-nil, you can use [rules.Required].
-This behavior is consistent with [govy.ForPointer] constructor, which will skip the validation
-unless you add [govy.PropertyRules.Required] to enforce the value to be a non-nil pointer.
+## Convert rules to pointer rules
 
 [//]: # (embed: ExampleRuleToPointer)
 
 ```go
+// The builtin rules, and most likely your custom rules as well, all operate on non-pointer values.
+// This means you cannot use them on pointers to the same type.
+//
+// If for whatever reason you don't want to use [govy.ForPointer] constructor,
+// you can use [govy.RuleToPointer] constructor and convert any [govy.Rule] to work on pointers.
+//
+// Note: [govy.RuleToPointer] will skip validation for nil pointers.
+// If you want to enforce the value to be non-nil, you can use [rules.Required].
+// This behavior is consistent with [govy.ForPointer] constructor, which will skip the validation
+// unless you add [govy.PropertyRules.Required] to enforce the value to be a non-nil pointer.
 func ExampleRuleToPointer() {
 	type Pointer struct {
 		Pointer *string `json:"pointer"`
@@ -569,19 +557,18 @@ func ExampleRuleToPointer() {
 }
 ```
 
-## ExampleRuleSet
-
-Sometimes it's useful to aggregate multiple [govy.Rule] into a single, composite rule.
-To do that we'll use [govy.RuleSet] and [govy.NewRuleSet] constructor.
-RuleSet is a simple container for multiple [govy.Rule].
-During validation it is unpacked and each [govy.RuleError] is reported separately.
-
-Note that govy uses similar syntax to wrapped errors in Go;
-a ':' delimiter is used to chain error codes together.
+## Group rules into reusable sets
 
 [//]: # (embed: ExampleRuleSet)
 
 ```go
+// Sometimes it's useful to aggregate multiple [govy.Rule] into a single, composite rule.
+// To do that we'll use [govy.RuleSet] and [govy.NewRuleSet] constructor.
+// RuleSet is a simple container for multiple [govy.Rule].
+// During validation it is unpacked and each [govy.RuleError] is reported separately.
+//
+// Note that govy uses similar syntax to wrapped errors in Go;
+// a ':' delimiter is used to chain error codes together.
 func ExampleRuleSet() {
 	teacherNameRule := govy.NewRuleSet(
 		rules.StringLength(1, 5),
@@ -619,16 +606,15 @@ func ExampleRuleSet() {
 }
 ```
 
-## ExampleRuleSetToPointer
-
-Similar to [govy.RuleToPointer], you can use [govy.RuleSetToPointer] to convert
-[govy.RuleSet] to work with pointers.
-
-See [ExampleRuleToPointer] for more details.
+## Convert rule sets to pointer rule sets
 
 [//]: # (embed: ExampleRuleSetToPointer)
 
 ```go
+// Similar to [govy.RuleToPointer], you can use [govy.RuleSetToPointer] to convert
+// [govy.RuleSet] to work with pointers.
+//
+// See [ExampleRuleToPointer] for more details.
 func ExampleRuleSetToPointer() {
 	type Pointer struct {
 		Pointer *string `json:"pointer"`
@@ -658,20 +644,19 @@ func ExampleRuleSetToPointer() {
 }
 ```
 
-## ExampleRuleSet_Cascade
-
-If you wish to control how rules aggregated by [govy.RuleSet] evaluate
-you can use [govy.RuleSet.Cascade] to set a [govy.CascadeMode].
-
-Similar to how the cascade mode works when evaluating [govy.PropertyRules],
-the [govy.CascadeModeStop] will stop validation after the first encountered error.
-
-In the example below we can see that although both rules should fail,
-only the first one (order of definitions matters here!) returns an error.
+## Cascade failures within rule sets
 
 [//]: # (embed: ExampleRuleSet_Cascade)
 
 ```go
+// If you wish to control how rules aggregated by [govy.RuleSet] evaluate
+// you can use [govy.RuleSet.Cascade] to set a [govy.CascadeMode].
+//
+// Similar to how the cascade mode works when evaluating [govy.PropertyRules],
+// the [govy.CascadeModeStop] will stop validation after the first encountered error.
+//
+// In the example below we can see that although both rules should fail,
+// only the first one (order of definitions matters here!) returns an error.
 func ExampleRuleSet_Cascade() {
 	teacherNameRule := govy.NewRuleSet(
 		rules.StringLength(1, 5),

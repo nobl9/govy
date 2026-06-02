@@ -4,21 +4,20 @@ Core govy error helpers and structured error flows useful when writing tests wit
 
 ## Examples
 
-- [Check validation errors by code](#examplehaserrorcode)
-- [Match validator errors in tests](#examplevalidatorerrors)
+- [Check validation errors by code](#check-validation-errors-by-code)
+- [Match validator errors in tests](#match-validator-errors-in-tests)
 
-## ExampleHasErrorCode
-
-To inspect if an error contains a given [govy.ErrorCode], use [govy.HasErrorCode] function.
-This function will also return true if the expected [govy.ErrorCode]
-is part of a chain of wrapped error codes.
-In this example we're dealing with two error code chains:
-  - 'teacher_name:string_length'
-  - 'teacher_name:string_match_regexp'
+## Check validation errors by code
 
 [//]: # (embed: ExampleHasErrorCode)
 
 ```go
+// To inspect if an error contains a given [govy.ErrorCode], use [govy.HasErrorCode] function.
+// This function will also return true if the expected [govy.ErrorCode]
+// is part of a chain of wrapped error codes.
+// In this example we're dealing with two error code chains:
+//   - 'teacher_name:string_length'
+//   - 'teacher_name:string_match_regexp'
 func ExampleHasErrorCode() {
 	teacherNameRule := govy.NewRuleSet(
 		rules.StringLength(1, 5),
@@ -57,14 +56,13 @@ func ExampleHasErrorCode() {
 }
 ```
 
-## ExampleValidatorErrors
-
-[govy.Validator.ValidateSlice] outputs [govy.ValidatorErrors] which is a slice of [govy.ValidatorError].
-Each [govy.ValidatorError] has an additional property set: SliceIndex, which is a 0-based slice element index.
+## Match validator errors in tests
 
 [//]: # (embed: ExampleValidatorErrors)
 
 ```go
+// [govy.Validator.ValidateSlice] outputs [govy.ValidatorErrors] which is a slice of [govy.ValidatorError].
+// Each [govy.ValidatorError] has an additional property set: SliceIndex, which is a 0-based slice element index.
 func ExampleValidatorErrors() {
 	v := govy.New(
 		govy.For(func(t Teacher) string { return t.Name }).

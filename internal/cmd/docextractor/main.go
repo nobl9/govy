@@ -372,7 +372,11 @@ func readEmbeddedFunction(root, sourcePath, functionName string) string {
 		if !ok || funcDecl.Name.Name != functionName {
 			continue
 		}
-		start := fset.PositionFor(funcDecl.Pos(), false)
+		startPos := funcDecl.Pos()
+		if funcDecl.Doc != nil {
+			startPos = funcDecl.Doc.Pos()
+		}
+		start := fset.PositionFor(startPos, false)
 		end := fset.PositionFor(funcDecl.End(), false)
 		return strings.TrimSpace(string(source[start.Offset:end.Offset]))
 	}

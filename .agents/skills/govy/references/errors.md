@@ -4,29 +4,28 @@ Validator errors, runtime error naming, structured JSON errors, and manually con
 
 ## Examples
 
-- [Name validator-level errors](#examplevalidatorerror_withname)
-- [Inspect validator error output](#examplevalidatorerror)
-- [Construct property errors](#examplenewpropertyerror)
+- [Name validator-level errors](#name-validator-level-errors)
+- [Inspect validator error output](#inspect-validator-error-output)
+- [Construct property errors](#construct-property-errors)
 
-## ExampleValidatorError_WithName
-
-You can also add [govy.Validator] name during runtime,
-by calling [govy.ValidatorError.WithName] function on the returned error.
-
-Note: We left the previous "Teacher" name assignment, to demonstrate that
-the [govy.ValidatorError.WithName] function call will overwrite it.
-
-Note: This would also work:
-
-	err := v.WithName("Jake").Validate(Teacher{})
-
-govy, excluding error handling, tries to follow immutability principle.
-Calling any method on [govy.Validator] will not change its declared instance,
-but rather create a copy of it.
+## Name validator-level errors
 
 [//]: # (embed: ExampleValidatorError_WithName)
 
 ```go
+// You can also add [govy.Validator] name during runtime,
+// by calling [govy.ValidatorError.WithName] function on the returned error.
+//
+// Note: We left the previous "Teacher" name assignment, to demonstrate that
+// the [govy.ValidatorError.WithName] function call will overwrite it.
+//
+// Note: This would also work:
+//
+//	err := v.WithName("Jake").Validate(Teacher{})
+//
+// govy, excluding error handling, tries to follow immutability principle.
+// Calling any method on [govy.Validator] will not change its declared instance,
+// but rather create a copy of it.
 func ExampleValidatorError_WithName() {
 	v := govy.New(
 		govy.For(func(t Teacher) string { return t.Name }).
@@ -44,19 +43,18 @@ func ExampleValidatorError_WithName() {
 }
 ```
 
-## ExampleValidatorError
-
-All errors returned by [govy.Validator] are of type [govy.ValidatorError].
-Type casting directly to [govy.ValidatorError] should be safe once an error
-was asserted to be non-nil.
-However, you shouldn't trust any API with such promises, and always type check in your
-type assignments.
-
-All error types return by govy are JSON serializable.
+## Inspect validator error output
 
 [//]: # (embed: ExampleValidatorError)
 
 ```go
+// All errors returned by [govy.Validator] are of type [govy.ValidatorError].
+// Type casting directly to [govy.ValidatorError] should be safe once an error
+// was asserted to be non-nil.
+// However, you shouldn't trust any API with such promises, and always type check in your
+// type assignments.
+//
+// All error types return by govy are JSON serializable.
 func ExampleValidatorError() {
 	v := govy.New(
 		govy.For(func(t Teacher) string { return t.Name }).
@@ -93,18 +91,17 @@ func ExampleValidatorError() {
 }
 ```
 
-## ExampleNewPropertyError
-
-Sometimes you need top level context,
-but you want to scope the error to a specific, nested property.
-One of the ways to do that is to use [govy.NewPropertyError]
-and return [govy.PropertyError] from your validation rule.
-Note that you can still use [govy.ErrorCode] and pass [govy.RuleError] to the constructor.
-You can pass any number of [govy.RuleError].
+## Construct property errors
 
 [//]: # (embed: ExampleNewPropertyError)
 
 ```go
+// Sometimes you need top level context,
+// but you want to scope the error to a specific, nested property.
+// One of the ways to do that is to use [govy.NewPropertyError]
+// and return [govy.PropertyError] from your validation rule.
+// Note that you can still use [govy.ErrorCode] and pass [govy.RuleError] to the constructor.
+// You can pass any number of [govy.RuleError].
 func ExampleNewPropertyError() {
 	v := govy.New(
 		govy.For(govy.GetSelf[Teacher]()).

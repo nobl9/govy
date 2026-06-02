@@ -4,14 +4,14 @@ Examples from the rules package for collection uniqueness, property relationship
 
 ## Examples
 
-- [Require unique slice values](#examplesliceunique)
-- [Require mutually exclusive properties](#examplemutuallyexclusive)
-- [Require one populated property](#exampleoneofproperties)
-- [Compare properties for equality](#exampleequalproperties)
-- [Compare ordered properties](#exampleltproperties)
-- [Compare custom comparable properties](#exampleltcomparableproperties)
+- [Require unique slice values](#require-unique-slice-values)
+- [Require mutually exclusive properties](#require-mutually-exclusive-properties)
+- [Require one populated property](#require-one-populated-property)
+- [Compare properties for equality](#compare-properties-for-equality)
+- [Compare ordered properties](#compare-ordered-properties)
+- [Compare custom comparable properties](#compare-custom-comparable-properties)
 
-## ExampleSliceUnique
+## Require unique slice values
 
 [//]: # (embed: ExampleSliceUnique)
 
@@ -43,7 +43,7 @@ func ExampleSliceUnique() {
 }
 ```
 
-## ExampleMutuallyExclusive
+## Require mutually exclusive properties
 
 [//]: # (embed: ExampleMutuallyExclusive)
 
@@ -79,7 +79,7 @@ func ExampleMutuallyExclusive() {
 }
 ```
 
-## ExampleOneOfProperties
+## Require one populated property
 
 [//]: # (embed: ExampleOneOfProperties)
 
@@ -113,7 +113,7 @@ func ExampleOneOfProperties() {
 }
 ```
 
-## ExampleEqualProperties
+## Compare properties for equality
 
 [//]: # (embed: ExampleEqualProperties)
 
@@ -149,7 +149,7 @@ func ExampleEqualProperties() {
 }
 ```
 
-## ExampleLTProperties
+## Compare ordered properties
 
 [//]: # (embed: ExampleLTProperties)
 
@@ -187,14 +187,13 @@ func ExampleLTProperties() {
 }
 ```
 
-## ExampleLTComparableProperties
-
-LTComparableProperties and other *ComparableProperties functions work with types
-that implement [rules.Comparable] interface, such as [time.Time].
+## Compare custom comparable properties
 
 [//]: # (embed: ExampleLTComparableProperties)
 
 ```go
+// LTComparableProperties and other *ComparableProperties functions work with types
+// that implement [rules.Comparable] interface, such as [time.Time].
 func ExampleLTComparableProperties() {
 	type TimeRange struct {
 		StartTime time.Time `json:"startTime"`
