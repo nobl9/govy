@@ -2,10 +2,6 @@
 
 Validator construction, naming, conditions, slice validation, cascade behavior, and validator composition patterns.
 
-Source examples:
-
-- [pkg/govy/example_test.go](../../../../pkg/govy/example_test.go)
-
 ## Examples
 
 - [ExampleNew](#examplenew)
@@ -20,13 +16,11 @@ Source examples:
 
 ## ExampleNew
 
-Source: [pkg/govy/example_test.go:44](../../../../pkg/govy/example_test.go#L44)
-
 In order to create a new [govy.Validator] use [govy.New] constructor.
 Let's define simple [govy.PropertyRules] for [Teacher.Name].
 For now, it will be always failing.
 
-[//]: # (embed: pkg/govy/example_test.go#ExampleNew)
+[//]: # (embed: ExampleNew)
 
 ```go
 func ExampleNew() {
@@ -48,12 +42,10 @@ func ExampleNew() {
 
 ## ExampleValidator_WithName
 
-Source: [pkg/govy/example_test.go:62](../../../../pkg/govy/example_test.go#L62)
-
 To associate [govy.Validator] with an entity name use [govy.Validator.WithName] function.
 When any of the rules fails, the error will contain the entity name you've provided.
 
-[//]: # (embed: pkg/govy/example_test.go#ExampleValidator_WithName)
+[//]: # (embed: ExampleValidator_WithName)
 
 ```go
 func ExampleValidator_WithName() {
@@ -75,13 +67,11 @@ func ExampleValidator_WithName() {
 
 ## ExampleValidator_WithNameFunc
 
-Source: [pkg/govy/example_test.go:81](../../../../pkg/govy/example_test.go#L81)
-
 If statically defined name through [govy.Validator.WithName] is not enough,
 you can use [govy.Validator.WithNameFunc].
 The function receives the entity's instance you're validating and returns a string name.
 
-[//]: # (embed: pkg/govy/example_test.go#ExampleValidator_WithNameFunc)
+[//]: # (embed: ExampleValidator_WithNameFunc)
 
 ```go
 func ExampleValidator_WithNameFunc() {
@@ -103,14 +93,12 @@ func ExampleValidator_WithNameFunc() {
 
 ## ExampleValidator_When
 
-Source: [pkg/govy/example_test.go:130](../../../../pkg/govy/example_test.go#L130)
-
 [govy.Validator] rules can be evaluated on condition, to specify the predicate use [govy.Validator.When] function.
 
 In this example, validation for [Teacher] instance will only be evaluated
 if the [Teacher.Age] property is less than 50 years.
 
-[//]: # (embed: pkg/govy/example_test.go#ExampleValidator_When)
+[//]: # (embed: ExampleValidator_When)
 
 ```go
 func ExampleValidator_When() {
@@ -148,13 +136,11 @@ func ExampleValidator_When() {
 
 ## ExampleValidator_Validate_slice
 
-Source: [pkg/govy/example_test.go:207](../../../../pkg/govy/example_test.go#L207)
-
 If you want to validate a slice of entities, you can combine [govy.New] with [govy.ForSlice].
 The produced errors will contain information about the failing entity's index
 in their [govy.PropertyError.PropertyPath].
 
-[//]: # (embed: pkg/govy/example_test.go#ExampleValidator_Validate_slice)
+[//]: # (embed: ExampleValidator_Validate_slice)
 
 ```go
 func ExampleValidator_Validate_slice() {
@@ -187,8 +173,6 @@ func ExampleValidator_Validate_slice() {
 
 ## ExampleValidator_ValidateSlice
 
-Source: [pkg/govy/example_test.go:1556](../../../../pkg/govy/example_test.go#L1556)
-
 If combining [govy.New] with [govy.ForSlice] is not verbose enough for you,
 you can use [govy.Validator.ValidateSlice] function.
 It will validate each element according to the rules defined by [govy.Validator].
@@ -202,7 +186,7 @@ Note: Since each element is validated in isolation,
 the reported property paths will not start with the slice index,
 they will instead start at the element's root.
 
-[//]: # (embed: pkg/govy/example_test.go#ExampleValidator_ValidateSlice)
+[//]: # (embed: ExampleValidator_ValidateSlice)
 
 ```go
 func ExampleValidator_ValidateSlice() {
@@ -232,8 +216,6 @@ func ExampleValidator_ValidateSlice() {
 
 ## ExampleValidator_Cascade
 
-Source: [pkg/govy/example_test.go:1588](../../../../pkg/govy/example_test.go#L1588)
-
 Unlike [govy.PropertyRules.Cascade] which works on [govy.PropertyRules] level,
 [govy.Validator.Cascade] propagates to all the properties of [govy.Validator] and
 furthermore, will stop evaluating the next property if any preceding property fails.
@@ -243,7 +225,7 @@ If [govy.PropertyRules.Cascade] is set, the setting will take precedence over
 
 See [ExamplePropertyRules_Cascade] for more details on [govy.PropertyRules.Cascade].
 
-[//]: # (embed: pkg/govy/example_test.go#ExampleValidator_Cascade)
+[//]: # (embed: ExampleValidator_Cascade)
 
 ```go
 func ExampleValidator_Cascade() {
@@ -288,11 +270,9 @@ func ExampleValidator_Cascade() {
 
 ## ExampleValidator
 
-Source: [pkg/govy/example_test.go:1690](../../../../pkg/govy/example_test.go#L1690)
-
 Bringing it all (mostly) together, let's create a fully fledged [govy.Validator] for [Teacher].
 
-[//]: # (embed: pkg/govy/example_test.go#ExampleValidator)
+[//]: # (embed: ExampleValidator)
 
 ```go
 func ExampleValidator() {
@@ -358,8 +338,6 @@ func ExampleValidator() {
 
 ## ExampleValidator_branchingPattern
 
-Source: [pkg/govy/example_test.go:1760](../../../../pkg/govy/example_test.go#L1760)
-
 When dealing with properties that should only be validated if a certain other
 property has specific value, it's recommended to use [govy.PropertyRules.When] and [govy.PropertyRules.Include]
 to separate validation paths into non-overlapping branches.
@@ -369,7 +347,7 @@ shared property between [CSV] and [JSON] files.
 We define separate [govy.Validator] for [CSV] and [JSON] and use [govy.PropertyRules.When] to only validate
 their included [govy.Validator] if the correct [File.Format] is provided.
 
-[//]: # (embed: pkg/govy/example_test.go#ExampleValidator_branchingPattern)
+[//]: # (embed: ExampleValidator_branchingPattern)
 
 ```go
 func ExampleValidator_branchingPattern() {

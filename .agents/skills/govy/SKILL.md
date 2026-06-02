@@ -14,9 +14,8 @@ This skill treats exclusively about
 [github.com/nobl9/govy](https://github.com/nobl9/govy), a generic,
 reflection-free validation library for Go.
 
-The references in this skill are generated from govy's testable examples.
-Load only the reference that matches the task instead of opening
-`pkg/govy/example_test.go` directly.
+The references in this skill are self-contained.
+Load only the reference that matches the task.
 
 ## Reference Selection
 

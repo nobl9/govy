@@ -2,10 +2,6 @@
 
 Property getters, names, explicit JSON paths, pointers, transforms, required and optional values, hidden values, and property-level conditions.
 
-Source examples:
-
-- [pkg/govy/example_test.go](../../../../pkg/govy/example_test.go)
-
 ## Examples
 
 - [ExamplePropertyRules_WithName](#examplepropertyrules_withname)
@@ -22,8 +18,6 @@ Source examples:
 
 ## ExamplePropertyRules_WithName
 
-Source: [pkg/govy/example_test.go:246](../../../../pkg/govy/example_test.go#L246)
-
 So far we've been using a very simple [govy.PropertyRules] instance:
 
 	validation.For(func(t Teacher) string { return t.Name }).
@@ -37,7 +31,7 @@ We can also change the [govy.Rule] to be something more real.
 govy comes with a number of predefined [govy.Rule], we'll use
 [rules.EQ] which accepts a single argument, value to compare with.
 
-[//]: # (embed: pkg/govy/example_test.go#ExamplePropertyRules_WithName)
+[//]: # (embed: ExamplePropertyRules_WithName)
 
 ```go
 func ExamplePropertyRules_WithName() {
@@ -66,8 +60,6 @@ func ExamplePropertyRules_WithName() {
 
 ## ExamplePropertyRules_WithName_wrongUsage
 
-Source: [pkg/govy/example_test.go:276](../../../../pkg/govy/example_test.go#L276)
-
 Beware that anything passed into [govy.PropertyRules.WithName] is treated as a single path segment.
 If you pass a dot-separated path-like string into this method, govy renders
 the dots as escaped characters inside one bracket-quoted segment.
@@ -76,7 +68,7 @@ For multi-segment paths, use [govy.PropertyRules.WithPath] instead.
 Note: Prior to v0.25.0, [govy.PropertyRules.WithName] treated every string
 as a path, so this usage was valid then.
 
-[//]: # (embed: pkg/govy/example_test.go#ExamplePropertyRules_WithName_wrongUsage)
+[//]: # (embed: ExamplePropertyRules_WithName_wrongUsage)
 
 ```go
 func ExamplePropertyRules_WithName_wrongUsage() {
@@ -107,8 +99,6 @@ func ExamplePropertyRules_WithName_wrongUsage() {
 
 ## ExamplePropertyRules_WithPath
 
-Source: [pkg/govy/example_test.go:312](../../../../pkg/govy/example_test.go#L312)
-
 While [govy.PropertyRules.WithName] is convenient and we recommend using it,
 sometimes you might want to define rules that access nested fields directly.
 That's what [govy.PropertyRules.WithPath] is for.
@@ -121,7 +111,7 @@ You can either:
   - pass a string representation of path directly with [jsonpath.Parse]
   - construct the path with a builder API, starting with [jsonpath.New]
 
-[//]: # (embed: pkg/govy/example_test.go#ExamplePropertyRules_WithPath)
+[//]: # (embed: ExamplePropertyRules_WithPath)
 
 ```go
 func ExamplePropertyRules_WithPath() {
@@ -160,8 +150,6 @@ func ExamplePropertyRules_WithPath() {
 
 ## ExampleForPointer
 
-Source: [pkg/govy/example_test.go:365](../../../../pkg/govy/example_test.go#L365)
-
 [govy.For] constructor creates new [govy.PropertyRules] instance.
 It's only argument, [govy.PropertyGetter] is used to extract the property value.
 It works fine for direct values, but falls short when working with pointers.
@@ -183,7 +171,7 @@ Let's define a rule for [Teacher.MiddleName] property.
 Not everyone has to have a middle name, that's why we've defined this field
 as a pointer to string, rather than a string itself.
 
-[//]: # (embed: pkg/govy/example_test.go#ExampleForPointer)
+[//]: # (embed: ExampleForPointer)
 
 ```go
 func ExampleForPointer() {
@@ -214,8 +202,6 @@ func ExampleForPointer() {
 
 ## ExampleTransform
 
-Source: [pkg/govy/example_test.go:403](../../../../pkg/govy/example_test.go#L403)
-
 [govy.Transform] constructor can be used to transform the property's value
 before it's passed to the rules' evaluation.
 It's useful when you want to use rules that operate on a different type than the property's.
@@ -230,7 +216,7 @@ the second will succeed transformation, but it will fail the validation for [rul
 
 Notice how the [govy.Transformer] shape adheres to a lot of standard library conversion/parsing functions.
 
-[//]: # (embed: pkg/govy/example_test.go#ExampleTransform)
+[//]: # (embed: ExampleTransform)
 
 ```go
 func ExampleTransform() {
@@ -265,8 +251,6 @@ func ExampleTransform() {
 
 ## ExamplePropertyRules_Required
 
-Source: [pkg/govy/example_test.go:456](../../../../pkg/govy/example_test.go#L456)
-
 By default, when [govy.PropertyRules] is constructed using [govy.ForPointer]
 it will skip validation of the property if the pointer is nil.
 To enforce a value is set for pointer use [govy.PropertyRules.Required].
@@ -292,7 +276,7 @@ it's not evaluated in a sequential loop, unlike standard [govy.Rule].
 However, we recommend you always place it below [govy.PropertyRules.WithName]
 to make your rules more readable.
 
-[//]: # (embed: pkg/govy/example_test.go#ExamplePropertyRules_Required)
+[//]: # (embed: ExamplePropertyRules_Required)
 
 ```go
 func ExamplePropertyRules_Required() {
@@ -333,8 +317,6 @@ func ExamplePropertyRules_Required() {
 
 ## ExamplePropertyRules_OmitEmpty
 
-Source: [pkg/govy/example_test.go:498](../../../../pkg/govy/example_test.go#L498)
-
 While [govy.ForPointer] will by default omit validation for nil pointers,
 it might be useful to have a similar behavior for optional properties
 which are direct values.
@@ -343,7 +325,7 @@ which are direct values.
 Note: [govy.PropertyRules.OmitEmpty] will have no effect on pointers handled
 by [govy.ForPointer], as they already behave in the same way.
 
-[//]: # (embed: pkg/govy/example_test.go#ExamplePropertyRules_OmitEmpty)
+[//]: # (embed: ExamplePropertyRules_OmitEmpty)
 
 ```go
 func ExamplePropertyRules_OmitEmpty() {
@@ -379,8 +361,6 @@ func ExamplePropertyRules_OmitEmpty() {
 
 ## ExamplePropertyRules_HideValue
 
-Source: [pkg/govy/example_test.go:534](../../../../pkg/govy/example_test.go#L534)
-
 Sometimes you want to hide the value of the property in the error message.
 It can contain sensitive information, like a secret access key.
 You can use [govy.PropertyRules.HideValue] to achieve that.
@@ -388,7 +368,7 @@ You can use [govy.PropertyRules.HideValue] to achieve that.
 You can see that the error message now contains "[hidden]" instead of the actual value,
 and the property value is not included in the property bullet point (- 'name').
 
-[//]: # (embed: pkg/govy/example_test.go#ExamplePropertyRules_HideValue)
+[//]: # (embed: ExamplePropertyRules_HideValue)
 
 ```go
 func ExamplePropertyRules_HideValue() {
@@ -418,8 +398,6 @@ func ExamplePropertyRules_HideValue() {
 
 ## ExampleGetSelf
 
-Source: [pkg/govy/example_test.go:565](../../../../pkg/govy/example_test.go#L565)
-
 If you want to access the value of the entity you're writing the [govy.Validator] for,
 you can use [govy.GetSelf] function which is a convenience [govy.PropertyGetter] that returns self.
 Note that we don't call [govy.PropertyRules.WithName] here,
@@ -428,7 +406,7 @@ as we're comparing two properties in our top level, [Teacher] scope.
 You can provide your own rules using [govy.NewRule] constructor.
 It returns new [govy.Rule] instance which wraps your validation function.
 
-[//]: # (embed: pkg/govy/example_test.go#ExampleGetSelf)
+[//]: # (embed: ExampleGetSelf)
 
 ```go
 func ExampleGetSelf() {
@@ -459,15 +437,13 @@ func ExampleGetSelf() {
 
 ## ExamplePropertyRules_When
 
-Source: [pkg/govy/example_test.go:1485](../../../../pkg/govy/example_test.go#L1485)
-
 To only run property validation on condition, use [govy.PropertyRules.When].
 Predicates set through [govy.PropertyRules.When] are evaluated in the order they are provided.
 If any predicate is not met, validation rules are not evaluated for the whole [govy.PropertyRules].
 
 It's recommended to define [govy.PropertyRules.When] before [govy.PropertyRules.Rules] declaration.
 
-[//]: # (embed: pkg/govy/example_test.go#ExamplePropertyRules_When)
+[//]: # (embed: ExamplePropertyRules_When)
 
 ```go
 func ExamplePropertyRules_When() {
@@ -495,8 +471,6 @@ func ExamplePropertyRules_When() {
 
 ## ExamplePropertyRules_Cascade
 
-Source: [pkg/govy/example_test.go:1514](../../../../pkg/govy/example_test.go#L1514)
-
 To customize how [govy.Rule] are evaluated use [govy.PropertyRules.Cascade].
 Use [govy.CascadeModeStop] to stop validation after the first error.
 If you wish to revert to the default behavior, use [govy.CascadeModeContinue].
@@ -505,7 +479,7 @@ Note: the cascade mode change only applies to the given [govy.PropertyRules] ins
 and not the parent [govy.Validator] or neighboring [govy.PropertyRules].
 It does however override the [govy.CascadeMode] set for [govy.Validator].
 
-[//]: # (embed: pkg/govy/example_test.go#ExamplePropertyRules_Cascade)
+[//]: # (embed: ExamplePropertyRules_Cascade)
 
 ```go
 func ExamplePropertyRules_Cascade() {

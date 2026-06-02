@@ -288,14 +288,70 @@ func replaceEmbeddedExamples(root, markdown, markdownPath string) string {
 
 func readEmbeddedExample(root, exampleRef string) string {
 	sourcePath, functionName, hasFunctionName := strings.Cut(exampleRef, "#")
-	if !hasFunctionName {
-		contents, err := os.ReadFile(filepath.Join(root, filepath.FromSlash(sourcePath))) // #nosec G304,G703
-		if err != nil {
-			logFatal(err, "Failed to read embedded example %q", exampleRef)
-		}
-		return string(contents)
+	if hasFunctionName {
+		return readEmbeddedFunction(root, sourcePath, functionName)
 	}
-	return readEmbeddedFunction(root, sourcePath, functionName)
+	if strings.HasPrefix(exampleRef, "Example") {
+		return readEmbeddedFunctionByName(root, exampleRef)
+	}
+
+	contents, err := os.ReadFile(filepath.Join(root, filepath.FromSlash(sourcePath))) // #nosec G304,G703
+	if err != nil {
+		logFatal(err, "Failed to read embedded example %q", exampleRef)
+	}
+	return string(contents)
+}
+
+func readEmbeddedFunctionByName(root, functionName string) string {
+	var matches []string
+	if err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error { // #nosec G703
+		if err != nil {
+			return err
+		}
+		if entry.IsDir() || filepath.Base(path) != "example_test.go" {
+			return nil
+		}
+		if hasEmbeddedFunction(path, functionName) {
+			matches = append(matches, path)
+		}
+		return nil
+	}); err != nil {
+		logFatal(err, "Failed to find embedded example %q", functionName)
+	}
+
+	switch len(matches) {
+	case 0:
+		logFatal(nil, "Function %q was not found in example_test.go files", functionName)
+	case 1:
+		relPath, err := filepath.Rel(root, matches[0])
+		if err != nil {
+			logFatal(err, "Failed to resolve embedded example source %q", matches[0])
+		}
+		return readEmbeddedFunction(root, filepath.ToSlash(relPath), functionName)
+	default:
+		logFatal(
+			nil,
+			"Function %q is ambiguous across example_test.go files: %s",
+			functionName,
+			strings.Join(matches, ", "),
+		)
+	}
+	return ""
+}
+
+func hasEmbeddedFunction(path, functionName string) bool {
+	fset := token.NewFileSet()
+	astFile, err := parser.ParseFile(fset, path, nil, parser.SkipObjectResolution)
+	if err != nil {
+		logFatal(err, "Failed to parse embedded example source %q", path)
+	}
+	for _, decl := range astFile.Decls {
+		funcDecl, ok := decl.(*ast.FuncDecl)
+		if ok && funcDecl.Name.Name == functionName {
+			return true
+		}
+	}
+	return false
 }
 
 func readEmbeddedFunction(root, sourcePath, functionName string) string {

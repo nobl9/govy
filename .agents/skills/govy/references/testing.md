@@ -2,18 +2,12 @@
 
 Core govy error helpers and structured error flows useful when writing tests without the govytest package.
 
-Source examples:
-
-- [pkg/govy/example_test.go](../../../../pkg/govy/example_test.go)
-
 ## Examples
 
 - [ExampleHasErrorCode](#examplehaserrorcode)
 - [ExampleValidatorErrors](#examplevalidatorerrors)
 
 ## ExampleHasErrorCode
-
-Source: [pkg/govy/example_test.go:1151](../../../../pkg/govy/example_test.go#L1151)
 
 To inspect if an error contains a given [govy.ErrorCode], use [govy.HasErrorCode] function.
 This function will also return true if the expected [govy.ErrorCode]
@@ -22,7 +16,7 @@ In this example we're dealing with two error code chains:
   - 'teacher_name:string_length'
   - 'teacher_name:string_match_regexp'
 
-[//]: # (embed: pkg/govy/example_test.go#ExampleHasErrorCode)
+[//]: # (embed: ExampleHasErrorCode)
 
 ```go
 func ExampleHasErrorCode() {
@@ -65,12 +59,10 @@ func ExampleHasErrorCode() {
 
 ## ExampleValidatorErrors
 
-Source: [pkg/govy/example_test.go:1629](../../../../pkg/govy/example_test.go#L1629)
-
 [govy.Validator.ValidateSlice] outputs [govy.ValidatorErrors] which is a slice of [govy.ValidatorError].
 Each [govy.ValidatorError] has an additional property set: SliceIndex, which is a 0-based slice element index.
 
-[//]: # (embed: pkg/govy/example_test.go#ExampleValidatorErrors)
+[//]: # (embed: ExampleValidatorErrors)
 
 ```go
 func ExampleValidatorErrors() {

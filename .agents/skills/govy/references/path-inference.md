@@ -2,10 +2,6 @@
 
 Runtime and generated path inference, govyconfig registration, and inference caching behavior.
 
-Source examples:
-
-- [pkg/govy/example_test.go](../../../../pkg/govy/example_test.go)
-
 ## Examples
 
 - [ExampleInferPathMode](#exampleinferpathmode)
@@ -13,8 +9,6 @@ Source examples:
 - [ExampleValidator_InferPath_changeModeInRuntime](#examplevalidator_inferpath_changemodeinruntime)
 
 ## ExampleInferPathMode
-
-Source: [pkg/govy/example_test.go:1991](../../../../pkg/govy/example_test.go#L1991)
 
 In the interactive tutorial for govy, we've been using
 [govy.PropertyRules.WithName] to provide explicit path segments for our properties.
@@ -52,7 +46,7 @@ we need to explicitly instruct govy to infer paths from test files.
 By default, test files are not parsed to improve performance.
 In order to do that, we use [govyconfig.SetInferPathIncludeTestFiles].
 
-[//]: # (embed: pkg/govy/example_test.go#ExampleInferPathMode)
+[//]: # (embed: ExampleInferPathMode)
 
 ```go
 func ExampleInferPathMode() {
@@ -81,8 +75,6 @@ func ExampleInferPathMode() {
 
 ## ExampleInferPathModeGenerate
 
-Source: [pkg/govy/example_test.go:2024](../../../../pkg/govy/example_test.go#L2024)
-
 In the previous example we've seen [govy.InferPathModeRuntime] in action.
 An alternative for the aforementioned mode which offers better runtime performance
 is [govy.InferPathModeGenerate].
@@ -94,7 +86,7 @@ The first validator, 'v1', is created with [govy.InferPathModeDisable],
 the second validator, 'v2' is created with [govy.InferPathModeGenerate].
 As you can see in the output, only the second validator, 'v2' has the inferred path.
 
-[//]: # (embed: pkg/govy/example_test.go#ExampleInferPathModeGenerate)
+[//]: # (embed: ExampleInferPathModeGenerate)
 
 ```go
 func ExampleInferPathModeGenerate() {
@@ -140,8 +132,6 @@ func ExampleInferPathModeGenerate() {
 
 ## ExampleValidator_InferPath_changeModeInRuntime
 
-Source: [pkg/govy/example_test.go:2072](../../../../pkg/govy/example_test.go#L2072)
-
 Knowing when to call [govy.Validator.InferPath] is important.
 The path inference runs only once per [govy.PropertyRules] instance, on the first validation.
 Once this happens, the result is cached, even if that result is an empty path.
@@ -151,7 +141,7 @@ The first validation runs with [govy.InferPathModeDisable], which produces an em
 This empty result is then cached. Even after switching to [govy.InferPathModeRuntime],
 the cached empty result persists, so no property path appears in the output.
 
-[//]: # (embed: pkg/govy/example_test.go#ExampleValidator_InferPath_changeModeInRuntime)
+[//]: # (embed: ExampleValidator_InferPath_changeModeInRuntime)
 
 ```go
 func ExampleValidator_InferPath_changeModeInRuntime() {

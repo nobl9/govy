@@ -2,18 +2,12 @@
 
 Validation plan generation and strict validation of plan metadata.
 
-Source examples:
-
-- [pkg/govy/example_test.go](../../../../pkg/govy/example_test.go)
-
 ## Examples
 
 - [ExamplePlan](#exampleplan)
 - [ExamplePlan_validation](#exampleplan_validation)
 
 ## ExamplePlan
-
-Source: [pkg/govy/example_test.go:1832](../../../../pkg/govy/example_test.go#L1832)
 
 When documenting an API it's often a struggle to keep consistency
 between the code and documentation we write for it.
@@ -27,7 +21,7 @@ There are multiple ways to improve the generated documentation:
     For builtin rules, the description is already provided.
   - Use [govy.WhenDescription] to provide a plan-only description for your when conditions.
 
-[//]: # (embed: pkg/govy/example_test.go#ExamplePlan)
+[//]: # (embed: ExamplePlan)
 
 ```go
 func ExamplePlan() {
@@ -95,15 +89,13 @@ func ExamplePlan() {
 
 ## ExamplePlan_validation
 
-Source: [pkg/govy/example_test.go:1899](../../../../pkg/govy/example_test.go#L1899)
-
 You can enforce certain rules upon [govy.Plan].
 For instance, If you'd want to make sure every [govy.Predicate]
 has a description attached to it, provide [govy.Plan] with [govy.PlanRequirePredicateDescription] option.
 
 If you want to follow our best recommendations, use [govy.PlanStrictMode].
 
-[//]: # (embed: pkg/govy/example_test.go#ExamplePlan_validation)
+[//]: # (embed: ExamplePlan_validation)
 
 ```go
 func ExamplePlan_validation() {

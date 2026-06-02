@@ -2,10 +2,6 @@
 
 Assertion helpers for validating govy errors in tests.
 
-Source examples:
-
-- [pkg/govytest/example_test.go](../../../../pkg/govytest/example_test.go)
-
 ## Examples
 
 - [ExampleAssertNoError](#exampleassertnoerror)
@@ -15,14 +11,12 @@ Source examples:
 
 ## ExampleAssertNoError
 
-Source: [pkg/govytest/example_test.go:25](../../../../pkg/govytest/example_test.go#L25)
-
 You can use [govytest.AssertNoError] to ensure no error was produced by [govy.Validator.Validate].
 If an error was produced, it will be printed to the stdout in JSON format.
 
 To demonstrate the erroneous output of [govytest.AssertNoError] we'll fail the assertion.
 
-[//]: # (embed: pkg/govytest/example_test.go#ExampleAssertNoError)
+[//]: # (embed: ExampleAssertNoError)
 
 ```go
 func ExampleAssertNoError() {
@@ -91,8 +85,6 @@ func ExampleAssertNoError() {
 
 ## ExampleAssertError
 
-Source: [pkg/govytest/example_test.go:96](../../../../pkg/govytest/example_test.go#L96)
-
 Verifying that expected errors were produced by [govy.Validator.Validate] can be a tedious task.
 Often times we might only care about [govy.ErrorCode] and not the message or description of the error.
 To help in that process, [govytest.AssertError] can be used to ensure that the expected errors were produced.
@@ -102,7 +94,7 @@ For more details on how to use [govytest.ExpectedRuleError], see its code docume
 
 To demonstrate the erroneous output of [govytest.AssertError] we'll fail the assertion.
 
-[//]: # (embed: pkg/govytest/example_test.go#ExampleAssertError)
+[//]: # (embed: ExampleAssertError)
 
 ```go
 func ExampleAssertError() {
@@ -183,8 +175,6 @@ func ExampleAssertError() {
 
 ## ExampleAssertError_validatorErrors
 
-Source: [pkg/govytest/example_test.go:187](../../../../pkg/govytest/example_test.go#L187)
-
 [govytest.AssertError] can handle not only [govy.ValidatorError] but also a slice of these
 wrapped into [govy.ValidatorErrors].
 
@@ -202,7 +192,7 @@ You can set them both, but you need to provide at least one of them.
 Every [govytest.ExpectedRuleError] is aggregated per matched [govy.ValidatorError]
 and the function runs recursively for every [govy.ValidatorError] and expected errors pair.
 
-[//]: # (embed: pkg/govytest/example_test.go#ExampleAssertError_validatorErrors)
+[//]: # (embed: ExampleAssertError_validatorErrors)
 
 ```go
 func ExampleAssertError_validatorErrors() {
@@ -286,8 +276,6 @@ func ExampleAssertError_validatorErrors() {
 
 ## ExampleAssertErrorContains
 
-Source: [pkg/govytest/example_test.go:271](../../../../pkg/govytest/example_test.go#L271)
-
 If you don't want to verify all the errors returned by [govy.Validator],
 but ensure a single, expected error is produced use [govytest.AssertErrorContains]
 instead of [govytest.AssertError].
@@ -295,7 +283,7 @@ instead of [govytest.AssertError].
 To demonstrate the erroneous output of [govytest.AssertErrorContains]
 we'll first match the error and then fail the assertion.
 
-[//]: # (embed: pkg/govytest/example_test.go#ExampleAssertErrorContains)
+[//]: # (embed: ExampleAssertErrorContains)
 
 ```go
 func ExampleAssertErrorContains() {

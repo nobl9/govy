@@ -2,10 +2,6 @@
 
 Examples from the rules package for collection uniqueness, property relationships, and comparable values.
 
-Source examples:
-
-- [pkg/rules/example_test.go](../../../../pkg/rules/example_test.go)
-
 ## Examples
 
 - [ExampleSliceUnique](#examplesliceunique)
@@ -17,9 +13,7 @@ Source examples:
 
 ## ExampleSliceUnique
 
-Source: [pkg/rules/example_test.go:21](../../../../pkg/rules/example_test.go#L21)
-
-[//]: # (embed: pkg/rules/example_test.go#ExampleSliceUnique)
+[//]: # (embed: ExampleSliceUnique)
 
 ```go
 func ExampleSliceUnique() {
@@ -51,9 +45,7 @@ func ExampleSliceUnique() {
 
 ## ExampleMutuallyExclusive
 
-Source: [pkg/rules/example_test.go:47](../../../../pkg/rules/example_test.go#L47)
-
-[//]: # (embed: pkg/rules/example_test.go#ExampleMutuallyExclusive)
+[//]: # (embed: ExampleMutuallyExclusive)
 
 ```go
 func ExampleMutuallyExclusive() {
@@ -89,9 +81,7 @@ func ExampleMutuallyExclusive() {
 
 ## ExampleOneOfProperties
 
-Source: [pkg/rules/example_test.go:77](../../../../pkg/rules/example_test.go#L77)
-
-[//]: # (embed: pkg/rules/example_test.go#ExampleOneOfProperties)
+[//]: # (embed: ExampleOneOfProperties)
 
 ```go
 func ExampleOneOfProperties() {
@@ -125,9 +115,7 @@ func ExampleOneOfProperties() {
 
 ## ExampleEqualProperties
 
-Source: [pkg/rules/example_test.go:105](../../../../pkg/rules/example_test.go#L105)
-
-[//]: # (embed: pkg/rules/example_test.go#ExampleEqualProperties)
+[//]: # (embed: ExampleEqualProperties)
 
 ```go
 func ExampleEqualProperties() {
@@ -163,9 +151,7 @@ func ExampleEqualProperties() {
 
 ## ExampleLTProperties
 
-Source: [pkg/rules/example_test.go:135](../../../../pkg/rules/example_test.go#L135)
-
-[//]: # (embed: pkg/rules/example_test.go#ExampleLTProperties)
+[//]: # (embed: ExampleLTProperties)
 
 ```go
 func ExampleLTProperties() {
@@ -203,12 +189,10 @@ func ExampleLTProperties() {
 
 ## ExampleLTComparableProperties
 
-Source: [pkg/rules/example_test.go:169](../../../../pkg/rules/example_test.go#L169)
-
 LTComparableProperties and other *ComparableProperties functions work with types
 that implement [rules.Comparable] interface, such as [time.Time].
 
-[//]: # (embed: pkg/rules/example_test.go#ExampleLTComparableProperties)
+[//]: # (embed: ExampleLTComparableProperties)
 
 ```go
 func ExampleLTComparableProperties() {

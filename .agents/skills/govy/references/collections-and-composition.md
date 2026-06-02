@@ -2,10 +2,6 @@
 
 Nested validators, slice and map property rules, slice pointers, and validator variants derived from path removal.
 
-Source examples:
-
-- [pkg/govy/example_test.go](../../../../pkg/govy/example_test.go)
-
 ## Examples
 
 - [ExamplePropertyRules_Include](#examplepropertyrules_include)
@@ -15,8 +11,6 @@ Source examples:
 - [ExampleValidator_RemovePropertiesByPath](#examplevalidator_removepropertiesbypath)
 
 ## ExamplePropertyRules_Include
-
-Source: [pkg/govy/example_test.go:1240](../../../../pkg/govy/example_test.go#L1240)
 
 So far we've defined validation rules for simple, top-level properties.
 What If we want to define validation rules for nested properties?
@@ -28,7 +22,7 @@ Let's extend our [Teacher] struct to include a nested [University] property.
 Notice how the nested property path is automatically built for you,
 each segment separated by a dot.
 
-[//]: # (embed: pkg/govy/example_test.go#ExamplePropertyRules_Include)
+[//]: # (embed: ExamplePropertyRules_Include)
 
 ```go
 func ExamplePropertyRules_Include() {
@@ -71,8 +65,6 @@ func ExamplePropertyRules_Include() {
 
 ## ExampleForSlice
 
-Source: [pkg/govy/example_test.go:1299](../../../../pkg/govy/example_test.go#L1299)
-
 When dealing with slices we often want to both validate the whole slice
 and each of its elements.
 You can use [govy.ForSlice] function to do just that.
@@ -96,7 +88,7 @@ For each element we're also including [Student] [govy.Validator].
 Notice that property path for slices has the following format:
 <slice_name>[<index>].<slice_property_name>
 
-[//]: # (embed: pkg/govy/example_test.go#ExampleForSlice)
+[//]: # (embed: ExampleForSlice)
 
 ```go
 func ExampleForSlice() {
@@ -140,8 +132,6 @@ func ExampleForSlice() {
 
 ## ExampleForSlice_sliceOfPointers
 
-Source: [pkg/govy/example_test.go:1351](../../../../pkg/govy/example_test.go#L1351)
-
 When dealing with slices of pointers you may find it problematic to add [govy.Rule]
 with [govy.PropertyRulesForSlice.RulesForEach].
 The builtin rules, and most likely your custom rules as well, all operate on non-pointer values.
@@ -157,7 +147,7 @@ In the below example we're defining two [govy.Validator] instances:
 This behavior is consistent with [govy.ForPointer] constructor, which will skip the validation
 unless you add [govy.PropertyRules.Required] to enforce the value to be a non-nil pointer.
 
-[//]: # (embed: pkg/govy/example_test.go#ExampleForSlice_sliceOfPointers)
+[//]: # (embed: ExampleForSlice_sliceOfPointers)
 
 ```go
 func ExampleForSlice_sliceOfPointers() {
@@ -208,8 +198,6 @@ func ExampleForSlice_sliceOfPointers() {
 
 ## ExampleForMap
 
-Source: [pkg/govy/example_test.go:1428](../../../../pkg/govy/example_test.go#L1428)
-
 When dealing with maps there are three forms of iteration:
   - keys
   - values
@@ -243,7 +231,7 @@ In the below example, we're defining that student index to [Teacher] map:
 Notice that property path for maps has the following format:
 <map_name>.<key>.<map_property_name>
 
-[//]: # (embed: pkg/govy/example_test.go#ExampleForMap)
+[//]: # (embed: ExampleForMap)
 
 ```go
 func ExampleForMap() {
@@ -301,12 +289,10 @@ func ExampleForMap() {
 
 ## ExampleValidator_RemovePropertiesByPath
 
-Source: [pkg/govy/example_test.go:1926](../../../../pkg/govy/example_test.go#L1926)
-
 This example demonstrates how to remove specific properties from a [govy.Validator] by their paths.
 This is useful when you want to create a modified validator without certain rules.
 
-[//]: # (embed: pkg/govy/example_test.go#ExampleValidator_RemovePropertiesByPath)
+[//]: # (embed: ExampleValidator_RemovePropertiesByPath)
 
 ```go
 func ExampleValidator_RemovePropertiesByPath() {

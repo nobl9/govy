@@ -2,10 +2,6 @@
 
 Validator errors, runtime error naming, structured JSON errors, and manually constructed property errors.
 
-Source examples:
-
-- [pkg/govy/example_test.go](../../../../pkg/govy/example_test.go)
-
 ## Examples
 
 - [ExampleValidatorError_WithName](#examplevalidatorerror_withname)
@@ -13,8 +9,6 @@ Source examples:
 - [ExampleNewPropertyError](#examplenewpropertyerror)
 
 ## ExampleValidatorError_WithName
-
-Source: [pkg/govy/example_test.go:110](../../../../pkg/govy/example_test.go#L110)
 
 You can also add [govy.Validator] name during runtime,
 by calling [govy.ValidatorError.WithName] function on the returned error.
@@ -30,7 +24,7 @@ govy, excluding error handling, tries to follow immutability principle.
 Calling any method on [govy.Validator] will not change its declared instance,
 but rather create a copy of it.
 
-[//]: # (embed: pkg/govy/example_test.go#ExampleValidatorError_WithName)
+[//]: # (embed: ExampleValidatorError_WithName)
 
 ```go
 func ExampleValidatorError_WithName() {
@@ -52,8 +46,6 @@ func ExampleValidatorError_WithName() {
 
 ## ExampleValidatorError
 
-Source: [pkg/govy/example_test.go:169](../../../../pkg/govy/example_test.go#L169)
-
 All errors returned by [govy.Validator] are of type [govy.ValidatorError].
 Type casting directly to [govy.ValidatorError] should be safe once an error
 was asserted to be non-nil.
@@ -62,7 +54,7 @@ type assignments.
 
 All error types return by govy are JSON serializable.
 
-[//]: # (embed: pkg/govy/example_test.go#ExampleValidatorError)
+[//]: # (embed: ExampleValidatorError)
 
 ```go
 func ExampleValidatorError() {
@@ -103,8 +95,6 @@ func ExampleValidatorError() {
 
 ## ExampleNewPropertyError
 
-Source: [pkg/govy/example_test.go:1194](../../../../pkg/govy/example_test.go#L1194)
-
 Sometimes you need top level context,
 but you want to scope the error to a specific, nested property.
 One of the ways to do that is to use [govy.NewPropertyError]
@@ -112,7 +102,7 @@ and return [govy.PropertyError] from your validation rule.
 Note that you can still use [govy.ErrorCode] and pass [govy.RuleError] to the constructor.
 You can pass any number of [govy.RuleError].
 
-[//]: # (embed: pkg/govy/example_test.go#ExampleNewPropertyError)
+[//]: # (embed: ExampleNewPropertyError)
 
 ```go
 func ExampleNewPropertyError() {

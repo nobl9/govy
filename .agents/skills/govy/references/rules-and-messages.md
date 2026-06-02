@@ -2,10 +2,6 @@
 
 Custom rules, details, examples, error codes, messages, message templates, template functions, pointer rules, and rule sets.
 
-Source examples:
-
-- [pkg/govy/example_test.go](../../../../pkg/govy/example_test.go)
-
 ## Examples
 
 - [ExampleRule](#examplerule)
@@ -29,8 +25,6 @@ Source examples:
 
 ## ExampleRule
 
-Source: [pkg/govy/example_test.go:599](../../../../pkg/govy/example_test.go#L599)
-
 Govy comes with a set of predefined rules,
 which you can use out of the box by importing [rules] package.
 
@@ -41,7 +35,7 @@ and returns an error if the validation failed.
 Note: the [govy.Rule] struct has all its fields private,
 so you can only create and modify them using exported constructor and methods.
 
-[//]: # (embed: pkg/govy/example_test.go#ExampleRule)
+[//]: # (embed: ExampleRule)
 
 ```go
 func ExampleRule() {
@@ -73,13 +67,11 @@ func ExampleRule() {
 
 ## ExampleRule_WithDetails
 
-Source: [pkg/govy/example_test.go:628](../../../../pkg/govy/example_test.go#L628)
-
 You can use [govy.Rule.WithDetails] to add additional details to the error message.
 This allows you to extend existing rules by adding your use case context.
 Let's give a regex validation some more clarity.
 
-[//]: # (embed: pkg/govy/example_test.go#ExampleRule_WithDetails)
+[//]: # (embed: ExampleRule_WithDetails)
 
 ```go
 func ExampleRule_WithDetails() {
@@ -109,11 +101,9 @@ func ExampleRule_WithDetails() {
 
 ## ExampleRule_WithDetailsf
 
-Source: [pkg/govy/example_test.go:653](../../../../pkg/govy/example_test.go#L653)
-
 You can use [govy.Rule.WithDetailsf] to add formatted details to the returned [govy.RuleError] error message.
 
-[//]: # (embed: pkg/govy/example_test.go#ExampleRule_WithDetailsf)
+[//]: # (embed: ExampleRule_WithDetailsf)
 
 ```go
 func ExampleRule_WithDetailsf() {
@@ -145,8 +135,6 @@ func ExampleRule_WithDetailsf() {
 
 ## ExampleRule_WithExamples
 
-Source: [pkg/govy/example_test.go:686](../../../../pkg/govy/example_test.go#L686)
-
 You can use [govy.Rule.WithExamples] to add examples of valid inputs
 which pass the [govy.Rule].
 This can be useful for more complex rules, especially regex based, where
@@ -155,7 +143,7 @@ it might not be immediately obvious how a valid value should look like.
 Note: examples are added between the error message and details
 (configured with [govy.Rule.WithDetails]).
 
-[//]: # (embed: pkg/govy/example_test.go#ExampleRule_WithExamples)
+[//]: # (embed: ExampleRule_WithExamples)
 
 ```go
 func ExampleRule_WithExamples() {
@@ -186,8 +174,6 @@ func ExampleRule_WithExamples() {
 
 ## ExampleRule_WithErrorCode
 
-Source: [pkg/govy/example_test.go:718](../../../../pkg/govy/example_test.go#L718)
-
 When testing, it can be tedious to always rely on error messages as these can change over time.
 Enter [govy.ErrorCode], which is a simple string type alias used to ease testing,
 but also potentially allow third parties to integrate with your validation results.
@@ -196,7 +182,7 @@ Notice that our modified version of [rules.StringMatchRegexp] will now return a 
 Predefined rules have [govy.ErrorCode] already associated with them.
 To view the list of predefined [govy.ErrorCode] checkout error_codes.go file.
 
-[//]: # (embed: pkg/govy/example_test.go#ExampleRule_WithErrorCode)
+[//]: # (embed: ExampleRule_WithErrorCode)
 
 ```go
 func ExampleRule_WithErrorCode() {
@@ -227,11 +213,9 @@ func ExampleRule_WithErrorCode() {
 
 ## ExampleRule_WithMessage
 
-Source: [pkg/govy/example_test.go:744](../../../../pkg/govy/example_test.go#L744)
-
 If you want to override the default error message, you can use [govy.Rule.WithMessage].
 
-[//]: # (embed: pkg/govy/example_test.go#ExampleRule_WithMessage)
+[//]: # (embed: ExampleRule_WithMessage)
 
 ```go
 func ExampleRule_WithMessage() {
@@ -262,11 +246,9 @@ func ExampleRule_WithMessage() {
 
 ## ExampleRule_WithMessagef
 
-Source: [pkg/govy/example_test.go:770](../../../../pkg/govy/example_test.go#L770)
-
 You can use [govy.Rule.WithMessagef] to override the default error message using printf-like formatting.
 
-[//]: # (embed: pkg/govy/example_test.go#ExampleRule_WithMessagef)
+[//]: # (embed: ExampleRule_WithMessagef)
 
 ```go
 func ExampleRule_WithMessagef() {
@@ -297,8 +279,6 @@ func ExampleRule_WithMessagef() {
 
 ## ExampleRule_WithMessageTemplateString
 
-Source: [pkg/govy/example_test.go:805](../../../../pkg/govy/example_test.go#L805)
-
 If you want to have more control over the resulting error message, but [govy.Rule.WithMessage]
 is not enough, you can utilize a template string which is parsed by [govy.Rule] into
 [template.Template] to construct a custom error message.
@@ -310,7 +290,7 @@ Refer to the rule's documentation to see which variables are supported.
 Note: Builtin functions provided by [govy.AddTemplateFunctions], like 'formatExamples',
 are automatically added to the parsed [template.Template].
 
-[//]: # (embed: pkg/govy/example_test.go#ExampleRule_WithMessageTemplateString)
+[//]: # (embed: ExampleRule_WithMessageTemplateString)
 
 ```go
 func ExampleRule_WithMessageTemplateString() {
@@ -342,8 +322,6 @@ func ExampleRule_WithMessageTemplateString() {
 
 ## ExampleRule_WithMessageTemplate
 
-Source: [pkg/govy/example_test.go:839](../../../../pkg/govy/example_test.go#L839)
-
 If you want to have more control over the [template.Template] used for error message creation,
 for instance, add custom functions, use [govy.Rule.WithMessageTemplate].
 
@@ -353,7 +331,7 @@ under the hood to join a slice of strings with a comma.
 Note: 'Examples' field is a plain slice of strings, If you wish to format it the same way
 as the default message does, use 'formatExamples' function provided by [govy.AddTemplateFunctions].
 
-[//]: # (embed: pkg/govy/example_test.go#ExampleRule_WithMessageTemplate)
+[//]: # (embed: ExampleRule_WithMessageTemplate)
 
 ```go
 func ExampleRule_WithMessageTemplate() {
@@ -388,8 +366,6 @@ func ExampleRule_WithMessageTemplate() {
 
 ## ExampleAddTemplateFunctions
 
-Source: [pkg/govy/example_test.go:880](../../../../pkg/govy/example_test.go#L880)
-
 Under the hood builtin rules' message templates utilize a set of custom template functions.
 If you want to use them in your custom templates, you can add them to your [template.Template]
 instance by calling [govy.AddTemplateFunctions].
@@ -403,7 +379,7 @@ Note: Builtin functions are automatically added to the parsed [template.Template
 Note: [govy.AddTemplateFunctions] calls [template.Template.Funcs], which will not add the functions
 to your template If it was already parsed.
 
-[//]: # (embed: pkg/govy/example_test.go#ExampleAddTemplateFunctions)
+[//]: # (embed: ExampleAddTemplateFunctions)
 
 ```go
 func ExampleAddTemplateFunctions() {
@@ -438,9 +414,7 @@ func ExampleAddTemplateFunctions() {
 
 ## ExampleAddTemplateFunctions_formatExamples
 
-Source: [pkg/govy/example_test.go:909](../../../../pkg/govy/example_test.go#L909)
-
-[//]: # (embed: pkg/govy/example_test.go#ExampleAddTemplateFunctions_formatExamples)
+[//]: # (embed: ExampleAddTemplateFunctions_formatExamples)
 
 ```go
 func ExampleAddTemplateFunctions_formatExamples() {
@@ -464,9 +438,7 @@ func ExampleAddTemplateFunctions_formatExamples() {
 
 ## ExampleAddTemplateFunctions_joinSlice
 
-Source: [pkg/govy/example_test.go:927](../../../../pkg/govy/example_test.go#L927)
-
-[//]: # (embed: pkg/govy/example_test.go#ExampleAddTemplateFunctions_joinSlice)
+[//]: # (embed: ExampleAddTemplateFunctions_joinSlice)
 
 ```go
 func ExampleAddTemplateFunctions_joinSlice() {
@@ -490,9 +462,7 @@ func ExampleAddTemplateFunctions_joinSlice() {
 
 ## ExampleAddTemplateFunctions_indent
 
-Source: [pkg/govy/example_test.go:945](../../../../pkg/govy/example_test.go#L945)
-
-[//]: # (embed: pkg/govy/example_test.go#ExampleAddTemplateFunctions_indent)
+[//]: # (embed: ExampleAddTemplateFunctions_indent)
 
 ```go
 func ExampleAddTemplateFunctions_indent() {
@@ -517,8 +487,6 @@ func ExampleAddTemplateFunctions_indent() {
 
 ## ExampleRule_WithDescription
 
-Source: [pkg/govy/example_test.go:976](../../../../pkg/govy/example_test.go#L976)
-
 [govy.Rule] error might be static, i.e. a single [govy.Rule] always returns
 the same exact error message, but they don't have to.
 For instance, consider a rule which parses a URL using [net/url] package.
@@ -532,7 +500,7 @@ It will be only included in the [govy.RulePlan] and otherwise not displayed in
 the default [govy.RuleError.Error].
 However, it is available in the structured [govy.RuleError].
 
-[//]: # (embed: pkg/govy/example_test.go#ExampleRule_WithDescription)
+[//]: # (embed: ExampleRule_WithDescription)
 
 ```go
 func ExampleRule_WithDescription() {
@@ -563,8 +531,6 @@ func ExampleRule_WithDescription() {
 
 ## ExampleRuleToPointer
 
-Source: [pkg/govy/example_test.go:1011](../../../../pkg/govy/example_test.go#L1011)
-
 The builtin rules, and most likely your custom rules as well, all operate on non-pointer values.
 This means you cannot use them on pointers to the same type.
 
@@ -576,7 +542,7 @@ If you want to enforce the value to be non-nil, you can use [rules.Required].
 This behavior is consistent with [govy.ForPointer] constructor, which will skip the validation
 unless you add [govy.PropertyRules.Required] to enforce the value to be a non-nil pointer.
 
-[//]: # (embed: pkg/govy/example_test.go#ExampleRuleToPointer)
+[//]: # (embed: ExampleRuleToPointer)
 
 ```go
 func ExampleRuleToPointer() {
@@ -605,8 +571,6 @@ func ExampleRuleToPointer() {
 
 ## ExampleRuleSet
 
-Source: [pkg/govy/example_test.go:1041](../../../../pkg/govy/example_test.go#L1041)
-
 Sometimes it's useful to aggregate multiple [govy.Rule] into a single, composite rule.
 To do that we'll use [govy.RuleSet] and [govy.NewRuleSet] constructor.
 RuleSet is a simple container for multiple [govy.Rule].
@@ -615,7 +579,7 @@ During validation it is unpacked and each [govy.RuleError] is reported separatel
 Note that govy uses similar syntax to wrapped errors in Go;
 a ':' delimiter is used to chain error codes together.
 
-[//]: # (embed: pkg/govy/example_test.go#ExampleRuleSet)
+[//]: # (embed: ExampleRuleSet)
 
 ```go
 func ExampleRuleSet() {
@@ -657,14 +621,12 @@ func ExampleRuleSet() {
 
 ## ExampleRuleSetToPointer
 
-Source: [pkg/govy/example_test.go:1081](../../../../pkg/govy/example_test.go#L1081)
-
 Similar to [govy.RuleToPointer], you can use [govy.RuleSetToPointer] to convert
 [govy.RuleSet] to work with pointers.
 
 See [ExampleRuleToPointer] for more details.
 
-[//]: # (embed: pkg/govy/example_test.go#ExampleRuleSetToPointer)
+[//]: # (embed: ExampleRuleSetToPointer)
 
 ```go
 func ExampleRuleSetToPointer() {
@@ -698,8 +660,6 @@ func ExampleRuleSetToPointer() {
 
 ## ExampleRuleSet_Cascade
 
-Source: [pkg/govy/example_test.go:1117](../../../../pkg/govy/example_test.go#L1117)
-
 If you wish to control how rules aggregated by [govy.RuleSet] evaluate
 you can use [govy.RuleSet.Cascade] to set a [govy.CascadeMode].
 
@@ -709,7 +669,7 @@ the [govy.CascadeModeStop] will stop validation after the first encountered erro
 In the example below we can see that although both rules should fail,
 only the first one (order of definitions matters here!) returns an error.
 
-[//]: # (embed: pkg/govy/example_test.go#ExampleRuleSet_Cascade)
+[//]: # (embed: ExampleRuleSet_Cascade)
 
 ```go
 func ExampleRuleSet_Cascade() {
