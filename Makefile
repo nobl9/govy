@@ -102,10 +102,10 @@ generate/code:
 	$(call _print_step,Generating Go code)
 	go generate ./...
 
-## Generate README.md file embedded examples.
+## Generate Markdown embedded examples.
 generate/readme:
-	$(call _print_step,Generating README.md embedded examples)
-	$(SCRIPTS_DIR)/embed-example-in-readme.bash README.md
+	$(call _print_step,Generating Markdown embedded examples)
+	$(SCRIPTS_DIR)/embed-examples-in-markdown.bash README.md .agents/skills/govy/references
 
 .PHONY: format format/go
 ## Format files.

@@ -7,6 +7,7 @@ import (
 	"go/format"
 	"go/parser"
 	"go/token"
+	"io/fs"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -29,6 +30,16 @@ func main() {
 	fmt.Println("Running docextractor...")
 
 	root := internal.FindModuleRoot()
+	if len(os.Args) > 1 {
+		switch os.Args[1] {
+		case "embed":
+			embedExamples(root, os.Args[2:])
+			return
+		default:
+			logFatal(nil, "Unknown docextractor command %q", os.Args[1])
+		}
+	}
+
 	docs := findTemplateFunctionsDocs(root)
 
 	path := filepath.Join(root, "pkg", "govy", "message_templates.go")
@@ -185,10 +196,139 @@ func findTemplateFunctionsDocs(root string) [][]string {
 	return docsList
 }
 
+func embedExamples(root string, paths []string) {
+	if len(paths) == 0 {
+		logFatal(nil, "No Markdown files provided for example embedding")
+	}
+
+	for _, path := range paths {
+		info, err := os.Stat(path) // #nosec G703
+		if err != nil {
+			logFatal(err, "Failed to stat path %q", path)
+		}
+		if !info.IsDir() {
+			embedExamplesInMarkdown(root, path)
+			continue
+		}
+		if err = filepath.WalkDir(path, func(path string, entry fs.DirEntry, err error) error { // #nosec G703
+			if err != nil {
+				return err
+			}
+			if entry.IsDir() || filepath.Ext(path) != ".md" {
+				return nil
+			}
+			embedExamplesInMarkdown(root, path)
+			return nil
+		}); err != nil {
+			logFatal(err, "Failed to walk Markdown directory %q", path)
+		}
+	}
+}
+
+func embedExamplesInMarkdown(root, path string) {
+	contents, err := os.ReadFile(path) // #nosec G304,G703
+	if err != nil {
+		logFatal(err, "Failed to read Markdown file %q", path)
+	}
+
+	updated := replaceEmbeddedExamples(root, string(contents), path)
+	if updated == string(contents) {
+		return
+	}
+	if err = os.WriteFile(path, []byte(updated), 0o600); err != nil { // #nosec G703
+		logFatal(err, "Failed to write Markdown file %q", path)
+	}
+}
+
+func replaceEmbeddedExamples(root, markdown, markdownPath string) string {
+	const (
+		embedPrefix = "[//]: # (embed: "
+		embedSuffix = ")"
+		goFence     = "```go\n"
+	)
+
+	var builder strings.Builder
+	cursor := 0
+	for {
+		directiveStart := strings.Index(markdown[cursor:], embedPrefix)
+		if directiveStart < 0 {
+			builder.WriteString(markdown[cursor:])
+			return builder.String()
+		}
+		directiveStart += cursor
+		lineEnd := strings.IndexByte(markdown[directiveStart:], '\n')
+		if lineEnd < 0 {
+			logFatal(nil, "Embed directive in %q is not followed by a code block", markdownPath)
+		}
+		lineEnd += directiveStart
+		directive := strings.TrimSpace(markdown[directiveStart:lineEnd])
+		if !strings.HasPrefix(directive, embedPrefix) || !strings.HasSuffix(directive, embedSuffix) {
+			logFatal(nil, "Malformed embed directive %q in %q", directive, markdownPath)
+		}
+		exampleRef := strings.TrimSuffix(strings.TrimPrefix(directive, embedPrefix), embedSuffix)
+		example := readEmbeddedExample(root, exampleRef)
+
+		fenceStart := strings.Index(markdown[lineEnd:], goFence)
+		if fenceStart < 0 {
+			logFatal(nil, "Embed directive %q in %q is missing a Go code block", exampleRef, markdownPath)
+		}
+		fenceStart += lineEnd
+		codeStart := fenceStart + len(goFence)
+		fenceEnd := strings.Index(markdown[codeStart:], "\n```")
+		if fenceEnd < 0 {
+			logFatal(nil, "Embed directive %q in %q has an unterminated Go code block", exampleRef, markdownPath)
+		}
+		fenceEnd += codeStart
+
+		builder.WriteString(markdown[cursor:codeStart])
+		builder.WriteString(strings.TrimRight(example, "\n"))
+		cursor = fenceEnd
+	}
+}
+
+func readEmbeddedExample(root, exampleRef string) string {
+	sourcePath, functionName, hasFunctionName := strings.Cut(exampleRef, "#")
+	if !hasFunctionName {
+		contents, err := os.ReadFile(filepath.Join(root, filepath.FromSlash(sourcePath))) // #nosec G304,G703
+		if err != nil {
+			logFatal(err, "Failed to read embedded example %q", exampleRef)
+		}
+		return string(contents)
+	}
+	return readEmbeddedFunction(root, sourcePath, functionName)
+}
+
+func readEmbeddedFunction(root, sourcePath, functionName string) string {
+	path := filepath.Join(root, filepath.FromSlash(sourcePath))
+	source, err := os.ReadFile(path) // #nosec G304,G703
+	if err != nil {
+		logFatal(err, "Failed to read embedded example source %q", path)
+	}
+
+	fset := token.NewFileSet()
+	astFile, err := parser.ParseFile(fset, path, source, parser.ParseComments|parser.SkipObjectResolution)
+	if err != nil {
+		logFatal(err, "Failed to parse embedded example source %q", path)
+	}
+
+	for _, decl := range astFile.Decls {
+		funcDecl, ok := decl.(*ast.FuncDecl)
+		if !ok || funcDecl.Name.Name != functionName {
+			continue
+		}
+		start := fset.PositionFor(funcDecl.Pos(), false)
+		end := fset.PositionFor(funcDecl.End(), false)
+		return strings.TrimSpace(string(source[start.Offset:end.Offset]))
+	}
+	logFatal(nil, "Function %q was not found in embedded example source %q", functionName, sourcePath)
+	return ""
+}
+
 func logFatal(err error, msg string, a ...any) {
 	var attrs []slog.Attr
 	if err != nil {
 		attrs = append(attrs, slog.String("error", err.Error()))
 	}
 	logging.Logger().LogAttrs(context.Background(), slog.LevelError, fmt.Sprintf(msg, a...), attrs...)
+	os.Exit(1)
 }
