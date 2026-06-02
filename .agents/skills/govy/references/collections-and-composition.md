@@ -2,15 +2,24 @@
 
 Nested validators, slice and map property rules, slice pointers, and validator variants derived from path removal.
 
-## Examples
+## Topics
 
-- [Include nested validators](#include-nested-validators)
-- [Validate each slice element](#validate-each-slice-element)
-- [Validate slices of pointers](#validate-slices-of-pointers)
-- [Validate each map value](#validate-each-map-value)
-- [Remove properties by path](#remove-properties-by-path)
+- [Compose nested validators](#compose-nested-validators)
+  - [Include a validator for a nested object.](#include-a-validator-for-a-nested-object)
+- [Validate collection elements](#validate-collection-elements)
+  - [Validate a slice and each of its elements.](#validate-a-slice-and-each-of-its-elements)
+  - [Handle slices whose elements are pointers.](#handle-slices-whose-elements-are-pointers)
+  - [Validate map keys, values, and key-value items.](#validate-map-keys-values-and-key-value-items)
+- [Derive validator variants](#derive-validator-variants)
+  - [Remove selected properties by path.](#remove-selected-properties-by-path)
 
-## Include nested validators
+## Compose nested validators
+
+Use Include when a property has its own validator. Govy appends nested paths automatically so errors still point to the leaf property.
+
+<a id="include-a-validator-for-a-nested-object"></a>
+
+**Include a validator for a nested object.**
 
 [//]: # (embed: ExamplePropertyRules_Include)
 
@@ -62,7 +71,13 @@ func ExamplePropertyRules_Include() {
 }
 ```
 
-## Validate each slice element
+## Validate collection elements
+
+Use collection-specific builders when both the collection and each element need validation. They preserve map keys or slice indexes in paths.
+
+<a id="validate-a-slice-and-each-of-its-elements"></a>
+
+**Validate a slice and each of its elements.**
 
 [//]: # (embed: ExampleForSlice)
 
@@ -128,7 +143,9 @@ func ExampleForSlice() {
 }
 ```
 
-## Validate slices of pointers
+<a id="handle-slices-whose-elements-are-pointers"></a>
+
+**Handle slices whose elements are pointers.**
 
 [//]: # (embed: ExampleForSlice_sliceOfPointers)
 
@@ -193,7 +210,9 @@ func ExampleForSlice_sliceOfPointers() {
 }
 ```
 
-## Validate each map value
+<a id="validate-map-keys-values-and-key-value-items"></a>
+
+**Validate map keys, values, and key-value items.**
 
 [//]: # (embed: ExampleForMap)
 
@@ -283,7 +302,13 @@ func ExampleForMap() {
 }
 ```
 
-## Remove properties by path
+## Derive validator variants
+
+Use path-based removal when a caller needs a variant of an existing validator without mutating the original declaration.
+
+<a id="remove-selected-properties-by-path"></a>
+
+**Remove selected properties by path.**
 
 [//]: # (embed: ExampleValidator_RemovePropertiesByPath)
 
@@ -320,4 +345,3 @@ func ExampleValidator_RemovePropertiesByPath() {
 	// Modified validator passed
 }
 ```
-

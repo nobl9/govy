@@ -2,12 +2,19 @@
 
 Core govy error helpers and structured error flows useful when writing tests without the govytest package.
 
-## Examples
+## Topics
 
-- [Check validation errors by code](#check-validation-errors-by-code)
-- [Match validator errors in tests](#match-validator-errors-in-tests)
+- [Inspect validation errors](#inspect-validation-errors)
+  - [Check whether any nested rule error carries an error code.](#check-whether-any-nested-rule-error-carries-an-error-code)
+  - [Match validator errors returned from slice validation.](#match-validator-errors-returned-from-slice-validation)
 
-## Check validation errors by code
+## Inspect validation errors
+
+Use these helpers when tests need to match structured govy errors without depending on entire formatted error strings.
+
+<a id="check-whether-any-nested-rule-error-carries-an-error-code"></a>
+
+**Check whether any nested rule error carries an error code.**
 
 [//]: # (embed: ExampleHasErrorCode)
 
@@ -56,7 +63,9 @@ func ExampleHasErrorCode() {
 }
 ```
 
-## Match validator errors in tests
+<a id="match-validator-errors-returned-from-slice-validation"></a>
+
+**Match validator errors returned from slice validation.**
 
 [//]: # (embed: ExampleValidatorErrors)
 
@@ -123,4 +132,3 @@ func ExampleValidatorErrors() {
 	// ]
 }
 ```
-

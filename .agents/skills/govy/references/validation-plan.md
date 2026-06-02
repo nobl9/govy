@@ -2,12 +2,19 @@
 
 Validation plan generation and strict validation of plan metadata.
 
-## Examples
+## Topics
 
-- [Generate a validation plan](#generate-a-validation-plan)
-- [Validate generated plan metadata](#validate-generated-plan-metadata)
+- [Generate and enforce validation plans](#generate-and-enforce-validation-plans)
+  - [Generate a plan from a validator.](#generate-a-plan-from-a-validator)
+  - [Validate plan metadata with strict plan options.](#validate-plan-metadata-with-strict-plan-options)
 
-## Generate a validation plan
+## Generate and enforce validation plans
+
+Use validation plans when validation rules also need to describe an API contract. Add examples, descriptions, and predicate descriptions before generating the plan.
+
+<a id="generate-a-plan-from-a-validator"></a>
+
+**Generate a plan from a validator.**
 
 [//]: # (embed: ExamplePlan)
 
@@ -86,7 +93,9 @@ func ExamplePlan() {
 }
 ```
 
-## Validate generated plan metadata
+<a id="validate-plan-metadata-with-strict-plan-options"></a>
+
+**Validate plan metadata with strict plan options.**
 
 [//]: # (embed: ExamplePlan_validation)
 
@@ -121,4 +130,3 @@ func ExamplePlan_validation() {
 	// predicates without description found at: validator level, $.name
 }
 ```
-

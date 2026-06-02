@@ -2,13 +2,21 @@
 
 Runtime and generated path inference, govyconfig registration, and inference caching behavior.
 
-## Examples
+## Topics
 
-- [Configure path inference modes](#configure-path-inference-modes)
-- [Generate inferred paths](#generate-inferred-paths)
-- [Change path inference at runtime](#change-path-inference-at-runtime)
+- [Choose a path inference mode](#choose-a-path-inference-mode)
+  - [Configure inference modes and include test files when needed.](#configure-inference-modes-and-include-test-files-when-needed)
+  - [Use generated inference by registering generated paths.](#use-generated-inference-by-registering-generated-paths)
+- [Avoid late inference changes](#avoid-late-inference-changes)
+  - [Changing inference mode after first validation does not recompute paths.](#changing-inference-mode-after-first-validation-does-not-recompute-paths)
 
-## Configure path inference modes
+## Choose a path inference mode
+
+Prefer explicit paths unless inferred paths are part of the design. Runtime inference trades startup simplicity for a one-time AST lookup, while generated inference moves that work into code generation.
+
+<a id="configure-inference-modes-and-include-test-files-when-needed"></a>
+
+**Configure inference modes and include test files when needed.**
 
 [//]: # (embed: ExampleInferPathMode)
 
@@ -72,7 +80,9 @@ func ExampleInferPathMode() {
 }
 ```
 
-## Generate inferred paths
+<a id="use-generated-inference-by-registering-generated-paths"></a>
+
+**Use generated inference by registering generated paths.**
 
 [//]: # (embed: ExampleInferPathModeGenerate)
 
@@ -128,7 +138,13 @@ func ExampleInferPathModeGenerate() {
 }
 ```
 
-## Change path inference at runtime
+## Avoid late inference changes
+
+Path inference is cached after first validation. Configure the mode before validation, not after an empty path has already been inferred.
+
+<a id="changing-inference-mode-after-first-validation-does-not-recompute-paths"></a>
+
+**Changing inference mode after first validation does not recompute paths.**
 
 [//]: # (embed: ExampleValidator_InferPath_changeModeInRuntime)
 
@@ -174,4 +190,3 @@ func ExampleValidator_InferPath_changeModeInRuntime() {
 	//   - must be equal to 'Jerry'
 }
 ```
-

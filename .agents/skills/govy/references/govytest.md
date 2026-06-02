@@ -2,14 +2,21 @@
 
 Assertion helpers for validating govy errors in tests.
 
-## Examples
+## Topics
 
-- [Assert successful validation](#assert-successful-validation)
-- [Assert structured validation errors](#assert-structured-validation-errors)
-- [Assert nested validator errors](#assert-nested-validator-errors)
-- [Assert partial validation errors](#assert-partial-validation-errors)
+- [Assert validation results](#assert-validation-results)
+  - [Assert that validation succeeded.](#assert-that-validation-succeeded)
+  - [Assert exact structured rule errors.](#assert-exact-structured-rule-errors)
+  - [Assert nested ValidatorErrors produced by slice validation.](#assert-nested-validatorerrors-produced-by-slice-validation)
+  - [Assert that one expected error is present among other errors.](#assert-that-one-expected-error-is-present-among-other-errors)
 
-## Assert successful validation
+## Assert validation results
+
+Use govytest when tests should match structured validation failures. Prefer these helpers over comparing full formatted error strings.
+
+<a id="assert-that-validation-succeeded"></a>
+
+**Assert that validation succeeded.**
 
 [//]: # (embed: ExampleAssertNoError)
 
@@ -82,7 +89,9 @@ func ExampleAssertNoError() {
 }
 ```
 
-## Assert structured validation errors
+<a id="assert-exact-structured-rule-errors"></a>
+
+**Assert exact structured rule errors.**
 
 [//]: # (embed: ExampleAssertError)
 
@@ -171,7 +180,9 @@ func ExampleAssertError() {
 }
 ```
 
-## Assert nested validator errors
+<a id="assert-nested-validatorerrors-produced-by-slice-validation"></a>
+
+**Assert nested ValidatorErrors produced by slice validation.**
 
 [//]: # (embed: ExampleAssertError_validatorErrors)
 
@@ -271,7 +282,9 @@ func ExampleAssertError_validatorErrors() {
 }
 ```
 
-## Assert partial validation errors
+<a id="assert-that-one-expected-error-is-present-among-other-errors"></a>
+
+**Assert that one expected error is present among other errors.**
 
 [//]: # (embed: ExampleAssertErrorContains)
 
@@ -359,4 +372,3 @@ func ExampleAssertErrorContains() {
 	// ]
 }
 ```
-

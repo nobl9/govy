@@ -2,16 +2,25 @@
 
 Examples from the rules package for collection uniqueness, property relationships, and comparable values.
 
-## Examples
+## Topics
 
-- [Require unique slice values](#require-unique-slice-values)
-- [Require mutually exclusive properties](#require-mutually-exclusive-properties)
-- [Require one populated property](#require-one-populated-property)
-- [Compare properties for equality](#compare-properties-for-equality)
-- [Compare ordered properties](#compare-ordered-properties)
-- [Compare custom comparable properties](#compare-custom-comparable-properties)
+- [Collection constraints](#collection-constraints)
+  - [Require values in a slice to be unique.](#require-values-in-a-slice-to-be-unique)
+- [Property relationship rules](#property-relationship-rules)
+  - [Require exactly one value across mutually exclusive properties.](#require-exactly-one-value-across-mutually-exclusive-properties)
+  - [Require one populated value from a set of properties.](#require-one-populated-value-from-a-set-of-properties)
+- [Property comparison rules](#property-comparison-rules)
+  - [Compare two properties for equality.](#compare-two-properties-for-equality)
+  - [Compare ordered primitive properties.](#compare-ordered-primitive-properties)
+  - [Compare custom comparable properties.](#compare-custom-comparable-properties)
 
-## Require unique slice values
+## Collection constraints
+
+Use collection rules when the validation decision depends on all values, not a single property value.
+
+<a id="require-values-in-a-slice-to-be-unique"></a>
+
+**Require values in a slice to be unique.**
 
 [//]: # (embed: ExampleSliceUnique)
 
@@ -43,7 +52,13 @@ func ExampleSliceUnique() {
 }
 ```
 
-## Require mutually exclusive properties
+## Property relationship rules
+
+Use property relationship rules when one field controls whether another field may or must be set.
+
+<a id="require-exactly-one-value-across-mutually-exclusive-properties"></a>
+
+**Require exactly one value across mutually exclusive properties.**
 
 [//]: # (embed: ExampleMutuallyExclusive)
 
@@ -79,7 +94,9 @@ func ExampleMutuallyExclusive() {
 }
 ```
 
-## Require one populated property
+<a id="require-one-populated-value-from-a-set-of-properties"></a>
+
+**Require one populated value from a set of properties.**
 
 [//]: # (embed: ExampleOneOfProperties)
 
@@ -113,7 +130,13 @@ func ExampleOneOfProperties() {
 }
 ```
 
-## Compare properties for equality
+## Property comparison rules
+
+Use comparison rules when multiple properties must preserve ordering or equality. Pick comparable variants for types such as time.Time that define their own ordering contract.
+
+<a id="compare-two-properties-for-equality"></a>
+
+**Compare two properties for equality.**
 
 [//]: # (embed: ExampleEqualProperties)
 
@@ -149,7 +172,9 @@ func ExampleEqualProperties() {
 }
 ```
 
-## Compare ordered properties
+<a id="compare-ordered-primitive-properties"></a>
+
+**Compare ordered primitive properties.**
 
 [//]: # (embed: ExampleLTProperties)
 
@@ -187,7 +212,9 @@ func ExampleLTProperties() {
 }
 ```
 
-## Compare custom comparable properties
+<a id="compare-custom-comparable-properties"></a>
+
+**Compare custom comparable properties.**
 
 [//]: # (embed: ExampleLTComparableProperties)
 
@@ -232,4 +259,3 @@ func ExampleLTComparableProperties() {
 	//   - 'startTime' must be before 'endTime'
 }
 ```
-

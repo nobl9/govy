@@ -2,13 +2,21 @@
 
 Validator errors, runtime error naming, structured JSON errors, and manually constructed property errors.
 
-## Examples
+## Topics
 
-- [Name validator-level errors](#name-validator-level-errors)
-- [Inspect validator error output](#inspect-validator-error-output)
-- [Construct property errors](#construct-property-errors)
+- [Work with validator errors](#work-with-validator-errors)
+  - [Set or overwrite a validator name on returned errors.](#set-or-overwrite-a-validator-name-on-returned-errors)
+  - [Inspect and serialize validator error output.](#inspect-and-serialize-validator-error-output)
+- [Create property-scoped errors](#create-property-scoped-errors)
+  - [Construct a property error with one or more rule errors.](#construct-a-property-error-with-one-or-more-rule-errors)
 
-## Name validator-level errors
+## Work with validator errors
+
+Use validator errors when validation failed at the validator level. Names can be attached after validation, and structured fields are available for serialization or inspection.
+
+<a id="set-or-overwrite-a-validator-name-on-returned-errors"></a>
+
+**Set or overwrite a validator name on returned errors.**
 
 [//]: # (embed: ExampleValidatorError_WithName)
 
@@ -43,7 +51,9 @@ func ExampleValidatorError_WithName() {
 }
 ```
 
-## Inspect validator error output
+<a id="inspect-and-serialize-validator-error-output"></a>
+
+**Inspect and serialize validator error output.**
 
 [//]: # (embed: ExampleValidatorError)
 
@@ -91,7 +101,13 @@ func ExampleValidatorError() {
 }
 ```
 
-## Construct property errors
+## Create property-scoped errors
+
+Return property errors from custom rules when top-level validation logic needs to point the failure at a nested property path.
+
+<a id="construct-a-property-error-with-one-or-more-rule-errors"></a>
+
+**Construct a property error with one or more rule errors.**
 
 [//]: # (embed: ExampleNewPropertyError)
 
@@ -139,4 +155,3 @@ func ExampleNewPropertyError() {
 	//     - you can pass me too!
 }
 ```
-

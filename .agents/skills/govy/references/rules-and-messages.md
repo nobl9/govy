@@ -2,28 +2,41 @@
 
 Custom rules, details, examples, error codes, messages, message templates, template functions, pointer rules, and rule sets.
 
-## Examples
+## Topics
 
-- [Create a custom rule](#create-a-custom-rule)
-- [Attach static rule details](#attach-static-rule-details)
-- [Attach formatted rule details](#attach-formatted-rule-details)
-- [Attach rule examples](#attach-rule-examples)
-- [Attach rule error codes](#attach-rule-error-codes)
-- [Override rule messages](#override-rule-messages)
-- [Override rule messages dynamically](#override-rule-messages-dynamically)
-- [Use string message templates](#use-string-message-templates)
-- [Use parsed message templates](#use-parsed-message-templates)
-- [Add custom template functions](#add-custom-template-functions)
-- [Format example lists in templates](#format-example-lists-in-templates)
-- [Join slices in templates](#join-slices-in-templates)
-- [Indent template output](#indent-template-output)
-- [Describe rules for validation plans](#describe-rules-for-validation-plans)
-- [Convert rules to pointer rules](#convert-rules-to-pointer-rules)
-- [Group rules into reusable sets](#group-rules-into-reusable-sets)
-- [Convert rule sets to pointer rule sets](#convert-rule-sets-to-pointer-rule-sets)
-- [Cascade failures within rule sets](#cascade-failures-within-rule-sets)
+- [Create custom rules](#create-custom-rules)
+  - [Create a custom rule from a validation function.](#create-a-custom-rule-from-a-validation-function)
+- [Add rule context](#add-rule-context)
+  - [Attach static details to a rule error.](#attach-static-details-to-a-rule-error)
+  - [Attach formatted details when the context is computed.](#attach-formatted-details-when-the-context-is-computed)
+  - [Attach valid input examples for complex rules.](#attach-valid-input-examples-for-complex-rules)
+  - [Attach stable error codes for tests and integrations.](#attach-stable-error-codes-for-tests-and-integrations)
+- [Customize rule messages](#customize-rule-messages)
+  - [Override a rule message with a fixed string.](#override-a-rule-message-with-a-fixed-string)
+  - [Build a rule message dynamically from the failed value.](#build-a-rule-message-dynamically-from-the-failed-value)
+- [Use message templates](#use-message-templates)
+  - [Attach a template from a string.](#attach-a-template-from-a-string)
+  - [Attach a pre-parsed template.](#attach-a-pre-parsed-template)
+- [Add template helper functions](#add-template-helper-functions)
+  - [Register the builtin helper functions on a template.](#register-the-builtin-helper-functions-on-a-template)
+  - [Format example slices the same way default messages do.](#format-example-slices-the-same-way-default-messages-do)
+  - [Join slice values in custom template output.](#join-slice-values-in-custom-template-output)
+  - [Indent multiline template output.](#indent-multiline-template-output)
+- [Describe rules for generated plans](#describe-rules-for-generated-plans)
+  - [Attach a plan-only rule description.](#attach-a-plan-only-rule-description)
+- [Reuse rule sets](#reuse-rule-sets)
+  - [Convert a rule so it can validate pointer values.](#convert-a-rule-so-it-can-validate-pointer-values)
+  - [Group multiple rules into a reusable set.](#group-multiple-rules-into-a-reusable-set)
+  - [Convert a whole rule set for pointer validation.](#convert-a-whole-rule-set-for-pointer-validation)
+  - [Stop evaluating later rules in a rule set after failure.](#stop-evaluating-later-rules-in-a-rule-set-after-failure)
 
-## Create a custom rule
+## Create custom rules
+
+Use custom rules for validation that is not covered by pkg/rules. Keep the rule function focused on the validation decision and attach context through rule metadata methods.
+
+<a id="create-a-custom-rule-from-a-validation-function"></a>
+
+**Create a custom rule from a validation function.**
 
 [//]: # (embed: ExampleRule)
 
@@ -64,7 +77,13 @@ func ExampleRule() {
 }
 ```
 
-## Attach static rule details
+## Add rule context
+
+Use details, examples, and error codes to make rule failures useful to both humans and tests. Details extend the message, examples document valid inputs, and error codes provide a stable assertion surface.
+
+<a id="attach-static-details-to-a-rule-error"></a>
+
+**Attach static details to a rule error.**
 
 [//]: # (embed: ExampleRule_WithDetails)
 
@@ -97,7 +116,9 @@ func ExampleRule_WithDetails() {
 }
 ```
 
-## Attach formatted rule details
+<a id="attach-formatted-details-when-the-context-is-computed"></a>
+
+**Attach formatted details when the context is computed.**
 
 [//]: # (embed: ExampleRule_WithDetailsf)
 
@@ -130,7 +151,9 @@ func ExampleRule_WithDetailsf() {
 }
 ```
 
-## Attach rule examples
+<a id="attach-valid-input-examples-for-complex-rules"></a>
+
+**Attach valid input examples for complex rules.**
 
 [//]: # (embed: ExampleRule_WithExamples)
 
@@ -168,7 +191,9 @@ func ExampleRule_WithExamples() {
 }
 ```
 
-## Attach rule error codes
+<a id="attach-stable-error-codes-for-tests-and-integrations"></a>
+
+**Attach stable error codes for tests and integrations.**
 
 [//]: # (embed: ExampleRule_WithErrorCode)
 
@@ -206,7 +231,13 @@ func ExampleRule_WithErrorCode() {
 }
 ```
 
-## Override rule messages
+## Customize rule messages
+
+Use WithMessage for fixed replacements and WithMessagef when the failed value or details should shape the final message. These methods replace the base message while preserving details and examples.
+
+<a id="override-a-rule-message-with-a-fixed-string"></a>
+
+**Override a rule message with a fixed string.**
 
 [//]: # (embed: ExampleRule_WithMessage)
 
@@ -238,7 +269,9 @@ func ExampleRule_WithMessage() {
 }
 ```
 
-## Override rule messages dynamically
+<a id="build-a-rule-message-dynamically-from-the-failed-value"></a>
+
+**Build a rule message dynamically from the failed value.**
 
 [//]: # (embed: ExampleRule_WithMessagef)
 
@@ -270,7 +303,13 @@ func ExampleRule_WithMessagef() {
 }
 ```
 
-## Use string message templates
+## Use message templates
+
+Use message templates when message formatting needs access to rule data such as details, examples, or property values. Start with a string template for simple cases and parse templates yourself when you need reuse or validation before attaching them.
+
+<a id="attach-a-template-from-a-string"></a>
+
+**Attach a template from a string.**
 
 [//]: # (embed: ExampleRule_WithMessageTemplateString)
 
@@ -312,7 +351,9 @@ func ExampleRule_WithMessageTemplateString() {
 }
 ```
 
-## Use parsed message templates
+<a id="attach-a-pre-parsed-template"></a>
+
+**Attach a pre-parsed template.**
 
 [//]: # (embed: ExampleRule_WithMessageTemplate)
 
@@ -355,7 +396,13 @@ func ExampleRule_WithMessageTemplate() {
 }
 ```
 
-## Add custom template functions
+## Add template helper functions
+
+Template helpers are registered through AddTemplateFunctions. Use the built-ins for common formatting instead of formatting slices or multiline text by hand inside every template.
+
+<a id="register-the-builtin-helper-functions-on-a-template"></a>
+
+**Register the builtin helper functions on a template.**
 
 [//]: # (embed: ExampleAddTemplateFunctions)
 
@@ -402,7 +449,9 @@ func ExampleAddTemplateFunctions() {
 }
 ```
 
-## Format example lists in templates
+<a id="format-example-slices-the-same-way-default-messages-do"></a>
+
+**Format example slices the same way default messages do.**
 
 [//]: # (embed: ExampleAddTemplateFunctions_formatExamples)
 
@@ -426,7 +475,9 @@ func ExampleAddTemplateFunctions_formatExamples() {
 }
 ```
 
-## Join slices in templates
+<a id="join-slice-values-in-custom-template-output"></a>
+
+**Join slice values in custom template output.**
 
 [//]: # (embed: ExampleAddTemplateFunctions_joinSlice)
 
@@ -450,7 +501,9 @@ func ExampleAddTemplateFunctions_joinSlice() {
 }
 ```
 
-## Indent template output
+<a id="indent-multiline-template-output"></a>
+
+**Indent multiline template output.**
 
 [//]: # (embed: ExampleAddTemplateFunctions_indent)
 
@@ -475,7 +528,13 @@ func ExampleAddTemplateFunctions_indent() {
 }
 ```
 
-## Describe rules for validation plans
+## Describe rules for generated plans
+
+Use descriptions when validation plans are part of the API contract. Descriptions are plan metadata; they do not change runtime validation behavior.
+
+<a id="attach-a-plan-only-rule-description"></a>
+
+**Attach a plan-only rule description.**
 
 [//]: # (embed: ExampleRule_WithDescription)
 
@@ -518,7 +577,13 @@ func ExampleRule_WithDescription() {
 }
 ```
 
-## Convert rules to pointer rules
+## Reuse rule sets
+
+Use rule sets to package related rules and reuse them across properties. Convert rules or rule sets to pointer variants when validating pointed-to values.
+
+<a id="convert-a-rule-so-it-can-validate-pointer-values"></a>
+
+**Convert a rule so it can validate pointer values.**
 
 [//]: # (embed: ExampleRuleToPointer)
 
@@ -557,7 +622,9 @@ func ExampleRuleToPointer() {
 }
 ```
 
-## Group rules into reusable sets
+<a id="group-multiple-rules-into-a-reusable-set"></a>
+
+**Group multiple rules into a reusable set.**
 
 [//]: # (embed: ExampleRuleSet)
 
@@ -606,7 +673,9 @@ func ExampleRuleSet() {
 }
 ```
 
-## Convert rule sets to pointer rule sets
+<a id="convert-a-whole-rule-set-for-pointer-validation"></a>
+
+**Convert a whole rule set for pointer validation.**
 
 [//]: # (embed: ExampleRuleSetToPointer)
 
@@ -644,7 +713,9 @@ func ExampleRuleSetToPointer() {
 }
 ```
 
-## Cascade failures within rule sets
+<a id="stop-evaluating-later-rules-in-a-rule-set-after-failure"></a>
+
+**Stop evaluating later rules in a rule set after failure.**
 
 [//]: # (embed: ExampleRuleSet_Cascade)
 
@@ -685,4 +756,3 @@ func ExampleRuleSet_Cascade() {
 	//     - length must be between 1 and 5
 }
 ```
-

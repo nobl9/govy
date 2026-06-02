@@ -2,21 +2,32 @@
 
 Property getters, names, explicit JSON paths, pointers, transforms, required and optional values, hidden values, and property-level conditions.
 
-## Examples
+## Topics
 
-- [Name property rules](#name-property-rules)
-- [Avoid dotted property names](#avoid-dotted-property-names)
-- [Set nested property paths](#set-nested-property-paths)
-- [Validate optional pointer properties](#validate-optional-pointer-properties)
-- [Transform values before validation](#transform-values-before-validation)
-- [Require non-empty property values](#require-non-empty-property-values)
-- [Skip validation for empty values](#skip-validation-for-empty-values)
-- [Hide sensitive values in errors](#hide-sensitive-values-in-errors)
-- [Validate the current object](#validate-the-current-object)
-- [Run property rules conditionally](#run-property-rules-conditionally)
-- [Cascade failures within property rules](#cascade-failures-within-property-rules)
+- [Name and path properties](#name-and-path-properties)
+  - [Name a property rule with one path segment.](#name-a-property-rule-with-one-path-segment)
+  - [Do not pass dotted paths to WithName.](#do-not-pass-dotted-paths-to-withname)
+  - [Set multi-segment paths with jsonpath.Path.](#set-multi-segment-paths-with-jsonpathpath)
+- [Validate optional and transformed values](#validate-optional-and-transformed-values)
+  - [Validate the pointed-to value while skipping nil by default.](#validate-the-pointed-to-value-while-skipping-nil-by-default)
+  - [Transform a property value before applying rules.](#transform-a-property-value-before-applying-rules)
+- [Handle empty or sensitive values](#handle-empty-or-sensitive-values)
+  - [Require a non-empty value before normal rules run.](#require-a-non-empty-value-before-normal-rules-run)
+  - [Skip rule evaluation for empty optional values.](#skip-rule-evaluation-for-empty-optional-values)
+  - [Hide sensitive property values in errors.](#hide-sensitive-property-values-in-errors)
+- [Use whole-object context](#use-whole-object-context)
+  - [Validate using the whole current object.](#validate-using-the-whole-current-object)
+  - [Run property rules only when predicates match.](#run-property-rules-only-when-predicates-match)
+- [Control property-level aggregation](#control-property-level-aggregation)
+  - [Stop evaluating later rules on one property.](#stop-evaluating-later-rules-on-one-property)
 
-## Name property rules
+## Name and path properties
+
+Prefer WithName for a single path segment. Use WithPath when the rule logically targets a nested path or a specific index.
+
+<a id="name-a-property-rule-with-one-path-segment"></a>
+
+**Name a property rule with one path segment.**
 
 [//]: # (embed: ExamplePropertyRules_WithName)
 
@@ -57,7 +68,9 @@ func ExamplePropertyRules_WithName() {
 }
 ```
 
-## Avoid dotted property names
+<a id="do-not-pass-dotted-paths-to-withname"></a>
+
+**Do not pass dotted paths to WithName.**
 
 [//]: # (embed: ExamplePropertyRules_WithName_wrongUsage)
 
@@ -95,7 +108,9 @@ func ExamplePropertyRules_WithName_wrongUsage() {
 }
 ```
 
-## Set nested property paths
+<a id="set-multi-segment-paths-with-jsonpathpath"></a>
+
+**Set multi-segment paths with jsonpath.Path.**
 
 [//]: # (embed: ExamplePropertyRules_WithPath)
 
@@ -145,7 +160,13 @@ func ExamplePropertyRules_WithPath() {
 }
 ```
 
-## Validate optional pointer properties
+## Validate optional and transformed values
+
+Use ForPointer for optional pointer fields and Transform when rule input should differ from the stored field type.
+
+<a id="validate-the-pointed-to-value-while-skipping-nil-by-default"></a>
+
+**Validate the pointed-to value while skipping nil by default.**
 
 [//]: # (embed: ExampleForPointer)
 
@@ -196,7 +217,9 @@ func ExampleForPointer() {
 }
 ```
 
-## Transform values before validation
+<a id="transform-a-property-value-before-applying-rules"></a>
+
+**Transform a property value before applying rules.**
 
 [//]: # (embed: ExampleTransform)
 
@@ -244,7 +267,13 @@ func ExampleTransform() {
 }
 ```
 
-## Require non-empty property values
+## Handle empty or sensitive values
+
+Use Required to fail fast on empty values, OmitEmpty to skip optional direct values, and HideValue when errors must not expose the original input.
+
+<a id="require-a-non-empty-value-before-normal-rules-run"></a>
+
+**Require a non-empty value before normal rules run.**
 
 [//]: # (embed: ExamplePropertyRules_Required)
 
@@ -309,7 +338,9 @@ func ExamplePropertyRules_Required() {
 }
 ```
 
-## Skip validation for empty values
+<a id="skip-rule-evaluation-for-empty-optional-values"></a>
+
+**Skip rule evaluation for empty optional values.**
 
 [//]: # (embed: ExamplePropertyRules_OmitEmpty)
 
@@ -352,7 +383,9 @@ func ExamplePropertyRules_OmitEmpty() {
 }
 ```
 
-## Hide sensitive values in errors
+<a id="hide-sensitive-property-values-in-errors"></a>
+
+**Hide sensitive property values in errors.**
 
 [//]: # (embed: ExamplePropertyRules_HideValue)
 
@@ -388,7 +421,13 @@ func ExamplePropertyRules_HideValue() {
 }
 ```
 
-## Validate the current object
+## Use whole-object context
+
+Use GetSelf when the rule compares multiple fields in the same object. Use property-level When to keep branch-specific rules isolated.
+
+<a id="validate-using-the-whole-current-object"></a>
+
+**Validate using the whole current object.**
 
 [//]: # (embed: ExampleGetSelf)
 
@@ -426,7 +465,9 @@ func ExampleGetSelf() {
 }
 ```
 
-## Run property rules conditionally
+<a id="run-property-rules-only-when-predicates-match"></a>
+
+**Run property rules only when predicates match.**
 
 [//]: # (embed: ExamplePropertyRules_When)
 
@@ -459,7 +500,13 @@ func ExamplePropertyRules_When() {
 }
 ```
 
-## Cascade failures within property rules
+## Control property-level aggregation
+
+Property cascade overrides validator cascade for that property and is useful when later rules add noise after an earlier failure.
+
+<a id="stop-evaluating-later-rules-on-one-property"></a>
+
+**Stop evaluating later rules on one property.**
 
 [//]: # (embed: ExamplePropertyRules_Cascade)
 
@@ -501,4 +548,3 @@ func ExamplePropertyRules_Cascade() {
 	//     - must not be equal to 'Jerry'
 }
 ```
-
