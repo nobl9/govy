@@ -4,8 +4,8 @@ Validation plan generation and strict validation of plan metadata.
 
 ## Examples
 
-- [ExamplePlan](#exampleplan)
-- [ExamplePlan_validation](#exampleplan_validation)
+- [Generate a validation plan](#exampleplan)
+- [Validate generated plan metadata](#exampleplan_validation)
 
 ## ExamplePlan
 

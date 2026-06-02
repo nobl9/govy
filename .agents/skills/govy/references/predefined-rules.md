@@ -4,12 +4,12 @@ Examples from the rules package for collection uniqueness, property relationship
 
 ## Examples
 
-- [ExampleSliceUnique](#examplesliceunique)
-- [ExampleMutuallyExclusive](#examplemutuallyexclusive)
-- [ExampleOneOfProperties](#exampleoneofproperties)
-- [ExampleEqualProperties](#exampleequalproperties)
-- [ExampleLTProperties](#exampleltproperties)
-- [ExampleLTComparableProperties](#exampleltcomparableproperties)
+- [Require unique slice values](#examplesliceunique)
+- [Require mutually exclusive properties](#examplemutuallyexclusive)
+- [Require one populated property](#exampleoneofproperties)
+- [Compare properties for equality](#exampleequalproperties)
+- [Compare ordered properties](#exampleltproperties)
+- [Compare custom comparable properties](#exampleltcomparableproperties)
 
 ## ExampleSliceUnique
 

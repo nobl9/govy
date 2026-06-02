@@ -4,15 +4,15 @@ Validator construction, naming, conditions, slice validation, cascade behavior, 
 
 ## Examples
 
-- [ExampleNew](#examplenew)
-- [ExampleValidator_WithName](#examplevalidator_withname)
-- [ExampleValidator_WithNameFunc](#examplevalidator_withnamefunc)
-- [ExampleValidator_When](#examplevalidator_when)
-- [ExampleValidator_Validate_slice](#examplevalidator_validate_slice)
-- [ExampleValidator_ValidateSlice](#examplevalidator_validateslice)
-- [ExampleValidator_Cascade](#examplevalidator_cascade)
-- [ExampleValidator](#examplevalidator)
-- [ExampleValidator_branchingPattern](#examplevalidator_branchingpattern)
+- [Create a validator](#examplenew)
+- [Name a validator](#examplevalidator_withname)
+- [Name a validator dynamically](#examplevalidator_withnamefunc)
+- [Validate conditionally](#examplevalidator_when)
+- [Validate slices with indexed paths](#examplevalidator_validate_slice)
+- [Validate slice elements directly](#examplevalidator_validateslice)
+- [Cascade failures across validators](#examplevalidator_cascade)
+- [Build a complete validator](#examplevalidator)
+- [Branch validation by property value](#examplevalidator_branchingpattern)
 
 ## ExampleNew
 

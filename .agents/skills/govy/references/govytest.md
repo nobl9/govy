@@ -4,10 +4,10 @@ Assertion helpers for validating govy errors in tests.
 
 ## Examples
 
-- [ExampleAssertNoError](#exampleassertnoerror)
-- [ExampleAssertError](#exampleasserterror)
-- [ExampleAssertError_validatorErrors](#exampleasserterror_validatorerrors)
-- [ExampleAssertErrorContains](#exampleasserterrorcontains)
+- [Assert successful validation](#exampleassertnoerror)
+- [Assert structured validation errors](#exampleasserterror)
+- [Assert nested validator errors](#exampleasserterror_validatorerrors)
+- [Assert partial validation errors](#exampleasserterrorcontains)
 
 ## ExampleAssertNoError
 

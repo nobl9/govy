@@ -4,11 +4,11 @@ Nested validators, slice and map property rules, slice pointers, and validator v
 
 ## Examples
 
-- [ExamplePropertyRules_Include](#examplepropertyrules_include)
-- [ExampleForSlice](#exampleforslice)
-- [ExampleForSlice_sliceOfPointers](#exampleforslice_sliceofpointers)
-- [ExampleForMap](#exampleformap)
-- [ExampleValidator_RemovePropertiesByPath](#examplevalidator_removepropertiesbypath)
+- [Include nested validators](#examplepropertyrules_include)
+- [Validate each slice element](#exampleforslice)
+- [Validate slices of pointers](#exampleforslice_sliceofpointers)
+- [Validate each map value](#exampleformap)
+- [Remove properties by path](#examplevalidator_removepropertiesbypath)
 
 ## ExamplePropertyRules_Include
 

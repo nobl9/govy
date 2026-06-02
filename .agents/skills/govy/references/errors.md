@@ -4,9 +4,9 @@ Validator errors, runtime error naming, structured JSON errors, and manually con
 
 ## Examples
 
-- [ExampleValidatorError_WithName](#examplevalidatorerror_withname)
-- [ExampleValidatorError](#examplevalidatorerror)
-- [ExampleNewPropertyError](#examplenewpropertyerror)
+- [Name validator-level errors](#examplevalidatorerror_withname)
+- [Inspect validator error output](#examplevalidatorerror)
+- [Construct property errors](#examplenewpropertyerror)
 
 ## ExampleValidatorError_WithName
 

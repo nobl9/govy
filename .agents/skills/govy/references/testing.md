@@ -4,8 +4,8 @@ Core govy error helpers and structured error flows useful when writing tests wit
 
 ## Examples
 
-- [ExampleHasErrorCode](#examplehaserrorcode)
-- [ExampleValidatorErrors](#examplevalidatorerrors)
+- [Check validation errors by code](#examplehaserrorcode)
+- [Match validator errors in tests](#examplevalidatorerrors)
 
 ## ExampleHasErrorCode
 

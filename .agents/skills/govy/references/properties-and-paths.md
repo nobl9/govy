@@ -4,17 +4,17 @@ Property getters, names, explicit JSON paths, pointers, transforms, required and
 
 ## Examples
 
-- [ExamplePropertyRules_WithName](#examplepropertyrules_withname)
-- [ExamplePropertyRules_WithName_wrongUsage](#examplepropertyrules_withname_wrongusage)
-- [ExamplePropertyRules_WithPath](#examplepropertyrules_withpath)
-- [ExampleForPointer](#exampleforpointer)
-- [ExampleTransform](#exampletransform)
-- [ExamplePropertyRules_Required](#examplepropertyrules_required)
-- [ExamplePropertyRules_OmitEmpty](#examplepropertyrules_omitempty)
-- [ExamplePropertyRules_HideValue](#examplepropertyrules_hidevalue)
-- [ExampleGetSelf](#examplegetself)
-- [ExamplePropertyRules_When](#examplepropertyrules_when)
-- [ExamplePropertyRules_Cascade](#examplepropertyrules_cascade)
+- [Name property rules](#examplepropertyrules_withname)
+- [Avoid dotted property names](#examplepropertyrules_withname_wrongusage)
+- [Set nested property paths](#examplepropertyrules_withpath)
+- [Validate optional pointer properties](#exampleforpointer)
+- [Transform values before validation](#exampletransform)
+- [Require non-empty property values](#examplepropertyrules_required)
+- [Skip validation for empty values](#examplepropertyrules_omitempty)
+- [Hide sensitive values in errors](#examplepropertyrules_hidevalue)
+- [Validate the current object](#examplegetself)
+- [Run property rules conditionally](#examplepropertyrules_when)
+- [Cascade failures within property rules](#examplepropertyrules_cascade)
 
 ## ExamplePropertyRules_WithName
 

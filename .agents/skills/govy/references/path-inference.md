@@ -4,9 +4,9 @@ Runtime and generated path inference, govyconfig registration, and inference cac
 
 ## Examples
 
-- [ExampleInferPathMode](#exampleinferpathmode)
-- [ExampleInferPathModeGenerate](#exampleinferpathmodegenerate)
-- [ExampleValidator_InferPath_changeModeInRuntime](#examplevalidator_inferpath_changemodeinruntime)
+- [Configure path inference modes](#exampleinferpathmode)
+- [Generate inferred paths](#exampleinferpathmodegenerate)
+- [Change path inference at runtime](#examplevalidator_inferpath_changemodeinruntime)
 
 ## ExampleInferPathMode
 
