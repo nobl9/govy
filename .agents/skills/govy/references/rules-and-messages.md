@@ -1,6 +1,6 @@
-# Rules and Messages
+# Creating and Modifying Rules
 
-Custom rules, details, examples, error codes, messages, message templates, template functions, pointer rules, and rule sets.
+Creating new rules and modifying rules with details, examples, error codes, messages, message templates, template functions, pointer conversion, and rule sets.
 
 ## Topics
 

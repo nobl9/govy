@@ -1,6 +1,6 @@
 # Predefined Rules
 
-Examples from the rules package for collection uniqueness, property relationships, and comparable values.
+Examples that show selected predefined rules in use. For the generated catalog of all existing predefined rule constructors, see [Existing Rules](existing-rules.md).
 
 ## Topics
 

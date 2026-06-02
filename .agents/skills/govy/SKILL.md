@@ -23,13 +23,14 @@ Load only the reference that matches the task.
 | :--- | :--- |
 | Build a validator, name it, add conditions, validate slices, or compose validators | [core-validation.md](references/core-validation.md) |
 | Work with property getters, paths, pointers, transforms, required values, optional values, hidden values, or property-level conditions | [properties-and-paths.md](references/properties-and-paths.md) |
-| Write custom rules, rule sets, error details, examples, error codes, custom messages, or message templates | [rules-and-messages.md](references/rules-and-messages.md) |
+| Create or modify rules, rule sets, error details, examples, error codes, custom messages, or message templates | [rules-and-messages.md](references/rules-and-messages.md) |
 | Validate nested objects, slices, maps, each element, or compose validators over collections | [collections-and-composition.md](references/collections-and-composition.md) |
 | Inspect, serialize, rename, or construct govy errors | [errors.md](references/errors.md) |
 | Test govy validation behavior without the govytest package | [testing.md](references/testing.md) |
 | Generate or validate a validation plan | [validation-plan.md](references/validation-plan.md) |
 | Configure runtime or generated path inference | [path-inference.md](references/path-inference.md) |
-| Use predefined rules from `pkg/rules` | [predefined-rules.md](references/predefined-rules.md) |
+| Choose from existing predefined rules in `pkg/rules` | [existing-rules.md](references/existing-rules.md) |
+| See examples of predefined rules in use | [predefined-rules.md](references/predefined-rules.md) |
 | Use `pkg/govytest` assertion helpers | [govytest.md](references/govytest.md) |
 
 ## Usage Guidance
