@@ -4,28 +4,11 @@ on:
   push:
     branches:
       - main
-  # pull_request event is required only for autolabeler
-  # 'edited' event is required to account for initial invalid PR names
-  pull_request:
-    types: [opened, reopened, synchronize, edited]
-
 permissions:
   contents: read
 
 jobs:
-  autolabeler:
-    if: github.event_name == 'pull_request'
-    permissions:
-      # write permission is required to add labels to pull requests
-      pull-requests: write
-    runs-on: ubuntu-latest
-    steps:
-      - uses: release-drafter/release-drafter/autolabeler@v7.3.1
-        with:
-          token: ${{ secrets.RELEASE_LABELER_TOKEN }}
-
   update_release_draft:
-    if: github.event_name == 'push'
     permissions:
       # write permission is required to create a github release
       contents: write
