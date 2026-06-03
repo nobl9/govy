@@ -105,7 +105,7 @@ generate/code:
 ## Generate Markdown embedded examples.
 generate/readme:
 	$(call _print_step,Generating Markdown embedded examples)
-	$(SCRIPTS_DIR)/embed-examples-in-markdown.bash README.md .agents/skills/govy/references
+	$(SCRIPTS_DIR)/embed-examples-in-markdown.bash README.md .agents/skills/govy
 
 .PHONY: format format/go
 ## Format files.

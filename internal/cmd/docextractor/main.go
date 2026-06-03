@@ -491,7 +491,7 @@ func replaceEmbeddedExamples(root, markdown, markdownPath string) string {
 		}
 		fenceStart += lineEnd
 		codeStart := fenceStart + len(goFence)
-		fenceEnd := strings.Index(markdown[codeStart:], "\n```")
+		fenceEnd := findCodeFenceEnd(markdown[codeStart:])
 		if fenceEnd < 0 {
 			logFatal(nil, "Embed directive %q in %q has an unterminated Go code block", exampleRef, markdownPath)
 		}
@@ -499,8 +499,21 @@ func replaceEmbeddedExamples(root, markdown, markdownPath string) string {
 
 		builder.WriteString(markdown[cursor:codeStart])
 		builder.WriteString(strings.TrimRight(example, "\n"))
+		if markdown[fenceEnd] != '\n' {
+			builder.WriteByte('\n')
+		}
 		cursor = fenceEnd
 	}
+}
+
+func findCodeFenceEnd(markdown string) int {
+	if strings.HasPrefix(markdown, "```") {
+		return 0
+	}
+	if fenceEnd := strings.Index(markdown, "\n```"); fenceEnd >= 0 {
+		return fenceEnd
+	}
+	return strings.Index(markdown, "```")
 }
 
 func readEmbeddedExample(root, exampleRef string) string {
