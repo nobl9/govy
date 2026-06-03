@@ -49,7 +49,7 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.RELEASE_LABELER_TOKEN }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6.0.2
+        uses: actions/checkout@v6.0.3
         with:
           ref: main
       - name: Add release notes to the draft
