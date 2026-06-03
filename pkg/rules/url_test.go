@@ -121,7 +121,7 @@ func TestURL_WithOptions(t *testing.T) {
 		"host deny list rejects exact hostname": {
 			url:         "https://foobar.com",
 			options:     []URLOption{URLHostDenyList("foobar.com")},
-			expectedErr: "valid URL must not use one of the following hostnames: 'foobar.com'",
+			expectedErr: "valid URL must not use any of the following hostnames: 'foobar.com'",
 			shouldFail:  true,
 		},
 		"host deny list accepts other hostnames": {
@@ -134,7 +134,7 @@ func TestURL_WithOptions(t *testing.T) {
 				URLHostAllowList("foobar.com"),
 				URLHostDenyList("foobar.com"),
 			},
-			expectedErr: "valid URL must not use one of the following hostnames: 'foobar.com'",
+			expectedErr: "valid URL must not use any of the following hostnames: 'foobar.com'",
 			shouldFail:  true,
 		},
 	}
