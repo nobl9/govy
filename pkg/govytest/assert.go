@@ -23,9 +23,9 @@ type testingT interface {
 // ExpectedRuleError defines the expectations for the asserted error.
 // Its fields are used to find and match an actual [govy.RuleError].
 type ExpectedRuleError struct {
-	// Optional. Matched against [govy.PropertyError.PropertyName].
-	// It should be only left empty if the validated property has no name.
-	PropertyName string `json:"propertyName"`
+	// Optional. Matched against [govy.PropertyError.PropertyPath].
+	// It should only be left empty if the validated property has no path.
+	PropertyPath string `json:"propertyPath"`
 	// Optional. Matched against [govy.RuleError.Code].
 	Code govy.ErrorCode `json:"code,omitempty"`
 	// Optional. Matched against [govy.RuleError.Message].
@@ -49,7 +49,7 @@ var expectedRuleErrorValidation = govy.New(
 			"message":         func(e ExpectedRuleError) any { return e.Message },
 			"containsMessage": func(e ExpectedRuleError) any { return e.ContainsMessage },
 		})),
-).InferName()
+).WithNameFunc(govy.NameFuncFromTypeName[ExpectedRuleError]())
 
 // expectedRuleErrorValidationForValidatorErrors defines the validation rules for [ExpectedRuleError]
 // when asserting errors in [govy.ValidatorErrors] slice.
@@ -69,7 +69,7 @@ var expectedRuleErrorValidationForValidatorErrors = govy.New(
 			)),
 	govy.ForPointer(func(e ExpectedRuleError) *int { return e.ValidatorIndex }).
 		Rules(rules.GTE(0)),
-).InferName()
+).WithNameFunc(govy.NameFuncFromTypeName[ExpectedRuleError]())
 
 // AssertNoError asserts that the provided error is nil.
 // If the error is not nil and of type [govy.ValidatorError] it will try
@@ -95,7 +95,7 @@ func AssertNoError(t testingT, err error) bool {
 //   - the expected number of [govy.RuleError] equal to the number of provided [ExpectedRuleError]
 //   - at least one error which matches each of the provided [ExpectedRuleError]
 //
-// [ExpectedRuleError] and actual error are considered equal if they have the same property name and:
+// [ExpectedRuleError] and actual error are considered equal if they have the same property path and:
 //   - [ExpectedRuleError.Code] is equal to [govy.RuleError.Code]
 //   - [ExpectedRuleError.Message] is equal to [govy.RuleError.Message]
 //   - [ExpectedRuleError.ContainsMessage] is part of [govy.RuleError.Message]
@@ -131,7 +131,7 @@ func AssertError(
 // Unlike [AssertError], it checks only a single error.
 // The actual error may contain other errors, If you want to match them all, use [AssertError].
 //
-// [ExpectedRuleError] and actual error are considered equal if they have the same property name and:
+// [ExpectedRuleError] and actual error are considered equal if they have the same property path and:
 //   - [ExpectedRuleError.Code] is equal to [govy.RuleError.Code]
 //   - [ExpectedRuleError.Message] is equal to [govy.RuleError.Message]
 //   - [ExpectedRuleError.ContainsMessage] is part of [govy.RuleError.Message]
@@ -384,7 +384,7 @@ func assertErrorMatches(
 
 	multiMatch := false
 	for i, actual := range validatorErr.Errors {
-		if actual.PropertyName != expected.PropertyName {
+		if actual.PropertyPath.String() != expected.PropertyPath {
 			continue
 		}
 		if expected.IsKeyError != actual.IsKeyError {

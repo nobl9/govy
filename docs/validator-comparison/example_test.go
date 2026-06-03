@@ -221,13 +221,13 @@ func Example_govy() {
 	// Output:
 	// Validation has failed for the following properties:
 	//   - 'apiVersion' with value 'n9/v2alpha':
-	//     - should be equal to 'n9/v1alpha'
+	//     - must be equal to 'n9/v1alpha'
 	//   - 'kind' with value 'Project':
-	//     - should be equal to 'Service'
+	//     - must be equal to 'Service'
 	//   - 'metadata.name' with value 'slo-status api':
 	//     - string must match regular expression: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?$' (e.g. 'my-name', '123-abc'); an RFC-1123 compliant label name must consist of lower case alphanumeric characters or '-', and must start and end with an alphanumeric character
 	//   - 'metadata.project' with value 'default project':
 	//     - string must match regular expression: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?$' (e.g. 'my-name', '123-abc'); an RFC-1123 compliant label name must consist of lower case alphanumeric characters or '-', and must start and end with an alphanumeric character
-	//   - 'metadata.labels.['ke y']' with key 'ke y':
+	//   - 'metadata.labels['ke y']' with key 'ke y':
 	//     - string must match regular expression: '^\p{Ll}([_\-0-9\p{Ll}]*[0-9\p{Ll}])?$'
 }

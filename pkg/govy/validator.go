@@ -1,13 +1,13 @@
 package govy
 
 import (
-	"fmt"
 	"slices"
-	"strings"
+
+	"github.com/nobl9/govy/pkg/jsonpath"
 )
 
 // New creates a new [Validator] aggregating the provided property rules.
-func New[T any](props ...propertyRulesInterface[T]) Validator[T] {
+func New[T any](props ...PropertyRulesInterface[T]) Validator[T] {
 	return Validator[T]{
 		id:    newInstanceID(),
 		props: props,
@@ -18,11 +18,11 @@ func New[T any](props ...propertyRulesInterface[T]) Validator[T] {
 // It serves as an aggregator for [PropertyRules].
 // Typically, it represents a struct.
 type Validator[T any] struct {
-	id       instanceID
-	props    []propertyRulesInterface[T]
-	name     string
-	nameFunc func(value T) string
-	mode     CascadeMode
+	id          instanceID
+	props       []PropertyRulesInterface[T]
+	name        string
+	nameFunc    func(value T) string
+	cascadeMode CascadeMode
 
 	predicateMatcher[T]
 }
@@ -34,13 +34,7 @@ func (v Validator[T]) WithName(name string) Validator[T] {
 	return v
 }
 
-// WithID sets a unique identifier for this [Validator] instance.
-// The identifier can be used to:
-//   - Retrieve the validator's ID via [Validator.GetID]
-//   - Reference the validator when using [Validator.RemovePropertiesByID]
-//
-// This is useful when you want explicit control over identifiers
-// rather than relying on auto-generated UUIDs.
+// WithID sets a unique identifier for this validator.
 func (v Validator[T]) WithID(id string) Validator[T] {
 	v.id = v.id.WithUserSuppliedID(id)
 	return v
@@ -60,27 +54,11 @@ func (v Validator[T]) When(predicate Predicate[T], opts ...WhenOption) Validator
 	return v
 }
 
-// InferName will set the name of the [Validator] to its type S.
-// If the name was already set through [Validator.WithName], it will not be overridden.
-// It does not use the same inference mechanisms as [PropertyRules.InferName],
-// it simply checks the [Validator] type parameter using reflection.
-func (v Validator[T]) InferName() Validator[T] {
-	if v.name != "" {
-		return v
-	}
-	split := strings.Split(fmt.Sprintf("%T", *new(T)), ".")
-	if len(split) == 0 {
-		return v
-	}
-	v.name = split[len(split)-1]
-	return v
-}
-
 // Cascade sets the [CascadeMode] for the validator,
 // which controls the flow of evaluating the validation rules.
 func (v Validator[T]) Cascade(mode CascadeMode) Validator[T] {
-	v.mode = mode
-	props := make([]propertyRulesInterface[T], 0, len(v.props))
+	v.cascadeMode = mode
+	props := make([]PropertyRulesInterface[T], 0, len(v.props))
 	for _, prop := range v.props {
 		props = append(props, prop.cascadeInternal(mode))
 	}
@@ -88,37 +66,54 @@ func (v Validator[T]) Cascade(mode CascadeMode) Validator[T] {
 	return v
 }
 
-// RemovePropertiesByID removes any [PropertyRules] or included [Validator]
-// which match the provided identifiers.
+// RemovePropertiesByPath removes any [PropertyRules] or included [Validator]
+// which match the provided property paths.
+// Paths are interpreted relative to this validator's root.
 // It returns a modified [Validator] instance without these rules,
 // the original [Validator] is not changed.
-//
-// Identifiers must be obtained using [PropertyRules.GetID] or [Validator.GetID].
-// Property names are not accepted as identifiers - you must use explicit IDs.
-//
-// The identifier returned by GetID follows this priority:
-//   - User-supplied ID (via [PropertyRules.WithID] or [Validator.WithID]) if set
-//   - Auto-generated UUID otherwise
-func (v Validator[T]) RemovePropertiesByID(ids ...string) Validator[T] {
-	if len(ids) == 0 {
+func (v Validator[T]) RemovePropertiesByPath(paths ...jsonpath.Path) Validator[T] {
+	if len(paths) == 0 {
 		return v
 	}
-	filtered := make([]propertyRulesInterface[T], 0, len(v.props))
+	filtered := make([]PropertyRulesInterface[T], 0, len(v.props))
 	for _, prop := range v.props {
-		if slices.Contains(ids, prop.GetID()) {
-			continue
+		if !slices.ContainsFunc(paths, prop.getPath().Equal) {
+			filtered = append(filtered, prop)
 		}
-		filtered = append(filtered, prop)
 	}
 	v.props = filtered
 	return v
 }
 
-// GetID returns an identifier for this [Validator] instance.
-// The identifier is resolved in the following priority order:
-//   - User-supplied ID (via [Validator.WithID]) if set
-//   - Validator name (via [Validator.WithName]) if set
-//   - Auto-generated UUID otherwise
+// RemovePropertiesByID removes any [PropertyRules] matching the provided identifiers.
+// It returns a modified [Validator] instance without these rules,
+// the original [Validator] is not changed.
+func (v Validator[T]) RemovePropertiesByID(ids ...string) Validator[T] {
+	if len(ids) == 0 {
+		return v
+	}
+	filtered := make([]PropertyRulesInterface[T], 0, len(v.props))
+	for _, prop := range v.props {
+		if !slices.Contains(ids, prop.GetID()) {
+			filtered = append(filtered, prop)
+		}
+	}
+	v.props = filtered
+	return v
+}
+
+// InferPath sets the [InferPathMode] for the validator,
+// which controls relative property path inference for validation rules.
+func (v Validator[T]) InferPath(mode InferPathMode) Validator[T] {
+	props := make([]PropertyRulesInterface[T], 0, len(v.props))
+	for _, prop := range v.props {
+		props = append(props, prop.inferPathModeInternal(mode))
+	}
+	v.props = props
+	return v
+}
+
+// GetID returns the identifier for this validator.
 func (v Validator[T]) GetID() string {
 	return v.id.GetID()
 }
@@ -142,16 +137,12 @@ func (v Validator[T]) Validate(value T) error {
 			continue
 		}
 		allErrors = append(allErrors, pErrs...)
-		if v.mode == CascadeModeStop {
+		if v.cascadeMode == CascadeModeStop {
 			break
 		}
 	}
 	if len(allErrors) != 0 {
-		name := v.name
-		if v.nameFunc != nil {
-			name = v.nameFunc(value)
-		}
-		return NewValidatorError(allErrors).WithName(name)
+		return NewValidatorError(allErrors).WithName(v.getName(value))
 	}
 	return nil
 }
@@ -179,6 +170,18 @@ func (v Validator[T]) ValidateSlice(values []T) error {
 		return nil
 	}
 	return errs
+}
+
+// getName returns the name of the property.
+func (v Validator[T]) getName(value T) string {
+	switch {
+	case v.name != "":
+		return v.name
+	case v.nameFunc != nil:
+		return v.nameFunc(value)
+	default:
+		return ""
+	}
 }
 
 // plan constructs a validation plan for all the properties of the [Validator].

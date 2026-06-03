@@ -961,7 +961,7 @@ func BenchmarkStringTitle(b *testing.B) {
 }
 
 var (
-	errGitRefEmpty           = errors.New("git reference cannot be empty")
+	errGitRefEmpty           = errors.New("git reference must not be empty")
 	errGitRefEndsWithDot     = errors.New("git reference must not end with a '.'")
 	errGitRefAtLeastOneSlash = errors.New("git reference must contain at least one '/'")
 	errGitRefEmptyPart       = errors.New("git reference must not have empty parts")

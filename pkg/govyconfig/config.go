@@ -3,67 +3,34 @@ package govyconfig
 import (
 	"fmt"
 	"log/slog"
-	"reflect"
 	"strings"
 	"sync"
 
 	"github.com/nobl9/govy/internal"
 	"github.com/nobl9/govy/internal/logging"
+	"github.com/nobl9/govy/pkg/jsonpath"
 )
 
 var (
-	inferredNames                  = make(map[string]InferredName)
-	nameInferFunc    NameInferFunc = NameInferDefaultFunc
-	nameInferMode                  = NameInferModeDisable
-	includeTestFiles               = false
-
-	mu sync.RWMutex
+	includeTestFiles = false
+	inferredPaths    = make(map[string]InferredPath)
+	mu               sync.RWMutex
 )
 
-// InferredName represents an inferred property name.
-type InferredName struct {
-	// Name is the inferred property name.
-	Name string
-	// File is the relative path to the file where the [govy.PropertyRules.For] is detected.
+// InferredPath represents an inferred relative property path for a specific getter call site.
+type InferredPath struct {
+	// Path is the inferred relative property path fragment.
+	// It does not include a leading `$` segment.
+	Path jsonpath.Path
+	// File is the path, relative to the module root, to the file where a govy property
+	// constructor call was detected.
 	File string
-	// Line is the line number in the File where the [govy.PropertyRules.For] is detected.
+	// Line is the line number in File where that constructor call was detected.
 	Line int
 }
 
-func (g InferredName) key() string {
+func (g InferredPath) key() string {
 	return getterLocationKey(g.File, g.Line)
-}
-
-func getterLocationKey(file string, line int) string {
-	file = strings.TrimPrefix(file, internal.FindModuleRoot()+"/")
-	return fmt.Sprintf("%s:%d", file, line)
-}
-
-// SetInferredName sets the inferred property name for the given file and line.
-// Once it's registered it can be retrieved using [GetInferredName].
-// It is primarily exported for code generation utility of govy which runs in NameInferModeGenerate.
-func SetInferredName(loc InferredName) {
-	mu.Lock()
-	inferredNames[loc.key()] = loc
-	mu.Unlock()
-}
-
-// GetInferredName returns the inferred property name for the given file and line.
-// The name has to be first set using [SetInferredName].
-// It is primarily exported for govy to utilize when NameInferModeGenerate mode is set.
-func GetInferredName(file string, line int) string {
-	mu.RLock()
-	defer mu.RUnlock()
-	name, ok := inferredNames[getterLocationKey(file, line)]
-	if !ok {
-		logging.Logger().Error(
-			"inferred name was not found",
-			slog.String("file", file),
-			slog.Int("line", line),
-		)
-		return ""
-	}
-	return name.Name
 }
 
 // SetLogLevel sets the logging level for [slog.Logger] used by govy.
@@ -72,86 +39,48 @@ func SetLogLevel(level slog.Level) {
 	logging.SetLogLevel(level)
 }
 
-// NameInferMode defines a mode of property names' inference.
-type NameInferMode int
-
-const (
-	// NameInferModeDisable disables property names' inference.
-	// It is the default mode.
-	NameInferModeDisable NameInferMode = iota
-	// NameInferModeRuntime infers property names' during runtime,
-	// whenever For, ForSlice, ForPointer or ForMap are created.
-	// If you're not reusing these [govy.PropertyRules], but rather creating them dynamically,
-	// beware of significant performance cost of the inference mechanism.
-	NameInferModeRuntime
-	// NameInferModeGenerate does the heavy lifting of inferring property names
-	// in a separate step which involves code generation.
-	// When creating new [govy.PropertyRules], the only performance hit is due to the
-	// usage of [runtime] package which helps us get the caller frame details.
-	NameInferModeGenerate
-)
-
-// SetNameInferMode sets the mode of property names' inference.
-// It overrides the default mode [NameInferModeDisable].
-// It's safe to call this function concurrently.
-func SetNameInferMode(mode NameInferMode) {
+// SetInferredPath sets the inferred relative property path for the given file and line.
+// Once it's registered it can be retrieved using [GetInferredPath].
+// It is primarily exported for code generation utility of govy which runs in [InferPathModeGenerate].
+func SetInferredPath(loc InferredPath) {
 	mu.Lock()
-	nameInferMode = mode
+	inferredPaths[loc.key()] = loc
 	mu.Unlock()
 }
 
-func GetNameInferMode() NameInferMode {
+// GetInferredPath returns the inferred relative property path for the given file and line.
+// The path has to be first set using [SetInferredPath].
+// It is primarily exported for govy to utilize when [InferPathModeGenerate] mode is set.
+func GetInferredPath(file string, line int) jsonpath.Path {
 	mu.RLock()
 	defer mu.RUnlock()
-	return nameInferMode
-}
-
-// SetNameInferFunc sets the function for inferring field names from struct tags.
-// It overrides the default function [NameInferDefaultFunc].
-// It's safe to call this function concurrently.
-func SetNameInferFunc(rule NameInferFunc) {
-	mu.Lock()
-	nameInferFunc = rule
-	mu.Unlock()
-}
-
-func GetNameInferFunc() NameInferFunc {
-	mu.RLock()
-	defer mu.RUnlock()
-	return nameInferFunc
-}
-
-// NameInferFunc is a function blueprint for inferring property names.
-// It is only called for struct fields.
-// Tag value is the raw value of the struct tag, it needs to be parsed with [reflect.StructTag].
-type NameInferFunc func(fieldName, tagValue string) string
-
-// NameInferDefaultFunc is the default function for inferring field names from struct tags.
-// It looks for json and yaml tags, preferring json if both are set.
-func NameInferDefaultFunc(fieldName, tagValue string) string {
-	for _, tagKey := range []string{"json", "yaml"} {
-		tagValues := strings.Split(
-			reflect.StructTag(strings.Trim(tagValue, "`")).Get(tagKey),
-			",",
+	p, ok := inferredPaths[getterLocationKey(file, line)]
+	if !ok {
+		logging.Logger().Error(
+			"inferred path was not found",
+			slog.String("file", file),
+			slog.Int("line", line),
 		)
-		if len(tagValues) > 0 && tagValues[0] != "" {
-			fieldName = tagValues[0]
-			break
-		}
+		return jsonpath.Path{}
 	}
-	return fieldName
+	return p.Path
 }
 
-// SetNameInferIncludeTestFiles sets whether to include test files in name inference mechanism.
-func SetNameInferIncludeTestFiles(inc bool) {
+// SetInferPathIncludeTestFiles sets whether test files participate in path inference.
+func SetInferPathIncludeTestFiles(inc bool) {
 	mu.Lock()
 	includeTestFiles = inc
 	mu.Unlock()
 }
 
-// GetNameInferIncludeTestFiles returns whether to include test files in name inference mechanism.
-func GetNameInferIncludeTestFiles() bool {
+// GetInferPathIncludeTestFiles returns whether test files participate in path inference.
+func GetInferPathIncludeTestFiles() bool {
 	mu.RLock()
 	defer mu.RUnlock()
 	return includeTestFiles
+}
+
+func getterLocationKey(file string, line int) string {
+	file = strings.TrimPrefix(file, internal.FindModuleRoot()+"/")
+	return fmt.Sprintf("%s:%d", file, line)
 }

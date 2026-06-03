@@ -23,6 +23,14 @@ const (
 	LTTemplate
 	LTETemplate
 	EqualPropertiesTemplate
+	GTPropertiesTemplate
+	GTEPropertiesTemplate
+	LTPropertiesTemplate
+	LTEPropertiesTemplate
+	GTComparablePropertiesTemplate
+	GTEComparablePropertiesTemplate
+	LTComparablePropertiesTemplate
+	LTEComparablePropertiesTemplate
 	DurationPrecisionTemplate
 	ForbiddenTemplate
 	OneOfTemplate
@@ -64,21 +72,29 @@ const (
 )
 
 var rawMessageTemplates = map[templateKey]string{
-	LengthTemplate:            "length must be between {{ .MinLength }} and {{ .MaxLength }}",
-	MinLengthTemplate:         "length must be greater than or equal to {{ .ComparisonValue }}",
-	MaxLengthTemplate:         "length must be less than or equal to {{ .ComparisonValue }}",
-	EQTemplate:                "should be equal to '{{ .ComparisonValue }}'",
-	NEQTemplate:               "should be not equal to '{{ .ComparisonValue }}'",
-	GTTemplate:                "should be greater than '{{ .ComparisonValue }}'",
-	GTETemplate:               "should be greater than or equal to '{{ .ComparisonValue }}'",
-	LTTemplate:                "should be less than '{{ .ComparisonValue }}'",
-	LTETemplate:               "should be less than or equal to '{{ .ComparisonValue }}'",
-	EqualPropertiesTemplate:   `all of [{{ joinSlice .ComparisonValue "" }}] properties must be equal, but '{{ .Custom.FirstNotEqual }}' is not equal to '{{ .Custom.SecondNotEqual }}'`,
-	DurationPrecisionTemplate: "duration must be defined with {{ .ComparisonValue }} precision",
-	ForbiddenTemplate:         "property is forbidden",
-	OneOfTemplate:             `must be one of: {{ joinSlice .ComparisonValue "" }}`,
-	NotOneOfTemplate:          `must not be one of: {{ joinSlice .ComparisonValue "" }}`,
-	OneOfPropertiesTemplate:   `one of [{{ joinSlice .ComparisonValue "" }}] properties must be set, none was provided`,
+	LengthTemplate:                  "length must be between {{ .MinLength }} and {{ .MaxLength }}",
+	MinLengthTemplate:               "length must be greater than or equal to {{ .ComparisonValue }}",
+	MaxLengthTemplate:               "length must be less than or equal to {{ .ComparisonValue }}",
+	EQTemplate:                      "must be equal to '{{ .ComparisonValue }}'",
+	NEQTemplate:                     "must not be equal to '{{ .ComparisonValue }}'",
+	GTTemplate:                      "must be greater than '{{ .ComparisonValue }}'",
+	GTETemplate:                     "must be greater than or equal to '{{ .ComparisonValue }}'",
+	LTTemplate:                      "must be less than '{{ .ComparisonValue }}'",
+	LTETemplate:                     "must be less than or equal to '{{ .ComparisonValue }}'",
+	EqualPropertiesTemplate:         `all of [{{ joinSlice .ComparisonValue "" }}] properties must be equal, but '{{ .Custom.FirstNotEqual }}' is not equal to '{{ .Custom.SecondNotEqual }}'`,
+	GTPropertiesTemplate:            `'{{ .Custom.FirstProperty }}' must be greater than '{{ .Custom.SecondProperty }}'`,
+	GTEPropertiesTemplate:           `'{{ .Custom.FirstProperty }}' must be greater than or equal to '{{ .Custom.SecondProperty }}'`,
+	LTPropertiesTemplate:            `'{{ .Custom.FirstProperty }}' must be less than '{{ .Custom.SecondProperty }}'`,
+	LTEPropertiesTemplate:           `'{{ .Custom.FirstProperty }}' must be less than or equal to '{{ .Custom.SecondProperty }}'`,
+	GTComparablePropertiesTemplate:  `'{{ .Custom.FirstProperty }}' must be {{- if .Custom.IsTemporal }} after {{- else }} greater than {{- end }} '{{ .Custom.SecondProperty }}'`,
+	GTEComparablePropertiesTemplate: `'{{ .Custom.FirstProperty }}' must be {{- if .Custom.IsTemporal }} after or equal to {{- else }} greater than or equal to {{- end }} '{{ .Custom.SecondProperty }}'`,
+	LTComparablePropertiesTemplate:  `'{{ .Custom.FirstProperty }}' must be {{- if .Custom.IsTemporal }} before {{- else }} less than {{- end }} '{{ .Custom.SecondProperty }}'`,
+	LTEComparablePropertiesTemplate: `'{{ .Custom.FirstProperty }}' must be {{- if .Custom.IsTemporal }} before or equal to {{- else }} less than or equal to {{- end }} '{{ .Custom.SecondProperty }}'`,
+	DurationPrecisionTemplate:       "duration must be defined with {{ .ComparisonValue }} precision",
+	ForbiddenTemplate:               "property is forbidden",
+	OneOfTemplate:                   `must be one of: {{ joinSlice .ComparisonValue "" }}`,
+	NotOneOfTemplate:                `must not be one of: {{ joinSlice .ComparisonValue "" }}`,
+	OneOfPropertiesTemplate:         `one of [{{ joinSlice .ComparisonValue "" }}] properties must be set, none was provided`,
 	MutuallyExclusiveTemplate: `
 {{- if .Custom.NoProperties -}}
 	one of [{{ joinSlice .ComparisonValue "" }}] properties must be set, none was provided
@@ -94,7 +110,7 @@ var rawMessageTemplates = map[templateKey]string{
 {{- end }}
 `,
 	RequiredTemplate:          internal.RequiredMessage,
-	StringNonEmptyTemplate:    "string cannot be empty",
+	StringNonEmptyTemplate:    "string must not be empty",
 	StringMatchRegexpTemplate: "string must match regular expression: '{{ .ComparisonValue }}'",
 	StringDenyRegexpTemplate:  "string must not match regular expression: '{{ .ComparisonValue }}'",
 	StringEmailTemplate:       "string must be a valid email address: {{ .Error }}",
@@ -125,7 +141,7 @@ var rawMessageTemplates = map[templateKey]string{
 	StringTitleTemplate: "each word in a string must start with a capital letter",
 	StringGitRefTemplate: `
 {{- if eq .Custom.GitRefEmpty true -}}
-	git reference cannot be empty
+	git reference must not be empty
 {{- else if eq .Custom.GitRefEndsWithDot true -}}
 	git reference must not end with a '.'
 {{- else if eq .Custom.GitRefAtLeastOneSlash true -}}

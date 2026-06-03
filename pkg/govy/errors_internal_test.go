@@ -5,56 +5,68 @@ import (
 	"testing"
 
 	"github.com/nobl9/govy/internal/assert"
+	"github.com/nobl9/govy/pkg/jsonpath"
 )
 
-func TestPropertyError_prependPropertyName(t *testing.T) {
+func TestPropertyError_prependPropertyPath(t *testing.T) {
 	tests := []struct {
 		PropertyError *PropertyError
-		InputName     string
-		ExpectedName  string
+		InputPath     jsonpath.Path
+		ExpectedPath  string
 	}{
 		{
 			PropertyError: &PropertyError{},
 		},
 		{
-			PropertyError: &PropertyError{PropertyName: "test"},
-			ExpectedName:  "test",
+			PropertyError: &PropertyError{PropertyPath: jsonpath.Parse("test")},
+			ExpectedPath:  "test",
 		},
 		{
 			PropertyError: &PropertyError{},
-			InputName:     "new",
-			ExpectedName:  "new",
+			InputPath:     jsonpath.Parse("new"),
+			ExpectedPath:  "new",
 		},
 		{
-			PropertyError: &PropertyError{PropertyName: "original"},
-			InputName:     "added",
-			ExpectedName:  "added.original",
+			PropertyError: &PropertyError{PropertyPath: jsonpath.Parse("original")},
+			InputPath:     jsonpath.Parse("added"),
+			ExpectedPath:  "added.original",
 		},
 		{
-			PropertyError: &PropertyError{PropertyName: "bar", IsSliceElementError: true},
-			InputName:     "foo[1]",
-			ExpectedName:  "foo[1].bar",
+			PropertyError: &PropertyError{PropertyPath: jsonpath.Parse("bar"), IsSliceElementError: true},
+			InputPath:     jsonpath.Parse("foo[1]"),
+			ExpectedPath:  "foo[1].bar",
 		},
 		{
-			PropertyError: &PropertyError{PropertyName: "[2]", IsSliceElementError: true},
-			InputName:     "foo",
-			ExpectedName:  "foo[2]",
+			PropertyError: &PropertyError{PropertyPath: jsonpath.Parse("[2]"), IsSliceElementError: true},
+			InputPath:     jsonpath.Parse("foo"),
+			ExpectedPath:  "foo[2]",
 		},
 		{
-			PropertyError: &PropertyError{PropertyName: "foo", IsSliceElementError: true},
-			InputName:     "[0]",
-			ExpectedName:  "[0].foo",
+			PropertyError: &PropertyError{PropertyPath: jsonpath.Parse("foo"), IsSliceElementError: true},
+			InputPath:     jsonpath.Parse("[0]"),
+			ExpectedPath:  "[0].foo",
 		},
 		{
-			PropertyError: &PropertyError{PropertyName: "[1]", IsSliceElementError: true},
-			InputName:     "[0]",
-			ExpectedName:  "[0][1]",
+			PropertyError: &PropertyError{PropertyPath: jsonpath.Parse("[1]"), IsSliceElementError: true},
+			InputPath:     jsonpath.Parse("[0]"),
+			ExpectedPath:  "[0][1]",
+		},
+		{
+			PropertyError: &PropertyError{PropertyPath: jsonpath.Parse("['foo.bar']")},
+			InputPath:     jsonpath.Parse("parent"),
+			ExpectedPath:  "parent['foo.bar']",
+		},
+		{
+			PropertyError: &PropertyError{PropertyPath: jsonpath.Parse("child")},
+			InputPath:     jsonpath.Parse("['complex.parent']"),
+			ExpectedPath:  "['complex.parent'].child",
 		},
 	}
 
 	for i, tc := range tests {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
-			assert.Equal(t, tc.ExpectedName, tc.PropertyError.prependParentPropertyName(tc.InputName).PropertyName)
+			result := tc.PropertyError.prependParentPropertyPath(tc.InputPath)
+			assert.Equal(t, tc.ExpectedPath, result.PropertyPath.String())
 		})
 	}
 }

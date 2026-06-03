@@ -12,7 +12,7 @@ import (
 // Format converts any value to a pretty, human-readable string representation.
 func Format(v any) string {
 	rv := reflect.ValueOf(v)
-	if rv.Kind() == reflect.Ptr || rv.Kind() == reflect.Interface {
+	if rv.Kind() == reflect.Pointer || rv.Kind() == reflect.Interface {
 		return Format(rv.Elem())
 	}
 	switch rv.Kind() {

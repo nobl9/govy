@@ -3,8 +3,6 @@ package main
 import (
 	"examplemodule/university"
 	"fmt"
-
-	"github.com/nobl9/govy/pkg/govyconfig"
 )
 
 type Teacher struct {
@@ -21,8 +19,4 @@ func main() {
 	}
 	err := teacherValidation.Validate(john)
 	fmt.Println(err)
-}
-
-func init() {
-	govyconfig.SetNameInferMode(govyconfig.NameInferModeRuntime)
 }

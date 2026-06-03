@@ -13,11 +13,11 @@ import (
 
 const (
 	govyCmdName      = "govy"
-	nameInferCmdName = "nameinfer"
+	inferPathCmdName = "pathinfer"
 )
 
 var subcommands = []string{
-	nameInferCmdName,
+	inferPathCmdName,
 }
 
 func main() {
@@ -40,8 +40,8 @@ func main() {
 
 	var cmd interface{ Run() error }
 	switch os.Args[1] {
-	case nameInferCmdName:
-		cmd = newNameInferCommand()
+	case inferPathCmdName:
+		cmd = newInferPathCommand()
 	default:
 		errFatalWithUsage(
 			rootCmd,

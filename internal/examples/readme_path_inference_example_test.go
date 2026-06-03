@@ -8,11 +8,9 @@ import (
 	"github.com/nobl9/govy/pkg/rules"
 )
 
-func Example_nameInference() {
-	govyconfig.SetNameInferIncludeTestFiles(true) // Required for the example to run.
-	govyconfig.SetNameInferMode(govyconfig.NameInferModeRuntime)
-	defer govyconfig.SetNameInferIncludeTestFiles(false)
-	defer govyconfig.SetNameInferMode(govyconfig.NameInferModeDisable)
+func Example_pathInference() {
+	govyconfig.SetInferPathIncludeTestFiles(true) // Required for the example to run.
+	defer govyconfig.SetInferPathIncludeTestFiles(false)
 
 	type Teacher struct {
 		Name string `json:"name"`
@@ -21,7 +19,9 @@ func Example_nameInference() {
 	v := govy.New(
 		govy.For(func(t Teacher) string { return t.Name }).
 			Rules(rules.EQ("Jerry")),
-	).InferName()
+	).
+		InferPath(govy.InferPathModeRuntime).
+		WithNameFunc(govy.NameFuncFromTypeName[Teacher]())
 
 	teacher := Teacher{Name: "Tom"}
 	err := v.Validate(teacher)
@@ -32,5 +32,5 @@ func Example_nameInference() {
 	// Output:
 	// Validation for Teacher has failed for the following properties:
 	//   - 'name' with value 'Tom':
-	//     - should be equal to 'Jerry'
+	//     - must be equal to 'Jerry'
 }

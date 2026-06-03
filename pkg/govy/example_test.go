@@ -10,6 +10,8 @@ import (
 	"time"
 
 	"github.com/nobl9/govy/pkg/govy"
+	"github.com/nobl9/govy/pkg/govyconfig"
+	"github.com/nobl9/govy/pkg/jsonpath"
 	"github.com/nobl9/govy/pkg/rules"
 )
 
@@ -186,7 +188,7 @@ func ExampleValidatorError() {
 	// {
 	//   "errors": [
 	//     {
-	//       "propertyName": "name",
+	//       "propertyPath": "name",
 	//       "propertyValue": "John",
 	//       "errors": [
 	//         {
@@ -201,7 +203,7 @@ func ExampleValidatorError() {
 
 // If you want to validate a slice of entities, you can combine [govy.New] with [govy.ForSlice].
 // The produced errors will contain information about the failing entity's index
-// in their [govy.PropertyError.PropertyName].
+// in their [govy.PropertyError.PropertyPath].
 func ExampleValidator_Validate_slice() {
 	teacherValidator := govy.New(
 		govy.For(func(t Teacher) string { return t.Name }).
@@ -236,7 +238,7 @@ func ExampleValidator_Validate_slice() {
 //
 // The error message returned by this property rule does not tell us
 // which property is failing.
-// Let's change that by adding property name using [govy.PropertyRules.WithName].
+// Let's change that by adding an explicit path segment using [govy.PropertyRules.WithName].
 //
 // We can also change the [govy.Rule] to be something more real.
 // govy comes with a number of predefined [govy.Rule], we'll use
@@ -261,7 +263,83 @@ func ExamplePropertyRules_WithName() {
 	// Output:
 	// Validation for Teacher has failed for the following properties:
 	//   - 'name' with value 'Jake':
-	//     - should be equal to 'Tom'
+	//     - must be equal to 'Tom'
+}
+
+// Beware that anything passed into [govy.PropertyRules.WithName] is treated as a single path segment.
+// If you pass a dot-separated path-like string into this method, govy renders
+// the dots as escaped characters inside one bracket-quoted segment.
+// For multi-segment paths, use [govy.PropertyRules.WithPath] instead.
+//
+// Note: Prior to v0.25.0, [govy.PropertyRules.WithName] treated every string
+// as a path, so this usage was valid then.
+func ExamplePropertyRules_WithName_wrongUsage() {
+	v := govy.New(
+		govy.For(func(t Teacher) string { return t.University.Name }).
+			WithName("university.name"). // WRONG USAGE!
+			Rules(rules.EQ("Tom").WithMessage("yikes, looks like you used WithName instead of WithPath!")),
+	).WithName("Teacher")
+
+	teacher := Teacher{
+		Name: "Jake",
+		University: University{
+			Name: "Poznan University of Technology",
+		},
+	}
+
+	err := v.Validate(teacher)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	// Output:
+	// Validation for Teacher has failed for the following properties:
+	//   - '['university.name']' with value 'Poznan University of Technology':
+	//     - yikes, looks like you used WithName instead of WithPath!
+}
+
+// While [govy.PropertyRules.WithName] is convenient and we recommend using it,
+// sometimes you might want to define rules that access nested fields directly.
+// That's what [govy.PropertyRules.WithPath] is for.
+//
+// Unlike [govy.PropertyRules.WithName], [govy.PropertyRules.WithPath] accepts a
+// [jsonpath.Path] with one or more segments.
+// [govy.PropertyRules.WithName] is just shorthand for `jsonpath.New().Name(...)`.
+//
+// You can either:
+//   - pass a string representation of path directly with [jsonpath.Parse]
+//   - construct the path with a builder API, starting with [jsonpath.New]
+func ExamplePropertyRules_WithPath() {
+	v := govy.New(
+		govy.For(func(t Teacher) string { return t.University.Name }).
+			WithPath(jsonpath.Parse("university.name")).
+			Rules(rules.EQ("Tom")),
+		govy.For(func(t Teacher) string { return t.Students[0].Index }).
+			WithPath(jsonpath.New().Name("students").Index(0).Name("index")).
+			Rules(rules.EQ("2")),
+	).WithName("Teacher")
+
+	teacher := Teacher{
+		Name: "Jake",
+		University: University{
+			Name: "Poznan University of Technology",
+		},
+		Students: []Student{
+			{Index: "1"},
+		},
+	}
+
+	err := v.Validate(teacher)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	// Output:
+	// Validation for Teacher has failed for the following properties:
+	//   - 'university.name' with value 'Poznan University of Technology':
+	//     - must be equal to 'Tom'
+	//   - 'students[0].index' with value '1':
+	//     - must be equal to '2'
 }
 
 // [govy.For] constructor creates new [govy.PropertyRules] instance.
@@ -950,7 +1028,7 @@ func ExampleRuleToPointer() {
 	// Output:
 	// Validation has failed for the following properties:
 	//   - 'pointer' with value 'bar':
-	//     - should be equal to 'foo'
+	//     - must be equal to 'foo'
 }
 
 // Sometimes it's useful to aggregate multiple [govy.Rule] into a single, composite rule.
@@ -1119,7 +1197,7 @@ func ExampleNewPropertyError() {
 			Rules(govy.NewRule(func(t Teacher) error {
 				if t.Name == "Jake" {
 					return govy.NewPropertyError(
-						"name",
+						jsonpath.Parse("name"),
 						t.Name,
 						govy.NewRuleError("name cannot be Jake", "error_code_jake"),
 						govy.NewRuleError("you can pass me too!"))
@@ -1191,7 +1269,7 @@ func ExamplePropertyRules_Include() {
 	// Output:
 	// Validation for Teacher has failed for the following properties:
 	//   - 'name' with value 'Jerry':
-	//     - should be equal to 'Tom'
+	//     - must be equal to 'Tom'
 	//   - 'university.address':
 	//     - property is required but was empty
 }
@@ -1391,11 +1469,11 @@ func ExampleForMap() {
 	// Validation has failed for the following properties:
 	//   - 'students' with value '{"9182300123":{"name":"Eve","age":0,"students":null,"university":{"name":"","address":""}},"91823001...':
 	//     - length must be less than or equal to 2
-	//   - 'students.9182300123' with key '9182300123':
+	//   - 'students['9182300123']' with key '9182300123':
 	//     - length must be between 9 and 9
-	//   - 'students.9182300123.name' with value 'Eve':
-	//     - should be not equal to 'Eve'
-	//   - 'students.918230013' with value '{"name":"Joan","age":0,"students":null,"university":{"name":"","address":""}}':
+	//   - 'students['9182300123'].name' with value 'Eve':
+	//     - must not be equal to 'Eve'
+	//   - 'students['918230013']' with value '{"name":"Joan","age":0,"students":null,"university":{"name":"","address":""}}':
 	//     - Joan cannot be a teacher for student with index 918230013
 }
 
@@ -1423,7 +1501,7 @@ func ExamplePropertyRules_When() {
 	// Output:
 	// Validation for Teacher has failed for the following properties:
 	//   - 'name' with value 'Jerry':
-	//     - should be not equal to 'Jerry'
+	//     - must not be equal to 'Jerry'
 }
 
 // To customize how [govy.Rule] are evaluated use [govy.PropertyRules.Cascade].
@@ -1460,7 +1538,7 @@ func ExamplePropertyRules_Cascade() {
 	//     - always fails
 	// Validation for Teacher has failed for the following properties:
 	//   - 'name' with value 'Jerry':
-	//     - should be not equal to 'Jerry'
+	//     - must not be equal to 'Jerry'
 }
 
 // If combining [govy.New] with [govy.ForSlice] is not verbose enough for you,
@@ -1473,7 +1551,7 @@ func ExamplePropertyRules_Cascade() {
 // [govy.Validator.ValidateSlice] is designed to be used for processing independent values.
 //
 // Note: Since each element is validated in isolation,
-// the property names will not start with the slice index,
+// the reported property paths will not start with the slice index,
 // they will instead start at the element's root.
 func ExampleValidator_ValidateSlice() {
 	v := govy.New(
@@ -1539,11 +1617,11 @@ func ExampleValidator_Cascade() {
 	// Output:
 	// Validation for Tom has failed for the following properties:
 	//   - 'age' with value '148920h0m0s':
-	//     - should be greater than '157680h0m0s'
+	//     - must be greater than '157680h0m0s'
 	// Validation for Jerry has failed for the following properties:
 	//   - 'name' with value 'Jerry':
-	//     - should be not equal to 'Jerry'
-	//     - should be equal to 'Tom'
+	//     - must not be equal to 'Jerry'
+	//     - must be equal to 'Tom'
 }
 
 // [govy.Validator.ValidateSlice] outputs [govy.ValidatorErrors] which is a slice of [govy.ValidatorError].
@@ -1578,7 +1656,7 @@ func ExampleValidatorErrors() {
 	//   {
 	//     "errors": [
 	//       {
-	//         "propertyName": "name",
+	//         "propertyPath": "name",
 	//         "propertyValue": "John",
 	//         "errors": [
 	//           {
@@ -1593,7 +1671,7 @@ func ExampleValidatorErrors() {
 	//   {
 	//     "errors": [
 	//       {
-	//         "propertyName": "name",
+	//         "propertyPath": "name",
 	//         "propertyValue": "Jake",
 	//         "errors": [
 	//           {
@@ -1794,7 +1872,7 @@ func ExamplePlan() {
 	//       ],
 	//       "rules": [
 	//         {
-	//           "description": "should be not equal to 'Jerry'",
+	//           "description": "must not be equal to 'Jerry'",
 	//           "details": "Jerry is just a name!",
 	//           "errorCode": "not_equal_to",
 	//           "conditions": [
@@ -1843,168 +1921,183 @@ func ExamplePlan_validation() {
 	// predicates without description found at: validator level, $.name
 }
 
-// Sometimes you want to reuse a [govy.Validator] but exclude certain property rules.
-// This is particularly useful when you have a base validator that you want to customize
-// for different contexts without duplicating code.
-// Use [govy.Validator.RemovePropertiesByID] to filter out specific property rules by their identifiers.
-//
-// Property identifiers must be obtained using [PropertyRules.GetID] or explicitly set with [PropertyRules.WithID].
-// Property names are not accepted - you must use actual IDs.
-//
-// This example demonstrates how to create a base [govy.Validator] for [Teacher] and then
-// create specialized versions by removing certain validations using GetID().
-func ExampleValidator_RemovePropertiesByID() {
-	universityValidation := govy.New(
-		govy.For(func(u University) string { return u.Address }).
-			WithName("address").
-			Required(),
+// This example demonstrates how to remove specific properties from a [govy.Validator] by their paths.
+// This is useful when you want to create a modified validator without certain rules.
+func ExampleValidator_RemovePropertiesByPath() {
+	baseValidator := govy.New(
+		govy.For(func(t Teacher) string { return t.Name }).
+			WithName("name").
+			Rules(rules.StringNotEmpty()),
+		govy.For(func(t Teacher) time.Duration { return t.Age }).
+			WithName("age").
+			Rules(rules.GT(time.Duration(0))),
 	)
 
-	nameProp := govy.For(func(t Teacher) string { return t.Name }).
-		WithName("name").
-		Required().
-		Rules(
-			rules.StringNotEmpty(),
-			rules.OneOf("Jake", "George"))
+	teacher := Teacher{Name: "John", Age: -1}
 
-	ageProp := govy.For(func(t Teacher) time.Duration { return t.Age }).
-		WithName("age").
-		Rules(rules.GT(18 * year))
-
-	universityProp := govy.For(func(t Teacher) University { return t.University }).
-		WithName("university").
-		Include(universityValidation)
-
-	baseTeacherValidator := govy.New(
-		nameProp,
-		ageProp,
-		universityProp,
-	).WithName("Teacher")
-
-	relaxedTeacherValidator := baseTeacherValidator.RemovePropertiesByID(ageProp.GetID(), universityProp.GetID())
-
-	strictTeacher := Teacher{
-		Name: "John",
-		Age:  17 * year,
-		University: University{
-			Name:    "Poznan University of Technology",
-			Address: "",
-		},
-	}
-
-	relaxedTeacher := Teacher{
-		Name: "Jake",
-	}
-
-	err := baseTeacherValidator.Validate(strictTeacher)
+	// Base validator fails because age is negative
+	err := baseValidator.Validate(teacher)
 	if err != nil {
-		fmt.Printf("Base validator:\n%v\n\n", err)
+		fmt.Println("Base validator failed")
 	}
-	err = relaxedTeacherValidator.Validate(strictTeacher)
-	if err != nil {
-		fmt.Printf("Relaxed validator with strict data:\n%v\n\n", err)
-	}
-	err = relaxedTeacherValidator.Validate(relaxedTeacher)
+
+	// Modified validator passes because age validation is removed
+	modifiedValidator := baseValidator.RemovePropertiesByPath(jsonpath.New().Name("age"))
+	err = modifiedValidator.Validate(teacher)
 	if err == nil {
-		fmt.Println("Relaxed validator passed!")
+		fmt.Println("Modified validator passed")
 	}
 
 	// Output:
-	// Base validator:
-	// Validation for Teacher has failed for the following properties:
-	//   - 'name' with value 'John':
-	//     - must be one of: Jake, George
-	//   - 'age' with value '148920h0m0s':
-	//     - should be greater than '157680h0m0s'
-	//   - 'university.address':
-	//     - property is required but was empty
-	//
-	// Relaxed validator with strict data:
-	// Validation for Teacher has failed for the following properties:
-	//   - 'name' with value 'John':
-	//     - must be one of: Jake, George
-	//
-	// Relaxed validator passed!
+	// Base validator failed
+	// Modified validator passed
 }
 
-// You can retrieve the identifier of a [govy.Validator] or [govy.PropertyRules]
-// using the [govy.Validator.GetID] or [govy.PropertyRules.GetID] methods.
-// This is useful when you need to call [govy.Validator.RemovePropertiesByID] method
-// without hardcoding ID strings.
+// In the interactive tutorial for govy, we've been using
+// [govy.PropertyRules.WithName] to provide explicit path segments for our properties.
 //
-// The [govy.Validator.GetID] and [govy.PropertyRules.GetID] methods return:
-//   - User-supplied ID (via [govy.Validator.WithID] or [govy.PropertyRules.WithID]) if set
-//   - Auto-generated UUID otherwise
+// Ideally, we'd want govy to derive those paths directly from the getter expressions,
+// matching the struct fields selected by the user.
+// Go uses struct tags to achieve that,
+// and libraries like [encoding/json] use these tags to encode/decode structs.
+// Unfortunately, there's no easy way to tell what exact property we're returning from [govy.PropertyGetter].
 //
-// This example demonstrates how to use GetID to dynamically remove properties.
-// Notice how there are two [govy.PropertyRules] for "name" - using explicit IDs
-// allows us to distinguish between them, which wouldn't be possible with name-based removal.
-func ExamplePropertyRules_GetID() {
-	universityValidator := govy.New(
-		govy.For(func(u University) string { return u.Address }).
-			WithName("address").
-			Required(),
-	).WithID("university-validator")
+// To solve this problem, govy provides a way to infer the property path (with a catch).
+// The catch being that the path inference mechanism needs to parse the whole modules' AST.
+// This can be a performance hit, especially for large projects if not done properly.
+//
+// By default govy will not attempt to infer any property paths.
+//
+// So, how do we do that properly?
+// Both [govy.Validator] and [govy.PropertyRules] (including variants) have a dedicated method
+// to configure how property paths are inferred.
+//
+// It depends on the [govy.InferPathMode] used:
+//   - [govy.InferPathModeDisable], path inference is disabled (default), nothing to do here
+//   - [govy.InferPathModeRuntime], the path is inferred during runtime from the getter expression.
+//     This is the most flexible option, but also the slowest, although the slowdown
+//     is incurred only once, whenever [govy.PropertyRules.Validate] is first called.
+//     If you make sure that [govy.PropertyRules] is created only once and don't mind
+//     the one-time performance hit, this should be enough for you.
+//   - [govy.InferPathModeGenerate], the path is inferred during a separate code generation phase.
+//     This mode requires you to run `govy inferpath` before you run your code.
+//     It generates a file with inferred relative paths for your getter call sites,
+//     which automatically registers them using [govyconfig.SetInferredPath].
+//
+// Since this tutorial is run as a test,
+// we need to explicitly instruct govy to infer paths from test files.
+// By default, test files are not parsed to improve performance.
+// In order to do that, we use [govyconfig.SetInferPathIncludeTestFiles].
+func ExampleInferPathMode() {
+	govyconfig.SetInferPathIncludeTestFiles(true)
+	defer govyconfig.SetInferPathIncludeTestFiles(false)
 
-	nameProperty := govy.For(func(t Teacher) string { return t.Name }).
-		WithName("name").
-		WithID("name-property").
-		Required()
+	v := govy.New(
+		govy.For(func(t Teacher) string { return t.Name }).
+			Rules(rules.EQ("Jerry")),
+	).
+		InferPath(govy.InferPathModeRuntime).
+		WithName("Teacher")
 
-	namePropertyExtra := govy.For(func(t Teacher) string { return t.Name }).
-		WithName("name").
-		WithID("name-property-extra").
-		Required().
-		Rules(rules.OneOf("John", "George"))
-
-	ageProperty := govy.For(func(t Teacher) time.Duration { return t.Age }).
-		WithName("age").
-		WithID("age-property").
-		Rules(rules.GT(18 * year))
-
-	universityProperty := govy.For(func(t Teacher) University { return t.University }).
-		WithName("university").
-		WithID("university-property").
-		Include(universityValidator)
-
-	teacherValidator := govy.New(
-		nameProperty,
-		namePropertyExtra,
-		ageProperty,
-		universityProperty,
-	).WithName("Teacher").WithID("teacher-validator")
-
-	fmt.Println("Teacher validator ID:", teacherValidator.GetID())
-	fmt.Println("Name property ID:", nameProperty.GetID())
-	fmt.Println("Name property (extra) ID:", namePropertyExtra.GetID())
-	fmt.Println("Age property ID:", ageProperty.GetID())
-	fmt.Println("University property ID:", universityProperty.GetID())
-
-	relaxedValidator := teacherValidator.RemovePropertiesByID(
-		ageProperty.GetID(),
-		universityProperty.GetID(),
-		namePropertyExtra.GetID(),
-	)
-
-	teacher := Teacher{
-		Name: "Jake",
-		Age:  17 * year,
-		University: University{
-			Name:    "Poznan University of Technology",
-			Address: "",
-		},
-	}
-
-	err := relaxedValidator.Validate(teacher)
-	if err == nil {
-		fmt.Println("Relaxed validation passed!")
+	teacher := Teacher{Name: "Tom"}
+	err := v.Validate(teacher)
+	if err != nil {
+		fmt.Println(err)
 	}
 
 	// Output:
-	// Teacher validator ID: teacher-validator
-	// Name property ID: name-property
-	// Name property (extra) ID: name-property-extra
-	// Age property ID: age-property
-	// University property ID: university-property
-	// Relaxed validation passed!
+	// Validation for Teacher has failed for the following properties:
+	//   - 'name' with value 'Tom':
+	//     - must be equal to 'Jerry'
+}
+
+// In the previous example we've seen [govy.InferPathModeRuntime] in action.
+// An alternative for the aforementioned mode which offers better runtime performance
+// is [govy.InferPathModeGenerate].
+//
+// It comes at a cost of having to run the code generation utility before running your code.
+// The utility generates code which uses [govyconfig.SetInferredPath].
+// We'll use this very function in this example to simulate the code generation step.
+// The first validator, 'v1', is created with [govy.InferPathModeDisable],
+// the second validator, 'v2' is created with [govy.InferPathModeGenerate].
+// As you can see in the output, only the second validator, 'v2' has the inferred path.
+func ExampleInferPathModeGenerate() {
+	govyconfig.SetInferPathIncludeTestFiles(true)
+	defer govyconfig.SetInferPathIncludeTestFiles(false)
+
+	v1 := govy.New(
+		govy.For(func(t Teacher) string { return t.Name }).
+			Rules(rules.EQ("Jerry")),
+	).
+		InferPath(govy.InferPathModeDisable).
+		WithName("Teacher")
+
+	govyconfig.SetInferredPath(govyconfig.InferredPath{
+		Path: jsonpath.New().Name("name"),
+		File: "pkg/govy/example_test.go",
+		Line: 2042,
+	})
+
+	v2 := govy.New(
+		govy.For(func(t Teacher) string { return t.Name }).
+			Rules(rules.EQ("Thomas")),
+	).
+		InferPath(govy.InferPathModeGenerate).
+		WithName("NotTeacher")
+
+	teacher := Teacher{Name: "Tom"}
+	if err := v1.Validate(teacher); err != nil {
+		fmt.Println(err)
+	}
+	if err := v2.Validate(teacher); err != nil {
+		fmt.Println(err)
+	}
+
+	// Output:
+	// Validation for Teacher has failed:
+	//   - must be equal to 'Jerry'
+	// Validation for NotTeacher has failed for the following properties:
+	//   - 'name' with value 'Tom':
+	//     - must be equal to 'Thomas'
+}
+
+// Knowing when to call [govy.Validator.InferPath] is important.
+// The path inference runs only once per [govy.PropertyRules] instance, on the first validation.
+// Once this happens, the result is cached, even if that result is an empty path.
+//
+// This example demonstrates that changing the mode after the first validation has no effect.
+// The first validation runs with [govy.InferPathModeDisable], which produces an empty path.
+// This empty result is then cached. Even after switching to [govy.InferPathModeRuntime],
+// the cached empty result persists, so no property path appears in the output.
+func ExampleValidator_InferPath_changeModeInRuntime() {
+	govyconfig.SetInferPathIncludeTestFiles(true)
+	defer govyconfig.SetInferPathIncludeTestFiles(false)
+
+	v := govy.New(
+		govy.For(func(t Teacher) string { return t.Name }).
+			Rules(rules.EQ("Jerry")),
+	).
+		InferPath(govy.InferPathModeDisable).
+		WithName("Teacher")
+
+	teacher := Teacher{Name: "Tom"}
+	err := v.Validate(teacher)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	fmt.Println("---\nAfter setting Runtime infer mode.\n---")
+	err = v.InferPath(govy.InferPathModeRuntime).Validate(teacher)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	// Output:
+	// Validation for Teacher has failed:
+	//   - must be equal to 'Jerry'
+	// ---
+	// After setting Runtime infer mode.
+	// ---
+	// Validation for Teacher has failed:
+	//   - must be equal to 'Jerry'
 }

@@ -8,7 +8,9 @@ import (
 	"github.com/nobl9/govy/internal/assert"
 
 	"github.com/nobl9/govy/pkg/govy"
+	"github.com/nobl9/govy/pkg/govyconfig"
 	"github.com/nobl9/govy/pkg/govytest"
+	"github.com/nobl9/govy/pkg/jsonpath"
 	"github.com/nobl9/govy/pkg/rules"
 )
 
@@ -31,22 +33,22 @@ func TestValidator(t *testing.T) {
 				WithName("test").
 				Rules(govy.NewRule(func(v string) error { return nil })),
 			govy.For(func(m mockValidatorStruct) string { return "name" }).
-				WithName("test.name").
+				WithPath(jsonpath.New().Name("test").Name("name")).
 				Rules(govy.NewRule(func(v string) error { return err1 })),
 			govy.For(func(m mockValidatorStruct) string { return "display" }).
-				WithName("test.display").
+				WithPath(jsonpath.New().Name("test").Name("display")).
 				Rules(govy.NewRule(func(v string) error { return err2 })),
 		)
 		err := mustValidatorError(t, v.Validate(mockValidatorStruct{}))
 		assert.Require(t, assert.Len(t, err.Errors, 2))
 		assert.Equal(t, &govy.ValidatorError{Errors: govy.PropertyErrors{
 			&govy.PropertyError{
-				PropertyName:  "test.name",
+				PropertyPath:  jsonpath.Parse("test.name"),
 				PropertyValue: "name",
 				Errors:        []*govy.RuleError{{Message: err1.Error()}},
 			},
 			&govy.PropertyError{
-				PropertyName:  "test.display",
+				PropertyPath:  jsonpath.Parse("test.display"),
 				PropertyValue: "display",
 				Errors:        []*govy.RuleError{{Message: err2.Error()}},
 			},
@@ -78,7 +80,7 @@ func TestValidatorWhen(t *testing.T) {
 		assert.Require(t, assert.Len(t, err.Errors, 1))
 		assert.Equal(t, &govy.ValidatorError{Errors: govy.PropertyErrors{
 			&govy.PropertyError{
-				PropertyName:  "test",
+				PropertyPath:  jsonpath.Parse("test"),
 				PropertyValue: "test",
 				Errors:        []*govy.RuleError{{Message: "test"}},
 			},
@@ -101,41 +103,40 @@ func TestValidatorWithName(t *testing.T) {
 }
 
 func TestValidatorWithNameFunc(t *testing.T) {
-	v := govy.New(
-		govy.For(func(m mockValidatorStruct) string { return "test" }).
-			WithName("test").
-			Rules(govy.NewRule(func(v string) error { return errors.New("test") })),
-	).WithNameFunc(func(m mockValidatorStruct) string { return "validator with field: " + m.Field })
-
-	err := v.Validate(mockValidatorStruct{Field: "FIELD"})
-	assert.Require(t, assert.Error(t, err))
-	assert.EqualError(t, err, `Validation for validator with field: FIELD has failed for the following properties:
-  - 'test' with value 'test':
-    - test`)
-}
-
-func TestValidatorInferName(t *testing.T) {
-	t.Run("infer name", func(t *testing.T) {
+	t.Run("custom name function", func(t *testing.T) {
 		v := govy.New(
 			govy.For(func(m mockValidatorStruct) string { return "test" }).
 				WithName("test").
 				Rules(govy.NewRule(func(v string) error { return errors.New("test") })),
-		).InferName()
+		).WithNameFunc(func(m mockValidatorStruct) string { return "validator with field: " + m.Field })
 
-		err := v.Validate(mockValidatorStruct{})
+		err := v.Validate(mockValidatorStruct{Field: "FIELD"})
 		assert.Require(t, assert.Error(t, err))
-		assert.EqualError(t, err, `Validation for mockValidatorStruct has failed for the following properties:
+		assert.EqualError(t, err, `Validation for validator with field: FIELD has failed for the following properties:
   - 'test' with value 'test':
     - test`)
 	})
-	t.Run("do not infer name if name was already set", func(t *testing.T) {
+	t.Run("type based builtin name function", func(t *testing.T) {
+		v := govy.New(
+			govy.For(func(t Teacher) string { return "test" }).
+				WithName("test").
+				Rules(govy.NewRule(func(v string) error { return errors.New("test") })),
+		).WithNameFunc(govy.NameFuncFromTypeName[Teacher]())
+
+		err := v.Validate(Teacher{})
+		assert.Require(t, assert.Error(t, err))
+		assert.EqualError(t, err, `Validation for Teacher has failed for the following properties:
+  - 'test' with value 'test':
+    - test`)
+	})
+	t.Run("setting WithName AFTTER WithNameFunc cancels name function out", func(t *testing.T) {
 		v := govy.New(
 			govy.For(func(m mockValidatorStruct) string { return "test" }).
 				WithName("test").
 				Rules(govy.NewRule(func(v string) error { return errors.New("test") })),
 		).
-			WithName("myValidator").
-			InferName()
+			WithNameFunc(govy.NameFuncFromTypeName[mockValidatorStruct]()).
+			WithName("myValidator")
 
 		err := v.Validate(mockValidatorStruct{})
 		assert.Require(t, assert.Error(t, err))
@@ -176,7 +177,7 @@ func TestValidatorValidateSlice(t *testing.T) {
 				SliceIndex: ptr(1),
 				Errors: govy.PropertyErrors{
 					&govy.PropertyError{
-						PropertyName: "Field",
+						PropertyPath: jsonpath.Parse("Field"),
 						Errors: []*govy.RuleError{{
 							Message: internal.RequiredMessage,
 							Code:    rules.ErrorCodeRequired,
@@ -189,7 +190,7 @@ func TestValidatorValidateSlice(t *testing.T) {
 				SliceIndex: ptr(3),
 				Errors: govy.PropertyErrors{
 					&govy.PropertyError{
-						PropertyName: "Field",
+						PropertyPath: jsonpath.Parse("Field"),
 						Errors: []*govy.RuleError{{
 							Message: internal.RequiredMessage,
 							Code:    rules.ErrorCodeRequired,
@@ -235,17 +236,17 @@ func TestValidatorCascade(t *testing.T) {
 	)
 
 	allErrors := []govytest.ExpectedRuleError{
-		{PropertyName: "string", Message: "1"},
-		{PropertyName: "string", Message: "2"},
-		{PropertyName: "slice", Message: "1"},
-		{PropertyName: "slice", Message: "2"},
-		{PropertyName: "map", Message: "1"},
-		{PropertyName: "map", Message: "2"},
+		{PropertyPath: "string", Message: "1"},
+		{PropertyPath: "string", Message: "2"},
+		{PropertyPath: "slice", Message: "1"},
+		{PropertyPath: "slice", Message: "2"},
+		{PropertyPath: "map", Message: "1"},
+		{PropertyPath: "map", Message: "2"},
 	}
 	firstErrors := []govytest.ExpectedRuleError{
-		{PropertyName: "string", Message: "1"},
-		{PropertyName: "slice", Message: "1"},
-		{PropertyName: "map", Message: "1"},
+		{PropertyPath: "string", Message: "1"},
+		{PropertyPath: "slice", Message: "1"},
+		{PropertyPath: "map", Message: "1"},
 	}
 
 	testCases := map[string]struct {
@@ -255,7 +256,7 @@ func TestValidatorCascade(t *testing.T) {
 		"mode stop": {
 			validator.Cascade(govy.CascadeModeStop),
 			[]govytest.ExpectedRuleError{
-				{PropertyName: "string", Message: "1"},
+				{PropertyPath: "string", Message: "1"},
 			},
 		},
 		"mode continue": {
@@ -291,8 +292,20 @@ func TestValidatorCascade(t *testing.T) {
 				propertyRulesForMap.Cascade(govy.CascadeModeContinue),
 			).Cascade(govy.CascadeModeStop),
 			[]govytest.ExpectedRuleError{
-				{PropertyName: "string", Message: "1"},
-				{PropertyName: "string", Message: "2"},
+				{PropertyPath: "string", Message: "1"},
+				{PropertyPath: "string", Message: "2"},
+			},
+		},
+		"mixed inheritance": {
+			govy.New(
+				propertyRulesNeverFails,
+				propertyRules.Cascade(govy.CascadeModeContinue),
+				propertyRulesForSlice,
+				propertyRulesForMap.Cascade(govy.CascadeModeContinue),
+			).Cascade(govy.CascadeModeStop),
+			[]govytest.ExpectedRuleError{
+				{PropertyPath: "string", Message: "1"},
+				{PropertyPath: "string", Message: "2"},
 			},
 		},
 	}
@@ -305,14 +318,298 @@ func TestValidatorCascade(t *testing.T) {
 	}
 }
 
-func mustValidatorError(t *testing.T, err error) *govy.ValidatorError {
-	t.Helper()
-	return mustErrorType[*govy.ValidatorError](t, err)
+func TestValidatorRemovePropertiesByPath(t *testing.T) {
+	t.Run("remove single property", func(t *testing.T) {
+		v := govy.New(
+			govy.For(func(m mockValidatorStruct) string { return m.Field }).
+				WithName("field").
+				Rules(rules.EQ("test")),
+			govy.For(func(m mockValidatorStruct) string { return m.Field }).
+				WithName("other").
+				Rules(rules.EQ("invalid")),
+		)
+		err := v.Validate(mockValidatorStruct{Field: "invalid"})
+		assert.Error(t, err)
+
+		modified := v.RemovePropertiesByPath(jsonpath.New().Name("field"))
+		err = modified.Validate(mockValidatorStruct{Field: "invalid"})
+		assert.NoError(t, err)
+	})
+
+	t.Run("remove multiple properties", func(t *testing.T) {
+		v := govy.New(
+			govy.For(func(m mockValidatorStruct) string { return m.Field }).
+				WithName("field1").
+				Rules(rules.EQ("test")),
+			govy.For(func(m mockValidatorStruct) string { return m.Field }).
+				WithName("field2").
+				Rules(rules.EQ("test")),
+			govy.For(func(m mockValidatorStruct) string { return m.Field }).
+				WithName("field3").
+				Rules(rules.EQ("valid")),
+		)
+		err := v.Validate(mockValidatorStruct{Field: "valid"})
+		assert.Error(t, err)
+
+		modified := v.RemovePropertiesByPath(
+			jsonpath.New().Name("field1"),
+			jsonpath.New().Name("field2"),
+		)
+		err = modified.Validate(mockValidatorStruct{Field: "valid"})
+		assert.NoError(t, err)
+	})
+
+	t.Run("remove all properties", func(t *testing.T) {
+		v := govy.New(
+			govy.For(func(m mockValidatorStruct) string { return m.Field }).
+				WithName("field1").
+				Rules(rules.EQ("test")),
+			govy.For(func(m mockValidatorStruct) string { return m.Field }).
+				WithName("field2").
+				Rules(rules.EQ("test")),
+		)
+		err := v.Validate(mockValidatorStruct{Field: "anything"})
+		assert.Error(t, err)
+
+		modified := v.RemovePropertiesByPath(
+			jsonpath.New().Name("field1"),
+			jsonpath.New().Name("field2"),
+		)
+		err = modified.Validate(mockValidatorStruct{Field: "anything"})
+		assert.NoError(t, err)
+	})
+
+	t.Run("remove non-existent property", func(t *testing.T) {
+		v := govy.New(
+			govy.For(func(m mockValidatorStruct) string { return m.Field }).
+				WithName("field").
+				Rules(rules.EQ("test")),
+		)
+		modified := v.RemovePropertiesByPath(jsonpath.New().Name("nonexistent"))
+		err := modified.Validate(mockValidatorStruct{Field: "invalid"})
+		assert.Error(t, err)
+	})
+
+	t.Run("remove with empty paths slice", func(t *testing.T) {
+		v := govy.New(
+			govy.For(func(m mockValidatorStruct) string { return m.Field }).
+				WithName("field").
+				Rules(rules.EQ("test")),
+		)
+		modified := v.RemovePropertiesByPath()
+		err := modified.Validate(mockValidatorStruct{Field: "invalid"})
+		assert.Error(t, err)
+	})
+
+	t.Run("original validator is unchanged", func(t *testing.T) {
+		original := govy.New(
+			govy.For(func(m mockValidatorStruct) string { return m.Field }).
+				WithName("field").
+				Rules(rules.EQ("test")),
+		)
+		modified := original.RemovePropertiesByPath(jsonpath.New().Name("field"))
+
+		errOriginal := original.Validate(mockValidatorStruct{Field: "invalid"})
+		assert.Error(t, errOriginal)
+
+		errModified := modified.Validate(mockValidatorStruct{Field: "invalid"})
+		assert.NoError(t, errModified)
+	})
+
+	t.Run("remove slice property rules", func(t *testing.T) {
+		v := govy.New(
+			govy.ForSlice(func(m mockValidatorStruct) []string { return []string{m.Field} }).
+				WithName("items").
+				Rules(rules.SliceMaxLength[[]string](0)),
+		)
+		err := v.Validate(mockValidatorStruct{Field: "test"})
+		assert.Error(t, err)
+
+		modified := v.RemovePropertiesByPath(jsonpath.New().Name("items"))
+		err = modified.Validate(mockValidatorStruct{Field: "test"})
+		assert.NoError(t, err)
+	})
+
+	t.Run("remove map property rules", func(t *testing.T) {
+		v := govy.New(
+			govy.ForMap(func(m mockValidatorStruct) map[string]string {
+				return map[string]string{"key": m.Field}
+			}).
+				WithName("mapping").
+				Rules(rules.MapMaxLength[map[string]string](0)),
+		)
+		err := v.Validate(mockValidatorStruct{Field: "test"})
+		assert.Error(t, err)
+
+		modified := v.RemovePropertiesByPath(jsonpath.New().Name("mapping"))
+		err = modified.Validate(mockValidatorStruct{Field: "test"})
+		assert.NoError(t, err)
+	})
+
+	t.Run("remove multi-segment path", func(t *testing.T) {
+		v := govy.New(
+			govy.For(func(m mockValidatorStruct) string { return m.Field }).
+				WithPath(jsonpath.New().Name("test").Name("field")).
+				Rules(rules.EQ("expected")),
+			govy.For(func(m mockValidatorStruct) string { return m.Field }).
+				WithName("other").
+				Rules(rules.EQ("expected")),
+		)
+		err := v.Validate(mockValidatorStruct{Field: "actual"})
+		assert.Error(t, err)
+
+		modified := v.RemovePropertiesByPath(jsonpath.New().Name("test").Name("field"))
+		vErr := mustValidatorError(t, modified.Validate(mockValidatorStruct{Field: "actual"}))
+		assert.Require(t, assert.Len(t, vErr.Errors, 1))
+		assert.Equal(t, jsonpath.Parse("other"), vErr.Errors[0].PropertyPath)
+	})
+
+	t.Run("remove property with special characters in name", func(t *testing.T) {
+		v := govy.New(
+			govy.For(func(m mockValidatorStruct) string { return m.Field }).
+				WithName("foo.bar").
+				Rules(rules.EQ("expected")),
+			govy.For(func(m mockValidatorStruct) string { return m.Field }).
+				WithName("other").
+				Rules(rules.EQ("expected")),
+		)
+		err := v.Validate(mockValidatorStruct{Field: "actual"})
+		assert.Error(t, err)
+
+		modified := v.RemovePropertiesByPath(jsonpath.New().Name("foo.bar"))
+		vErr := mustValidatorError(t, modified.Validate(mockValidatorStruct{Field: "actual"}))
+		assert.Require(t, assert.Len(t, vErr.Errors, 1))
+		assert.Equal(t, jsonpath.Parse("other"), vErr.Errors[0].PropertyPath)
+	})
 }
 
-func mustValidatorErrors(t *testing.T, err error) govy.ValidatorErrors {
-	t.Helper()
-	return mustErrorType[govy.ValidatorErrors](t, err)
+func TestValidatorInferPath(t *testing.T) {
+	govyconfig.SetInferPathIncludeTestFiles(true)
+	defer govyconfig.SetInferPathIncludeTestFiles(false)
+
+	type mockInferPathStruct struct {
+		Name     string         `json:"name"`
+		Students []string       `json:"students"`
+		Grades   map[string]int `json:"grades"`
+	}
+
+	propertyRules := govy.For(func(m mockInferPathStruct) string { return m.Name }).
+		Rules(rules.EQ("expected"))
+	propertyRulesForSlice := govy.ForSlice(func(m mockInferPathStruct) []string { return m.Students }).
+		RulesForEach(rules.EQ("expected"))
+	propertyRulesForMap := govy.ForMap(func(m mockInferPathStruct) map[string]int { return m.Grades }).
+		RulesForKeys(rules.EQ("expected"))
+
+	t.Run("propagates mode to all properties", func(t *testing.T) {
+		v := govy.New(
+			propertyRules,
+			propertyRulesForSlice,
+			propertyRulesForMap,
+		).
+			InferPath(govy.InferPathModeRuntime)
+
+		err := v.Validate(mockInferPathStruct{
+			Name:     "actual",
+			Students: []string{"actual"},
+			Grades:   map[string]int{"actual": 1},
+		})
+		errs := mustValidatorError(t, err)
+		govytest.AssertError(
+			t,
+			errs,
+			govytest.ExpectedRuleError{
+				PropertyPath: "name",
+				Message:      "must be equal to 'expected'",
+			},
+			govytest.ExpectedRuleError{
+				PropertyPath: "students[0]",
+				Message:      "must be equal to 'expected'",
+			},
+			govytest.ExpectedRuleError{
+				PropertyPath: "grades.actual",
+				IsKeyError:   true,
+				Message:      "must be equal to 'expected'",
+			},
+		)
+	})
+
+	t.Run("property mode Runtime is not overridden by validator mode Generate", func(t *testing.T) {
+		govyconfig.SetInferredPath(govyconfig.InferredPath{
+			// Changed name to differentiate between runtime and generate modes.
+			Path: jsonpath.New().Name("generated-students"),
+			File: "pkg/govy/validator_test.go",
+			Line: 551,
+		})
+
+		v := govy.New(
+			govy.For(func(m mockInferPathStruct) string { return m.Name }).
+				InferPath(govy.InferPathModeDisable).
+				Rules(rules.EQ("expected")),
+			govy.ForSlice(func(m mockInferPathStruct) []string { return m.Students }).
+				InferPath(govy.InferPathModeRuntime).
+				RulesForEach(rules.EQ("expected")),
+			govy.ForMap(func(m mockInferPathStruct) map[string]int { return m.Grades }).
+				// InferPath(govy.InferPathModeRuntime). -- Inference mode should be inherited from Validator.
+				RulesForKeys(rules.EQ("expected")),
+		).
+			InferPath(govy.InferPathModeGenerate)
+
+		err := v.Validate(mockInferPathStruct{
+			Name:     "actual",
+			Students: []string{"actual"},
+			Grades:   map[string]int{"actual": 1},
+		})
+		errs := mustValidatorError(t, err)
+		govytest.AssertError(
+			t,
+			errs,
+			govytest.ExpectedRuleError{
+				PropertyPath: "", // Path inference is disabled.
+				Message:      "must be equal to 'expected'",
+			},
+			govytest.ExpectedRuleError{
+				PropertyPath: "students[0]", // Runtime mode.
+				Message:      "must be equal to 'expected'",
+			},
+			govytest.ExpectedRuleError{
+				PropertyPath: "['generated-students'].actual", // Generate mode.
+				IsKeyError:   true,
+				Message:      "must be equal to 'expected'",
+			},
+		)
+	})
+
+	t.Run("no mode set on properties - validator can set mode", func(t *testing.T) {
+		// Properties don't set any mode (defaults to InferPathModeDisable = 0).
+		// Validator.InferPath(InferPathModeRuntime) should propagate to all properties.
+		v := govy.New(
+			govy.For(func(m mockInferPathStruct) string { return m.Name }).
+				Rules(rules.EQ("expected")),
+			govy.ForSlice(func(m mockInferPathStruct) []string { return m.Students }).
+				RulesForEach(rules.EQ("expected")),
+			govy.ForMap(func(m mockInferPathStruct) map[string]int { return m.Grades }).
+				RulesForKeys(rules.EQ("expected")),
+		).InferPath(govy.InferPathModeRuntime)
+
+		err := v.Validate(mockInferPathStruct{
+			Name:     "actual",
+			Students: []string{"actual"},
+			Grades:   map[string]int{"actual": 1},
+		})
+		errs := mustValidatorError(t, err)
+		// Check that all properties have inferred names (validator's mode was applied).
+		govytest.AssertError(
+			t,
+			errs,
+			govytest.ExpectedRuleError{PropertyPath: "name", Message: "must be equal to 'expected'"},
+			govytest.ExpectedRuleError{PropertyPath: "students[0]", Message: "must be equal to 'expected'"},
+			govytest.ExpectedRuleError{
+				PropertyPath: "grades.actual",
+				IsKeyError:   true,
+				Message:      "must be equal to 'expected'",
+			},
+		)
+	})
 }
 
 func TestValidatorWithID(t *testing.T) {
@@ -356,7 +653,7 @@ func TestValidatorRemovePropertiesByID(t *testing.T) {
 		err := mustValidatorError(t, filteredV.Validate(mockValidatorStruct{}))
 
 		assert.Require(t, assert.Len(t, err.Errors, 1))
-		assert.Equal(t, "property2", err.Errors[0].PropertyName)
+		assert.Equal(t, jsonpath.Parse("property2"), err.Errors[0].PropertyPath)
 	})
 
 	t.Run("remove multiple properties by ID", func(t *testing.T) {
@@ -378,7 +675,7 @@ func TestValidatorRemovePropertiesByID(t *testing.T) {
 		err := mustValidatorError(t, filteredV.Validate(mockValidatorStruct{}))
 
 		assert.Require(t, assert.Len(t, err.Errors, 1))
-		assert.Equal(t, "property2", err.Errors[0].PropertyName)
+		assert.Equal(t, jsonpath.Parse("property2"), err.Errors[0].PropertyPath)
 	})
 
 	t.Run("remove property by generated ID", func(t *testing.T) {
@@ -399,7 +696,7 @@ func TestValidatorRemovePropertiesByID(t *testing.T) {
 		err := mustValidatorError(t, filteredV.Validate(mockValidatorStruct{}))
 
 		assert.Require(t, assert.Len(t, err.Errors, 1))
-		assert.Equal(t, "property2", err.Errors[0].PropertyName)
+		assert.Equal(t, jsonpath.Parse("property2"), err.Errors[0].PropertyPath)
 	})
 
 	t.Run("remove all properties", func(t *testing.T) {
@@ -428,7 +725,7 @@ func TestValidatorRemovePropertiesByID(t *testing.T) {
 		err := mustValidatorError(t, filteredV.Validate(mockValidatorStruct{}))
 
 		assert.Require(t, assert.Len(t, err.Errors, 1))
-		assert.Equal(t, "property1", err.Errors[0].PropertyName)
+		assert.Equal(t, jsonpath.Parse("property1"), err.Errors[0].PropertyPath)
 	})
 
 	t.Run("remove with empty IDs slice", func(t *testing.T) {
@@ -443,7 +740,7 @@ func TestValidatorRemovePropertiesByID(t *testing.T) {
 		err := mustValidatorError(t, filteredV.Validate(mockValidatorStruct{}))
 
 		assert.Require(t, assert.Len(t, err.Errors, 1))
-		assert.Equal(t, "property1", err.Errors[0].PropertyName)
+		assert.Equal(t, jsonpath.Parse("property1"), err.Errors[0].PropertyPath)
 	})
 
 	t.Run("original validator is unchanged", func(t *testing.T) {
@@ -537,6 +834,16 @@ func TestValidatorRemovePropertiesByID(t *testing.T) {
 		filteredErr := filteredV.Validate(obj)
 		assert.NoError(t, filteredErr)
 	})
+}
+
+func mustValidatorError(t *testing.T, err error) *govy.ValidatorError {
+	t.Helper()
+	return mustErrorType[*govy.ValidatorError](t, err)
+}
+
+func mustValidatorErrors(t *testing.T, err error) govy.ValidatorErrors {
+	t.Helper()
+	return mustErrorType[govy.ValidatorErrors](t, err)
 }
 
 type mockValidatorStruct struct {

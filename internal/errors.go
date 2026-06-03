@@ -77,7 +77,7 @@ func PropertyValueString(v any) string {
 		}
 		raw, _ := json.Marshal(v)
 		s = string(raw)
-	case reflect.Ptr:
+	case reflect.Pointer:
 		if rv.IsNil() {
 			return ""
 		}

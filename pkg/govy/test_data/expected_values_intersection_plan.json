@@ -11,7 +11,7 @@
       ],
       "rules": [
         {
-          "description": "should be not equal to 'baz'",
+          "description": "must not be equal to 'baz'",
           "errorCode": "not_equal_to"
         },
         {
@@ -19,7 +19,7 @@
           "errorCode": "one_of"
         },
         {
-          "description": "should be equal to 'foo'",
+          "description": "must be equal to 'foo'",
           "errorCode": "equal_to"
         },
         {

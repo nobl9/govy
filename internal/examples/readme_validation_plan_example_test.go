@@ -109,7 +109,7 @@ func Example_validationPlan() {
 	//       ],
 	//       "rules": [
 	//         {
-	//           "description": "string cannot be empty",
+	//           "description": "string must not be empty",
 	//           "errorCode": "string_not_empty"
 	//         },
 	//         {

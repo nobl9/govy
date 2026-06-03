@@ -5,20 +5,13 @@ import (
 
 	"github.com/nobl9/govy/internal"
 	"github.com/nobl9/govy/internal/typeinfo"
+	"github.com/nobl9/govy/pkg/jsonpath"
 )
 
 // For creates a new [PropertyRules] instance for the property
 // which value is extracted through [PropertyGetter] function.
 func For[T, P any](getter PropertyGetter[T, P]) PropertyRules[T, P] {
-	return forConstructor(getter, inferName())
-}
-
-func forConstructor[T, P any](getter PropertyGetter[T, P], name string) PropertyRules[T, P] {
-	return PropertyRules[T, P]{
-		id:     newInstanceID(),
-		name:   name,
-		getter: func(parent P) (v T, err error) { return getter(parent), nil },
-	}
+	return forConstructor(getter)
 }
 
 // ForPointer accepts a getter function returning a pointer and wraps its call in order to
@@ -27,8 +20,7 @@ func forConstructor[T, P any](getter PropertyGetter[T, P], name string) Property
 // validation will not proceed.
 func ForPointer[T, P any](getter PropertyGetter[*T, P]) PropertyRules[T, P] {
 	return PropertyRules[T, P]{
-		id:   newInstanceID(),
-		name: inferName(),
+		pathFunc: getInferPathFunc(getCallersAndProgramCounter(4)),
 		getter: func(parent P) (indirect T, err error) {
 			ptr := getter(parent)
 			if ptr != nil {
@@ -48,8 +40,7 @@ func ForPointer[T, P any](getter PropertyGetter[*T, P]) PropertyRules[T, P] {
 func Transform[T, N, P any](getter PropertyGetter[T, P], transform Transformer[T, N]) PropertyRules[N, P] {
 	typInfo := typeinfo.Get[T]()
 	return PropertyRules[N, P]{
-		id:   newInstanceID(),
-		name: inferName(),
+		pathFunc: getInferPathFunc(getCallersAndProgramCounter(4)),
 		transformGetter: func(parent P) (transformed N, original any, err error) {
 			v := getter(parent)
 			if internal.IsEmpty(v) {
@@ -62,6 +53,25 @@ func Transform[T, N, P any](getter PropertyGetter[T, P], transform Transformer[T
 			return transformed, v, nil
 		},
 		originalType: &typInfo,
+	}
+}
+
+// forConstructor creates [PropertyRules].
+// It wraps the getter function in [internalPropertyGetter] and adds path inference.
+func forConstructor[T, P any](getter PropertyGetter[T, P]) PropertyRules[T, P] {
+	return PropertyRules[T, P]{
+		id:       newInstanceID(),
+		pathFunc: getInferPathFunc(getCallersAndProgramCounter(4)),
+		getter:   func(parent P) (v T, err error) { return getter(parent), nil },
+	}
+}
+
+// forConstructorWithoutPathInference creates [PropertyRules] without path inference.
+// Used for internal rules in [ForSlice] and [ForMap] where paths are managed separately.
+func forConstructorWithoutPathInference[T, P any](getter PropertyGetter[T, P]) PropertyRules[T, P] {
+	return PropertyRules[T, P]{
+		id:     newInstanceID(),
+		getter: func(parent P) (v T, err error) { return getter(parent), nil },
 	}
 }
 
@@ -90,18 +100,21 @@ func (emptyErr) Error() string { return "" }
 // It is the middle-level building block of the validation process,
 // aggregated by [Validator] and aggregating [Rule].
 type PropertyRules[T, P any] struct {
-	id              instanceID
-	name            string
-	getter          internalPropertyGetter[T, P]
-	transformGetter internalTransformPropertyGetter[T, P]
-	rules           []validationInterface[T]
-	required        bool
-	omitEmpty       bool
-	hideValue       bool
-	isPointer       bool
-	mode            CascadeMode
-	examples        []string
-	originalType    *typeinfo.TypeInfo
+	id               instanceID
+	path             jsonpath.Path
+	pathFunc         inferPathFunc
+	getter           internalPropertyGetter[T, P]
+	transformGetter  internalTransformPropertyGetter[T, P]
+	rules            []validationInterface[T]
+	required         bool
+	omitEmpty        bool
+	hideValue        bool
+	isPointer        bool
+	cascadeMode      CascadeMode
+	inferPathMode    InferPathMode
+	inferPathModeSet bool
+	examples         []string
+	originalType     *typeinfo.TypeInfo
 
 	predicateMatcher[P]
 }
@@ -133,20 +146,20 @@ func (r PropertyRules[T, P]) Validate(parent P) error {
 		switch errValue := err.(type) {
 		// Same as Rule[P] as for GetSelf we'd get the same type on T and P.
 		case *PropertyError:
-			allErrors = append(allErrors, errValue.prependParentPropertyName(r.name))
+			allErrors = append(allErrors, errValue.prependParentPropertyPath(r.getPath()))
 		case *ValidatorError:
 			for _, e := range errValue.Errors {
-				allErrors = append(allErrors, e.prependParentPropertyName(r.name))
+				allErrors = append(allErrors, e.prependParentPropertyPath(r.getPath()))
 			}
 		default:
 			ruleErrors = append(ruleErrors, err)
 		}
-		if r.mode == CascadeModeStop {
+		if r.cascadeMode == CascadeModeStop {
 			break
 		}
 	}
 	if len(ruleErrors) > 0 {
-		allErrors = append(allErrors, NewPropertyError(r.name, propValue, ruleErrors...))
+		allErrors = append(allErrors, NewPropertyError(r.getPath(), propValue, ruleErrors...))
 	}
 	if len(allErrors) > 0 {
 		if r.hideValue {
@@ -157,20 +170,27 @@ func (r PropertyRules[T, P]) Validate(parent P) error {
 	return nil
 }
 
-// WithName sets the name of the property.
-// If the name was inferred, it will be overridden.
+// WithName sets a single named path segment for the property.
+// If the path was inferred, it will be overridden.
+// Special characters in the segment are automatically escaped using JSONPath bracket notation.
+// Dotted or bracketed multi-segment paths must be provided with [PropertyRules.WithPath].
 func (r PropertyRules[T, P]) WithName(name string) PropertyRules[T, P] {
-	r.name = name
+	r.path = jsonpath.New().Name(name)
 	return r
 }
 
-// WithID sets a unique identifier for this [PropertyRules] instance.
-// The identifier can be used to:
-//   - Retrieve the property rules' ID via [PropertyRules.GetID]
-//   - Reference the property rules when using [Validator.RemovePropertiesByID]
-//
-// This is useful when you want explicit control over identifiers
-// rather than relying on auto-generated UUIDs.
+// WithPath sets the property path using a pre-constructed [jsonpath.Path].
+// The provided path is a fragment relative to the current validator or parent property,
+// not an absolute `$.`-prefixed JSONPath expression.
+// This is useful when the property path contains multiple segments
+// or when you need explicit control over the path construction.
+func (r PropertyRules[T, P]) WithPath(path jsonpath.Path) PropertyRules[T, P] {
+	r.path = path
+	return r
+}
+
+// WithID sets a unique identifier for these property rules.
+// The identifier can be used with [Validator.RemovePropertiesByID].
 func (r PropertyRules[T, P]) WithID(id string) PropertyRules[T, P] {
 	r.id = r.id.WithUserSuppliedID(id)
 	return r
@@ -183,7 +203,7 @@ func (r PropertyRules[T, P]) WithExamples(examples ...string) PropertyRules[T, P
 }
 
 // Rules associates provided [Rule] with the property.
-func (r PropertyRules[T, P]) Rules(rules ...rulesInterface[T]) PropertyRules[T, P] {
+func (r PropertyRules[T, P]) Rules(rules ...RulesInterface[T]) PropertyRules[T, P] {
 	for _, rule := range rules {
 		r.rules = append(r.rules, rule)
 	}
@@ -191,7 +211,7 @@ func (r PropertyRules[T, P]) Rules(rules ...rulesInterface[T]) PropertyRules[T, 
 }
 
 // Include embeds specified [Validator] and its [PropertyRules] into the property.
-func (r PropertyRules[T, P]) Include(rules ...validatorInterface[T]) PropertyRules[T, P] {
+func (r PropertyRules[T, P]) Include(rules ...ValidatorInterface[T]) PropertyRules[T, P] {
 	for _, rule := range rules {
 		r.rules = append(r.rules, rule)
 	}
@@ -229,27 +249,42 @@ func (r PropertyRules[T, P]) HideValue() PropertyRules[T, P] {
 // Cascade sets the [CascadeMode] for the property,
 // which controls the flow of evaluating the validation rules.
 func (r PropertyRules[T, P]) Cascade(mode CascadeMode) PropertyRules[T, P] {
-	r.mode = mode
+	r.cascadeMode = mode
 	return r
 }
 
-// GetID returns an identifier for these property rules.
-// The identifier is resolved in the following priority order:
-//   - User-supplied ID if set
-//   - Property name (via [PropertyRules.WithName]) if set
-//   - Auto-generated UUID otherwise
+// InferPath sets the [InferPathMode] for the property,
+// which controls if and how a relative property path is inferred from the getter expression.
+// If you manually provide a path using [PropertyRules.WithName] or [PropertyRules.WithPath],
+// this setting will have no effect, acting like [InferPathModeDisable].
+func (r PropertyRules[T, P]) InferPath(mode InferPathMode) PropertyRules[T, P] {
+	r.inferPathMode = mode
+	r.inferPathModeSet = true
+	return r
+}
+
+// GetID returns the identifier for these property rules.
 func (r PropertyRules[T, P]) GetID() string {
 	return r.id.GetID()
 }
 
 // cascadeInternal is an internal wrapper around [PropertyRules.Cascade] which
-// fulfills [propertyRulesInterface] interface.
+// fulfills [PropertyRulesInterface] interface.
 // If the [CascadeMode] is already set, it won't change it.
-func (r PropertyRules[T, P]) cascadeInternal(mode CascadeMode) propertyRulesInterface[P] {
-	if r.mode != 0 {
+func (r PropertyRules[T, P]) cascadeInternal(mode CascadeMode) PropertyRulesInterface[P] {
+	if r.cascadeMode != 0 {
 		return r
 	}
 	return r.Cascade(mode)
+}
+
+// inferPathModeInternal is an internal wrapper around [PropertyRules.InferPath] which
+// fulfills [PropertyRulesInterface] interface.
+func (r PropertyRules[T, P]) inferPathModeInternal(mode InferPathMode) PropertyRulesInterface[P] {
+	if r.inferPathModeSet {
+		return r
+	}
+	return r.InferPath(mode)
 }
 
 // plan constructs a validation plan for the property.
@@ -260,7 +295,7 @@ func (r PropertyRules[T, P]) plan(builder planBuilder) {
 	} else {
 		builder.propertyPlan.TypeInfo = TypeInfo(typeinfo.Get[T]())
 	}
-	builder = builder.appendPath(r.name).setExamples(r.examples...)
+	builder = builder.appendPath(r.getPath()).setExamples(r.examples...)
 	builder = appendPredicatesToPlanBuilder(builder, r.predicates)
 	if r.required {
 		// Dummy rule to register the property as required.
@@ -310,7 +345,7 @@ func (r PropertyRules[T, P]) getValue(parent P) (v T, skip bool, propErr *Proper
 		} else {
 			propValue = v
 		}
-		return v, false, NewPropertyError(r.name, propValue, err)
+		return v, false, NewPropertyError(r.getPath(), propValue, err)
 	}
 	isEmpty := isEmptyError || (!r.isPointer && internal.IsEmpty(v))
 	// If the value is not empty we simply return it.
@@ -319,7 +354,7 @@ func (r PropertyRules[T, P]) getValue(parent P) (v T, skip bool, propErr *Proper
 	}
 	// If the value is empty and the property is required, we return [ErrorCodeRequired].
 	if r.required {
-		return v, false, NewPropertyError(r.name, nil, newRequiredError())
+		return v, false, NewPropertyError(r.getPath(), nil, newRequiredError())
 	}
 	// If the value is empty and we're skipping empty values or the value is a pointer, we skip the validation.
 	if r.omitEmpty || r.isPointer {
@@ -328,12 +363,24 @@ func (r PropertyRules[T, P]) getValue(parent P) (v T, skip bool, propErr *Proper
 	return v, false, nil
 }
 
+// getPath returns the path of the property.
+func (r PropertyRules[T, S]) getPath() jsonpath.Path {
+	switch {
+	case !r.path.IsEmpty():
+		return r.path
+	case r.pathFunc != nil:
+		return r.pathFunc(r.inferPathMode)
+	default:
+		return jsonpath.Path{}
+	}
+}
+
+// isPropertyRules implements [PropertyRulesInterface].
+func (r PropertyRules[T, P]) isPropertyRules() {}
+
 func newRequiredError() *RuleError {
 	return NewRuleError(
 		internal.RequiredMessage,
 		internal.RequiredErrorCode,
 	)
 }
-
-// isPropertyRules implements [propertyRulesInterface].
-func (r PropertyRules[T, P]) isPropertyRules() {}

@@ -32,7 +32,7 @@ extract_header() {
 
 indent() {
   while IFS= read -r line; do
-    printf "  %s\n" "${line%"${line##*[![:space:]]}"}"
+    printf "  > %s\n" "${line%"${line##*[![:space:]]}"}"
   done <<<"$1"
 }
 
@@ -59,7 +59,7 @@ while IFS= read -r line; do
   add_notes() {
     local notes="$1"
     if [[ $notes != "" ]]; then
-      new_notes+=$(indent "> $notes")
+      new_notes+=$(indent "$notes")
       new_notes+="\n"
     fi
   }
