@@ -48,7 +48,9 @@ Load only the reference that matches the task.
   pointed-to value and nil values are skipped unless `Required` is added.
 - Use `Required` and `OmitEmpty` on property rules to short-circuit empty values
   before running normal rules.
-- Attach `WithDescription`, `WithDetails`, `WithExamples`, and error codes
-  when the validation plan or user-facing errors need to be informative.
+- Attach plan and error metadata to the receiver that owns it:
+  use `Rule.WithDescription`, `Rule.WithDetails`, `Rule.WithExamples`,
+  and `Rule.WithErrorCode` for rules; use `PropertyRules.WithExamples`
+  for property examples; use `govy.WhenDescription` for conditional rules.
 - Use `govytest` helpers for tests that need to match structured validation
   errors rather than brittle full error strings.

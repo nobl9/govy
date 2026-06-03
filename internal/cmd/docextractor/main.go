@@ -299,9 +299,8 @@ type generatedDocsConfig struct {
 }
 
 type documentedFunction struct {
-	name      string
-	signature string
-	comments  []string
+	name        string
+	description string
 }
 
 func renderGeneratedDocs(root, docsRef string) string {
@@ -334,33 +333,21 @@ func renderGeneratedDocs(root, docsRef string) string {
 	}
 	slices.Sort(files)
 
-	var builder strings.Builder
+	functions := make([]documentedFunction, 0, len(files))
 	for _, file := range files {
-		functions := readDocumentedFunctions(file, config)
-		if len(functions) == 0 {
-			continue
-		}
-		if builder.Len() > 0 {
-			builder.WriteString("\n")
-		}
-		builder.WriteString("## ")
-		builder.WriteString(sourceFileTitle(file))
-		builder.WriteString("\n\n")
-		for i, function := range functions {
-			if i > 0 {
-				builder.WriteString("\n")
-			}
-			builder.WriteString("### `")
-			builder.WriteString(function.name)
-			builder.WriteString("`\n\n")
-			builder.WriteString("```go\n")
-			for _, comment := range function.comments {
-				builder.WriteString(comment)
-				builder.WriteByte('\n')
-			}
-			builder.WriteString(function.signature)
-			builder.WriteString("\n```\n")
-		}
+		functions = append(functions, readDocumentedFunctions(file, config)...)
+	}
+	slices.SortFunc(functions, func(a, b documentedFunction) int {
+		return strings.Compare(a.name, b.name)
+	})
+
+	var builder strings.Builder
+	for _, function := range functions {
+		builder.WriteString("- `")
+		builder.WriteString(function.name)
+		builder.WriteString("` - ")
+		builder.WriteString(function.description)
+		builder.WriteByte('\n')
 	}
 	return builder.String()
 }
@@ -401,17 +388,51 @@ func readDocumentedFunctions(path string, config generatedDocsConfig) []document
 		if funcDecl.Doc == nil {
 			logFatal(nil, "Exported function %q in %q is missing documentation", funcDecl.Name.Name, path)
 		}
-		comments := make([]string, 0, len(funcDecl.Doc.List))
-		for _, comment := range funcDecl.Doc.List {
-			comments = append(comments, comment.Text)
-		}
 		functions = append(functions, documentedFunction{
-			name:      funcDecl.Name.Name,
-			signature: functionSignature(fset, funcDecl),
-			comments:  comments,
+			name:        funcDecl.Name.Name,
+			description: firstDocSentence(funcDecl.Doc),
 		})
 	}
 	return functions
+}
+
+func firstDocSentence(doc *ast.CommentGroup) string {
+	lines := make([]string, 0, len(doc.List))
+	for _, comment := range doc.List {
+		line := strings.TrimSpace(strings.TrimPrefix(comment.Text, "//"))
+		if line == "" {
+			break
+		}
+		lines = append(lines, line)
+	}
+	return firstSentence(strings.Join(lines, " "))
+}
+
+func firstSentence(text string) string {
+	bracketDepth := 0
+	for i, r := range text {
+		switch r {
+		case '[':
+			bracketDepth++
+		case ']':
+			if bracketDepth > 0 {
+				bracketDepth--
+			}
+		case '.':
+			if bracketDepth > 0 || isKnownAbbreviation(text[:i+1]) {
+				continue
+			}
+			if i == len(text)-1 || text[i+1] == ' ' || text[i+1] == '\n' || text[i+1] == '\t' {
+				return strings.TrimSpace(text[:i+1])
+			}
+		}
+	}
+	return strings.TrimSpace(text)
+}
+
+func isKnownAbbreviation(text string) bool {
+	lower := strings.ToLower(text)
+	return strings.HasSuffix(lower, "i.e.") || strings.HasSuffix(lower, "e.g.")
 }
 
 func matchesReturnFilter(fset *token.FileSet, funcDecl *ast.FuncDecl, returns []string) bool {
@@ -434,26 +455,6 @@ func matchesReturnFilter(fset *token.FileSet, funcDecl *ast.FuncDecl, returns []
 		}
 	}
 	return false
-}
-
-func functionSignature(fset *token.FileSet, funcDecl *ast.FuncDecl) string {
-	var builder strings.Builder
-	if err := printer.Fprint(&builder, fset, funcDecl.Type); err != nil {
-		logFatal(err, "Failed to print signature for function %q", funcDecl.Name.Name)
-	}
-	return "func " + funcDecl.Name.Name + strings.TrimPrefix(builder.String(), "func")
-}
-
-func sourceFileTitle(path string) string {
-	name := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
-	parts := strings.FieldsFunc(name, func(r rune) bool { return r == '_' || r == '-' })
-	for i, part := range parts {
-		if len(part) == 0 {
-			continue
-		}
-		parts[i] = strings.ToUpper(part[:1]) + part[1:]
-	}
-	return strings.Join(parts, " ")
 }
 
 func replaceEmbeddedExamples(root, markdown, markdownPath string) string {

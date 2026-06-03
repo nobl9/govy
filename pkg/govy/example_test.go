@@ -446,7 +446,7 @@ func ExampleTransform() {
 // the property does not contain a zero value.
 //
 // Note: [govy.PropertyRules.Required] is introducing a short circuit.
-// If the assertion fails, validation will stop and return [govy.govy.ErrorCodeRequired].
+// If the assertion fails, validation will stop and return [rules.ErrorCodeRequired].
 // None of the rules you've defined would be evaluated.
 //
 // Note: Placement of [govy.PropertyRules.Required] does not matter,
@@ -1400,7 +1400,7 @@ func ExampleForSlice_sliceOfPointers() {
 //
 // You can use [govy.ForMap] function to define rules for all the aforementioned iterators.
 // It returns a new struct [govy.PropertyRulesForMap] which behaves similar to
-// [govy.PropertyRulesForSlice]..
+// [govy.PropertyRulesForSlice].
 //
 // To define rules for keys use:
 //   - [govy.PropertyRulesForMap.RulesForKeys]
@@ -1424,7 +1424,7 @@ func ExampleForSlice_sliceOfPointers() {
 //   - Joan cannot be a teacher for student with index 918230013 (items).
 //
 // Notice that property path for maps has the following format:
-// <map_name>.<key>.<map_property_name>
+// <map_name>[<key>].<map_property_name>
 func ExampleForMap() {
 	teacherValidator := govy.New(
 		govy.For(func(t Teacher) string { return t.Name }).

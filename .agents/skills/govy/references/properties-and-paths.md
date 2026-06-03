@@ -295,7 +295,7 @@ Use Required to fail fast on empty values, OmitEmpty to skip optional direct val
 // the property does not contain a zero value.
 //
 // Note: [govy.PropertyRules.Required] is introducing a short circuit.
-// If the assertion fails, validation will stop and return [govy.govy.ErrorCodeRequired].
+// If the assertion fails, validation will stop and return [rules.ErrorCodeRequired].
 // None of the rules you've defined would be evaluated.
 //
 // Note: Placement of [govy.PropertyRules.Required] does not matter,
