@@ -39,7 +39,7 @@ type urlTemplateVars struct {
 // URLSchemes restricts [URL] to the provided schemes.
 func URLSchemes(schemes ...string) URLOption {
 	return urlOptionFunc(func(options *urlRuleOptions) {
-		options.schemes = slices.Clone(schemes)
+		options.schemes = schemes
 	})
 }
 
