@@ -1,0 +1,19 @@
+name: PR Autolabeler
+
+on:
+  # pull_request_target is required to label PRs from forks.
+  # This workflow must stay metadata-only: do not checkout or run PR code here.
+  pull_request_target:
+    types: [opened, reopened, synchronize, edited]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  autolabeler:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: release-drafter/release-drafter/autolabeler@v7.3.1
+        with:
+          token: ${{ github.token }}
