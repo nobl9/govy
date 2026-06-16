@@ -71,9 +71,9 @@ const _templateKey_name = "LengthTemplateMinLengthTemplateMaxLengthTemplateEQTem
 var _templateKey_index = [...]uint16{0, 14, 31, 48, 58, 69, 79, 90, 100, 111, 134, 154, 175, 195, 216, 246, 277, 307, 338, 363, 380, 393, 409, 432, 457, 482, 498, 520, 545, 569, 588, 605, 621, 639, 657, 675, 695, 715, 733, 755, 777, 801, 823, 842, 862, 890, 912, 933, 966, 986, 1007, 1029, 1051, 1088, 1099, 1118, 1142}
 
 func (i templateKey) String() string {
-	i -= 1
-	if i < 0 || i >= templateKey(len(_templateKey_index)-1) {
-		return "templateKey(" + strconv.FormatInt(int64(i+1), 10) + ")"
+	idx := int(i) - 1
+	if i < 1 || idx >= len(_templateKey_index)-1 {
+		return "templateKey(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
-	return _templateKey_name[_templateKey_index[i]:_templateKey_index[i+1]]
+	return _templateKey_name[_templateKey_index[idx]:_templateKey_index[idx+1]]
 }
