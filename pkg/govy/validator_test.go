@@ -699,6 +699,55 @@ func TestValidatorRemovePropertiesByID(t *testing.T) {
 		assert.Equal(t, jsonpath.Parse("property2"), err.Errors[0].PropertyPath)
 	})
 
+	t.Run("remove pointer property by generated ID", func(t *testing.T) {
+		type withPointers struct {
+			Primary   *string
+			Secondary *string
+		}
+
+		prop1 := govy.ForPointer(func(w withPointers) *string { return w.Primary }).
+			WithName("primary").
+			Rules(rules.StringMinLength(3))
+		prop2 := govy.ForPointer(func(w withPointers) *string { return w.Secondary }).
+			WithName("secondary").
+			Rules(rules.StringMinLength(3))
+		v := govy.New(prop1, prop2)
+
+		filteredV := v.RemovePropertiesByID(prop1.GetID())
+		err := mustValidatorError(t, filteredV.Validate(withPointers{
+			Primary:   ptr("a"),
+			Secondary: ptr("b"),
+		}))
+
+		assert.Require(t, assert.Len(t, err.Errors, 1))
+		assert.Equal(t, jsonpath.Parse("secondary"), err.Errors[0].PropertyPath)
+	})
+
+	t.Run("remove transformed property by generated ID", func(t *testing.T) {
+		type withTransformed struct {
+			Primary   string
+			Secondary string
+		}
+		transform := func(s string) (int, error) { return len(s), nil }
+
+		prop1 := govy.Transform(func(w withTransformed) string { return w.Primary }, transform).
+			WithName("primary").
+			Rules(rules.GT(1))
+		prop2 := govy.Transform(func(w withTransformed) string { return w.Secondary }, transform).
+			WithName("secondary").
+			Rules(rules.GT(1))
+		v := govy.New(prop1, prop2)
+
+		filteredV := v.RemovePropertiesByID(prop1.GetID())
+		err := mustValidatorError(t, filteredV.Validate(withTransformed{
+			Primary:   "a",
+			Secondary: "b",
+		}))
+
+		assert.Require(t, assert.Len(t, err.Errors, 1))
+		assert.Equal(t, jsonpath.Parse("secondary"), err.Errors[0].PropertyPath)
+	})
+
 	t.Run("remove all properties", func(t *testing.T) {
 		prop1 := govy.For(func(m mockValidatorStruct) string { return "test1" }).
 			WithName("property1").
