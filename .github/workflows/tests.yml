@@ -22,7 +22,7 @@ jobs:
       - name: Run benchmark
         run: make test/benchmark | tee benchmark.txt
       - name: Download previous benchmark data
-        uses: actions/cache@v6.0.0
+        uses: actions/cache@v6.1.0
         with:
           path: ./cache
           key: ${{ runner.os }}-benchmark
