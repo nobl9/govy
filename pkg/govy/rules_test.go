@@ -463,6 +463,50 @@ type mockStruct struct {
 	Field string `json:"field"`
 }
 
+func TestPropertyRulesWithID(t *testing.T) {
+	t.Run("property rules", func(t *testing.T) {
+		prop := govy.For(func(m mockStruct) string { return m.Field }).
+			WithName("field").
+			WithID("custom-field-id").
+			Rules(rules.EQ("test"))
+
+		assert.Equal(t, "custom-field-id", prop.GetID())
+	})
+
+	t.Run("slice property rules", func(t *testing.T) {
+		prop := govy.ForSlice(func(m mockStruct) []string { return []string{m.Field} }).
+			WithName("items").
+			WithID("custom-slice-id").
+			Rules(rules.SliceMaxLength[[]string](10))
+
+		assert.Equal(t, "custom-slice-id", prop.GetID())
+	})
+
+	t.Run("map property rules", func(t *testing.T) {
+		prop := govy.ForMap(func(m mockStruct) map[string]string {
+			return map[string]string{"key": m.Field}
+		}).
+			WithName("data").
+			WithID("custom-map-id").
+			Rules(rules.MapMaxLength[map[string]string](10))
+
+		assert.Equal(t, "custom-map-id", prop.GetID())
+	})
+
+	t.Run("WithID creates a copy", func(t *testing.T) {
+		original := govy.For(func(m mockStruct) string { return m.Field }).
+			WithName("field").
+			Rules(rules.EQ("test"))
+
+		originalID := original.GetID()
+		modified := original.WithID("custom-id")
+
+		assert.Equal(t, originalID, original.GetID())
+		assert.Equal(t, "custom-id", modified.GetID())
+		assert.True(t, originalID != modified.GetID())
+	})
+}
+
 func BenchmarkFor(b *testing.B) {
 	for b.Loop() {
 		_ = govy.For(func(m mockStruct) string { return m.Field })

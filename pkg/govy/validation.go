@@ -18,6 +18,7 @@ type ValidatorInterface[T any] interface {
 type PropertyRulesInterface[T any] interface {
 	validationInterface[T]
 	cascadeInternal(mode CascadeMode) PropertyRulesInterface[T]
+	GetID() string
 	getPath() jsonpath.Path
 	inferPathModeInternal(mode InferPathMode) PropertyRulesInterface[T]
 	isPropertyRules()

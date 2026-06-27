@@ -20,6 +20,7 @@ func For[T, P any](getter PropertyGetter[T, P]) PropertyRules[T, P] {
 // validation will not proceed.
 func ForPointer[T, P any](getter PropertyGetter[*T, P]) PropertyRules[T, P] {
 	return PropertyRules[T, P]{
+		id:       newInstanceID(),
 		pathFunc: getInferPathFunc(getCallersAndProgramCounter(4)),
 		getter: func(parent P) (indirect T, err error) {
 			ptr := getter(parent)
@@ -40,6 +41,7 @@ func ForPointer[T, P any](getter PropertyGetter[*T, P]) PropertyRules[T, P] {
 func Transform[T, N, P any](getter PropertyGetter[T, P], transform Transformer[T, N]) PropertyRules[N, P] {
 	typInfo := typeinfo.Get[T]()
 	return PropertyRules[N, P]{
+		id:       newInstanceID(),
 		pathFunc: getInferPathFunc(getCallersAndProgramCounter(4)),
 		transformGetter: func(parent P) (transformed N, original any, err error) {
 			v := getter(parent)
@@ -60,6 +62,7 @@ func Transform[T, N, P any](getter PropertyGetter[T, P], transform Transformer[T
 // It wraps the getter function in [internalPropertyGetter] and adds path inference.
 func forConstructor[T, P any](getter PropertyGetter[T, P]) PropertyRules[T, P] {
 	return PropertyRules[T, P]{
+		id:       newInstanceID(),
 		pathFunc: getInferPathFunc(getCallersAndProgramCounter(4)),
 		getter:   func(parent P) (v T, err error) { return getter(parent), nil },
 	}
@@ -69,6 +72,7 @@ func forConstructor[T, P any](getter PropertyGetter[T, P]) PropertyRules[T, P] {
 // Used for internal rules in [ForSlice] and [ForMap] where paths are managed separately.
 func forConstructorWithoutPathInference[T, P any](getter PropertyGetter[T, P]) PropertyRules[T, P] {
 	return PropertyRules[T, P]{
+		id:     newInstanceID(),
 		getter: func(parent P) (v T, err error) { return getter(parent), nil },
 	}
 }
@@ -98,6 +102,7 @@ func (emptyErr) Error() string { return "" }
 // It is the middle-level building block of the validation process,
 // aggregated by [Validator] and aggregating [Rule].
 type PropertyRules[T, P any] struct {
+	id               instanceID
 	path             jsonpath.Path
 	pathFunc         inferPathFunc
 	getter           internalPropertyGetter[T, P]
@@ -186,6 +191,13 @@ func (r PropertyRules[T, P]) WithPath(path jsonpath.Path) PropertyRules[T, P] {
 	return r
 }
 
+// WithID sets a unique identifier for these property rules.
+// The identifier can be used with [Validator.RemovePropertiesByID].
+func (r PropertyRules[T, P]) WithID(id string) PropertyRules[T, P] {
+	r.id = r.id.WithUserSuppliedID(id)
+	return r
+}
+
 // WithExamples sets the examples for the property.
 func (r PropertyRules[T, P]) WithExamples(examples ...string) PropertyRules[T, P] {
 	r.examples = append(r.examples, examples...)
@@ -251,6 +263,11 @@ func (r PropertyRules[T, P]) InferPath(mode InferPathMode) PropertyRules[T, P] {
 	r.inferPathMode = mode
 	r.inferPathModeSet = true
 	return r
+}
+
+// GetID returns the identifier for these property rules.
+func (r PropertyRules[T, P]) GetID() string {
+	return r.id.GetID()
 }
 
 // cascadeInternal is an internal wrapper around [PropertyRules.Cascade] which

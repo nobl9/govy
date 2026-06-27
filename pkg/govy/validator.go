@@ -8,13 +8,17 @@ import (
 
 // New creates a new [Validator] aggregating the provided property rules.
 func New[T any](props ...PropertyRulesInterface[T]) Validator[T] {
-	return Validator[T]{props: props}
+	return Validator[T]{
+		id:    newInstanceID(),
+		props: props,
+	}
 }
 
 // Validator is the top level validation entity.
 // It serves as an aggregator for [PropertyRules].
 // Typically, it represents a struct.
 type Validator[T any] struct {
+	id          instanceID
 	props       []PropertyRulesInterface[T]
 	name        string
 	nameFunc    func(value T) string
@@ -27,6 +31,12 @@ type Validator[T any] struct {
 func (v Validator[T]) WithName(name string) Validator[T] {
 	v.nameFunc = nil
 	v.name = name
+	return v
+}
+
+// WithID sets a unique identifier for this validator.
+func (v Validator[T]) WithID(id string) Validator[T] {
+	v.id = v.id.WithUserSuppliedID(id)
 	return v
 }
 
@@ -75,6 +85,23 @@ func (v Validator[T]) RemovePropertiesByPath(paths ...jsonpath.Path) Validator[T
 	return v
 }
 
+// RemovePropertiesByID removes any [PropertyRules] matching the provided identifiers.
+// It returns a modified [Validator] instance without these rules,
+// the original [Validator] is not changed.
+func (v Validator[T]) RemovePropertiesByID(ids ...string) Validator[T] {
+	if len(ids) == 0 {
+		return v
+	}
+	filtered := make([]PropertyRulesInterface[T], 0, len(v.props))
+	for _, prop := range v.props {
+		if !slices.Contains(ids, prop.GetID()) {
+			filtered = append(filtered, prop)
+		}
+	}
+	v.props = filtered
+	return v
+}
+
 // InferPath sets the [InferPathMode] for the validator,
 // which controls relative property path inference for validation rules.
 func (v Validator[T]) InferPath(mode InferPathMode) Validator[T] {
@@ -84,6 +111,11 @@ func (v Validator[T]) InferPath(mode InferPathMode) Validator[T] {
 	}
 	v.props = props
 	return v
+}
+
+// GetID returns the identifier for this validator.
+func (v Validator[T]) GetID() string {
+	return v.id.GetID()
 }
 
 // Validate will first evaluate predicates before validating any rules.

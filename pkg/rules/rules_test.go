@@ -29,8 +29,8 @@ func TestRules_EnsureTestsAndBenchmarksAreWritten(t *testing.T) {
 		t.Fatalf("Failed to read directory: %v", err)
 	}
 
-	var files []*ast.File
-	var fileNames []string
+	files := make([]*ast.File, 0, len(entries))
+	fileNames := make([]string, 0, len(entries))
 	for _, entry := range entries {
 		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".go") {
 			continue
