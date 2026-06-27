@@ -187,7 +187,21 @@ var rawMessageTemplates = map[templateKey]string{
 {{- if gt (len .Custom.Constraints) 0 }} based on constraints: {{ joinSlice .Custom.Constraints "" }}{{- end }}`,
 	UniquePropertiesTemplate: `all of [{{ joinSlice .ComparisonValue "" }}] properties must be unique, but '{{ .Custom.FirstProperty }}' collides with '{{ .Custom.SecondProperty }}'
 {{- if gt (len .Custom.Constraints) 0 }}, based on constraints: {{ joinSlice .Custom.Constraints "" }}{{- end }}`,
-	URLTemplate: "{{ .Error }}",
+	URLTemplate: `
+{{- if .Error -}}
+	{{ .Error }}
+{{- else if .Custom.Scheme -}}
+	valid URL must use one of the following schemes: {{ joinSlice .ComparisonValue "'" }}
+{{- else if .Custom.HostRequired -}}
+	valid URL must have a host
+{{- else if .Custom.UserInfoForbidden -}}
+	valid URL must not contain user information
+{{- else if .Custom.HostDenyList -}}
+	valid URL must not use any of the following hostnames: {{ joinSlice .ComparisonValue "'" }}
+{{- else if .Custom.HostAllowList -}}
+	valid URL must use one of the following hostnames: {{ joinSlice .ComparisonValue "'" }}
+{{- end }}
+`,
 }
 
 // templateDependencies defines dependency templates for a given template.
