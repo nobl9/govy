@@ -6,7 +6,7 @@
     "markdownlint-cli@0.49.0",
     "cspell@9.7.0",
     "golangci-lint@2.12.2",
-    "go@1.26.3"
+    "go@1.26.4"
   ],
   "shell": {
     "init_hook": [
