@@ -18,7 +18,7 @@ jobs:
     steps:
       # Drafts your next Release notes as Pull Requests are merged into "main"
       - id: drafter
-        uses: release-drafter/release-drafter@v7.3.1
+        uses: release-drafter/release-drafter@v7.5.1
         with:
           token: ${{ secrets.RELEASE_LABELER_TOKEN }}
 
@@ -32,7 +32,7 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.RELEASE_LABELER_TOKEN }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6.0.3
+        uses: actions/checkout@v7.0.0
         with:
           ref: main
       - name: Add release notes to the draft
