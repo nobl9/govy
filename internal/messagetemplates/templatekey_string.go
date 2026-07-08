@@ -46,29 +46,37 @@ func _() {
 	_ = x[StringCIDRv4Template-36]
 	_ = x[StringCIDRv6Template-37]
 	_ = x[StringJSONTemplate-38]
-	_ = x[StringContainsTemplate-39]
-	_ = x[StringExcludesTemplate-40]
-	_ = x[StringStartsWithTemplate-41]
-	_ = x[StringEndsWithTemplate-42]
-	_ = x[StringTitleTemplate-43]
-	_ = x[StringGitRefTemplate-44]
-	_ = x[StringFileSystemPathTemplate-45]
-	_ = x[StringFilePathTemplate-46]
-	_ = x[StringDirPathTemplate-47]
-	_ = x[StringMatchFileSystemPathTemplate-48]
-	_ = x[StringRegexpTemplate-49]
-	_ = x[StringCrontabTemplate-50]
-	_ = x[StringDateTimeTemplate-51]
-	_ = x[StringTimeZoneTemplate-52]
-	_ = x[StringKubernetesQualifiedNameTemplate-53]
-	_ = x[URLTemplate-54]
-	_ = x[SliceUniqueTemplate-55]
-	_ = x[UniquePropertiesTemplate-56]
+	_ = x[StringJWTTemplate-39]
+	_ = x[StringSemverTemplate-40]
+	_ = x[StringCVETemplate-41]
+	_ = x[StringE164Template-42]
+	_ = x[StringISBNTemplate-43]
+	_ = x[StringISBN10Template-44]
+	_ = x[StringISBN13Template-45]
+	_ = x[StringISSNTemplate-46]
+	_ = x[StringContainsTemplate-47]
+	_ = x[StringExcludesTemplate-48]
+	_ = x[StringStartsWithTemplate-49]
+	_ = x[StringEndsWithTemplate-50]
+	_ = x[StringTitleTemplate-51]
+	_ = x[StringGitRefTemplate-52]
+	_ = x[StringFileSystemPathTemplate-53]
+	_ = x[StringFilePathTemplate-54]
+	_ = x[StringDirPathTemplate-55]
+	_ = x[StringMatchFileSystemPathTemplate-56]
+	_ = x[StringRegexpTemplate-57]
+	_ = x[StringCrontabTemplate-58]
+	_ = x[StringDateTimeTemplate-59]
+	_ = x[StringTimeZoneTemplate-60]
+	_ = x[StringKubernetesQualifiedNameTemplate-61]
+	_ = x[URLTemplate-62]
+	_ = x[SliceUniqueTemplate-63]
+	_ = x[UniquePropertiesTemplate-64]
 }
 
-const _templateKey_name = "LengthTemplateMinLengthTemplateMaxLengthTemplateEQTemplateNEQTemplateGTTemplateGTETemplateLTTemplateLTETemplateEqualPropertiesTemplateGTPropertiesTemplateGTEPropertiesTemplateLTPropertiesTemplateLTEPropertiesTemplateGTComparablePropertiesTemplateGTEComparablePropertiesTemplateLTComparablePropertiesTemplateLTEComparablePropertiesTemplateDurationPrecisionTemplateForbiddenTemplateOneOfTemplateNotOneOfTemplateOneOfPropertiesTemplateMutuallyExclusiveTemplateMutuallyDependentTemplateRequiredTemplateStringNonEmptyTemplateStringMatchRegexpTemplateStringDenyRegexpTemplateStringEmailTemplateStringMACTemplateStringIPTemplateStringIPv4TemplateStringIPv6TemplateStringCIDRTemplateStringCIDRv4TemplateStringCIDRv6TemplateStringJSONTemplateStringContainsTemplateStringExcludesTemplateStringStartsWithTemplateStringEndsWithTemplateStringTitleTemplateStringGitRefTemplateStringFileSystemPathTemplateStringFilePathTemplateStringDirPathTemplateStringMatchFileSystemPathTemplateStringRegexpTemplateStringCrontabTemplateStringDateTimeTemplateStringTimeZoneTemplateStringKubernetesQualifiedNameTemplateURLTemplateSliceUniqueTemplateUniquePropertiesTemplate"
+const _templateKey_name = "LengthTemplateMinLengthTemplateMaxLengthTemplateEQTemplateNEQTemplateGTTemplateGTETemplateLTTemplateLTETemplateEqualPropertiesTemplateGTPropertiesTemplateGTEPropertiesTemplateLTPropertiesTemplateLTEPropertiesTemplateGTComparablePropertiesTemplateGTEComparablePropertiesTemplateLTComparablePropertiesTemplateLTEComparablePropertiesTemplateDurationPrecisionTemplateForbiddenTemplateOneOfTemplateNotOneOfTemplateOneOfPropertiesTemplateMutuallyExclusiveTemplateMutuallyDependentTemplateRequiredTemplateStringNonEmptyTemplateStringMatchRegexpTemplateStringDenyRegexpTemplateStringEmailTemplateStringMACTemplateStringIPTemplateStringIPv4TemplateStringIPv6TemplateStringCIDRTemplateStringCIDRv4TemplateStringCIDRv6TemplateStringJSONTemplateStringJWTTemplateStringSemverTemplateStringCVETemplateStringE164TemplateStringISBNTemplateStringISBN10TemplateStringISBN13TemplateStringISSNTemplateStringContainsTemplateStringExcludesTemplateStringStartsWithTemplateStringEndsWithTemplateStringTitleTemplateStringGitRefTemplateStringFileSystemPathTemplateStringFilePathTemplateStringDirPathTemplateStringMatchFileSystemPathTemplateStringRegexpTemplateStringCrontabTemplateStringDateTimeTemplateStringTimeZoneTemplateStringKubernetesQualifiedNameTemplateURLTemplateSliceUniqueTemplateUniquePropertiesTemplate"
 
-var _templateKey_index = [...]uint16{0, 14, 31, 48, 58, 69, 79, 90, 100, 111, 134, 154, 175, 195, 216, 246, 277, 307, 338, 363, 380, 393, 409, 432, 457, 482, 498, 520, 545, 569, 588, 605, 621, 639, 657, 675, 695, 715, 733, 755, 777, 801, 823, 842, 862, 890, 912, 933, 966, 986, 1007, 1029, 1051, 1088, 1099, 1118, 1142}
+var _templateKey_index = [...]uint16{0, 14, 31, 48, 58, 69, 79, 90, 100, 111, 134, 154, 175, 195, 216, 246, 277, 307, 338, 363, 380, 393, 409, 432, 457, 482, 498, 520, 545, 569, 588, 605, 621, 639, 657, 675, 695, 715, 733, 750, 770, 787, 805, 823, 843, 863, 881, 903, 925, 949, 971, 990, 1010, 1038, 1060, 1081, 1114, 1134, 1155, 1177, 1199, 1236, 1247, 1266, 1290}
 
 func (i templateKey) String() string {
 	idx := int(i) - 1
