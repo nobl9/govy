@@ -19,6 +19,26 @@ const (
 	stringLongitudeError              = "string must be a valid longitude coordinate (e.g. '0', '-122.4194', '180')"
 )
 
+func TestLazyLookupMap(t *testing.T) {
+	calls := 0
+	lazyMap := lazyLookupMap(func() map[string]struct{} {
+		calls++
+		return map[string]struct{}{
+			"test": {},
+		}
+	})
+
+	assert.Equal(t, 0, calls)
+
+	lookup := lazyMap()
+	_, ok := lookup["test"]
+	assert.True(t, ok)
+	assert.Equal(t, 1, calls)
+
+	_ = lazyMap()
+	assert.Equal(t, 1, calls)
+}
+
 var stringBCP47LanguageTagTestCases = []*struct {
 	in            string
 	expectedError string
