@@ -8,7 +8,21 @@ import (
 // Define all regular expressions here:
 var (
 	// Ref: https://www.ietf.org/rfc/rfc4122.txt
-	uuidRegexp  = lazyRegexCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
+	uuidRegexp = lazyRegexCompile(
+		`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`,
+	)
+	uuidRFC4122Regexp = lazyRegexCompile(
+		`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89aAbB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$`,
+	)
+	uuidv3Regexp = lazyRegexCompile(
+		`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-3[0-9a-fA-F]{3}-[89aAbB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$`,
+	)
+	uuidv4Regexp = lazyRegexCompile(
+		`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89aAbB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$`,
+	)
+	uuidv5Regexp = lazyRegexCompile(
+		`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-5[0-9a-fA-F]{3}-[89aAbB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$`,
+	)
 	asciiRegexp = lazyRegexCompile(`^[\x00-\x7F]*$`)
 	// Ref: https://www.ietf.org/rfc/rfc1123.txt
 	rfc1123DnsLabelRegexp      = lazyRegexCompile(`^[a-z0-9]([-a-z0-9]*[a-z0-9])?$`)
@@ -21,6 +35,10 @@ var (
 	fqdnRegexp                 = lazyRegexCompile(
 		`^([a-zA-Z0-9]{1}[a-zA-Z0-9-]{0,62})(\.[a-zA-Z0-9]{1}[a-zA-Z0-9-]{0,62})*?(\.[a-zA-Z]{1}[a-zA-Z0-9]{0,62})\.?$`,
 	)
+	bicRegexp            = lazyRegexCompile(`^[A-Z0-9]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$`)
+	bicISO93622014Regexp = lazyRegexCompile(`^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$`)
+	einRegexp            = lazyRegexCompile(`^\d{2}-\d{7}$`)
+	ssnRegexp            = lazyRegexCompile(`^\d{3}-\d{2}-\d{4}$`)
 )
 
 // lazyRegexCompile returns a function that compiles the regular expression

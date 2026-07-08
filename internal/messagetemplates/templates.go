@@ -50,6 +50,17 @@ const (
 	StringCIDRTemplate
 	StringCIDRv4Template
 	StringCIDRv6Template
+	StringUUIDRFC4122Template
+	StringUUIDv3Template
+	StringUUIDv4Template
+	StringUUIDv5Template
+	StringULIDTemplate
+	StringCreditCardTemplate
+	StringLuhnChecksumTemplate
+	StringBICTemplate
+	StringBICISO93622014Template
+	StringEINTemplate
+	StringSSNTemplate
 	StringJSONTemplate
 	StringContainsTemplate
 	StringExcludesTemplate
@@ -109,21 +120,32 @@ var rawMessageTemplates = map[templateKey]string{
 {{- else }} [{{ joinSlice .Custom.EmptyProperties "" }}] properties must also be set
 {{- end }}
 `,
-	RequiredTemplate:          internal.RequiredMessage,
-	StringNonEmptyTemplate:    "string must not be empty",
-	StringMatchRegexpTemplate: "string must match regular expression: '{{ .ComparisonValue }}'",
-	StringDenyRegexpTemplate:  "string must not match regular expression: '{{ .ComparisonValue }}'",
-	StringEmailTemplate:       "string must be a valid email address: {{ .Error }}",
-	StringMACTemplate:         "string must be a valid MAC address",
-	StringIPTemplate:          "string must be a valid IP address",
-	StringIPv4Template:        "string must be a valid IPv4 address",
-	StringIPv6Template:        "string must be a valid IPv6 address",
-	StringCIDRTemplate:        "string must be a valid CIDR notation IP address",
-	StringCIDRv4Template:      "string must be a valid CIDR notation IPv4 address",
-	StringCIDRv6Template:      "string must be a valid CIDR notation IPv6 address",
-	StringJSONTemplate:        "string must be a valid JSON",
-	StringContainsTemplate:    `string must contain the following substrings: {{ joinSlice .ComparisonValue "'" }}`,
-	StringExcludesTemplate:    `string must not contain any of the following substrings: {{ joinSlice .ComparisonValue "'" }}`,
+	RequiredTemplate:             internal.RequiredMessage,
+	StringNonEmptyTemplate:       "string must not be empty",
+	StringMatchRegexpTemplate:    "string must match regular expression: '{{ .ComparisonValue }}'",
+	StringDenyRegexpTemplate:     "string must not match regular expression: '{{ .ComparisonValue }}'",
+	StringEmailTemplate:          "string must be a valid email address: {{ .Error }}",
+	StringMACTemplate:            "string must be a valid MAC address",
+	StringIPTemplate:             "string must be a valid IP address",
+	StringIPv4Template:           "string must be a valid IPv4 address",
+	StringIPv6Template:           "string must be a valid IPv6 address",
+	StringCIDRTemplate:           "string must be a valid CIDR notation IP address",
+	StringCIDRv4Template:         "string must be a valid CIDR notation IPv4 address",
+	StringCIDRv6Template:         "string must be a valid CIDR notation IPv6 address",
+	StringUUIDRFC4122Template:    "string must be a valid RFC 4122 UUID",
+	StringUUIDv3Template:         "string must be a valid version 3 RFC 4122 UUID",
+	StringUUIDv4Template:         "string must be a valid version 4 RFC 4122 UUID",
+	StringUUIDv5Template:         "string must be a valid version 5 RFC 4122 UUID",
+	StringULIDTemplate:           "string must be a valid ULID",
+	StringCreditCardTemplate:     "string must be a valid credit card number",
+	StringLuhnChecksumTemplate:   "string must pass the Luhn checksum",
+	StringBICTemplate:            "string must be a valid BIC",
+	StringBICISO93622014Template: "string must be a valid ISO 9362:2014 BIC",
+	StringEINTemplate:            "string must be a valid EIN",
+	StringSSNTemplate:            "string must be a valid SSN",
+	StringJSONTemplate:           "string must be a valid JSON",
+	StringContainsTemplate:       `string must contain the following substrings: {{ joinSlice .ComparisonValue "'" }}`,
+	StringExcludesTemplate:       `string must not contain any of the following substrings: {{ joinSlice .ComparisonValue "'" }}`,
 	StringStartsWithTemplate: `
 {{- if eq (len .ComparisonValue) 1 -}}
 	string must start with '{{ index .ComparisonValue 0 }}' prefix
