@@ -51,6 +51,12 @@ const (
 	StringCIDRv4Template
 	StringCIDRv6Template
 	StringJSONTemplate
+	StringHexColorTemplate
+	StringRGBTemplate
+	StringRGBATemplate
+	StringHSLTemplate
+	StringHSLATemplate
+	StringCMYKTemplate
 	StringContainsTemplate
 	StringExcludesTemplate
 	StringStartsWithTemplate
@@ -122,6 +128,12 @@ var rawMessageTemplates = map[templateKey]string{
 	StringCIDRv4Template:      "string must be a valid CIDR notation IPv4 address",
 	StringCIDRv6Template:      "string must be a valid CIDR notation IPv6 address",
 	StringJSONTemplate:        "string must be a valid JSON",
+	StringHexColorTemplate:    "string must be a valid CSS hex color",
+	StringRGBTemplate:         "string must be a valid legacy comma-separated rgb(...) color",
+	StringRGBATemplate:        "string must be a valid legacy comma-separated rgba(...) color",
+	StringHSLTemplate:         "string must be a valid legacy comma-separated hsl(...) color",
+	StringHSLATemplate:        "string must be a valid legacy comma-separated hsla(...) color",
+	StringCMYKTemplate:        "string must be a valid comma-separated cmyk(...) color",
 	StringContainsTemplate:    `string must contain the following substrings: {{ joinSlice .ComparisonValue "'" }}`,
 	StringExcludesTemplate:    `string must not contain any of the following substrings: {{ joinSlice .ComparisonValue "'" }}`,
 	StringStartsWithTemplate: `
