@@ -3,6 +3,7 @@ package rules
 import (
 	"errors"
 	"net/url"
+	"strings"
 
 	"github.com/nobl9/govy/internal/messagetemplates"
 	"github.com/nobl9/govy/pkg/govy"
@@ -71,7 +72,7 @@ func URLUserInfoForbidden() URLOption {
 func URLHostAllowList(hosts ...string) URLOption {
 	return urlOptionFunc(func(u *url.URL) (govy.TemplateVars, bool) {
 		hostname := u.Hostname()
-		if len(hosts) == 0 || containsString(hosts, hostname) {
+		if len(hosts) == 0 || containsStringFold(hosts, hostname) {
 			return govy.TemplateVars{}, true
 		}
 		return govy.TemplateVars{
@@ -86,7 +87,7 @@ func URLHostAllowList(hosts ...string) URLOption {
 func URLHostDenyList(hosts ...string) URLOption {
 	return urlOptionFunc(func(u *url.URL) (govy.TemplateVars, bool) {
 		hostname := u.Hostname()
-		if len(hosts) == 0 || !containsString(hosts, hostname) {
+		if len(hosts) == 0 || !containsStringFold(hosts, hostname) {
 			return govy.TemplateVars{}, true
 		}
 		return govy.TemplateVars{
@@ -139,6 +140,15 @@ func validateURL(u *url.URL) error {
 func containsString(values []string, value string) bool {
 	for _, v := range values {
 		if v == value {
+			return true
+		}
+	}
+	return false
+}
+
+func containsStringFold(values []string, value string) bool {
+	for _, v := range values {
+		if strings.EqualFold(v, value) {
 			return true
 		}
 	}

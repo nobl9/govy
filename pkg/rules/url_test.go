@@ -108,6 +108,10 @@ func TestURL_WithOptions(t *testing.T) {
 			url:     "https://foobar.com",
 			options: []URLOption{URLHostAllowList("foobar.com")},
 		},
+		"host allow list accepts hostname with different case": {
+			url:     "https://FooBar.COM",
+			options: []URLOption{URLHostAllowList("foobar.com")},
+		},
 		"host allow list rejects unlisted hostname": {
 			url:         "https://barfoo.com",
 			options:     []URLOption{URLHostAllowList("foobar.com")},
@@ -120,6 +124,12 @@ func TestURL_WithOptions(t *testing.T) {
 		},
 		"host deny list rejects exact hostname": {
 			url:         "https://foobar.com",
+			options:     []URLOption{URLHostDenyList("foobar.com")},
+			expectedErr: "valid URL must not use any of the following hostnames: 'foobar.com'",
+			shouldFail:  true,
+		},
+		"host deny list rejects hostname with different case": {
+			url:         "https://FooBar.COM",
 			options:     []URLOption{URLHostDenyList("foobar.com")},
 			expectedErr: "valid URL must not use any of the following hostnames: 'foobar.com'",
 			shouldFail:  true,
