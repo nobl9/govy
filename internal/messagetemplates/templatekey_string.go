@@ -60,15 +60,24 @@ func _() {
 	_ = x[StringCrontabTemplate-50]
 	_ = x[StringDateTimeTemplate-51]
 	_ = x[StringTimeZoneTemplate-52]
-	_ = x[StringKubernetesQualifiedNameTemplate-53]
-	_ = x[URLTemplate-54]
-	_ = x[SliceUniqueTemplate-55]
-	_ = x[UniquePropertiesTemplate-56]
+	_ = x[StringBCP47LanguageTagTemplate-53]
+	_ = x[StringBCP47StrictLanguageTagTemplate-54]
+	_ = x[StringISO3166Alpha2Template-55]
+	_ = x[StringISO3166Alpha3Template-56]
+	_ = x[StringISO3166NumericTemplate-57]
+	_ = x[StringISO31662Template-58]
+	_ = x[StringISO4217Template-59]
+	_ = x[StringLatitudeTemplate-60]
+	_ = x[StringLongitudeTemplate-61]
+	_ = x[StringKubernetesQualifiedNameTemplate-62]
+	_ = x[URLTemplate-63]
+	_ = x[SliceUniqueTemplate-64]
+	_ = x[UniquePropertiesTemplate-65]
 }
 
-const _templateKey_name = "LengthTemplateMinLengthTemplateMaxLengthTemplateEQTemplateNEQTemplateGTTemplateGTETemplateLTTemplateLTETemplateEqualPropertiesTemplateGTPropertiesTemplateGTEPropertiesTemplateLTPropertiesTemplateLTEPropertiesTemplateGTComparablePropertiesTemplateGTEComparablePropertiesTemplateLTComparablePropertiesTemplateLTEComparablePropertiesTemplateDurationPrecisionTemplateForbiddenTemplateOneOfTemplateNotOneOfTemplateOneOfPropertiesTemplateMutuallyExclusiveTemplateMutuallyDependentTemplateRequiredTemplateStringNonEmptyTemplateStringMatchRegexpTemplateStringDenyRegexpTemplateStringEmailTemplateStringMACTemplateStringIPTemplateStringIPv4TemplateStringIPv6TemplateStringCIDRTemplateStringCIDRv4TemplateStringCIDRv6TemplateStringJSONTemplateStringContainsTemplateStringExcludesTemplateStringStartsWithTemplateStringEndsWithTemplateStringTitleTemplateStringGitRefTemplateStringFileSystemPathTemplateStringFilePathTemplateStringDirPathTemplateStringMatchFileSystemPathTemplateStringRegexpTemplateStringCrontabTemplateStringDateTimeTemplateStringTimeZoneTemplateStringKubernetesQualifiedNameTemplateURLTemplateSliceUniqueTemplateUniquePropertiesTemplate"
+const _templateKey_name = "LengthTemplateMinLengthTemplateMaxLengthTemplateEQTemplateNEQTemplateGTTemplateGTETemplateLTTemplateLTETemplateEqualPropertiesTemplateGTPropertiesTemplateGTEPropertiesTemplateLTPropertiesTemplateLTEPropertiesTemplateGTComparablePropertiesTemplateGTEComparablePropertiesTemplateLTComparablePropertiesTemplateLTEComparablePropertiesTemplateDurationPrecisionTemplateForbiddenTemplateOneOfTemplateNotOneOfTemplateOneOfPropertiesTemplateMutuallyExclusiveTemplateMutuallyDependentTemplateRequiredTemplateStringNonEmptyTemplateStringMatchRegexpTemplateStringDenyRegexpTemplateStringEmailTemplateStringMACTemplateStringIPTemplateStringIPv4TemplateStringIPv6TemplateStringCIDRTemplateStringCIDRv4TemplateStringCIDRv6TemplateStringJSONTemplateStringContainsTemplateStringExcludesTemplateStringStartsWithTemplateStringEndsWithTemplateStringTitleTemplateStringGitRefTemplateStringFileSystemPathTemplateStringFilePathTemplateStringDirPathTemplateStringMatchFileSystemPathTemplateStringRegexpTemplateStringCrontabTemplateStringDateTimeTemplateStringTimeZoneTemplateStringBCP47LanguageTagTemplateStringBCP47StrictLanguageTagTemplateStringISO3166Alpha2TemplateStringISO3166Alpha3TemplateStringISO3166NumericTemplateStringISO31662TemplateStringISO4217TemplateStringLatitudeTemplateStringLongitudeTemplateStringKubernetesQualifiedNameTemplateURLTemplateSliceUniqueTemplateUniquePropertiesTemplate"
 
-var _templateKey_index = [...]uint16{0, 14, 31, 48, 58, 69, 79, 90, 100, 111, 134, 154, 175, 195, 216, 246, 277, 307, 338, 363, 380, 393, 409, 432, 457, 482, 498, 520, 545, 569, 588, 605, 621, 639, 657, 675, 695, 715, 733, 755, 777, 801, 823, 842, 862, 890, 912, 933, 966, 986, 1007, 1029, 1051, 1088, 1099, 1118, 1142}
+var _templateKey_index = [...]uint16{0, 14, 31, 48, 58, 69, 79, 90, 100, 111, 134, 154, 175, 195, 216, 246, 277, 307, 338, 363, 380, 393, 409, 432, 457, 482, 498, 520, 545, 569, 588, 605, 621, 639, 657, 675, 695, 715, 733, 755, 777, 801, 823, 842, 862, 890, 912, 933, 966, 986, 1007, 1029, 1051, 1081, 1117, 1144, 1171, 1199, 1221, 1242, 1264, 1287, 1324, 1335, 1354, 1378}
 
 func (i templateKey) String() string {
 	idx := int(i) - 1
