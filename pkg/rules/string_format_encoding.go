@@ -13,7 +13,7 @@ import (
 func StringBase64() govy.Rule[string] {
 	tpl := messagetemplates.Get(messagetemplates.StringBase64Template)
 
-	return stringFormatRule(func(s string) bool {
+	return newStringEncodingRule(func(s string) bool {
 		return standardBase64Regexp().MatchString(s) &&
 			decodesBase64(base64.StdEncoding.Strict(), s)
 	}, ErrorCodeStringBase64, tpl)
@@ -24,7 +24,7 @@ func StringBase64() govy.Rule[string] {
 func StringBase64URL() govy.Rule[string] {
 	tpl := messagetemplates.Get(messagetemplates.StringBase64URLTemplate)
 
-	return stringFormatRule(func(s string) bool {
+	return newStringEncodingRule(func(s string) bool {
 		return base64URLRegexp().MatchString(s) &&
 			decodesBase64(base64.URLEncoding.Strict(), s)
 	}, ErrorCodeStringBase64URL, tpl)
@@ -35,7 +35,7 @@ func StringBase64URL() govy.Rule[string] {
 func StringBase64RawURL() govy.Rule[string] {
 	tpl := messagetemplates.Get(messagetemplates.StringBase64RawURLTemplate)
 
-	return stringFormatRule(func(s string) bool {
+	return newStringEncodingRule(func(s string) bool {
 		return base64RawURLRegexp().MatchString(s) &&
 			decodesBase64(base64.RawURLEncoding.Strict(), s)
 	}, ErrorCodeStringBase64RawURL, tpl)
@@ -46,48 +46,16 @@ func StringBase64RawURL() govy.Rule[string] {
 func StringHexadecimal() govy.Rule[string] {
 	tpl := messagetemplates.Get(messagetemplates.StringHexadecimalTemplate)
 
-	return stringFormatRule(func(s string) bool {
+	return newStringEncodingRule(func(s string) bool {
 		return hexadecimalRegexp().MatchString(s)
 	}, ErrorCodeStringHexadecimal, tpl)
 }
 
-// StringMD5 ensures the property's value is a lowercase hexadecimal MD5 digest.
-func StringMD5() govy.Rule[string] {
-	tpl := messagetemplates.Get(messagetemplates.StringMD5Template)
-
-	return stringFormatRule(func(s string) bool {
-		return md5Regexp().MatchString(s)
-	}, ErrorCodeStringMD5, tpl)
-}
-
-// StringSHA256 ensures the property's value is a lowercase hexadecimal SHA-256 digest.
-func StringSHA256() govy.Rule[string] {
-	tpl := messagetemplates.Get(messagetemplates.StringSHA256Template)
-
-	return stringFormatRule(func(s string) bool {
-		return sha256Regexp().MatchString(s)
-	}, ErrorCodeStringSHA256, tpl)
-}
-
-// StringSHA384 ensures the property's value is a lowercase hexadecimal SHA-384 digest.
-func StringSHA384() govy.Rule[string] {
-	tpl := messagetemplates.Get(messagetemplates.StringSHA384Template)
-
-	return stringFormatRule(func(s string) bool {
-		return sha384Regexp().MatchString(s)
-	}, ErrorCodeStringSHA384, tpl)
-}
-
-// StringSHA512 ensures the property's value is a lowercase hexadecimal SHA-512 digest.
-func StringSHA512() govy.Rule[string] {
-	tpl := messagetemplates.Get(messagetemplates.StringSHA512Template)
-
-	return stringFormatRule(func(s string) bool {
-		return sha512Regexp().MatchString(s)
-	}, ErrorCodeStringSHA512, tpl)
-}
-
-func stringFormatRule(validate func(string) bool, errorCode govy.ErrorCode, tpl *template.Template) govy.Rule[string] {
+func newStringEncodingRule(
+	validate func(string) bool,
+	errorCode govy.ErrorCode,
+	tpl *template.Template,
+) govy.Rule[string] {
 	return govy.NewRule(func(s string) error {
 		if !validate(s) {
 			return govy.NewRuleErrorTemplate(govy.TemplateVars{

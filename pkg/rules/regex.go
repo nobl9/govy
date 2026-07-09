@@ -15,10 +15,6 @@ var (
 	base64URLRegexp      = lazyRegexCompile(`^(?:[A-Za-z0-9_-]{4})*(?:[A-Za-z0-9_-]{2}==|[A-Za-z0-9_-]{3}=)?$`)
 	base64RawURLRegexp   = lazyRegexCompile(`^[A-Za-z0-9_-]*$`)
 	hexadecimalRegexp    = lazyRegexCompile(`^(?:0[xX])?[0-9a-fA-F]+$`)
-	md5Regexp            = lazyRegexCompile(`^[0-9a-f]{32}$`)
-	sha256Regexp         = lazyRegexCompile(`^[0-9a-f]{64}$`)
-	sha384Regexp         = lazyRegexCompile(`^[0-9a-f]{96}$`)
-	sha512Regexp         = lazyRegexCompile(`^[0-9a-f]{128}$`)
 	// Ref: https://www.ietf.org/rfc/rfc1123.txt
 	rfc1123DnsLabelRegexp      = lazyRegexCompile(`^[a-z0-9]([-a-z0-9]*[a-z0-9])?$`)
 	rfc1123DnsSubdomainRegexp  = lazyRegexCompile(`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`)
