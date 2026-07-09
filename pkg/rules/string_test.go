@@ -706,6 +706,81 @@ func BenchmarkStringJSON(b *testing.B) {
 	}
 }
 
+func TestStringJWT(t *testing.T) {
+	tests := map[string]struct {
+		in            string
+		expectedError string
+	}{
+		// cspell:disable
+		"signed token": {
+			in: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9." +
+				"eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ." +
+				"SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+		},
+		"unsecured token": {
+			in: "eyJhbGciOiJub25lIn0.e30.",
+		},
+		"wrong segment count": {
+			in:            "not-a-jwt",
+			expectedError: "string must be a valid JSON Web Token: expected 3 JWT segments",
+		},
+		"padded header segment": {
+			in:            "eyJhbGciOiJIUzI1NiJ9=.e30.c2ln",
+			expectedError: "string must be a valid JSON Web Token: JWT header segment must be base64url encoded without padding",
+		},
+		"claims segment is not JSON object": {
+			in: "eyJhbGciOiJIUzI1NiJ9." +
+				"bnVsbA." +
+				"c2ln",
+			expectedError: "string must be a valid JSON Web Token: JWT claims set segment must contain a JSON object",
+		},
+		"missing algorithm": {
+			in:            "e30.e30.c2ln",
+			expectedError: `string must be a valid JSON Web Token: JWT header must contain an "alg" string`,
+		},
+		"missing signature for signed token": {
+			in:            "eyJhbGciOiJIUzI1NiJ9.e30.",
+			expectedError: `string must be a valid JSON Web Token: JWT signature segment must not be empty unless alg is "none"`,
+		},
+		"signature present for none algorithm": {
+			in:            "eyJhbGciOiJub25lIn0.e30.c2ln",
+			expectedError: `string must be a valid JSON Web Token: JWT signature segment must be empty when alg is "none"`,
+		},
+		// cspell:enable
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			err := StringJWT().Validate(tt.in)
+			if tt.expectedError != "" {
+				assert.EqualError(t, err, tt.expectedError)
+				assert.True(t, govy.HasErrorCode(err, ErrorCodeStringJWT))
+				return
+			}
+			assert.NoError(t, err)
+		})
+	}
+}
+
+func BenchmarkStringJWT(b *testing.B) {
+	rule := StringJWT()
+	values := []string{
+		// cspell:disable
+		"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9." +
+			"eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ." +
+			"SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+		"eyJhbGciOiJub25lIn0.e30.",
+		"not-a-jwt",
+		// cspell:enable
+	}
+
+	for b.Loop() {
+		for _, value := range values {
+			_ = rule.Validate(value)
+		}
+	}
+}
+
 var stringContainsTestCases = []*struct {
 	in            string
 	substrings    []string

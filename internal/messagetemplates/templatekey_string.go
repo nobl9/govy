@@ -46,29 +46,30 @@ func _() {
 	_ = x[StringCIDRv4Template-36]
 	_ = x[StringCIDRv6Template-37]
 	_ = x[StringJSONTemplate-38]
-	_ = x[StringContainsTemplate-39]
-	_ = x[StringExcludesTemplate-40]
-	_ = x[StringStartsWithTemplate-41]
-	_ = x[StringEndsWithTemplate-42]
-	_ = x[StringTitleTemplate-43]
-	_ = x[StringGitRefTemplate-44]
-	_ = x[StringFileSystemPathTemplate-45]
-	_ = x[StringFilePathTemplate-46]
-	_ = x[StringDirPathTemplate-47]
-	_ = x[StringMatchFileSystemPathTemplate-48]
-	_ = x[StringRegexpTemplate-49]
-	_ = x[StringCrontabTemplate-50]
-	_ = x[StringDateTimeTemplate-51]
-	_ = x[StringTimeZoneTemplate-52]
-	_ = x[StringKubernetesQualifiedNameTemplate-53]
-	_ = x[URLTemplate-54]
-	_ = x[SliceUniqueTemplate-55]
-	_ = x[UniquePropertiesTemplate-56]
+	_ = x[StringJWTTemplate-39]
+	_ = x[StringContainsTemplate-40]
+	_ = x[StringExcludesTemplate-41]
+	_ = x[StringStartsWithTemplate-42]
+	_ = x[StringEndsWithTemplate-43]
+	_ = x[StringTitleTemplate-44]
+	_ = x[StringGitRefTemplate-45]
+	_ = x[StringFileSystemPathTemplate-46]
+	_ = x[StringFilePathTemplate-47]
+	_ = x[StringDirPathTemplate-48]
+	_ = x[StringMatchFileSystemPathTemplate-49]
+	_ = x[StringRegexpTemplate-50]
+	_ = x[StringCrontabTemplate-51]
+	_ = x[StringDateTimeTemplate-52]
+	_ = x[StringTimeZoneTemplate-53]
+	_ = x[StringKubernetesQualifiedNameTemplate-54]
+	_ = x[URLTemplate-55]
+	_ = x[SliceUniqueTemplate-56]
+	_ = x[UniquePropertiesTemplate-57]
 }
 
-const _templateKey_name = "LengthTemplateMinLengthTemplateMaxLengthTemplateEQTemplateNEQTemplateGTTemplateGTETemplateLTTemplateLTETemplateEqualPropertiesTemplateGTPropertiesTemplateGTEPropertiesTemplateLTPropertiesTemplateLTEPropertiesTemplateGTComparablePropertiesTemplateGTEComparablePropertiesTemplateLTComparablePropertiesTemplateLTEComparablePropertiesTemplateDurationPrecisionTemplateForbiddenTemplateOneOfTemplateNotOneOfTemplateOneOfPropertiesTemplateMutuallyExclusiveTemplateMutuallyDependentTemplateRequiredTemplateStringNonEmptyTemplateStringMatchRegexpTemplateStringDenyRegexpTemplateStringEmailTemplateStringMACTemplateStringIPTemplateStringIPv4TemplateStringIPv6TemplateStringCIDRTemplateStringCIDRv4TemplateStringCIDRv6TemplateStringJSONTemplateStringContainsTemplateStringExcludesTemplateStringStartsWithTemplateStringEndsWithTemplateStringTitleTemplateStringGitRefTemplateStringFileSystemPathTemplateStringFilePathTemplateStringDirPathTemplateStringMatchFileSystemPathTemplateStringRegexpTemplateStringCrontabTemplateStringDateTimeTemplateStringTimeZoneTemplateStringKubernetesQualifiedNameTemplateURLTemplateSliceUniqueTemplateUniquePropertiesTemplate"
+const _templateKey_name = "LengthTemplateMinLengthTemplateMaxLengthTemplateEQTemplateNEQTemplateGTTemplateGTETemplateLTTemplateLTETemplateEqualPropertiesTemplateGTPropertiesTemplateGTEPropertiesTemplateLTPropertiesTemplateLTEPropertiesTemplateGTComparablePropertiesTemplateGTEComparablePropertiesTemplateLTComparablePropertiesTemplateLTEComparablePropertiesTemplateDurationPrecisionTemplateForbiddenTemplateOneOfTemplateNotOneOfTemplateOneOfPropertiesTemplateMutuallyExclusiveTemplateMutuallyDependentTemplateRequiredTemplateStringNonEmptyTemplateStringMatchRegexpTemplateStringDenyRegexpTemplateStringEmailTemplateStringMACTemplateStringIPTemplateStringIPv4TemplateStringIPv6TemplateStringCIDRTemplateStringCIDRv4TemplateStringCIDRv6TemplateStringJSONTemplateStringJWTTemplateStringContainsTemplateStringExcludesTemplateStringStartsWithTemplateStringEndsWithTemplateStringTitleTemplateStringGitRefTemplateStringFileSystemPathTemplateStringFilePathTemplateStringDirPathTemplateStringMatchFileSystemPathTemplateStringRegexpTemplateStringCrontabTemplateStringDateTimeTemplateStringTimeZoneTemplateStringKubernetesQualifiedNameTemplateURLTemplateSliceUniqueTemplateUniquePropertiesTemplate"
 
-var _templateKey_index = [...]uint16{0, 14, 31, 48, 58, 69, 79, 90, 100, 111, 134, 154, 175, 195, 216, 246, 277, 307, 338, 363, 380, 393, 409, 432, 457, 482, 498, 520, 545, 569, 588, 605, 621, 639, 657, 675, 695, 715, 733, 755, 777, 801, 823, 842, 862, 890, 912, 933, 966, 986, 1007, 1029, 1051, 1088, 1099, 1118, 1142}
+var _templateKey_index = [...]uint16{0, 14, 31, 48, 58, 69, 79, 90, 100, 111, 134, 154, 175, 195, 216, 246, 277, 307, 338, 363, 380, 393, 409, 432, 457, 482, 498, 520, 545, 569, 588, 605, 621, 639, 657, 675, 695, 715, 733, 750, 772, 794, 818, 840, 859, 879, 907, 929, 950, 983, 1003, 1024, 1046, 1068, 1105, 1116, 1135, 1159}
 
 func (i templateKey) String() string {
 	idx := int(i) - 1
