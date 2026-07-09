@@ -13,7 +13,7 @@ const (
 	stringISO3166Alpha2Error          = "string must be a valid ISO 3166-1 alpha-2 country code (e.g. 'US', 'PL', 'JP')"
 	stringISO3166Alpha3Error          = "string must be a valid ISO 3166-1 alpha-3 country code (e.g. 'USA', 'POL', 'JPN')"
 	stringISO3166NumericError         = "string must be a valid ISO 3166-1 numeric country code (e.g. '840', '616', '392')"
-	stringISO31662Error               = "string must have valid ISO 3166-2 subdivision code syntax (e.g. 'US-CA', 'GB-ENG', 'PL-14')"
+	stringISO31662Error               = "string must be a valid ISO 3166-2 subdivision code (e.g. 'US-CA', 'GB-ENG', 'PL-14')"
 	stringISO4217Error                = "string must be a valid ISO 4217 currency code (e.g. 'USD', 'EUR', 'JPY')"
 	stringLatitudeError               = "string must be a valid latitude coordinate (e.g. '0', '-45.25', '90')"
 	stringLongitudeError              = "string must be a valid longitude coordinate (e.g. '0', '-122.4194', '180')"
@@ -65,11 +65,9 @@ func TestStringBCP47LanguageTag(t *testing.T) {
 }
 
 func BenchmarkStringBCP47LanguageTag(b *testing.B) {
-	for _, tc := range stringBCP47LanguageTagTestCases {
-		rule := StringBCP47LanguageTag()
-		for range b.N {
-			_ = rule.Validate(tc.in)
-		}
+	rule := StringBCP47LanguageTag()
+	for b.Loop() {
+		_ = rule.Validate("zh-Hant-TW")
 	}
 }
 
@@ -100,11 +98,9 @@ func TestStringBCP47StrictLanguageTag(t *testing.T) {
 }
 
 func BenchmarkStringBCP47StrictLanguageTag(b *testing.B) {
-	for _, tc := range stringBCP47StrictLanguageTagTestCases {
-		rule := StringBCP47StrictLanguageTag()
-		for range b.N {
-			_ = rule.Validate(tc.in)
-		}
+	rule := StringBCP47StrictLanguageTag()
+	for b.Loop() {
+		_ = rule.Validate("zh-Hant-TW")
 	}
 }
 
@@ -138,11 +134,9 @@ func TestStringISO3166Alpha2(t *testing.T) {
 }
 
 func BenchmarkStringISO3166Alpha2(b *testing.B) {
-	for _, tc := range stringISO3166Alpha2TestCases {
-		rule := StringISO3166Alpha2()
-		for range b.N {
-			_ = rule.Validate(tc.in)
-		}
+	rule := StringISO3166Alpha2()
+	for b.Loop() {
+		_ = rule.Validate("US")
 	}
 }
 
@@ -176,11 +170,9 @@ func TestStringISO3166Alpha3(t *testing.T) {
 }
 
 func BenchmarkStringISO3166Alpha3(b *testing.B) {
-	for _, tc := range stringISO3166Alpha3TestCases {
-		rule := StringISO3166Alpha3()
-		for range b.N {
-			_ = rule.Validate(tc.in)
-		}
+	rule := StringISO3166Alpha3()
+	for b.Loop() {
+		_ = rule.Validate("USA")
 	}
 }
 
@@ -213,11 +205,9 @@ func TestStringISO3166Numeric(t *testing.T) {
 }
 
 func BenchmarkStringISO3166Numeric(b *testing.B) {
-	for _, tc := range stringISO3166NumericTestCases {
-		rule := StringISO3166Numeric()
-		for range b.N {
-			_ = rule.Validate(tc.in)
-		}
+	rule := StringISO3166Numeric()
+	for b.Loop() {
+		_ = rule.Validate("840")
 	}
 }
 
@@ -228,6 +218,8 @@ var stringISO31662TestCases = []*struct {
 	{in: "US-CA"},
 	{in: "GB-ENG"},
 	{in: "PL-14"},
+	{in: "US-XXX", expectedError: stringISO31662Error},
+	{in: "FR-999", expectedError: stringISO31662Error},
 	{in: "ZZ-CA", expectedError: stringISO31662Error},
 	{in: "US-cal", expectedError: stringISO31662Error},
 	{in: "USA-CA", expectedError: stringISO31662Error},
@@ -251,11 +243,9 @@ func TestStringISO31662(t *testing.T) {
 }
 
 func BenchmarkStringISO31662(b *testing.B) {
-	for _, tc := range stringISO31662TestCases {
-		rule := StringISO31662()
-		for range b.N {
-			_ = rule.Validate(tc.in)
-		}
+	rule := StringISO31662()
+	for b.Loop() {
+		_ = rule.Validate("US-CA")
 	}
 }
 
@@ -292,11 +282,9 @@ func TestStringISO4217(t *testing.T) {
 }
 
 func BenchmarkStringISO4217(b *testing.B) {
-	for _, tc := range stringISO4217TestCases {
-		rule := StringISO4217()
-		for range b.N {
-			_ = rule.Validate(tc.in)
-		}
+	rule := StringISO4217()
+	for b.Loop() {
+		_ = rule.Validate("USD")
 	}
 }
 
@@ -326,11 +314,9 @@ func TestStringLatitude(t *testing.T) {
 }
 
 func BenchmarkStringLatitude(b *testing.B) {
-	for _, tc := range stringLatitudeTestCases {
-		rule := StringLatitude()
-		for range b.N {
-			_ = rule.Validate(tc.in)
-		}
+	rule := StringLatitude()
+	for b.Loop() {
+		_ = rule.Validate("-45.25")
 	}
 }
 
@@ -360,10 +346,8 @@ func TestStringLongitude(t *testing.T) {
 }
 
 func BenchmarkStringLongitude(b *testing.B) {
-	for _, tc := range stringLongitudeTestCases {
-		rule := StringLongitude()
-		for range b.N {
-			_ = rule.Validate(tc.in)
-		}
+	rule := StringLongitude()
+	for b.Loop() {
+		_ = rule.Validate("-122.4194")
 	}
 }

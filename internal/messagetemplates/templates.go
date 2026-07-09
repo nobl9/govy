@@ -178,7 +178,7 @@ var rawMessageTemplates = map[templateKey]string{
 	StringISO3166Alpha2Template:          "string must be a valid ISO 3166-1 alpha-2 country code",
 	StringISO3166Alpha3Template:          "string must be a valid ISO 3166-1 alpha-3 country code",
 	StringISO3166NumericTemplate:         "string must be a valid ISO 3166-1 numeric country code",
-	StringISO31662Template:               "string must have valid ISO 3166-2 subdivision code syntax",
+	StringISO31662Template:               "string must be a valid ISO 3166-2 subdivision code",
 	StringISO4217Template:                "string must be a valid ISO 4217 currency code",
 	StringLatitudeTemplate:               "string must be a valid latitude coordinate",
 	StringLongitudeTemplate:              "string must be a valid longitude coordinate",
@@ -205,7 +205,21 @@ var rawMessageTemplates = map[templateKey]string{
 {{- if gt (len .Custom.Constraints) 0 }} based on constraints: {{ joinSlice .Custom.Constraints "" }}{{- end }}`,
 	UniquePropertiesTemplate: `all of [{{ joinSlice .ComparisonValue "" }}] properties must be unique, but '{{ .Custom.FirstProperty }}' collides with '{{ .Custom.SecondProperty }}'
 {{- if gt (len .Custom.Constraints) 0 }}, based on constraints: {{ joinSlice .Custom.Constraints "" }}{{- end }}`,
-	URLTemplate: "{{ .Error }}",
+	URLTemplate: `
+{{- if .Error -}}
+	{{ .Error }}
+{{- else if .Custom.Scheme -}}
+	valid URL must use one of the following schemes: {{ joinSlice .ComparisonValue "'" }}
+{{- else if .Custom.HostRequired -}}
+	valid URL must have a host
+{{- else if .Custom.UserInfoForbidden -}}
+	valid URL must not contain user information
+{{- else if .Custom.HostDenyList -}}
+	valid URL must not use any of the following hostnames: {{ joinSlice .ComparisonValue "'" }}
+{{- else if .Custom.HostAllowList -}}
+	valid URL must use one of the following hostnames: {{ joinSlice .ComparisonValue "'" }}
+{{- end }}
+`,
 }
 
 // templateDependencies defines dependency templates for a given template.

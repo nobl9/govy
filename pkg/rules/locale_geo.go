@@ -367,8 +367,7 @@ func StringISO3166Numeric() govy.Rule[string] {
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
 }
 
-// StringISO31662 ensures the property's value has ISO 3166-2 subdivision code syntax
-// and a valid ISO 3166-1 alpha-2 country prefix.
+// StringISO31662 ensures the property's value is a valid ISO 3166-2 subdivision code.
 func StringISO31662() govy.Rule[string] {
 	tpl := messagetemplates.Get(messagetemplates.StringISO31662Template)
 
@@ -383,7 +382,7 @@ func StringISO31662() govy.Rule[string] {
 		WithErrorCode(ErrorCodeStringISO31662).
 		WithMessageTemplate(tpl).
 		WithExamples("US-CA", "GB-ENG", "PL-14").
-		WithDescription("string must have ISO 3166-2 subdivision code syntax with a valid ISO 3166-1 alpha-2 country prefix")
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
 }
 
 // StringISO4217 ensures the property's value is a valid ISO 4217 currency code.
@@ -488,8 +487,8 @@ func isISO31662(s string) bool {
 	if !iso31662Regexp().MatchString(s) {
 		return false
 	}
-	country, _, _ := strings.Cut(s, "-")
-	return isISO3166Alpha2(country)
+	_, ok := iso31662Codes()[s]
+	return ok
 }
 
 func isISO4217(s string) bool {
