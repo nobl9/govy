@@ -8,8 +8,12 @@ import (
 // Define all regular expressions here:
 var (
 	// Ref: https://www.ietf.org/rfc/rfc4122.txt
-	uuidRegexp  = lazyRegexCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
-	asciiRegexp = lazyRegexCompile(`^[\x00-\x7F]*$`)
+	uuidRegexp   = lazyRegexCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
+	asciiRegexp  = lazyRegexCompile(`^[\x00-\x7F]*$`)
+	semverRegexp = lazyRegexCompile(
+		`^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*))*))?(?:\+([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$`,
+	)
+	cveRegexp = lazyRegexCompile(`^CVE-[0-9]{4}-[0-9]{4,19}$`)
 	// Ref: https://www.ietf.org/rfc/rfc1123.txt
 	rfc1123DnsLabelRegexp      = lazyRegexCompile(`^[a-z0-9]([-a-z0-9]*[a-z0-9])?$`)
 	rfc1123DnsSubdomainRegexp  = lazyRegexCompile(`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`)
