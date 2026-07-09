@@ -35,10 +35,6 @@ var (
 	fqdnRegexp                 = lazyRegexCompile(
 		`^([a-zA-Z0-9]{1}[a-zA-Z0-9-]{0,62})(\.[a-zA-Z0-9]{1}[a-zA-Z0-9-]{0,62})*?(\.[a-zA-Z]{1}[a-zA-Z0-9]{0,62})\.?$`,
 	)
-	bicRegexp            = lazyRegexCompile(`^[A-Z0-9]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$`)
-	bicISO93622014Regexp = lazyRegexCompile(`^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$`)
-	einRegexp            = lazyRegexCompile(`^\d{2}-\d{7}$`)
-	ssnRegexp            = lazyRegexCompile(`^\d{3}-\d{2}-\d{4}$`)
 )
 
 // lazyRegexCompile returns a function that compiles the regular expression

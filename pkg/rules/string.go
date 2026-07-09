@@ -275,21 +275,6 @@ func StringCIDRv6() govy.Rule[string] {
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
 }
 
-// StringUUID ensures property's value is a valid UUID string as defined by [RFC 4122].
-// It does not enforce a specific UUID version.
-//
-// [RFC 4122]: https://www.ietf.org/rfc/rfc4122.txt
-func StringUUID() govy.Rule[string] {
-	return StringMatchRegexp(uuidRegexp()).
-		WithDetails("expected RFC-4122 compliant UUID string").
-		WithExamples(
-			"00000000-0000-0000-0000-000000000000",
-			"e190c630-8873-11ee-b9d1-0242ac120002",
-			"79258D24-01A7-47E5-ACBB-7E762DE52298",
-		).
-		WithErrorCode(ErrorCodeStringUUID)
-}
-
 // StringASCII ensures property's value contains only ASCII characters.
 func StringASCII() govy.Rule[string] {
 	return StringMatchRegexp(asciiRegexp()).WithErrorCode(ErrorCodeStringASCII)

@@ -267,50 +267,6 @@ func BenchmarkStringASCII(b *testing.B) {
 	}
 }
 
-var stringUUIDTestCases = []*struct {
-	in         string
-	shouldFail bool
-}{
-	// cspell:disable
-	{"00000000-0000-0000-0000-000000000000", false},
-	{"e190c630-8873-11ee-b9d1-0242ac120002", false},
-	{"79258D24-01A7-47E5-ACBB-7E762DE52298", false},
-	{"a987Fbc9-4bed-3078-cf07-9141ba07c9f3", false},
-	{"foobar", true},
-	{"0987654321", true},
-	{"AXAXAXAX-AAAA-AAAA-AAAA-AAAAAAAAAAAA", true},
-	{"00000000-0000-0000-0000-0000000000", true},
-	{"", true},
-	{"xxxa987Fbc9-4bed-3078-cf07-9141ba07c9f3", true},
-	{"a987Fbc9-4bed-3078-cf07-9141ba07c9f3xxx", true},
-	{"a987Fbc94bed3078cf079141ba07c9f3", true},
-	{"934859", true},
-	{"987fbc9-4bed-3078-cf07a-9141ba07c9F3", true},
-	{"aaaaaaaa-1111-1111-aaaG-111111111111", true},
-	// cspell:enable
-}
-
-func TestStringUUID(t *testing.T) {
-	for _, tc := range stringUUIDTestCases {
-		err := StringUUID().Validate(tc.in)
-		if tc.shouldFail {
-			assert.Error(t, err)
-			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringUUID))
-		} else {
-			assert.NoError(t, err)
-		}
-	}
-}
-
-func BenchmarkStringUUID(b *testing.B) {
-	for _, tc := range stringUUIDTestCases {
-		rule := StringUUID()
-		for range b.N {
-			_ = rule.Validate(tc.in)
-		}
-	}
-}
-
 var stringEmailTestCases = []*struct {
 	in         string
 	shouldFail bool

@@ -12,7 +12,30 @@ type stringFormatIDTestCase struct {
 	expectedError string
 }
 
+type stringUUIDTestCase struct {
+	in         string
+	shouldFail bool
+}
+
 // cspell:disable
+var stringUUIDTestCases = []*stringUUIDTestCase{
+	{in: "00000000-0000-0000-0000-000000000000"},
+	{in: "e190c630-8873-11ee-b9d1-0242ac120002"},
+	{in: "79258D24-01A7-47E5-ACBB-7E762DE52298"},
+	{in: "a987Fbc9-4bed-3078-cf07-9141ba07c9f3"},
+	{in: "foobar", shouldFail: true},
+	{in: "0987654321", shouldFail: true},
+	{in: "AXAXAXAX-AAAA-AAAA-AAAA-AAAAAAAAAAAA", shouldFail: true},
+	{in: "00000000-0000-0000-0000-0000000000", shouldFail: true},
+	{in: "", shouldFail: true},
+	{in: "xxxa987Fbc9-4bed-3078-cf07-9141ba07c9f3", shouldFail: true},
+	{in: "a987Fbc9-4bed-3078-cf07-9141ba07c9f3xxx", shouldFail: true},
+	{in: "a987Fbc94bed3078cf079141ba07c9f3", shouldFail: true},
+	{in: "934859", shouldFail: true},
+	{in: "987fbc9-4bed-3078-cf07a-9141ba07c9F3", shouldFail: true},
+	{in: "aaaaaaaa-1111-1111-aaaG-111111111111", shouldFail: true},
+}
+
 var stringUUIDRFC4122TestCases = []*stringFormatIDTestCase{
 	{in: "f81d4fae-7dec-11d0-a765-00a0c91e6bf6"},
 	{in: "A987FBC9-4BED-3078-8F07-9141BA07C9F3"},
@@ -133,192 +156,29 @@ var stringULIDTestCases = []*stringFormatIDTestCase{
 	},
 }
 
-var stringCreditCardTestCases = []*stringFormatIDTestCase{
-	{in: "4111111111111111"},
-	{in: "4242424242424242"},
-	{in: "5555555555554444"},
-	{in: "378282246310005"},
-	{in: "6011111111111117"},
-	{in: "4222222222222"},
-	{in: "4000000000000000006"},
-	{
-		in:            "4111111111111112",
-		expectedError: "string must be a valid credit card number",
-	},
-	{
-		in:            "4111 1111 1111 1111",
-		expectedError: "string must be a valid credit card number",
-	},
-	{
-		in:            "4111-1111-1111-1111",
-		expectedError: "string must be a valid credit card number",
-	},
-	{
-		in:            "411111111111",
-		expectedError: "string must be a valid credit card number",
-	},
-	{
-		in:            "40000000000000000006",
-		expectedError: "string must be a valid credit card number",
-	},
-	{
-		in:            "0000000000000",
-		expectedError: "string must be a valid credit card number",
-	},
-}
-
-var stringLuhnChecksumTestCases = []*stringFormatIDTestCase{
-	{in: "0"},
-	{in: "0000"},
-	{in: "79927398713"},
-	{in: "4111111111111111"},
-	{
-		in:            "",
-		expectedError: "string must pass the Luhn checksum",
-	},
-	{
-		in:            "79927398710",
-		expectedError: "string must pass the Luhn checksum",
-	},
-	{
-		in:            "7992739871A",
-		expectedError: "string must pass the Luhn checksum",
-	},
-}
-
-var stringBICTestCases = []*stringFormatIDTestCase{
-	{in: "DEUTDEFF"},
-	{in: "DEUTDEFF500"},
-	{in: "NEDSZAJJXXX"},
-	{in: "A1B2US33XXX"},
-	{
-		in:            "deutdeff",
-		expectedError: "string must be a valid BIC",
-	},
-	{
-		in:            "DEUTD3FF",
-		expectedError: "string must be a valid BIC",
-	},
-	{
-		in:            "DEUTDEF",
-		expectedError: "string must be a valid BIC",
-	},
-	{
-		in:            "DEUTDEFF50",
-		expectedError: "string must be a valid BIC",
-	},
-	{
-		in:            "DEUTDEFF5000",
-		expectedError: "string must be a valid BIC",
-	},
-	{
-		in:            "DEUTDEFF50!",
-		expectedError: "string must be a valid BIC",
-	},
-}
-
-var stringBICISO93622014TestCases = []*stringFormatIDTestCase{
-	{in: "DEUTDEFF"},
-	{in: "DEUTDEFF500"},
-	{in: "NEDSZAJJXXX"},
-	{
-		in:            "A1B2US33XXX",
-		expectedError: "string must be a valid ISO 9362:2014 BIC",
-	},
-	{
-		in:            "deutdeff",
-		expectedError: "string must be a valid ISO 9362:2014 BIC",
-	},
-	{
-		in:            "DEUTD3FF",
-		expectedError: "string must be a valid ISO 9362:2014 BIC",
-	},
-	{
-		in:            "DEUTDEF",
-		expectedError: "string must be a valid ISO 9362:2014 BIC",
-	},
-	{
-		in:            "DEUTDEFF50!",
-		expectedError: "string must be a valid ISO 9362:2014 BIC",
-	},
-}
-
-var stringEINTestCases = []*stringFormatIDTestCase{
-	{in: "12-3456789"},
-	{in: "99-3456789"},
-	{
-		in:            "00-0000000",
-		expectedError: "string must be a valid EIN",
-	},
-	{
-		in:            "07-3456789",
-		expectedError: "string must be a valid EIN",
-	},
-	{
-		in:            "123456789",
-		expectedError: "string must be a valid EIN",
-	},
-	{
-		in:            "1-23456789",
-		expectedError: "string must be a valid EIN",
-	},
-	{
-		in:            "12-345678",
-		expectedError: "string must be a valid EIN",
-	},
-	{
-		in:            "12-34567890",
-		expectedError: "string must be a valid EIN",
-	},
-	{
-		in:            "AB-3456789",
-		expectedError: "string must be a valid EIN",
-	},
-	{
-		in:            "12_3456789",
-		expectedError: "string must be a valid EIN",
-	},
-}
-
-var stringSSNTestCases = []*stringFormatIDTestCase{
-	{in: "123-45-6789"},
-	{in: "899-99-9999"},
-	{in: "001-01-0001"},
-	{
-		in:            "000-45-6789",
-		expectedError: "string must be a valid SSN",
-	},
-	{
-		in:            "666-45-6789",
-		expectedError: "string must be a valid SSN",
-	},
-	{
-		in:            "900-45-6789",
-		expectedError: "string must be a valid SSN",
-	},
-	{
-		in:            "999-45-6789",
-		expectedError: "string must be a valid SSN",
-	},
-	{
-		in:            "123-00-6789",
-		expectedError: "string must be a valid SSN",
-	},
-	{
-		in:            "123-45-0000",
-		expectedError: "string must be a valid SSN",
-	},
-	{
-		in:            "123456789",
-		expectedError: "string must be a valid SSN",
-	},
-	{
-		in:            "12A-45-6789",
-		expectedError: "string must be a valid SSN",
-	},
-}
-
 // cspell:enable
+
+func TestStringUUID(t *testing.T) {
+	rule := StringUUID()
+	for _, tc := range stringUUIDTestCases {
+		err := rule.Validate(tc.in)
+		if tc.shouldFail {
+			assert.Error(t, err)
+			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringUUID))
+		} else {
+			assert.NoError(t, err)
+		}
+	}
+}
+
+func BenchmarkStringUUID(b *testing.B) {
+	rule := StringUUID()
+	for b.Loop() {
+		for _, tc := range stringUUIDTestCases {
+			_ = rule.Validate(tc.in)
+		}
+	}
+}
 
 func TestStringUUIDRFC4122(t *testing.T) {
 	testStringFormatIDRule(t, StringUUIDRFC4122(), ErrorCodeStringUUIDRFC4122, stringUUIDRFC4122TestCases)
@@ -360,54 +220,6 @@ func BenchmarkStringULID(b *testing.B) {
 	benchmarkStringFormatIDRule(b, StringULID(), stringULIDTestCases)
 }
 
-func TestStringCreditCard(t *testing.T) {
-	testStringFormatIDRule(t, StringCreditCard(), ErrorCodeStringCreditCard, stringCreditCardTestCases)
-}
-
-func BenchmarkStringCreditCard(b *testing.B) {
-	benchmarkStringFormatIDRule(b, StringCreditCard(), stringCreditCardTestCases)
-}
-
-func TestStringLuhnChecksum(t *testing.T) {
-	testStringFormatIDRule(t, StringLuhnChecksum(), ErrorCodeStringLuhnChecksum, stringLuhnChecksumTestCases)
-}
-
-func BenchmarkStringLuhnChecksum(b *testing.B) {
-	benchmarkStringFormatIDRule(b, StringLuhnChecksum(), stringLuhnChecksumTestCases)
-}
-
-func TestStringBIC(t *testing.T) {
-	testStringFormatIDRule(t, StringBIC(), ErrorCodeStringBIC, stringBICTestCases)
-}
-
-func BenchmarkStringBIC(b *testing.B) {
-	benchmarkStringFormatIDRule(b, StringBIC(), stringBICTestCases)
-}
-
-func TestStringBICISO93622014(t *testing.T) {
-	testStringFormatIDRule(t, StringBICISO93622014(), ErrorCodeStringBICISO93622014, stringBICISO93622014TestCases)
-}
-
-func BenchmarkStringBICISO93622014(b *testing.B) {
-	benchmarkStringFormatIDRule(b, StringBICISO93622014(), stringBICISO93622014TestCases)
-}
-
-func TestStringEIN(t *testing.T) {
-	testStringFormatIDRule(t, StringEIN(), ErrorCodeStringEIN, stringEINTestCases)
-}
-
-func BenchmarkStringEIN(b *testing.B) {
-	benchmarkStringFormatIDRule(b, StringEIN(), stringEINTestCases)
-}
-
-func TestStringSSN(t *testing.T) {
-	testStringFormatIDRule(t, StringSSN(), ErrorCodeStringSSN, stringSSNTestCases)
-}
-
-func BenchmarkStringSSN(b *testing.B) {
-	benchmarkStringFormatIDRule(b, StringSSN(), stringSSNTestCases)
-}
-
 func testStringFormatIDRule(
 	t *testing.T,
 	rule govy.Rule[string],
@@ -432,8 +244,8 @@ func benchmarkStringFormatIDRule(
 	testCases []*stringFormatIDTestCase,
 ) {
 	b.Helper()
-	for _, tc := range testCases {
-		for range b.N {
+	for b.Loop() {
+		for _, tc := range testCases {
 			_ = rule.Validate(tc.in)
 		}
 	}
