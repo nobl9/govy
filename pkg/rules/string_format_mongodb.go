@@ -51,7 +51,10 @@ func StringMongoDBConnectionString() govy.Rule[string] {
 }
 
 func validateMongoDBConnectionString(s string) error {
-	scheme, hostList := splitMongoDBConnectionString(s)
+	scheme, hostList, err := splitMongoDBConnectionString(s)
+	if err != nil {
+		return err
+	}
 
 	switch scheme {
 	case "mongodb", "mongodb+srv":
@@ -74,20 +77,39 @@ func validateMongoDBConnectionString(s string) error {
 	return nil
 }
 
-func splitMongoDBConnectionString(s string) (scheme, hostList string) {
+func splitMongoDBConnectionString(s string) (scheme, hostList string, err error) {
 	scheme, rest, ok := strings.Cut(s, "://")
 	if !ok {
-		return "", ""
+		return "", "", nil
 	}
 	scheme = strings.ToLower(scheme)
 
 	authority, _, _ := strings.Cut(rest, "/")
 	authority, _, _ = strings.Cut(authority, "?")
 	authority, _, _ = strings.Cut(authority, "#")
+	if strings.Count(authority, "@") > 1 {
+		return "", "", errors.New("userinfo must not contain unescaped @")
+	}
 	if userInfoEnd := strings.LastIndexByte(authority, '@'); userInfoEnd >= 0 {
+		if err = validateMongoDBUserInfo(authority[:userInfoEnd]); err != nil {
+			return "", "", err
+		}
 		authority = authority[userInfoEnd+1:]
 	}
-	return scheme, authority
+	return scheme, authority, nil
+}
+
+func validateMongoDBUserInfo(userInfo string) error {
+	if strings.Count(userInfo, ":") > 1 {
+		return errors.New("userinfo must contain no more than one unescaped colon")
+	}
+	if strings.ContainsAny(userInfo, "$[]") {
+		return errors.New("userinfo contains unescaped reserved character")
+	}
+	if _, err := url.PathUnescape(userInfo); err != nil {
+		return errors.New("userinfo contains invalid percent-encoding")
+	}
+	return nil
 }
 
 func validateMongoDBHost(host string, srv bool) error {
@@ -104,6 +126,9 @@ func validateMongoDBHost(host string, srv bool) error {
 		}
 		if srv && port != "" {
 			return errors.New("mongodb+srv host must not include a port")
+		}
+		if srv {
+			return errors.New("mongodb+srv host must be a DNS name")
 		}
 		if net.ParseIP(hostname) == nil || !strings.Contains(hostname, ":") {
 			return errors.New("host must be a valid IP address or DNS name")
@@ -134,6 +159,12 @@ func validateMongoDBHost(host string, srv bool) error {
 		if err := validateMongoDBPort(port); err != nil {
 			return err
 		}
+	}
+	if srv && net.ParseIP(hostname) != nil {
+		return errors.New("mongodb+srv host must be a DNS name")
+	}
+	if srv && !isValidSRVHostname(hostname) {
+		return errors.New("mongodb+srv host must include hostname, domain, and top-level domain")
 	}
 	if !isValidMongoDBHostname(hostname) {
 		return errors.New("host must be a valid IP address, DNS name, or URL-encoded Unix domain socket")
@@ -176,8 +207,8 @@ func validateMongoDBPort(port string) error {
 		}
 	}
 	n, err := strconv.Atoi(port)
-	if err != nil || n > 65535 {
-		return errors.New("port must be between 0 and 65535")
+	if err != nil || n < 1 || n > 65535 {
+		return errors.New("port must be between 1 and 65535")
 	}
 	return nil
 }
@@ -210,4 +241,12 @@ func isValidMongoDBHostname(hostname string) bool {
 		}
 	}
 	return true
+}
+
+func isValidSRVHostname(hostname string) bool {
+	if !isValidMongoDBHostname(hostname) {
+		return false
+	}
+	hostname = strings.TrimSuffix(hostname, ".")
+	return strings.Count(hostname, ".") >= 2
 }

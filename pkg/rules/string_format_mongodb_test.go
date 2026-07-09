@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/nobl9/govy/internal/assert"
-
 	"github.com/nobl9/govy/pkg/govy"
 )
 
@@ -97,6 +96,14 @@ func stringMongoDBConnectionStringTestCases() []stringFormatRuleTestCase {
 			in:   "mongodb://user:pass@db1.example.com:27017,db2.example.com:27018/admin?replicaSet=rs0&authSource=admin",
 		},
 		{
+			name: "encoded userinfo delimiters",
+			in:   "mongodb://user%40name:pa%3Ass@localhost",
+		},
+		{
+			name: "encoded reserved userinfo characters",
+			in:   "mongodb://u%24er:p%5Bass%5D@localhost",
+		},
+		{
 			name: "ipv4",
 			in:   "mongodb://127.0.0.1:27017/test",
 		},
@@ -136,6 +143,31 @@ func stringMongoDBConnectionStringTestCases() []stringFormatRuleTestCase {
 			expectedError: err + ": host must not be empty",
 		},
 		{
+			name:          "userinfo with unescaped at",
+			in:            "mongodb://user@name:pass@localhost",
+			expectedError: err + ": userinfo must not contain unescaped @",
+		},
+		{
+			name:          "userinfo with extra colon",
+			in:            "mongodb://user:pa:ss@localhost",
+			expectedError: err + ": userinfo must contain no more than one unescaped colon",
+		},
+		{
+			name:          "userinfo with invalid percent encoding",
+			in:            "mongodb://%zz@localhost",
+			expectedError: err + ": userinfo contains invalid percent-encoding",
+		},
+		{
+			name:          "userinfo with raw dollar",
+			in:            "mongodb://u$er:pass@localhost",
+			expectedError: err + ": userinfo contains unescaped reserved character",
+		},
+		{
+			name:          "userinfo with raw brackets",
+			in:            "mongodb://user:p[ass]@localhost",
+			expectedError: err + ": userinfo contains unescaped reserved character",
+		},
+		{
 			name:          "bad port",
 			in:            "mongodb://localhost:abc",
 			expectedError: err + ": port must contain only digits",
@@ -143,7 +175,17 @@ func stringMongoDBConnectionStringTestCases() []stringFormatRuleTestCase {
 		{
 			name:          "port out of range",
 			in:            "mongodb://localhost:65536",
-			expectedError: err + ": port must be between 0 and 65535",
+			expectedError: err + ": port must be between 1 and 65535",
+		},
+		{
+			name:          "port zero",
+			in:            "mongodb://localhost:0",
+			expectedError: err + ": port must be between 1 and 65535",
+		},
+		{
+			name:          "port zero padded",
+			in:            "mongodb://localhost:00000",
+			expectedError: err + ": port must be between 1 and 65535",
 		},
 		{
 			name:          "srv with multiple hosts",
@@ -159,6 +201,26 @@ func stringMongoDBConnectionStringTestCases() []stringFormatRuleTestCase {
 			name:          "srv with unix socket",
 			in:            "mongodb+srv://" + url.PathEscape("/tmp/mongodb-27017.sock"),
 			expectedError: err + ": mongodb+srv host must be a DNS name",
+		},
+		{
+			name:          "srv with ipv4",
+			in:            "mongodb+srv://127.0.0.1",
+			expectedError: err + ": mongodb+srv host must be a DNS name",
+		},
+		{
+			name:          "srv with bracketed ipv6",
+			in:            "mongodb+srv://[2001:db8::1]",
+			expectedError: err + ": mongodb+srv host must be a DNS name",
+		},
+		{
+			name:          "srv with single label hostname",
+			in:            "mongodb+srv://localhost",
+			expectedError: err + ": mongodb+srv host must include hostname, domain, and top-level domain",
+		},
+		{
+			name:          "srv with two label hostname",
+			in:            "mongodb+srv://cluster0.example",
+			expectedError: err + ": mongodb+srv host must include hostname, domain, and top-level domain",
 		},
 		{
 			name:          "unbracketed ipv6",
@@ -204,7 +266,7 @@ func benchmarkStringFormatRule(
 
 	for _, tc := range testCases {
 		b.Run(tc.name, func(b *testing.B) {
-			for range b.N {
+			for b.Loop() {
 				_ = rule.Validate(tc.in)
 			}
 		})
