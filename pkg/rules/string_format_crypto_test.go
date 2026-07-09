@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/nobl9/govy/internal/assert"
-
 	"github.com/nobl9/govy/pkg/govy"
 )
 
@@ -198,7 +197,7 @@ func benchmarkStringFormatRule(
 
 	for _, tc := range testCases {
 		b.Run(tc.name, func(b *testing.B) {
-			for range b.N {
+			for b.Loop() {
 				_ = rule.Validate(tc.in)
 			}
 		})
