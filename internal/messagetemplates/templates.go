@@ -50,6 +50,8 @@ const (
 	StringCIDRTemplate
 	StringCIDRv4Template
 	StringCIDRv6Template
+	StringEINTemplate
+	StringSSNTemplate
 	StringJSONTemplate
 	StringContainsTemplate
 	StringExcludesTemplate
@@ -121,6 +123,8 @@ var rawMessageTemplates = map[templateKey]string{
 	StringCIDRTemplate:        "string must be a valid CIDR notation IP address",
 	StringCIDRv4Template:      "string must be a valid CIDR notation IPv4 address",
 	StringCIDRv6Template:      "string must be a valid CIDR notation IPv6 address",
+	StringEINTemplate:         "string must be a valid EIN",
+	StringSSNTemplate:         "string must be a valid SSN",
 	StringJSONTemplate:        "string must be a valid JSON",
 	StringContainsTemplate:    `string must contain the following substrings: {{ joinSlice .ComparisonValue "'" }}`,
 	StringExcludesTemplate:    `string must not contain any of the following substrings: {{ joinSlice .ComparisonValue "'" }}`,
