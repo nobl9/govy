@@ -30,6 +30,7 @@ const (
 	ErrorCodeStringASCII                   govy.ErrorCode = "string_ascii"
 	ErrorCodeStringUUID                    govy.ErrorCode = "string_uuid"
 	ErrorCodeStringEmail                   govy.ErrorCode = "string_email"
+	ErrorCodeStringE164                    govy.ErrorCode = "string_e164"
 	ErrorCodeStringJSON                    govy.ErrorCode = "string_json"
 	ErrorCodeStringContains                govy.ErrorCode = "string_contains"
 	ErrorCodeStringExcludes                govy.ErrorCode = "string_excludes"

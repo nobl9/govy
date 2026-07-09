@@ -43,6 +43,7 @@ const (
 	StringMatchRegexpTemplate
 	StringDenyRegexpTemplate
 	StringEmailTemplate
+	StringE164Template
 	StringMACTemplate
 	StringIPTemplate
 	StringIPv4Template
@@ -114,6 +115,7 @@ var rawMessageTemplates = map[templateKey]string{
 	StringMatchRegexpTemplate: "string must match regular expression: '{{ .ComparisonValue }}'",
 	StringDenyRegexpTemplate:  "string must not match regular expression: '{{ .ComparisonValue }}'",
 	StringEmailTemplate:       "string must be a valid email address: {{ .Error }}",
+	StringE164Template:        "string must be a valid E.164 phone number",
 	StringMACTemplate:         "string must be a valid MAC address",
 	StringIPTemplate:          "string must be a valid IP address",
 	StringIPv4Template:        "string must be a valid IPv4 address",
