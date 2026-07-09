@@ -51,10 +51,6 @@ const (
 	StringCIDRv4Template
 	StringCIDRv6Template
 	StringJSONTemplate
-	StringJWTTemplate
-	StringSemverTemplate
-	StringCVETemplate
-	StringE164Template
 	StringISBNTemplate
 	StringISBN10Template
 	StringISBN13Template
@@ -130,10 +126,6 @@ var rawMessageTemplates = map[templateKey]string{
 	StringCIDRv4Template:      "string must be a valid CIDR notation IPv4 address",
 	StringCIDRv6Template:      "string must be a valid CIDR notation IPv6 address",
 	StringJSONTemplate:        "string must be a valid JSON",
-	StringJWTTemplate:         "string must be a valid JSON Web Token{{- if .Error }}: {{ .Error }}{{- end }}",
-	StringSemverTemplate:      "string must be a valid semantic version",
-	StringCVETemplate:         "string must be a valid CVE ID",
-	StringE164Template:        "string must be a valid E.164 phone number",
 	StringISBNTemplate:        "string must be a valid ISBN",
 	StringISBN10Template:      "string must be a valid ISBN-10",
 	StringISBN13Template:      "string must be a valid ISBN-13",
@@ -203,7 +195,21 @@ var rawMessageTemplates = map[templateKey]string{
 {{- if gt (len .Custom.Constraints) 0 }} based on constraints: {{ joinSlice .Custom.Constraints "" }}{{- end }}`,
 	UniquePropertiesTemplate: `all of [{{ joinSlice .ComparisonValue "" }}] properties must be unique, but '{{ .Custom.FirstProperty }}' collides with '{{ .Custom.SecondProperty }}'
 {{- if gt (len .Custom.Constraints) 0 }}, based on constraints: {{ joinSlice .Custom.Constraints "" }}{{- end }}`,
-	URLTemplate: "{{ .Error }}",
+	URLTemplate: `
+{{- if .Error -}}
+	{{ .Error }}
+{{- else if .Custom.Scheme -}}
+	valid URL must use one of the following schemes: {{ joinSlice .ComparisonValue "'" }}
+{{- else if .Custom.HostRequired -}}
+	valid URL must have a host
+{{- else if .Custom.UserInfoForbidden -}}
+	valid URL must not contain user information
+{{- else if .Custom.HostDenyList -}}
+	valid URL must not use any of the following hostnames: {{ joinSlice .ComparisonValue "'" }}
+{{- else if .Custom.HostAllowList -}}
+	valid URL must use one of the following hostnames: {{ joinSlice .ComparisonValue "'" }}
+{{- end }}
+`,
 }
 
 // templateDependencies defines dependency templates for a given template.

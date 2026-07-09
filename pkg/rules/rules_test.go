@@ -19,6 +19,11 @@ func TestRules_EnsureTestsAndBenchmarksAreWritten(t *testing.T) {
 		"HashFuncSelf":         true,
 		"CompareFunc":          true,
 		"CompareDeepEqualFunc": true,
+		"URLSchemes":           true,
+		"URLHostRequired":      true,
+		"URLUserInfoForbidden": true,
+		"URLHostAllowList":     true,
+		"URLHostDenyList":      true,
 	}
 	rulesDir := filepath.Join(internal.FindModuleRoot(), "pkg/rules")
 	fset := token.NewFileSet()
