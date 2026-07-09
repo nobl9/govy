@@ -170,27 +170,27 @@ func TestStringCMYK(t *testing.T) {
 }
 
 func BenchmarkStringHexColor(b *testing.B) {
-	benchmarkStringFormatColorRule(b, StringHexColor(), stringHexColorTestCases)
+	benchmarkStringFormatColorRule(b, StringHexColor(), "#112233")
 }
 
 func BenchmarkStringRGB(b *testing.B) {
-	benchmarkStringFormatColorRule(b, StringRGB(), stringRGBTestCases)
+	benchmarkStringFormatColorRule(b, StringRGB(), "rgb(12, 34, 56)")
 }
 
 func BenchmarkStringRGBA(b *testing.B) {
-	benchmarkStringFormatColorRule(b, StringRGBA(), stringRGBATestCases)
+	benchmarkStringFormatColorRule(b, StringRGBA(), "rgba(12, 34, 56, 0.25)")
 }
 
 func BenchmarkStringHSL(b *testing.B) {
-	benchmarkStringFormatColorRule(b, StringHSL(), stringHSLTestCases)
+	benchmarkStringFormatColorRule(b, StringHSL(), "hsl(120, 50%, 25%)")
 }
 
 func BenchmarkStringHSLA(b *testing.B) {
-	benchmarkStringFormatColorRule(b, StringHSLA(), stringHSLATestCases)
+	benchmarkStringFormatColorRule(b, StringHSLA(), "hsla(120, 50%, 25%, 0.5)")
 }
 
 func BenchmarkStringCMYK(b *testing.B) {
-	benchmarkStringFormatColorRule(b, StringCMYK(), stringCMYKTestCases)
+	benchmarkStringFormatColorRule(b, StringCMYK(), "cmyk(1%, 2%, 3%, 4%)")
 }
 
 func assertStringFormatColorRule(
@@ -213,12 +213,10 @@ func assertStringFormatColorRule(
 func benchmarkStringFormatColorRule(
 	b *testing.B,
 	rule govy.Rule[string],
-	testCases []*stringFormatColorTestCase,
+	in string,
 ) {
 	b.Helper()
-	for _, tc := range testCases {
-		for range b.N {
-			_ = rule.Validate(tc.in)
-		}
+	for b.Loop() {
+		_ = rule.Validate(in)
 	}
 }

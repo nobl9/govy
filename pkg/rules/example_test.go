@@ -2,6 +2,7 @@ package rules_test
 
 import (
 	"fmt"
+	"net/url"
 	"time"
 
 	"github.com/nobl9/govy/pkg/govy"
@@ -16,6 +17,35 @@ type Student struct {
 	Index     string `json:"index,omitempty"`
 	Name      string `json:"name,omitempty"`
 	IndexCopy string `json:"indexCopy,omitempty"`
+}
+
+func ExampleURL_withOptions() {
+	rule := rules.URL(
+		rules.URLHostRequired(),
+		rules.URLSchemes("https"),
+		rules.URLUserInfoForbidden(),
+		rules.URLHostAllowList("api.example.com"),
+	)
+	mustParseURL := func(rawURL string) *url.URL {
+		parsedURL, err := url.Parse(rawURL)
+		if err != nil {
+			panic(err)
+		}
+		return parsedURL
+	}
+
+	fmt.Println(rule.Validate(mustParseURL("https://api.example.com/v1")) == nil)
+	fmt.Println(rule.Validate(mustParseURL("http://api.example.com/v1")))
+	fmt.Println(rule.Validate(mustParseURL("mailto:alerts@example.com")))
+	fmt.Println(rule.Validate(mustParseURL("https://user@api.example.com/v1")))
+	fmt.Println(rule.Validate(mustParseURL("https://billing.example.com/v1")))
+
+	// Output:
+	// true
+	// valid URL must use one of the following schemes: 'https'
+	// valid URL must have a host
+	// valid URL must not contain user information
+	// valid URL must use one of the following hostnames: 'api.example.com'
 }
 
 func ExampleSliceUnique() {
