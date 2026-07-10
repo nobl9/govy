@@ -2,7 +2,6 @@ package rules
 
 import (
 	"strings"
-	"text/template"
 
 	"github.com/nobl9/govy/internal/messagetemplates"
 	"github.com/nobl9/govy/pkg/govy"
@@ -12,68 +11,75 @@ import (
 // It accepts digits separated by single spaces or hyphens and validates the check digit.
 // It does not validate ISBN registration-group or publisher ranges.
 func StringISBN() govy.Rule[string] {
-	return newStringPublicationRule(
-		messagetemplates.Get(messagetemplates.StringISBNTemplate),
-		ErrorCodeStringISBN,
-		"string must be a valid ISBN-10 or ISBN-13",
-		func(s string) bool {
-			return isISBN10(s) || isISBN13(s)
-		},
-	)
-}
+	tpl := messagetemplates.Get(messagetemplates.StringISBNTemplate)
 
-// StringISBN10 ensures the property's value is a valid ISBN-10.
-// It accepts digits separated by single spaces or hyphens and validates the check digit.
-// It does not validate ISBN registration-group or publisher ranges.
-func StringISBN10() govy.Rule[string] {
-	return newStringPublicationRule(
-		messagetemplates.Get(messagetemplates.StringISBN10Template),
-		ErrorCodeStringISBN10,
-		"string must be a valid ISBN-10",
-		isISBN10,
-	)
-}
-
-// StringISBN13 ensures the property's value is a valid ISBN-13.
-// It accepts digits separated by single spaces or hyphens and validates the check digit.
-// It does not validate ISBN registration-group or publisher ranges.
-func StringISBN13() govy.Rule[string] {
-	return newStringPublicationRule(
-		messagetemplates.Get(messagetemplates.StringISBN13Template),
-		ErrorCodeStringISBN13,
-		"string must be a valid ISBN-13",
-		isISBN13,
-	)
-}
-
-// StringISSN ensures the property's value is a valid ISSN.
-// It accepts 4 digits, a hyphen, 3 digits, and a final check character.
-func StringISSN() govy.Rule[string] {
-	return newStringPublicationRule(
-		messagetemplates.Get(messagetemplates.StringISSNTemplate),
-		ErrorCodeStringISSN,
-		"string must be a valid hyphenated ISSN",
-		isISSN,
-	)
-}
-
-func newStringPublicationRule(
-	tpl *template.Template,
-	errorCode govy.ErrorCode,
-	description string,
-	validate func(string) bool,
-) govy.Rule[string] {
 	return govy.NewRule(func(s string) error {
-		if !validate(s) {
+		if !isISBN10(s) && !isISBN13(s) {
 			return govy.NewRuleErrorTemplate(govy.TemplateVars{
 				PropertyValue: s,
 			})
 		}
 		return nil
 	}).
-		WithErrorCode(errorCode).
+		WithErrorCode(ErrorCodeStringISBN).
 		WithMessageTemplate(tpl).
-		WithDescription(description)
+		WithDescription("string must be a valid ISBN-10 or ISBN-13")
+}
+
+// StringISBN10 ensures the property's value is a valid ISBN-10.
+// It accepts digits separated by single spaces or hyphens and validates the check digit.
+// It does not validate ISBN registration-group or publisher ranges.
+func StringISBN10() govy.Rule[string] {
+	tpl := messagetemplates.Get(messagetemplates.StringISBN10Template)
+
+	return govy.NewRule(func(s string) error {
+		if !isISBN10(s) {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringISBN10).
+		WithMessageTemplate(tpl).
+		WithDescription("string must be a valid ISBN-10")
+}
+
+// StringISBN13 ensures the property's value is a valid ISBN-13.
+// It accepts digits separated by single spaces or hyphens and validates the check digit.
+// It does not validate ISBN registration-group or publisher ranges.
+func StringISBN13() govy.Rule[string] {
+	tpl := messagetemplates.Get(messagetemplates.StringISBN13Template)
+
+	return govy.NewRule(func(s string) error {
+		if !isISBN13(s) {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringISBN13).
+		WithMessageTemplate(tpl).
+		WithDescription("string must be a valid ISBN-13")
+}
+
+// StringISSN ensures the property's value is a valid ISSN.
+// It accepts 4 digits, a hyphen, 3 digits, and a final check character.
+func StringISSN() govy.Rule[string] {
+	tpl := messagetemplates.Get(messagetemplates.StringISSNTemplate)
+
+	return govy.NewRule(func(s string) error {
+		if !isISSN(s) {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringISSN).
+		WithMessageTemplate(tpl).
+		WithDescription("string must be a valid hyphenated ISSN")
 }
 
 func isISBN10(s string) bool {
