@@ -706,6 +706,64 @@ func BenchmarkStringJSON(b *testing.B) {
 	}
 }
 
+func TestStringE164(t *testing.T) {
+	tests := map[string]struct {
+		in            string
+		expectedError string
+	}{
+		"valid US number": {
+			in: "+14155552671",
+		},
+		"valid short country code": {
+			in: "+442071838750",
+		},
+		"valid minimum length": {
+			in: "+12",
+		},
+		"empty": {
+			expectedError: "string must be a valid E.164 phone number",
+		},
+		"missing plus": {
+			in:            "14155552671",
+			expectedError: "string must be a valid E.164 phone number",
+		},
+		"leading zero country code": {
+			in:            "+0123456789",
+			expectedError: "string must be a valid E.164 phone number",
+		},
+		"too long": {
+			in:            "+1234567890123456",
+			expectedError: "string must be a valid E.164 phone number",
+		},
+		"separator": {
+			in:            "+1-4155552671",
+			expectedError: "string must be a valid E.164 phone number",
+		},
+		"letters": {
+			in:            "+1415CALLNOW",
+			expectedError: "string must be a valid E.164 phone number",
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			err := StringE164().Validate(tt.in)
+			if tt.expectedError != "" {
+				assert.EqualError(t, err, tt.expectedError)
+				assert.True(t, govy.HasErrorCode(err, ErrorCodeStringE164))
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func BenchmarkStringE164(b *testing.B) {
+	rule := StringE164()
+	for b.Loop() {
+		_ = rule.Validate("+14155552671")
+	}
+}
+
 var stringContainsTestCases = []*struct {
 	in            string
 	substrings    []string
