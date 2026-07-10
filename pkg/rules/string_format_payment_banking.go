@@ -1,8 +1,6 @@
 package rules
 
 import (
-	"text/template"
-
 	"github.com/nobl9/govy/internal/messagetemplates"
 	"github.com/nobl9/govy/pkg/govy"
 )
@@ -11,54 +9,70 @@ import (
 // payment card number. It requires a 13- to 19-digit value that passes the
 // Luhn checksum and rejects all-same-digit values.
 func StringCreditCard() govy.Rule[string] {
-	return newStringPaymentBankingRule(
-		messagetemplates.Get(messagetemplates.StringCreditCardTemplate),
-		ErrorCodeStringCreditCard,
-		isValidCreditCard,
-	)
+	tpl := messagetemplates.Get(messagetemplates.StringCreditCardTemplate)
+
+	return govy.NewRule(func(s string) error {
+		if !isValidCreditCard(s) {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringCreditCard).
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
 }
 
 // StringLuhnChecksum ensures the property's value is a digit-only string that
 // passes the Luhn checksum.
 func StringLuhnChecksum() govy.Rule[string] {
-	return newStringPaymentBankingRule(
-		messagetemplates.Get(messagetemplates.StringLuhnChecksumTemplate),
-		ErrorCodeStringLuhnChecksum,
-		isLuhnChecksumValid,
-	)
+	tpl := messagetemplates.Get(messagetemplates.StringLuhnChecksumTemplate)
+
+	return govy.NewRule(func(s string) error {
+		if !isLuhnChecksumValid(s) {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringLuhnChecksum).
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
 }
 
 // StringBIC ensures the property's value matches the current BIC/SWIFT syntax.
 func StringBIC() govy.Rule[string] {
-	return newStringPaymentBankingRule(
-		messagetemplates.Get(messagetemplates.StringBICTemplate),
-		ErrorCodeStringBIC,
-		bicRegexp().MatchString,
-	)
+	tpl := messagetemplates.Get(messagetemplates.StringBICTemplate)
+
+	return govy.NewRule(func(s string) error {
+		if !bicRegexp().MatchString(s) {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringBIC).
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
 }
 
 // StringBICISO93622014 ensures the property's value matches the ISO 9362:2014
 // BIC syntax.
 func StringBICISO93622014() govy.Rule[string] {
-	return newStringPaymentBankingRule(
-		messagetemplates.Get(messagetemplates.StringBICISO93622014Template),
-		ErrorCodeStringBICISO93622014,
-		bicISO93622014Regexp().MatchString,
-	)
-}
+	tpl := messagetemplates.Get(messagetemplates.StringBICISO93622014Template)
 
-func newStringPaymentBankingRule(
-	tpl *template.Template,
-	errorCode govy.ErrorCode,
-	validator func(string) bool,
-) govy.Rule[string] {
 	return govy.NewRule(func(s string) error {
-		if validator(s) {
-			return nil
+		if !bicISO93622014Regexp().MatchString(s) {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+			})
 		}
-		return govy.NewRuleErrorTemplate(govy.TemplateVars{PropertyValue: s})
+		return nil
 	}).
-		WithErrorCode(errorCode).
+		WithErrorCode(ErrorCodeStringBICISO93622014).
 		WithMessageTemplate(tpl).
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
 }
