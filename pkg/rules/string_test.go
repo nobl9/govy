@@ -311,6 +311,58 @@ func BenchmarkStringUUID(b *testing.B) {
 	}
 }
 
+var stringMongoDBObjectIDTestCases = []*struct {
+	in            string
+	expectedError string
+}{
+	{
+		in: "507f1f77bcf86cd799439011",
+	},
+	{
+		in: "000000000000000000000000",
+	},
+	{
+		in:            "507F1F77BCF86CD799439011",
+		expectedError: "string must be a 24-character lowercase hexadecimal MongoDB ObjectID",
+	},
+	{
+		in:            "507f1f77bcf86cd79943901",
+		expectedError: "string must be a 24-character lowercase hexadecimal MongoDB ObjectID",
+	},
+	{
+		in:            "507f1f77bcf86cd7994390110",
+		expectedError: "string must be a 24-character lowercase hexadecimal MongoDB ObjectID",
+	},
+	{
+		in:            "507f1f77bcf86cd79943901g",
+		expectedError: "string must be a 24-character lowercase hexadecimal MongoDB ObjectID",
+	},
+	{
+		expectedError: "string must be a 24-character lowercase hexadecimal MongoDB ObjectID",
+	},
+}
+
+func TestStringMongoDBObjectID(t *testing.T) {
+	for _, tc := range stringMongoDBObjectIDTestCases {
+		err := StringMongoDBObjectID().Validate(tc.in)
+		if tc.expectedError != "" {
+			assert.EqualError(t, err, tc.expectedError)
+			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringMongoDBObjectID))
+		} else {
+			assert.NoError(t, err)
+		}
+	}
+}
+
+func BenchmarkStringMongoDBObjectID(b *testing.B) {
+	for _, tc := range stringMongoDBObjectIDTestCases {
+		rule := StringMongoDBObjectID()
+		for range b.N {
+			_ = rule.Validate(tc.in)
+		}
+	}
+}
+
 var stringEmailTestCases = []*struct {
 	in         string
 	shouldFail bool

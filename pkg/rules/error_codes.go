@@ -55,7 +55,6 @@ const (
 	ErrorCodeStringFQDN                    govy.ErrorCode = "string_fqdn"
 	ErrorCodeStringKubernetesQualifiedName govy.ErrorCode = "string_kubernetes_qualified_name"
 	ErrorCodeStringMongoDBObjectID         govy.ErrorCode = "string_mongodb_object_id"
-	ErrorCodeStringMongoDBConnectionString govy.ErrorCode = "string_mongodb_connection_string"
 	ErrorCodeSliceLength                   govy.ErrorCode = "slice_length"
 	ErrorCodeSliceMinLength                govy.ErrorCode = "slice_min_length"
 	ErrorCodeSliceMaxLength                govy.ErrorCode = "slice_max_length"
