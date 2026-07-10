@@ -1,8 +1,6 @@
 package rules
 
 import (
-	"text/template"
-
 	"github.com/nobl9/govy/internal/messagetemplates"
 	"github.com/nobl9/govy/pkg/govy"
 )
@@ -10,37 +8,35 @@ import (
 // StringEIN ensures the property's value is a US EIN in NN-NNNNNNN format
 // with a recognized prefix.
 func StringEIN() govy.Rule[string] {
-	return newStringFormatTaxRule(
-		messagetemplates.Get(messagetemplates.StringEINTemplate),
-		ErrorCodeStringEIN,
-		isValidEIN,
-	)
-}
+	tpl := messagetemplates.Get(messagetemplates.StringEINTemplate)
 
-// StringSSN ensures the property's value is a US SSN in NNN-NN-NNNN format.
-// It rejects area 000, 666, and 900-999, group 00, and serial 0000.
-func StringSSN() govy.Rule[string] {
-	return newStringFormatTaxRule(
-		messagetemplates.Get(messagetemplates.StringSSNTemplate),
-		ErrorCodeStringSSN,
-		isValidSSN,
-	)
-}
-
-func newStringFormatTaxRule(
-	tpl *template.Template,
-	errorCode govy.ErrorCode,
-	validator func(string) bool,
-) govy.Rule[string] {
 	return govy.NewRule(func(s string) error {
-		if !validator(s) {
+		if !isValidEIN(s) {
 			return govy.NewRuleErrorTemplate(govy.TemplateVars{
 				PropertyValue: s,
 			})
 		}
 		return nil
 	}).
-		WithErrorCode(errorCode).
+		WithErrorCode(ErrorCodeStringEIN).
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+}
+
+// StringSSN ensures the property's value is a US SSN in NNN-NN-NNNN format.
+// It rejects area 000, 666, and 900-999, group 00, and serial 0000.
+func StringSSN() govy.Rule[string] {
+	tpl := messagetemplates.Get(messagetemplates.StringSSNTemplate)
+
+	return govy.NewRule(func(s string) error {
+		if !isValidSSN(s) {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringSSN).
 		WithMessageTemplate(tpl).
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
 }
