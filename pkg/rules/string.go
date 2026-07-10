@@ -11,7 +11,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
-	"text/template"
 	"time"
 	"unicode"
 
@@ -294,63 +293,85 @@ func StringUUID() govy.Rule[string] {
 // StringUUIDRFC4122 ensures the property's value is an RFC 4122 UUID string.
 // It requires the canonical 36-character form, a version from 1 through 5, and RFC 4122 variant bits.
 func StringUUIDRFC4122() govy.Rule[string] {
-	return newStringFormatIDRule(
-		messagetemplates.Get(messagetemplates.StringUUIDRFC4122Template),
-		ErrorCodeStringUUIDRFC4122,
-		func(s string) bool { return uuidRFC4122Regexp().MatchString(s) },
-	)
-}
+	tpl := messagetemplates.Get(messagetemplates.StringUUIDRFC4122Template)
 
-// StringUUIDv3 ensures the property's value is a version 3 RFC 4122 UUID string.
-func StringUUIDv3() govy.Rule[string] {
-	return newStringFormatIDRule(
-		messagetemplates.Get(messagetemplates.StringUUIDv3Template),
-		ErrorCodeStringUUIDv3,
-		func(s string) bool { return uuidv3Regexp().MatchString(s) },
-	)
-}
-
-// StringUUIDv4 ensures the property's value is a version 4 RFC 4122 UUID string.
-func StringUUIDv4() govy.Rule[string] {
-	return newStringFormatIDRule(
-		messagetemplates.Get(messagetemplates.StringUUIDv4Template),
-		ErrorCodeStringUUIDv4,
-		func(s string) bool { return uuidv4Regexp().MatchString(s) },
-	)
-}
-
-// StringUUIDv5 ensures the property's value is a version 5 RFC 4122 UUID string.
-func StringUUIDv5() govy.Rule[string] {
-	return newStringFormatIDRule(
-		messagetemplates.Get(messagetemplates.StringUUIDv5Template),
-		ErrorCodeStringUUIDv5,
-		func(s string) bool { return uuidv5Regexp().MatchString(s) },
-	)
-}
-
-// StringULID ensures the property's value is a 26-character Crockford-base32 ULID string.
-func StringULID() govy.Rule[string] {
-	return newStringFormatIDRule(
-		messagetemplates.Get(messagetemplates.StringULIDTemplate),
-		ErrorCodeStringULID,
-		isValidULID,
-	)
-}
-
-func newStringFormatIDRule(
-	tpl *template.Template,
-	errorCode govy.ErrorCode,
-	validator func(string) bool,
-) govy.Rule[string] {
 	return govy.NewRule(func(s string) error {
-		if !validator(s) {
+		if !uuidRFC4122Regexp().MatchString(s) {
 			return govy.NewRuleErrorTemplate(govy.TemplateVars{
 				PropertyValue: s,
 			})
 		}
 		return nil
 	}).
-		WithErrorCode(errorCode).
+		WithErrorCode(ErrorCodeStringUUIDRFC4122).
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+}
+
+// StringUUIDv3 ensures the property's value is a version 3 RFC 4122 UUID string.
+func StringUUIDv3() govy.Rule[string] {
+	tpl := messagetemplates.Get(messagetemplates.StringUUIDv3Template)
+
+	return govy.NewRule(func(s string) error {
+		if !uuidv3Regexp().MatchString(s) {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringUUIDv3).
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+}
+
+// StringUUIDv4 ensures the property's value is a version 4 RFC 4122 UUID string.
+func StringUUIDv4() govy.Rule[string] {
+	tpl := messagetemplates.Get(messagetemplates.StringUUIDv4Template)
+
+	return govy.NewRule(func(s string) error {
+		if !uuidv4Regexp().MatchString(s) {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringUUIDv4).
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+}
+
+// StringUUIDv5 ensures the property's value is a version 5 RFC 4122 UUID string.
+func StringUUIDv5() govy.Rule[string] {
+	tpl := messagetemplates.Get(messagetemplates.StringUUIDv5Template)
+
+	return govy.NewRule(func(s string) error {
+		if !uuidv5Regexp().MatchString(s) {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringUUIDv5).
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+}
+
+// StringULID ensures the property's value is a 26-character Crockford-base32 ULID string.
+func StringULID() govy.Rule[string] {
+	tpl := messagetemplates.Get(messagetemplates.StringULIDTemplate)
+
+	return govy.NewRule(func(s string) error {
+		if !isValidULID(s) {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringULID).
 		WithMessageTemplate(tpl).
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
 }
