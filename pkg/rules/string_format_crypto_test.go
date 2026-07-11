@@ -141,8 +141,30 @@ func stringETHAddressTestCases() []stringFormatRuleTestCase {
 			in:   "0xde709f2102306220921060314715629080e2fb77",
 		},
 		{
-			name: "mixed case syntax only",
-			in:   "0x52908400098527886E0F7030069857D2E4169EE8",
+			name: "checksummed",
+			in:   "0x52908400098527886E0F7030069857D2E4169EE7",
+		},
+		{
+			name: "checksummed with mixed letters",
+			in:   "0x5AEDA56215b167893e80B4fE645BA6d5Bab767DE",
+		},
+		{
+			name: "checksummed with mixed casing",
+			in:   "0xfB6916095ca1df60bB79Ce92cE3Ea74c37c5d359",
+		},
+		{
+			name: "uppercase payload",
+			in:   "0xDE709F2102306220921060314715629080E2FB77",
+		},
+		{
+			name:          "bad checksum",
+			in:            "0x52908400098527886e0F7030069857D2E4169EE7",
+			expectedError: err,
+		},
+		{
+			name:          "bad checksum mixed letters",
+			in:            "0x5AEDA56215b167893e80B4fE645BA6d5Bab767De",
+			expectedError: err,
 		},
 		{
 			name:          "missing prefix",

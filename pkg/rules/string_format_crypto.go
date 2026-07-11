@@ -6,6 +6,8 @@ import (
 	"math/big"
 	"strings"
 
+	"golang.org/x/crypto/sha3"
+
 	"github.com/nobl9/govy/internal/messagetemplates"
 	"github.com/nobl9/govy/pkg/govy"
 )
@@ -57,14 +59,16 @@ func StringBTCBech32Address() govy.Rule[string] {
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
 }
 
-// StringETHAddress ensures the property's value is an Ethereum address in
-// hexadecimal form, with a 0x prefix followed by 40 hexadecimal characters.
-// It does not verify EIP-55 mixed-case checksum casing.
+// StringETHAddress ensures the property's value is an Ethereum address with a
+// 0x prefix followed by 40 hexadecimal characters.
+// Mixed-case addresses must satisfy the EIP-55 checksum.
+// All-lowercase and all-uppercase payloads are accepted as unchecksummed
+// addresses.
 func StringETHAddress() govy.Rule[string] {
 	tpl := messagetemplates.Get(messagetemplates.StringETHAddressTemplate)
 
 	return govy.NewRule(func(s string) error {
-		if !ethAddressRegexp().MatchString(s) {
+		if !isETHAddress(s) {
 			return govy.NewRuleErrorTemplate(govy.TemplateVars{
 				PropertyValue: s,
 			})
@@ -91,6 +95,47 @@ func isBTCAddress(s string) bool {
 
 	checksum := bitcoinChecksum(decoded[:21])
 	return bytes.Equal(checksum, decoded[21:])
+}
+
+func isETHAddress(s string) bool {
+	if !ethAddressRegexp().MatchString(s) {
+		return false
+	}
+
+	payload := s[len("0x"):]
+	if !hasMixedCase(payload) {
+		return true
+	}
+	return hasValidETHChecksum(payload)
+}
+
+func hasValidETHChecksum(payload string) bool {
+	hash := keccak256([]byte(strings.ToLower(payload)))
+	for i := range len(payload) {
+		b := payload[i]
+		if b >= '0' && b <= '9' {
+			continue
+		}
+
+		uppercase := ethChecksumNibble(hash, i) >= 8
+		if uppercase != (b >= 'A' && b <= 'F') {
+			return false
+		}
+	}
+	return true
+}
+
+func keccak256(data []byte) []byte {
+	h := sha3.NewLegacyKeccak256()
+	_, _ = h.Write(data)
+	return h.Sum(nil)
+}
+
+func ethChecksumNibble(hash []byte, index int) byte {
+	if index%2 == 0 {
+		return hash[index/2] >> 4
+	}
+	return hash[index/2] & 0x0f
 }
 
 func decodeBitcoinBase58(s string) ([]byte, bool) {
