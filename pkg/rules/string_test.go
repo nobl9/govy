@@ -708,7 +708,6 @@ func BenchmarkStringJSON(b *testing.B) {
 
 func TestStringBase64(t *testing.T) {
 	runStringEncodingRuleTest(t, StringBase64(), ErrorCodeStringBase64, map[string]stringEncodingRuleTestCase{
-		// cspell:disable
 		"empty":             {in: ""},
 		"single byte":       {in: "Zg=="},
 		"two bytes":         {in: "Zm8="},
@@ -730,13 +729,11 @@ func TestStringBase64(t *testing.T) {
 			in:            "Zm9v====",
 			expectedError: "string must be a valid standard padded base64 value",
 		},
-		// cspell:enable
 	})
 }
 
 func TestStringBase64URL(t *testing.T) {
 	runStringEncodingRuleTest(t, StringBase64URL(), ErrorCodeStringBase64URL, map[string]stringEncodingRuleTestCase{
-		// cspell:disable
 		"empty":        {in: ""},
 		"single byte":  {in: "Zg=="},
 		"two bytes":    {in: "Zm8="},
@@ -758,7 +755,6 @@ func TestStringBase64URL(t *testing.T) {
 			in:            "Zm9v====",
 			expectedError: "string must be a valid URL-safe padded base64 value",
 		},
-		// cspell:enable
 	})
 }
 
@@ -768,7 +764,6 @@ func TestStringBase64RawURL(t *testing.T) {
 		StringBase64RawURL(),
 		ErrorCodeStringBase64RawURL,
 		map[string]stringEncodingRuleTestCase{
-			// cspell:disable
 			"empty":        {in: ""},
 			"single byte":  {in: "Zg"},
 			"two bytes":    {in: "Zm8"},
@@ -790,14 +785,12 @@ func TestStringBase64RawURL(t *testing.T) {
 				in:            "Zm9v\n",
 				expectedError: "string must be a valid URL-safe base64 value without padding",
 			},
-			// cspell:enable
 		},
 	)
 }
 
 func TestStringHexadecimal(t *testing.T) {
 	runStringEncodingRuleTest(t, StringHexadecimal(), ErrorCodeStringHexadecimal, map[string]stringEncodingRuleTestCase{
-		// cspell:disable
 		"single digit":     {in: "0"},
 		"lowercase":        {in: "deadbeef"},
 		"uppercase":        {in: "DEADBEEF"},
@@ -819,7 +812,6 @@ func TestStringHexadecimal(t *testing.T) {
 			in:            "-0x1",
 			expectedError: "string must be a valid hexadecimal value",
 		},
-		// cspell:enable
 	})
 }
 
