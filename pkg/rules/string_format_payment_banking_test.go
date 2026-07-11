@@ -61,7 +61,6 @@ func BenchmarkStringLuhnChecksum(b *testing.B) {
 	}
 }
 
-// cspell:disable
 func BenchmarkStringBIC(b *testing.B) {
 	rule := StringBIC()
 	for b.Loop() {
@@ -130,8 +129,6 @@ var stringBICISO93622014TestCases = map[string]stringPaymentBankingTestCase{
 	"too short":             {in: "DEUTDEF", expectedError: "string must be a valid ISO 9362:2014 BIC"},
 	"punctuation":           {in: "DEUTDEFF50!", expectedError: "string must be a valid ISO 9362:2014 BIC"},
 }
-
-// cspell:enable
 
 func assertPaymentBankingRule(
 	t *testing.T,
