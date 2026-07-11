@@ -24,7 +24,7 @@ func StringHexColor() govy.Rule[string] {
 }
 
 // StringRGB ensures the property's value is a legacy comma-separated rgb(...) color.
-// It accepts either three numeric 0-255 components or three percentage 0-100% components.
+// It accepts either three numeric 0-255 components or three percentage components from 0% to 100%.
 func StringRGB() govy.Rule[string] {
 	tpl := messagetemplates.Get(messagetemplates.StringRGBTemplate)
 	return govy.NewRule(func(s string) error {
@@ -36,11 +36,11 @@ func StringRGB() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringRGB).
 		WithMessageTemplate(tpl).
-		WithDescription("string must be a legacy comma-separated rgb(...) color with numeric 0-255 or percentage 0-100% components")
+		WithDescription("string must be a legacy comma-separated rgb(...) color with numeric 0-255 or percentage components from 0% to 100%")
 }
 
 // StringRGBA ensures the property's value is a legacy comma-separated rgba(...) color.
-// It accepts RGB components and an alpha component of 0, 1, or a fractional 0.x value.
+// It accepts RGB components and an alpha component from 0 to 1 or 0% to 100%.
 func StringRGBA() govy.Rule[string] {
 	tpl := messagetemplates.Get(messagetemplates.StringRGBATemplate)
 	return govy.NewRule(func(s string) error {
@@ -52,7 +52,7 @@ func StringRGBA() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringRGBA).
 		WithMessageTemplate(tpl).
-		WithDescription("string must be a legacy comma-separated rgba(...) color with numeric 0-255 or percentage 0-100% RGB components and alpha 0, 1, or 0.x")
+		WithDescription("string must be a legacy comma-separated rgba(...) color with numeric 0-255 or percentage RGB components from 0% to 100% and alpha from 0 to 1 or 0% to 100%")
 }
 
 // StringHSL ensures the property's value is a legacy comma-separated hsl(...) color.
@@ -72,7 +72,7 @@ func StringHSL() govy.Rule[string] {
 }
 
 // StringHSLA ensures the property's value is a legacy comma-separated hsla(...) color.
-// It accepts HSL components and an alpha component of 0, 1, or a fractional 0.x value.
+// It accepts HSL components and an alpha component from 0 to 1 or 0% to 100%.
 func StringHSLA() govy.Rule[string] {
 	tpl := messagetemplates.Get(messagetemplates.StringHSLATemplate)
 	return govy.NewRule(func(s string) error {
@@ -84,7 +84,7 @@ func StringHSLA() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringHSLA).
 		WithMessageTemplate(tpl).
-		WithDescription("string must be a legacy comma-separated hsla(...) color with hue 0-360, saturation/lightness 0-100%, and alpha 0, 1, or 0.x")
+		WithDescription("string must be a legacy comma-separated hsla(...) color with hue 0-360, saturation/lightness 0% to 100%, and alpha from 0 to 1 or 0% to 100%")
 }
 
 // StringCMYK ensures the property's value is a cmyk(...) color.
@@ -104,11 +104,13 @@ func StringCMYK() govy.Rule[string] {
 }
 
 func splitCSSColorFunctionArgs(s, name string, count int) ([]string, bool) {
-	prefix := name + "("
-	if !strings.HasPrefix(s, prefix) || !strings.HasSuffix(s, ")") {
+	if len(s) <= len(name) ||
+		s[len(name)] != '(' ||
+		!strings.HasSuffix(s, ")") ||
+		!equalASCIIFold(s[:len(name)], name) {
 		return nil, false
 	}
-	body := strings.TrimSpace(strings.TrimSuffix(strings.TrimPrefix(s, prefix), ")"))
+	body := strings.TrimSpace(s[len(name)+1 : len(s)-1])
 	parts := strings.Split(body, ",")
 	if len(parts) != count {
 		return nil, false
@@ -150,15 +152,14 @@ func validRGBNumericComponent(s string) bool {
 
 func validPercentComponent(s string) bool {
 	value, ok := strings.CutSuffix(s, "%")
-	return ok && validIntComponent(value, 0, 100)
+	return ok && validDecimalComponent(value, 0, 100, false)
 }
 
 func validAlphaComponent(s string) bool {
-	if s == "0" || s == "1" {
-		return true
+	if value, ok := strings.CutSuffix(s, "%"); ok {
+		return validDecimalComponent(value, 0, 100, false)
 	}
-	value, ok := strings.CutPrefix(s, "0.")
-	return ok && isASCIIDigits(value)
+	return validDecimalComponent(s, 0, 1, true)
 }
 
 func validIntComponent(s string, minValue, maxValue int) bool {
@@ -166,6 +167,14 @@ func validIntComponent(s string, minValue, maxValue int) bool {
 		return false
 	}
 	n, err := strconv.Atoi(s)
+	return err == nil && n >= minValue && n <= maxValue
+}
+
+func validDecimalComponent(s string, minValue, maxValue float64, allowTrailingDot bool) bool {
+	if !isASCIIDecimal(s, allowTrailingDot) {
+		return false
+	}
+	n, err := strconv.ParseFloat(s, 64)
 	return err == nil && n >= minValue && n <= maxValue
 }
 
@@ -179,4 +188,46 @@ func isASCIIDigits(s string) bool {
 		}
 	}
 	return true
+}
+
+func isASCIIDecimal(s string, allowTrailingDot bool) bool {
+	if s == "" {
+		return false
+	}
+	hasDigit := false
+	hasDot := false
+	for i := range len(s) {
+		c := s[i]
+		switch {
+		case c >= '0' && c <= '9':
+			hasDigit = true
+		case c == '.' && !hasDot:
+			if !allowTrailingDot && i == len(s)-1 {
+				return false
+			}
+			hasDot = true
+		default:
+			return false
+		}
+	}
+	return hasDigit
+}
+
+func equalASCIIFold(a, b string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range len(a) {
+		if lowerASCII(a[i]) != lowerASCII(b[i]) {
+			return false
+		}
+	}
+	return true
+}
+
+func lowerASCII(b byte) byte {
+	if b >= 'A' && b <= 'Z' {
+		return b + ('a' - 'A')
+	}
+	return b
 }
