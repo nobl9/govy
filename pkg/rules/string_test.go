@@ -237,7 +237,6 @@ type stringUUIDTestCase struct {
 	shouldFail bool
 }
 
-// cspell:disable
 var stringUUIDTestCases = []*stringUUIDTestCase{
 	{in: "00000000-0000-0000-0000-000000000000"},
 	{in: "e190c630-8873-11ee-b9d1-0242ac120002"},
@@ -375,8 +374,6 @@ var stringULIDTestCases = []*stringFormatIDTestCase{
 		expectedError: "string must be a valid ULID",
 	},
 }
-
-// cspell:enable
 
 func TestStringUUID(t *testing.T) {
 	rule := StringUUID()

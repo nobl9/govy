@@ -36,6 +36,8 @@
     "Elts",
     "Fset",
     "Messagef",
+    "NDEKTSV",
+    "RRFFQ",
     "Skłodowska",
     "UUIDRFC",
     "atoi",
@@ -59,8 +61,10 @@
     "luhn",
     "mypkg",
     "nobl",
+    "ndektsv",
     "pkgs",
     "println",
+    "rrffq",
     "rtmp",
     "sloctl",
     "strconv",
@@ -70,6 +74,7 @@
     "uuidv",
     "vuln",
     "vulns",
+    "xxxa",
     "Implicits",
     "mygovy"
   ]
