@@ -311,55 +311,75 @@ func BenchmarkStringUUID(b *testing.B) {
 	}
 }
 
-var stringMongoDBObjectIDTestCases = []*struct {
+var stringMongoDBObjectIDTestCases = []struct {
+	name          string
 	in            string
 	expectedError string
 }{
 	{
-		in: "507f1f77bcf86cd799439011",
+		name: "lowercase",
+		in:   "507f1f77bcf86cd799439011",
 	},
 	{
-		in: "000000000000000000000000",
+		name: "zero value",
+		in:   "000000000000000000000000",
 	},
 	{
-		in:            "507F1F77BCF86CD799439011",
-		expectedError: "string must be a 24-character lowercase hexadecimal MongoDB ObjectID",
+		name: "uppercase",
+		in:   "507F1F77BCF86CD799439011",
 	},
 	{
+		name: "mixed case",
+		in:   "507f1F77BCF86CD799439011",
+	},
+	{
+		name:          "too short",
 		in:            "507f1f77bcf86cd79943901",
-		expectedError: "string must be a 24-character lowercase hexadecimal MongoDB ObjectID",
+		expectedError: "string must be a 24-character hexadecimal MongoDB ObjectID",
 	},
 	{
+		name:          "too long",
 		in:            "507f1f77bcf86cd7994390110",
-		expectedError: "string must be a 24-character lowercase hexadecimal MongoDB ObjectID",
+		expectedError: "string must be a 24-character hexadecimal MongoDB ObjectID",
 	},
 	{
+		name:          "non-hex lowercase letter",
 		in:            "507f1f77bcf86cd79943901g",
-		expectedError: "string must be a 24-character lowercase hexadecimal MongoDB ObjectID",
+		expectedError: "string must be a 24-character hexadecimal MongoDB ObjectID",
 	},
 	{
-		expectedError: "string must be a 24-character lowercase hexadecimal MongoDB ObjectID",
+		name:          "non-hex uppercase letter",
+		in:            "507F1F77BCF86CD79943901G",
+		expectedError: "string must be a 24-character hexadecimal MongoDB ObjectID",
+	},
+	{
+		name:          "empty",
+		expectedError: "string must be a 24-character hexadecimal MongoDB ObjectID",
 	},
 }
 
 func TestStringMongoDBObjectID(t *testing.T) {
 	for _, tc := range stringMongoDBObjectIDTestCases {
-		err := StringMongoDBObjectID().Validate(tc.in)
-		if tc.expectedError != "" {
-			assert.EqualError(t, err, tc.expectedError)
-			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringMongoDBObjectID))
-		} else {
-			assert.NoError(t, err)
-		}
+		t.Run(tc.name, func(t *testing.T) {
+			err := StringMongoDBObjectID().Validate(tc.in)
+			if tc.expectedError != "" {
+				assert.EqualError(t, err, tc.expectedError)
+				assert.True(t, govy.HasErrorCode(err, ErrorCodeStringMongoDBObjectID))
+			} else {
+				assert.NoError(t, err)
+			}
+		})
 	}
 }
 
 func BenchmarkStringMongoDBObjectID(b *testing.B) {
 	for _, tc := range stringMongoDBObjectIDTestCases {
-		rule := StringMongoDBObjectID()
-		for range b.N {
-			_ = rule.Validate(tc.in)
-		}
+		b.Run(tc.name, func(b *testing.B) {
+			rule := StringMongoDBObjectID()
+			for range b.N {
+				_ = rule.Validate(tc.in)
+			}
+		})
 	}
 }
 

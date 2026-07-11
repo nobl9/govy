@@ -21,7 +21,7 @@ var (
 	fqdnRegexp                 = lazyRegexCompile(
 		`^([a-zA-Z0-9]{1}[a-zA-Z0-9-]{0,62})(\.[a-zA-Z0-9]{1}[a-zA-Z0-9-]{0,62})*?(\.[a-zA-Z]{1}[a-zA-Z0-9]{0,62})\.?$`,
 	)
-	mongoDBObjectIDRegexp = lazyRegexCompile(`^[0-9a-f]{24}$`)
+	mongoDBObjectIDRegexp = lazyRegexCompile(`^[0-9a-fA-F]{24}$`)
 )
 
 // lazyRegexCompile returns a function that compiles the regular expression

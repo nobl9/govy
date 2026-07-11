@@ -291,7 +291,7 @@ func StringUUID() govy.Rule[string] {
 }
 
 // StringMongoDBObjectID ensures the property's value is a 24-character
-// lowercase hexadecimal MongoDB ObjectID.
+// hexadecimal MongoDB ObjectID.
 func StringMongoDBObjectID() govy.Rule[string] {
 	tpl := messagetemplates.Get(messagetemplates.StringMongoDBObjectIDTemplate)
 
