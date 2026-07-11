@@ -708,7 +708,6 @@ func BenchmarkStringJSON(b *testing.B) {
 
 func TestStringMD5(t *testing.T) {
 	runStringHashDigestRuleTest(t, StringMD5(), ErrorCodeStringMD5, map[string]stringHashDigestRuleTestCase{
-		// cspell:disable
 		"lowercase digest": {in: "d41d8cd98f00b204e9800998ecf8427e"},
 		"empty": {
 			in:            "",
@@ -726,13 +725,11 @@ func TestStringMD5(t *testing.T) {
 			in:            "d41d8cd98f00b204e9800998ecf8427g",
 			expectedError: "string must be a valid lowercase MD5 hexadecimal digest",
 		},
-		// cspell:enable
 	})
 }
 
 func TestStringSHA256(t *testing.T) {
 	runStringHashDigestRuleTest(t, StringSHA256(), ErrorCodeStringSHA256, map[string]stringHashDigestRuleTestCase{
-		// cspell:disable
 		"lowercase digest": {in: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"},
 		"empty": {
 			in:            "",
@@ -750,13 +747,11 @@ func TestStringSHA256(t *testing.T) {
 			in:            "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b85g",
 			expectedError: "string must be a valid lowercase SHA-256 hexadecimal digest",
 		},
-		// cspell:enable
 	})
 }
 
 func TestStringSHA384(t *testing.T) {
 	runStringHashDigestRuleTest(t, StringSHA384(), ErrorCodeStringSHA384, map[string]stringHashDigestRuleTestCase{
-		// cspell:disable
 		"lowercase digest": {
 			in: "38b060a751ac96384cd9327eb1b1e36a21fdb71114be07434c0cc7bf63f6e1da274edebfe76f65fbd51ad2f14898b95b",
 		},
@@ -776,13 +771,11 @@ func TestStringSHA384(t *testing.T) {
 			in:            "38b060a751ac96384cd9327eb1b1e36a21fdb71114be07434c0cc7bf63f6e1da274edebfe76f65fbd51ad2f14898b95g",
 			expectedError: "string must be a valid lowercase SHA-384 hexadecimal digest",
 		},
-		// cspell:enable
 	})
 }
 
 func TestStringSHA512(t *testing.T) {
 	runStringHashDigestRuleTest(t, StringSHA512(), ErrorCodeStringSHA512, map[string]stringHashDigestRuleTestCase{
-		// cspell:disable
 		"lowercase digest": {
 			in: "cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927da3e",
 		},
@@ -802,7 +795,6 @@ func TestStringSHA512(t *testing.T) {
 			in:            "cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927dag",
 			expectedError: "string must be a valid lowercase SHA-512 hexadecimal digest",
 		},
-		// cspell:enable
 	})
 }
 
