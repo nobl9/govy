@@ -47,7 +47,7 @@ func StringBIC() govy.Rule[string] {
 	tpl := messagetemplates.Get(messagetemplates.StringBICTemplate)
 
 	return govy.NewRule(func(s string) error {
-		if !bicRegexp().MatchString(s) {
+		if !isValidBIC(s) {
 			return govy.NewRuleErrorTemplate(govy.TemplateVars{
 				PropertyValue: s,
 			})
@@ -65,7 +65,7 @@ func StringBICISO93622014() govy.Rule[string] {
 	tpl := messagetemplates.Get(messagetemplates.StringBICISO93622014Template)
 
 	return govy.NewRule(func(s string) error {
-		if !bicISO93622014Regexp().MatchString(s) {
+		if !isValidBICISO93622014(s) {
 			return govy.NewRuleErrorTemplate(govy.TemplateVars{
 				PropertyValue: s,
 			})
@@ -122,4 +122,18 @@ func allSameDigit(s string) bool {
 		}
 	}
 	return true
+}
+
+func isValidBIC(s string) bool {
+	if !bicRegexp().MatchString(s) {
+		return false
+	}
+	return isValidBICCountryCode(s[4:6])
+}
+
+func isValidBICISO93622014(s string) bool {
+	if !bicISO93622014Regexp().MatchString(s) {
+		return false
+	}
+	return isValidBICCountryCode(s[4:6])
 }
