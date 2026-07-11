@@ -313,8 +313,6 @@ func StringJSON() govy.Rule[string] {
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
 }
 
-// cspell:words base64url alg
-
 // StringJWT ensures the property's value is a compact JSON Web Token (JWT).
 // It validates the three base64url-encoded segments, JSON object header,
 // JSON object claims set, and required `alg` header.

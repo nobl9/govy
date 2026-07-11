@@ -711,7 +711,6 @@ func TestStringJWT(t *testing.T) {
 		in            string
 		expectedError string
 	}{
-		// cspell:disable
 		"signed token": {
 			in: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9." +
 				"eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ." +
@@ -746,7 +745,6 @@ func TestStringJWT(t *testing.T) {
 			in:            "eyJhbGciOiJub25lIn0.e30.c2ln",
 			expectedError: `string must be a valid JSON Web Token: JWT signature segment must be empty when alg is "none"`,
 		},
-		// cspell:enable
 	}
 
 	for name, tt := range tests {
@@ -765,13 +763,11 @@ func TestStringJWT(t *testing.T) {
 func BenchmarkStringJWT(b *testing.B) {
 	rule := StringJWT()
 	values := []string{
-		// cspell:disable
 		"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9." +
 			"eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ." +
 			"SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
 		"eyJhbGciOiJub25lIn0.e30.",
 		"not-a-jwt",
-		// cspell:enable
 	}
 
 	for b.Loop() {
