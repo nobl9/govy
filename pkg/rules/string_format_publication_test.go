@@ -9,7 +9,6 @@ import (
 
 func TestStringISBN(t *testing.T) {
 	runStringPublicationRuleTest(t, StringISBN(), ErrorCodeStringISBN, map[string]stringPublicationRuleTestCase{
-		// cspell:disable
 		"isbn 10 hyphenated": {in: "0-306-40615-2"},
 		"isbn 10 plain":      {in: "0306406152"},
 		"isbn 10 x check":    {in: "0-9752298-0-X"},
@@ -41,13 +40,11 @@ func TestStringISBN(t *testing.T) {
 			in:            "abc",
 			expectedError: "string must be a valid ISBN",
 		},
-		// cspell:enable
 	})
 }
 
 func TestStringISBN10(t *testing.T) {
 	runStringPublicationRuleTest(t, StringISBN10(), ErrorCodeStringISBN10, map[string]stringPublicationRuleTestCase{
-		// cspell:disable
 		"hyphenated": {in: "0-306-40615-2"},
 		"plain":      {in: "0306406152"},
 		"x check":    {in: "0-9752298-0-X"},
@@ -72,13 +69,11 @@ func TestStringISBN10(t *testing.T) {
 			in:            "0-306--40615-2",
 			expectedError: "string must be a valid ISBN-10",
 		},
-		// cspell:enable
 	})
 }
 
 func TestStringISBN13(t *testing.T) {
 	runStringPublicationRuleTest(t, StringISBN13(), ErrorCodeStringISBN13, map[string]stringPublicationRuleTestCase{
-		// cspell:disable
 		"hyphenated":     {in: "978-0-306-40615-7"},
 		"plain":          {in: "9780306406157"},
 		"grouped":        {in: "978-3-16-148410-0"},
@@ -89,13 +84,11 @@ func TestStringISBN13(t *testing.T) {
 		"x check":        {in: "978030640615X", expectedError: "string must be a valid ISBN-13"},
 		"invalid prefix": {in: "9770306406157", expectedError: "string must be a valid ISBN-13"},
 		"trailing space": {in: "978 0 306 40615 7 ", expectedError: "string must be a valid ISBN-13"},
-		// cspell:enable
 	})
 }
 
 func TestStringISSN(t *testing.T) {
 	runStringPublicationRuleTest(t, StringISSN(), ErrorCodeStringISSN, map[string]stringPublicationRuleTestCase{
-		// cspell:disable
 		"numeric check":   {in: "2049-3630"},
 		"numeric example": {in: "0378-5955"},
 		"uppercase x":     {in: "2434-561X"},
@@ -106,7 +99,6 @@ func TestStringISSN(t *testing.T) {
 		"wrong grouping":  {in: "204-93630", expectedError: "string must be a valid ISSN"},
 		"x before check":  {in: "2049-36X0", expectedError: "string must be a valid ISSN"},
 		"hyphen as check": {in: "2049-363-", expectedError: "string must be a valid ISSN"},
-		// cspell:enable
 	})
 }
 
