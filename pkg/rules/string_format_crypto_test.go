@@ -7,42 +7,6 @@ import (
 	"github.com/nobl9/govy/pkg/govy"
 )
 
-func TestStringBTCAddress(t *testing.T) {
-	for _, tc := range stringBTCAddressTestCases() {
-		t.Run(tc.name, func(t *testing.T) {
-			assertStringFormatRule(t, StringBTCAddress(), ErrorCodeStringBTCAddress, tc)
-		})
-	}
-}
-
-func BenchmarkStringBTCAddress(b *testing.B) {
-	benchmarkStringFormatRule(b, StringBTCAddress(), stringBTCAddressTestCases())
-}
-
-func TestStringBTCBech32Address(t *testing.T) {
-	for _, tc := range stringBTCBech32AddressTestCases() {
-		t.Run(tc.name, func(t *testing.T) {
-			assertStringFormatRule(t, StringBTCBech32Address(), ErrorCodeStringBTCBech32Address, tc)
-		})
-	}
-}
-
-func BenchmarkStringBTCBech32Address(b *testing.B) {
-	benchmarkStringFormatRule(b, StringBTCBech32Address(), stringBTCBech32AddressTestCases())
-}
-
-func TestStringETHAddress(t *testing.T) {
-	for _, tc := range stringETHAddressTestCases() {
-		t.Run(tc.name, func(t *testing.T) {
-			assertStringFormatRule(t, StringETHAddress(), ErrorCodeStringETHAddress, tc)
-		})
-	}
-}
-
-func BenchmarkStringETHAddress(b *testing.B) {
-	benchmarkStringFormatRule(b, StringETHAddress(), stringETHAddressTestCases())
-}
-
 type stringFormatRuleTestCase struct {
 	name          string
 	in            string
@@ -87,6 +51,18 @@ func stringBTCAddressTestCases() []stringFormatRuleTestCase {
 	}
 }
 
+func TestStringBTCAddress(t *testing.T) {
+	for _, tc := range stringBTCAddressTestCases() {
+		t.Run(tc.name, func(t *testing.T) {
+			assertStringFormatRule(t, StringBTCAddress(), ErrorCodeStringBTCAddress, tc)
+		})
+	}
+}
+
+func BenchmarkStringBTCAddress(b *testing.B) {
+	benchmarkStringFormatRule(b, StringBTCAddress(), stringBTCAddressTestCases())
+}
+
 func stringBTCBech32AddressTestCases() []stringFormatRuleTestCase {
 	const err = "string must be a valid mainnet Bitcoin Bech32 address"
 	return []stringFormatRuleTestCase{
@@ -127,6 +103,18 @@ func stringBTCBech32AddressTestCases() []stringFormatRuleTestCase {
 			expectedError: err,
 		},
 	}
+}
+
+func TestStringBTCBech32Address(t *testing.T) {
+	for _, tc := range stringBTCBech32AddressTestCases() {
+		t.Run(tc.name, func(t *testing.T) {
+			assertStringFormatRule(t, StringBTCBech32Address(), ErrorCodeStringBTCBech32Address, tc)
+		})
+	}
+}
+
+func BenchmarkStringBTCBech32Address(b *testing.B) {
+	benchmarkStringFormatRule(b, StringBTCBech32Address(), stringBTCBech32AddressTestCases())
 }
 
 func stringETHAddressTestCases() []stringFormatRuleTestCase {
@@ -191,6 +179,18 @@ func stringETHAddressTestCases() []stringFormatRuleTestCase {
 			expectedError: err,
 		},
 	}
+}
+
+func TestStringETHAddress(t *testing.T) {
+	for _, tc := range stringETHAddressTestCases() {
+		t.Run(tc.name, func(t *testing.T) {
+			assertStringFormatRule(t, StringETHAddress(), ErrorCodeStringETHAddress, tc)
+		})
+	}
+}
+
+func BenchmarkStringETHAddress(b *testing.B) {
+	benchmarkStringFormatRule(b, StringETHAddress(), stringETHAddressTestCases())
 }
 
 func assertStringFormatRule(
