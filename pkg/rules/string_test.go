@@ -255,6 +255,28 @@ var stringUUIDTestCases = []*stringUUIDTestCase{
 	{in: "aaaaaaaa-1111-1111-aaaG-111111111111", shouldFail: true},
 }
 
+func TestStringUUID(t *testing.T) {
+	rule := StringUUID()
+	for _, tc := range stringUUIDTestCases {
+		err := rule.Validate(tc.in)
+		if tc.shouldFail {
+			assert.Error(t, err)
+			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringUUID))
+		} else {
+			assert.NoError(t, err)
+		}
+	}
+}
+
+func BenchmarkStringUUID(b *testing.B) {
+	rule := StringUUID()
+	for b.Loop() {
+		for _, tc := range stringUUIDTestCases {
+			_ = rule.Validate(tc.in)
+		}
+	}
+}
+
 var stringUUIDRFC4122TestCases = []*stringFormatIDTestCase{
 	{in: "f81d4fae-7dec-11d0-a765-00a0c91e6bf6"},
 	{in: "A987FBC9-4BED-3078-8F07-9141BA07C9F3"},
@@ -286,6 +308,14 @@ var stringUUIDRFC4122TestCases = []*stringFormatIDTestCase{
 	},
 }
 
+func TestStringUUIDRFC4122(t *testing.T) {
+	testStringFormatIDRule(t, StringUUIDRFC4122(), ErrorCodeStringUUIDRFC4122, stringUUIDRFC4122TestCases)
+}
+
+func BenchmarkStringUUIDRFC4122(b *testing.B) {
+	benchmarkStringFormatIDRule(b, StringUUIDRFC4122(), stringUUIDRFC4122TestCases)
+}
+
 var stringUUIDv3TestCases = []*stringFormatIDTestCase{
 	{in: "a987fbc9-4bed-3078-8f07-9141ba07c9f3"},
 	{in: "A987FBC9-4BED-3078-BF07-9141BA07C9F3"},
@@ -301,6 +331,14 @@ var stringUUIDv3TestCases = []*stringFormatIDTestCase{
 		in:            "a987fbc9-4bed-3078-8f07-9141ba07c9fg",
 		expectedError: "string must be a valid version 3 RFC 4122 UUID",
 	},
+}
+
+func TestStringUUIDv3(t *testing.T) {
+	testStringFormatIDRule(t, StringUUIDv3(), ErrorCodeStringUUIDv3, stringUUIDv3TestCases)
+}
+
+func BenchmarkStringUUIDv3(b *testing.B) {
+	benchmarkStringFormatIDRule(b, StringUUIDv3(), stringUUIDv3TestCases)
 }
 
 var stringUUIDv4TestCases = []*stringFormatIDTestCase{
@@ -320,6 +358,14 @@ var stringUUIDv4TestCases = []*stringFormatIDTestCase{
 	},
 }
 
+func TestStringUUIDv4(t *testing.T) {
+	testStringFormatIDRule(t, StringUUIDv4(), ErrorCodeStringUUIDv4, stringUUIDv4TestCases)
+}
+
+func BenchmarkStringUUIDv4(b *testing.B) {
+	benchmarkStringFormatIDRule(b, StringUUIDv4(), stringUUIDv4TestCases)
+}
+
 var stringUUIDv5TestCases = []*stringFormatIDTestCase{
 	{in: "987fbc97-4bed-5078-9f07-9141ba07c9f3"},
 	{in: "987FBC97-4BED-5078-AF07-9141BA07C9F3"},
@@ -335,6 +381,14 @@ var stringUUIDv5TestCases = []*stringFormatIDTestCase{
 		in:            "987fbc97-4bed-5078-9f07-9141ba07c9fg",
 		expectedError: "string must be a valid version 5 RFC 4122 UUID",
 	},
+}
+
+func TestStringUUIDv5(t *testing.T) {
+	testStringFormatIDRule(t, StringUUIDv5(), ErrorCodeStringUUIDv5, stringUUIDv5TestCases)
+}
+
+func BenchmarkStringUUIDv5(b *testing.B) {
+	benchmarkStringFormatIDRule(b, StringUUIDv5(), stringUUIDv5TestCases)
 }
 
 var stringULIDTestCases = []*stringFormatIDTestCase{
@@ -373,60 +427,6 @@ var stringULIDTestCases = []*stringFormatIDTestCase{
 		in:            "01ARZ3NDEKTSV4RRFFQ69G5F-V",
 		expectedError: "string must be a valid ULID",
 	},
-}
-
-func TestStringUUID(t *testing.T) {
-	rule := StringUUID()
-	for _, tc := range stringUUIDTestCases {
-		err := rule.Validate(tc.in)
-		if tc.shouldFail {
-			assert.Error(t, err)
-			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringUUID))
-		} else {
-			assert.NoError(t, err)
-		}
-	}
-}
-
-func BenchmarkStringUUID(b *testing.B) {
-	rule := StringUUID()
-	for b.Loop() {
-		for _, tc := range stringUUIDTestCases {
-			_ = rule.Validate(tc.in)
-		}
-	}
-}
-
-func TestStringUUIDRFC4122(t *testing.T) {
-	testStringFormatIDRule(t, StringUUIDRFC4122(), ErrorCodeStringUUIDRFC4122, stringUUIDRFC4122TestCases)
-}
-
-func BenchmarkStringUUIDRFC4122(b *testing.B) {
-	benchmarkStringFormatIDRule(b, StringUUIDRFC4122(), stringUUIDRFC4122TestCases)
-}
-
-func TestStringUUIDv3(t *testing.T) {
-	testStringFormatIDRule(t, StringUUIDv3(), ErrorCodeStringUUIDv3, stringUUIDv3TestCases)
-}
-
-func BenchmarkStringUUIDv3(b *testing.B) {
-	benchmarkStringFormatIDRule(b, StringUUIDv3(), stringUUIDv3TestCases)
-}
-
-func TestStringUUIDv4(t *testing.T) {
-	testStringFormatIDRule(t, StringUUIDv4(), ErrorCodeStringUUIDv4, stringUUIDv4TestCases)
-}
-
-func BenchmarkStringUUIDv4(b *testing.B) {
-	benchmarkStringFormatIDRule(b, StringUUIDv4(), stringUUIDv4TestCases)
-}
-
-func TestStringUUIDv5(t *testing.T) {
-	testStringFormatIDRule(t, StringUUIDv5(), ErrorCodeStringUUIDv5, stringUUIDv5TestCases)
-}
-
-func BenchmarkStringUUIDv5(b *testing.B) {
-	benchmarkStringFormatIDRule(b, StringUUIDv5(), stringUUIDv5TestCases)
 }
 
 func TestStringULID(t *testing.T) {
