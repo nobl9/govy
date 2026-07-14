@@ -7,74 +7,6 @@ import (
 	"github.com/nobl9/govy/pkg/govy"
 )
 
-func TestStringCreditCard(t *testing.T) {
-	rule := StringCreditCard()
-	for name, tc := range stringCreditCardTestCases {
-		t.Run(name, func(t *testing.T) {
-			err := rule.Validate(tc.in)
-			assertPaymentBankingRule(t, err, tc.expectedError, ErrorCodeStringCreditCard)
-		})
-	}
-}
-
-func TestStringLuhnChecksum(t *testing.T) {
-	rule := StringLuhnChecksum()
-	for name, tc := range stringLuhnChecksumTestCases {
-		t.Run(name, func(t *testing.T) {
-			err := rule.Validate(tc.in)
-			assertPaymentBankingRule(t, err, tc.expectedError, ErrorCodeStringLuhnChecksum)
-		})
-	}
-}
-
-func TestStringBIC(t *testing.T) {
-	rule := StringBIC()
-	for name, tc := range stringBICTestCases {
-		t.Run(name, func(t *testing.T) {
-			err := rule.Validate(tc.in)
-			assertPaymentBankingRule(t, err, tc.expectedError, ErrorCodeStringBIC)
-		})
-	}
-}
-
-func TestStringBICISO93622014(t *testing.T) {
-	rule := StringBICISO93622014()
-	for name, tc := range stringBICISO93622014TestCases {
-		t.Run(name, func(t *testing.T) {
-			err := rule.Validate(tc.in)
-			assertPaymentBankingRule(t, err, tc.expectedError, ErrorCodeStringBICISO93622014)
-		})
-	}
-}
-
-func BenchmarkStringCreditCard(b *testing.B) {
-	rule := StringCreditCard()
-	for b.Loop() {
-		_ = rule.Validate("4111111111111111")
-	}
-}
-
-func BenchmarkStringLuhnChecksum(b *testing.B) {
-	rule := StringLuhnChecksum()
-	for b.Loop() {
-		_ = rule.Validate("79927398713")
-	}
-}
-
-func BenchmarkStringBIC(b *testing.B) {
-	rule := StringBIC()
-	for b.Loop() {
-		_ = rule.Validate("DEUTDEFF500")
-	}
-}
-
-func BenchmarkStringBICISO93622014(b *testing.B) {
-	rule := StringBICISO93622014()
-	for b.Loop() {
-		_ = rule.Validate("DEUTDEFF500")
-	}
-}
-
 type stringPaymentBankingTestCase struct {
 	in            string
 	expectedError string
@@ -96,6 +28,23 @@ var stringCreditCardTestCases = map[string]stringPaymentBankingTestCase{
 	"all same digits":  {in: "0000000000000", expectedError: "string must be a valid credit card number"},
 }
 
+func TestStringCreditCard(t *testing.T) {
+	rule := StringCreditCard()
+	for name, tc := range stringCreditCardTestCases {
+		t.Run(name, func(t *testing.T) {
+			err := rule.Validate(tc.in)
+			assertPaymentBankingRule(t, err, tc.expectedError, ErrorCodeStringCreditCard)
+		})
+	}
+}
+
+func BenchmarkStringCreditCard(b *testing.B) {
+	rule := StringCreditCard()
+	for b.Loop() {
+		_ = rule.Validate("4111111111111111")
+	}
+}
+
 var stringLuhnChecksumTestCases = map[string]stringPaymentBankingTestCase{
 	"single zero":   {in: "0"},
 	"all zeroes":    {in: "0000"},
@@ -104,6 +53,23 @@ var stringLuhnChecksumTestCases = map[string]stringPaymentBankingTestCase{
 	"empty":         {in: "", expectedError: "string must pass the Luhn checksum"},
 	"failed check":  {in: "79927398710", expectedError: "string must pass the Luhn checksum"},
 	"non digit":     {in: "7992739871A", expectedError: "string must pass the Luhn checksum"},
+}
+
+func TestStringLuhnChecksum(t *testing.T) {
+	rule := StringLuhnChecksum()
+	for name, tc := range stringLuhnChecksumTestCases {
+		t.Run(name, func(t *testing.T) {
+			err := rule.Validate(tc.in)
+			assertPaymentBankingRule(t, err, tc.expectedError, ErrorCodeStringLuhnChecksum)
+		})
+	}
+}
+
+func BenchmarkStringLuhnChecksum(b *testing.B) {
+	rule := StringLuhnChecksum()
+	for b.Loop() {
+		_ = rule.Validate("79927398713")
+	}
 }
 
 var stringBICTestCases = map[string]stringPaymentBankingTestCase{
@@ -126,6 +92,23 @@ var stringBICTestCases = map[string]stringPaymentBankingTestCase{
 	"punctuation":           {in: "DEUTDEFF50!", expectedError: "string must be a valid BIC"},
 }
 
+func TestStringBIC(t *testing.T) {
+	rule := StringBIC()
+	for name, tc := range stringBICTestCases {
+		t.Run(name, func(t *testing.T) {
+			err := rule.Validate(tc.in)
+			assertPaymentBankingRule(t, err, tc.expectedError, ErrorCodeStringBIC)
+		})
+	}
+}
+
+func BenchmarkStringBIC(b *testing.B) {
+	rule := StringBIC()
+	for b.Loop() {
+		_ = rule.Validate("DEUTDEFF500")
+	}
+}
+
 var stringBICISO93622014TestCases = map[string]stringPaymentBankingTestCase{
 	"eight characters":      {in: "DEUTDEFF"},
 	"eleven characters":     {in: "DEUTDEFF500"},
@@ -142,6 +125,23 @@ var stringBICISO93622014TestCases = map[string]stringPaymentBankingTestCase{
 	"branch starts X":       {in: "DEUTDEFFXAA", expectedError: "string must be a valid ISO 9362:2014 BIC"},
 	"too short":             {in: "DEUTDEF", expectedError: "string must be a valid ISO 9362:2014 BIC"},
 	"punctuation":           {in: "DEUTDEFF50!", expectedError: "string must be a valid ISO 9362:2014 BIC"},
+}
+
+func TestStringBICISO93622014(t *testing.T) {
+	rule := StringBICISO93622014()
+	for name, tc := range stringBICISO93622014TestCases {
+		t.Run(name, func(t *testing.T) {
+			err := rule.Validate(tc.in)
+			assertPaymentBankingRule(t, err, tc.expectedError, ErrorCodeStringBICISO93622014)
+		})
+	}
+}
+
+func BenchmarkStringBICISO93622014(b *testing.B) {
+	rule := StringBICISO93622014()
+	for b.Loop() {
+		_ = rule.Validate("DEUTDEFF500")
+	}
 }
 
 func assertPaymentBankingRule(
