@@ -706,134 +706,141 @@ func BenchmarkStringJSON(b *testing.B) {
 	}
 }
 
+type stringEncodingRuleTestCase struct {
+	in            string
+	expectedError string
+}
+
+var stringBase64TestCases = map[string]stringEncodingRuleTestCase{
+	"empty":             {in: ""},
+	"single byte":       {in: "Zg=="},
+	"two bytes":         {in: "Zm8="},
+	"three bytes":       {in: "Zm9v"},
+	"standard alphabet": {in: "+/8="},
+	"missing padding": {
+		in:            "Zg",
+		expectedError: "string must be a valid standard padded base64 value",
+	},
+	"url alphabet": {
+		in:            "-_8=",
+		expectedError: "string must be a valid standard padded base64 value",
+	},
+	"new line": {
+		in:            "Zm9v\n",
+		expectedError: "string must be a valid standard padded base64 value",
+	},
+	"extra padding": {
+		in:            "Zm9v====",
+		expectedError: "string must be a valid standard padded base64 value",
+	},
+}
+
 func TestStringBase64(t *testing.T) {
-	runStringEncodingRuleTest(t, StringBase64(), ErrorCodeStringBase64, map[string]stringEncodingRuleTestCase{
-		"empty":             {in: ""},
-		"single byte":       {in: "Zg=="},
-		"two bytes":         {in: "Zm8="},
-		"three bytes":       {in: "Zm9v"},
-		"standard alphabet": {in: "+/8="},
-		"missing padding": {
-			in:            "Zg",
-			expectedError: "string must be a valid standard padded base64 value",
-		},
-		"url alphabet": {
-			in:            "-_8=",
-			expectedError: "string must be a valid standard padded base64 value",
-		},
-		"new line": {
-			in:            "Zm9v\n",
-			expectedError: "string must be a valid standard padded base64 value",
-		},
-		"extra padding": {
-			in:            "Zm9v====",
-			expectedError: "string must be a valid standard padded base64 value",
-		},
-	})
-}
-
-func TestStringBase64URL(t *testing.T) {
-	runStringEncodingRuleTest(t, StringBase64URL(), ErrorCodeStringBase64URL, map[string]stringEncodingRuleTestCase{
-		"empty":        {in: ""},
-		"single byte":  {in: "Zg=="},
-		"two bytes":    {in: "Zm8="},
-		"three bytes":  {in: "Zm9v"},
-		"url alphabet": {in: "-_8="},
-		"standard alphabet": {
-			in:            "+/8=",
-			expectedError: "string must be a valid URL-safe padded base64 value",
-		},
-		"missing padding": {
-			in:            "Zm8",
-			expectedError: "string must be a valid URL-safe padded base64 value",
-		},
-		"new line": {
-			in:            "Zm9v\n",
-			expectedError: "string must be a valid URL-safe padded base64 value",
-		},
-		"extra padding": {
-			in:            "Zm9v====",
-			expectedError: "string must be a valid URL-safe padded base64 value",
-		},
-	})
-}
-
-func TestStringBase64RawURL(t *testing.T) {
-	runStringEncodingRuleTest(
-		t,
-		StringBase64RawURL(),
-		ErrorCodeStringBase64RawURL,
-		map[string]stringEncodingRuleTestCase{
-			"empty":        {in: ""},
-			"single byte":  {in: "Zg"},
-			"two bytes":    {in: "Zm8"},
-			"three bytes":  {in: "Zm9v"},
-			"url alphabet": {in: "-_8"},
-			"padded": {
-				in:            "Zg==",
-				expectedError: "string must be a valid URL-safe base64 value without padding",
-			},
-			"standard alphabet": {
-				in:            "+/8",
-				expectedError: "string must be a valid URL-safe base64 value without padding",
-			},
-			"invalid length": {
-				in:            "A",
-				expectedError: "string must be a valid URL-safe base64 value without padding",
-			},
-			"new line": {
-				in:            "Zm9v\n",
-				expectedError: "string must be a valid URL-safe base64 value without padding",
-			},
-		},
-	)
-}
-
-func TestStringHexadecimal(t *testing.T) {
-	runStringEncodingRuleTest(t, StringHexadecimal(), ErrorCodeStringHexadecimal, map[string]stringEncodingRuleTestCase{
-		"single digit":     {in: "0"},
-		"lowercase":        {in: "deadbeef"},
-		"uppercase":        {in: "DEADBEEF"},
-		"lowercase prefix": {in: "0xdeadBEEF"},
-		"uppercase prefix": {in: "0XABCDEF"},
-		"empty": {
-			in:            "",
-			expectedError: "string must be a valid hexadecimal value",
-		},
-		"prefix only": {
-			in:            "0x",
-			expectedError: "string must be a valid hexadecimal value",
-		},
-		"invalid digit": {
-			in:            "0xabcdefg",
-			expectedError: "string must be a valid hexadecimal value",
-		},
-		"minus sign": {
-			in:            "-0x1",
-			expectedError: "string must be a valid hexadecimal value",
-		},
-	})
+	runStringEncodingRuleTest(t, StringBase64(), ErrorCodeStringBase64, stringBase64TestCases)
 }
 
 func BenchmarkStringBase64(b *testing.B) {
 	benchmarkStringEncodingRule(b, StringBase64(), []string{"", "Zg==", "Zm9v", "+/8=", "Zg"})
 }
 
+var stringBase64URLTestCases = map[string]stringEncodingRuleTestCase{
+	"empty":        {in: ""},
+	"single byte":  {in: "Zg=="},
+	"two bytes":    {in: "Zm8="},
+	"three bytes":  {in: "Zm9v"},
+	"url alphabet": {in: "-_8="},
+	"standard alphabet": {
+		in:            "+/8=",
+		expectedError: "string must be a valid URL-safe padded base64 value",
+	},
+	"missing padding": {
+		in:            "Zm8",
+		expectedError: "string must be a valid URL-safe padded base64 value",
+	},
+	"new line": {
+		in:            "Zm9v\n",
+		expectedError: "string must be a valid URL-safe padded base64 value",
+	},
+	"extra padding": {
+		in:            "Zm9v====",
+		expectedError: "string must be a valid URL-safe padded base64 value",
+	},
+}
+
+func TestStringBase64URL(t *testing.T) {
+	runStringEncodingRuleTest(t, StringBase64URL(), ErrorCodeStringBase64URL, stringBase64URLTestCases)
+}
+
 func BenchmarkStringBase64URL(b *testing.B) {
 	benchmarkStringEncodingRule(b, StringBase64URL(), []string{"", "Zg==", "Zm9v", "-_8=", "+/8="})
+}
+
+var stringBase64RawURLTestCases = map[string]stringEncodingRuleTestCase{
+	"empty":        {in: ""},
+	"single byte":  {in: "Zg"},
+	"two bytes":    {in: "Zm8"},
+	"three bytes":  {in: "Zm9v"},
+	"url alphabet": {in: "-_8"},
+	"padded": {
+		in:            "Zg==",
+		expectedError: "string must be a valid URL-safe base64 value without padding",
+	},
+	"standard alphabet": {
+		in:            "+/8",
+		expectedError: "string must be a valid URL-safe base64 value without padding",
+	},
+	"invalid length": {
+		in:            "A",
+		expectedError: "string must be a valid URL-safe base64 value without padding",
+	},
+	"new line": {
+		in:            "Zm9v\n",
+		expectedError: "string must be a valid URL-safe base64 value without padding",
+	},
+}
+
+func TestStringBase64RawURL(t *testing.T) {
+	runStringEncodingRuleTest(
+		t,
+		StringBase64RawURL(),
+		ErrorCodeStringBase64RawURL, stringBase64RawURLTestCases,
+	)
 }
 
 func BenchmarkStringBase64RawURL(b *testing.B) {
 	benchmarkStringEncodingRule(b, StringBase64RawURL(), []string{"", "Zg", "Zm9v", "-_8", "Zg=="})
 }
 
-func BenchmarkStringHexadecimal(b *testing.B) {
-	benchmarkStringEncodingRule(b, StringHexadecimal(), []string{"0", "deadbeef", "0XABCDEF", "0x"})
+var stringHexadecimalTestCases = map[string]stringEncodingRuleTestCase{
+	"single digit":     {in: "0"},
+	"lowercase":        {in: "deadbeef"},
+	"uppercase":        {in: "DEADBEEF"},
+	"lowercase prefix": {in: "0xdeadBEEF"},
+	"uppercase prefix": {in: "0XABCDEF"},
+	"empty": {
+		in:            "",
+		expectedError: "string must be a valid hexadecimal value",
+	},
+	"prefix only": {
+		in:            "0x",
+		expectedError: "string must be a valid hexadecimal value",
+	},
+	"invalid digit": {
+		in:            "0xabcdefg",
+		expectedError: "string must be a valid hexadecimal value",
+	},
+	"minus sign": {
+		in:            "-0x1",
+		expectedError: "string must be a valid hexadecimal value",
+	},
 }
 
-type stringEncodingRuleTestCase struct {
-	in            string
-	expectedError string
+func TestStringHexadecimal(t *testing.T) {
+	runStringEncodingRuleTest(t, StringHexadecimal(), ErrorCodeStringHexadecimal, stringHexadecimalTestCases)
+}
+
+func BenchmarkStringHexadecimal(b *testing.B) {
+	benchmarkStringEncodingRule(b, StringHexadecimal(), []string{"0", "deadbeef", "0XABCDEF", "0x"})
 }
 
 func runStringEncodingRuleTest(
