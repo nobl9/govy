@@ -43,6 +43,17 @@ var stringHexColorTestCases = []*stringFormatColorTestCase{
 	{in: " #123", expectedError: errStringHexColor},
 }
 
+func TestStringHexColor(t *testing.T) {
+	rule := StringHexColor()
+	for _, tc := range stringHexColorTestCases {
+		assertStringFormatColorRule(t, rule, tc.in, tc.expectedError, ErrorCodeStringHexColor)
+	}
+}
+
+func BenchmarkStringHexColor(b *testing.B) {
+	benchmarkStringFormatColorRule(b, StringHexColor(), "#112233")
+}
+
 var stringRGBTestCases = []*stringFormatColorTestCase{
 	{in: "rgb(0,0,0)"},
 	{in: "RGB(0,0,0)"},
@@ -64,6 +75,17 @@ var stringRGBTestCases = []*stringFormatColorTestCase{
 	{in: "rgb(0.5,0,0)", expectedError: errStringRGB},
 	{in: "rgb(0, 0%, 0)", expectedError: errStringRGB},
 	{in: "rgb(0 0 0)", expectedError: errStringRGB},
+}
+
+func TestStringRGB(t *testing.T) {
+	rule := StringRGB()
+	for _, tc := range stringRGBTestCases {
+		assertStringFormatColorRule(t, rule, tc.in, tc.expectedError, ErrorCodeStringRGB)
+	}
+}
+
+func BenchmarkStringRGB(b *testing.B) {
+	benchmarkStringFormatColorRule(b, StringRGB(), "rgb(12, 34, 56)")
 }
 
 var stringRGBATestCases = []*stringFormatColorTestCase{
@@ -94,6 +116,17 @@ var stringRGBATestCases = []*stringFormatColorTestCase{
 	{in: "rgba(0, 0%, 0, 0.5)", expectedError: errStringRGBA},
 }
 
+func TestStringRGBA(t *testing.T) {
+	rule := StringRGBA()
+	for _, tc := range stringRGBATestCases {
+		assertStringFormatColorRule(t, rule, tc.in, tc.expectedError, ErrorCodeStringRGBA)
+	}
+}
+
+func BenchmarkStringRGBA(b *testing.B) {
+	benchmarkStringFormatColorRule(b, StringRGBA(), "rgba(12, 34, 56, 0.25)")
+}
+
 var stringHSLTestCases = []*stringFormatColorTestCase{
 	{in: "hsl(0,0%,0%)"},
 	{in: "HsL(0,0%,0%)"},
@@ -113,6 +146,17 @@ var stringHSLTestCases = []*stringFormatColorTestCase{
 	{in: "hsl(120,50%,0)", expectedError: errStringHSL},
 	{in: "hsl(120,50%,0%,1)", expectedError: errStringHSL},
 	{in: "hsl(120 50% 0%)", expectedError: errStringHSL},
+}
+
+func TestStringHSL(t *testing.T) {
+	rule := StringHSL()
+	for _, tc := range stringHSLTestCases {
+		assertStringFormatColorRule(t, rule, tc.in, tc.expectedError, ErrorCodeStringHSL)
+	}
+}
+
+func BenchmarkStringHSL(b *testing.B) {
+	benchmarkStringFormatColorRule(b, StringHSL(), "hsl(120, 50%, 25%)")
 }
 
 var stringHSLATestCases = []*stringFormatColorTestCase{
@@ -142,6 +186,17 @@ var stringHSLATestCases = []*stringFormatColorTestCase{
 	{in: "hsla(120,50%,0%,50px)", expectedError: errStringHSLA},
 }
 
+func TestStringHSLA(t *testing.T) {
+	rule := StringHSLA()
+	for _, tc := range stringHSLATestCases {
+		assertStringFormatColorRule(t, rule, tc.in, tc.expectedError, ErrorCodeStringHSLA)
+	}
+}
+
+func BenchmarkStringHSLA(b *testing.B) {
+	benchmarkStringFormatColorRule(b, StringHSLA(), "hsla(120, 50%, 25%, 0.5)")
+}
+
 var stringCMYKTestCases = []*stringFormatColorTestCase{
 	{in: "cmyk(0%,0%,0%,0%)"},
 	{in: "CMYK(0%,0%,0%,0%)"},
@@ -159,66 +214,11 @@ var stringCMYKTestCases = []*stringFormatColorTestCase{
 	{in: "cmyk(0%,0%,0%,0%,0%)", expectedError: errStringCMYK},
 }
 
-func TestStringHexColor(t *testing.T) {
-	rule := StringHexColor()
-	for _, tc := range stringHexColorTestCases {
-		assertStringFormatColorRule(t, rule, tc.in, tc.expectedError, ErrorCodeStringHexColor)
-	}
-}
-
-func TestStringRGB(t *testing.T) {
-	rule := StringRGB()
-	for _, tc := range stringRGBTestCases {
-		assertStringFormatColorRule(t, rule, tc.in, tc.expectedError, ErrorCodeStringRGB)
-	}
-}
-
-func TestStringRGBA(t *testing.T) {
-	rule := StringRGBA()
-	for _, tc := range stringRGBATestCases {
-		assertStringFormatColorRule(t, rule, tc.in, tc.expectedError, ErrorCodeStringRGBA)
-	}
-}
-
-func TestStringHSL(t *testing.T) {
-	rule := StringHSL()
-	for _, tc := range stringHSLTestCases {
-		assertStringFormatColorRule(t, rule, tc.in, tc.expectedError, ErrorCodeStringHSL)
-	}
-}
-
-func TestStringHSLA(t *testing.T) {
-	rule := StringHSLA()
-	for _, tc := range stringHSLATestCases {
-		assertStringFormatColorRule(t, rule, tc.in, tc.expectedError, ErrorCodeStringHSLA)
-	}
-}
-
 func TestStringCMYK(t *testing.T) {
 	rule := StringCMYK()
 	for _, tc := range stringCMYKTestCases {
 		assertStringFormatColorRule(t, rule, tc.in, tc.expectedError, ErrorCodeStringCMYK)
 	}
-}
-
-func BenchmarkStringHexColor(b *testing.B) {
-	benchmarkStringFormatColorRule(b, StringHexColor(), "#112233")
-}
-
-func BenchmarkStringRGB(b *testing.B) {
-	benchmarkStringFormatColorRule(b, StringRGB(), "rgb(12, 34, 56)")
-}
-
-func BenchmarkStringRGBA(b *testing.B) {
-	benchmarkStringFormatColorRule(b, StringRGBA(), "rgba(12, 34, 56, 0.25)")
-}
-
-func BenchmarkStringHSL(b *testing.B) {
-	benchmarkStringFormatColorRule(b, StringHSL(), "hsl(120, 50%, 25%)")
-}
-
-func BenchmarkStringHSLA(b *testing.B) {
-	benchmarkStringFormatColorRule(b, StringHSLA(), "hsla(120, 50%, 25%, 0.5)")
 }
 
 func BenchmarkStringCMYK(b *testing.B) {
