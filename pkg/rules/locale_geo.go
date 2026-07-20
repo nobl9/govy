@@ -12,11 +12,6 @@ import (
 	"github.com/nobl9/govy/pkg/govy"
 )
 
-var (
-	iso31662Regexp          = lazyRegexCompile(`^[A-Z]{2}-[A-Z0-9]{1,3}$`)
-	decimalCoordinateRegexp = lazyRegexCompile(`^[+-]?(?:\d+(?:\.\d+)?|\.\d+)$`)
-)
-
 // iso3166Alpha2Codes returns the accepted ISO 3166-1 alpha-2 code elements.
 // x/text also recognizes aliases, reserved codes, and deleted codes.
 var iso3166Alpha2Codes = lazyLookupMap(func() map[string]struct{} {
@@ -349,7 +344,7 @@ func StringISO3166Alpha3() govy.Rule[string] {
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
 }
 
-// StringISO3166Numeric ensures the property's value is a valid ISO 3166-1 numeric country code.
+// StringISO3166Numeric ensures the property's value is a valid ISO 3166-1 numeric-3 country code.
 func StringISO3166Numeric() govy.Rule[string] {
 	tpl := messagetemplates.Get(messagetemplates.StringISO3166NumericTemplate)
 
@@ -367,7 +362,7 @@ func StringISO3166Numeric() govy.Rule[string] {
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
 }
 
-// StringISO31662 ensures the property's value is a valid ISO 3166-2 subdivision code.
+// StringISO31662 ensures the property's value is a valid ISO 3166-2 country subdivision code.
 func StringISO31662() govy.Rule[string] {
 	tpl := messagetemplates.Get(messagetemplates.StringISO31662Template)
 
@@ -385,7 +380,7 @@ func StringISO31662() govy.Rule[string] {
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
 }
 
-// StringISO4217 ensures the property's value is a valid ISO 4217 currency code.
+// StringISO4217 ensures the property's value is a valid ISO 4217 three-letter alphabetic currency code.
 func StringISO4217() govy.Rule[string] {
 	tpl := messagetemplates.Get(messagetemplates.StringISO4217Template)
 

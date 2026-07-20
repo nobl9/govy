@@ -177,9 +177,9 @@ var rawMessageTemplates = map[templateKey]string{
 	StringBCP47StrictLanguageTagTemplate: "string must be a valid canonical BCP 47 language tag",
 	StringISO3166Alpha2Template:          "string must be a valid ISO 3166-1 alpha-2 country code",
 	StringISO3166Alpha3Template:          "string must be a valid ISO 3166-1 alpha-3 country code",
-	StringISO3166NumericTemplate:         "string must be a valid ISO 3166-1 numeric country code",
-	StringISO31662Template:               "string must be a valid ISO 3166-2 subdivision code",
-	StringISO4217Template:                "string must be a valid ISO 4217 currency code",
+	StringISO3166NumericTemplate:         "string must be a valid ISO 3166-1 numeric-3 country code",
+	StringISO31662Template:               "string must be a valid ISO 3166-2 country subdivision code",
+	StringISO4217Template:                "string must be a valid ISO 4217 three-letter alphabetic currency code",
 	StringLatitudeTemplate:               "string must be a valid latitude coordinate",
 	StringLongitudeTemplate:              "string must be a valid longitude coordinate",
 	StringKubernetesQualifiedNameTemplate: `

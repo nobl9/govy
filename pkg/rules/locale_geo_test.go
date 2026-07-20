@@ -1,22 +1,11 @@
 package rules
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/nobl9/govy/internal/assert"
 	"github.com/nobl9/govy/pkg/govy"
-)
-
-const (
-	stringBCP47LanguageTagError       = "string must be a valid BCP 47 language tag (e.g. 'en', 'en-US', 'zh-Hant-TW')"
-	stringBCP47StrictLanguageTagError = "string must be a valid canonical BCP 47 language tag (e.g. 'en', 'en-US', 'zh-Hant-TW')"
-	stringISO3166Alpha2Error          = "string must be a valid ISO 3166-1 alpha-2 country code (e.g. 'US', 'PL', 'JP')"
-	stringISO3166Alpha3Error          = "string must be a valid ISO 3166-1 alpha-3 country code (e.g. 'USA', 'POL', 'JPN')"
-	stringISO3166NumericError         = "string must be a valid ISO 3166-1 numeric country code (e.g. '840', '616', '392')"
-	stringISO31662Error               = "string must be a valid ISO 3166-2 subdivision code (e.g. 'US-CA', 'GB-ENG', 'PL-14')"
-	stringISO4217Error                = "string must be a valid ISO 4217 currency code (e.g. 'USD', 'EUR', 'JPY')"
-	stringLatitudeError               = "string must be a valid latitude coordinate (e.g. '0', '-45.25', '90')"
-	stringLongitudeError              = "string must be a valid longitude coordinate (e.g. '0', '-122.4194', '180')"
 )
 
 func TestLazyLookupMap(t *testing.T) {
@@ -39,29 +28,42 @@ func TestLazyLookupMap(t *testing.T) {
 	assert.Equal(t, 1, calls)
 }
 
-var stringBCP47LanguageTagTestCases = []*struct {
-	in            string
-	expectedError string
-}{
-	{in: "en"},
-	{in: "en-US"},
-	{in: "zh-Hant-TW"},
-	{in: "iw"},
-	{in: "en_GB", expectedError: stringBCP47LanguageTagError},
-	{in: "English", expectedError: stringBCP47LanguageTagError},
-	{in: "", expectedError: stringBCP47LanguageTagError},
+var validStringBCP47LanguageTagInputs = []string{
+	"en",
+	"en-US",
+	"zh-Hant-TW",
+	"iw",
+}
+
+var invalidStringBCP47LanguageTagInputs = []string{
+	"en_GB",
+	"English",
+	"",
 }
 
 func TestStringBCP47LanguageTag(t *testing.T) {
-	for _, tc := range stringBCP47LanguageTagTestCases {
-		err := StringBCP47LanguageTag().Validate(tc.in)
-		if tc.expectedError != "" {
-			assert.EqualError(t, err, tc.expectedError)
-			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringBCP47LanguageTag))
-		} else {
-			assert.NoError(t, err)
+	rule := StringBCP47LanguageTag()
+	t.Run("valid inputs", func(t *testing.T) {
+		for _, input := range validStringBCP47LanguageTagInputs {
+			t.Run(fmt.Sprintf("%q", input), func(t *testing.T) {
+				assert.NoError(t, rule.Validate(input))
+			})
 		}
-	}
+	})
+	t.Run("invalid inputs", func(t *testing.T) {
+		for _, input := range invalidStringBCP47LanguageTagInputs {
+			t.Run(fmt.Sprintf("%q", input), func(t *testing.T) {
+				assert.Error(t, rule.Validate(input))
+			})
+		}
+		err := rule.Validate(invalidStringBCP47LanguageTagInputs[0])
+		assert.EqualError(
+			t,
+			err,
+			"string must be a valid BCP 47 language tag (e.g. 'en', 'en-US', 'zh-Hant-TW')",
+		)
+		assert.True(t, govy.HasErrorCode(err, ErrorCodeStringBCP47LanguageTag))
+	})
 }
 
 func BenchmarkStringBCP47LanguageTag(b *testing.B) {
@@ -71,30 +73,43 @@ func BenchmarkStringBCP47LanguageTag(b *testing.B) {
 	}
 }
 
-var stringBCP47StrictLanguageTagTestCases = []*struct {
-	in            string
-	expectedError string
-}{
-	{in: "en"},
-	{in: "en-US"},
-	{in: "zh-Hant-TW"},
-	{in: "iw", expectedError: stringBCP47StrictLanguageTagError},
-	{in: "EN-us", expectedError: stringBCP47StrictLanguageTagError},
-	{in: "en-Latn", expectedError: stringBCP47StrictLanguageTagError},
-	{in: "en_GB", expectedError: stringBCP47StrictLanguageTagError},
-	{in: "English", expectedError: stringBCP47StrictLanguageTagError},
+var validStringBCP47StrictLanguageTagInputs = []string{
+	"en",
+	"en-US",
+	"zh-Hant-TW",
+}
+
+var invalidStringBCP47StrictLanguageTagInputs = []string{
+	"iw",
+	"EN-us",
+	"en-Latn",
+	"en_GB",
+	"English",
 }
 
 func TestStringBCP47StrictLanguageTag(t *testing.T) {
-	for _, tc := range stringBCP47StrictLanguageTagTestCases {
-		err := StringBCP47StrictLanguageTag().Validate(tc.in)
-		if tc.expectedError != "" {
-			assert.EqualError(t, err, tc.expectedError)
-			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringBCP47StrictLanguageTag))
-		} else {
-			assert.NoError(t, err)
+	rule := StringBCP47StrictLanguageTag()
+	t.Run("valid inputs", func(t *testing.T) {
+		for _, input := range validStringBCP47StrictLanguageTagInputs {
+			t.Run(fmt.Sprintf("%q", input), func(t *testing.T) {
+				assert.NoError(t, rule.Validate(input))
+			})
 		}
-	}
+	})
+	t.Run("invalid inputs", func(t *testing.T) {
+		for _, input := range invalidStringBCP47StrictLanguageTagInputs {
+			t.Run(fmt.Sprintf("%q", input), func(t *testing.T) {
+				assert.Error(t, rule.Validate(input))
+			})
+		}
+		err := rule.Validate(invalidStringBCP47StrictLanguageTagInputs[0])
+		assert.EqualError(
+			t,
+			err,
+			"string must be a valid canonical BCP 47 language tag (e.g. 'en', 'en-US', 'zh-Hant-TW')",
+		)
+		assert.True(t, govy.HasErrorCode(err, ErrorCodeStringBCP47StrictLanguageTag))
+	})
 }
 
 func BenchmarkStringBCP47StrictLanguageTag(b *testing.B) {
@@ -104,33 +119,46 @@ func BenchmarkStringBCP47StrictLanguageTag(b *testing.B) {
 	}
 }
 
-var stringISO3166Alpha2TestCases = []*struct {
-	in            string
-	expectedError string
-}{
-	{in: "US"},
-	{in: "PL"},
-	{in: "JP"},
-	{in: "001", expectedError: stringISO3166Alpha2Error},
-	{in: "us", expectedError: stringISO3166Alpha2Error},
-	{in: "ZZ", expectedError: stringISO3166Alpha2Error},
-	{in: "UK", expectedError: stringISO3166Alpha2Error},
-	{in: "SU", expectedError: stringISO3166Alpha2Error},
-	{in: "AN", expectedError: stringISO3166Alpha2Error},
-	{in: "XK", expectedError: stringISO3166Alpha2Error},
-	{in: "AC", expectedError: stringISO3166Alpha2Error},
+var validStringISO3166Alpha2Inputs = []string{
+	"US",
+	"PL",
+	"JP",
+}
+
+var invalidStringISO3166Alpha2Inputs = []string{
+	"001",
+	"us",
+	"ZZ",
+	"UK",
+	"SU",
+	"AN",
+	"XK",
+	"AC",
 }
 
 func TestStringISO3166Alpha2(t *testing.T) {
-	for _, tc := range stringISO3166Alpha2TestCases {
-		err := StringISO3166Alpha2().Validate(tc.in)
-		if tc.expectedError != "" {
-			assert.EqualError(t, err, tc.expectedError)
-			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringISO3166Alpha2))
-		} else {
-			assert.NoError(t, err)
+	rule := StringISO3166Alpha2()
+	t.Run("valid inputs", func(t *testing.T) {
+		for _, input := range validStringISO3166Alpha2Inputs {
+			t.Run(fmt.Sprintf("%q", input), func(t *testing.T) {
+				assert.NoError(t, rule.Validate(input))
+			})
 		}
-	}
+	})
+	t.Run("invalid inputs", func(t *testing.T) {
+		for _, input := range invalidStringISO3166Alpha2Inputs {
+			t.Run(fmt.Sprintf("%q", input), func(t *testing.T) {
+				assert.Error(t, rule.Validate(input))
+			})
+		}
+		err := rule.Validate(invalidStringISO3166Alpha2Inputs[0])
+		assert.EqualError(
+			t,
+			err,
+			"string must be a valid ISO 3166-1 alpha-2 country code (e.g. 'US', 'PL', 'JP')",
+		)
+		assert.True(t, govy.HasErrorCode(err, ErrorCodeStringISO3166Alpha2))
+	})
 }
 
 func BenchmarkStringISO3166Alpha2(b *testing.B) {
@@ -140,33 +168,46 @@ func BenchmarkStringISO3166Alpha2(b *testing.B) {
 	}
 }
 
-var stringISO3166Alpha3TestCases = []*struct {
-	in            string
-	expectedError string
-}{
-	{in: "USA"},
-	{in: "POL"},
-	{in: "JPN"},
-	{in: "001", expectedError: stringISO3166Alpha3Error},
-	{in: "usa", expectedError: stringISO3166Alpha3Error},
-	{in: "ZZZ", expectedError: stringISO3166Alpha3Error},
-	{in: "SUN", expectedError: stringISO3166Alpha3Error},
-	{in: "ANT", expectedError: stringISO3166Alpha3Error},
-	{in: "DDR", expectedError: stringISO3166Alpha3Error},
-	{in: "XKK", expectedError: stringISO3166Alpha3Error},
-	{in: "ASC", expectedError: stringISO3166Alpha3Error},
+var validStringISO3166Alpha3Inputs = []string{
+	"USA",
+	"POL",
+	"JPN",
+}
+
+var invalidStringISO3166Alpha3Inputs = []string{
+	"001",
+	"usa",
+	"ZZZ",
+	"SUN",
+	"ANT",
+	"DDR",
+	"XKK",
+	"ASC",
 }
 
 func TestStringISO3166Alpha3(t *testing.T) {
-	for _, tc := range stringISO3166Alpha3TestCases {
-		err := StringISO3166Alpha3().Validate(tc.in)
-		if tc.expectedError != "" {
-			assert.EqualError(t, err, tc.expectedError)
-			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringISO3166Alpha3))
-		} else {
-			assert.NoError(t, err)
+	rule := StringISO3166Alpha3()
+	t.Run("valid inputs", func(t *testing.T) {
+		for _, input := range validStringISO3166Alpha3Inputs {
+			t.Run(fmt.Sprintf("%q", input), func(t *testing.T) {
+				assert.NoError(t, rule.Validate(input))
+			})
 		}
-	}
+	})
+	t.Run("invalid inputs", func(t *testing.T) {
+		for _, input := range invalidStringISO3166Alpha3Inputs {
+			t.Run(fmt.Sprintf("%q", input), func(t *testing.T) {
+				assert.Error(t, rule.Validate(input))
+			})
+		}
+		err := rule.Validate(invalidStringISO3166Alpha3Inputs[0])
+		assert.EqualError(
+			t,
+			err,
+			"string must be a valid ISO 3166-1 alpha-3 country code (e.g. 'USA', 'POL', 'JPN')",
+		)
+		assert.True(t, govy.HasErrorCode(err, ErrorCodeStringISO3166Alpha3))
+	})
 }
 
 func BenchmarkStringISO3166Alpha3(b *testing.B) {
@@ -176,32 +217,45 @@ func BenchmarkStringISO3166Alpha3(b *testing.B) {
 	}
 }
 
-var stringISO3166NumericTestCases = []*struct {
-	in            string
-	expectedError string
-}{
-	{in: "840"},
-	{in: "616"},
-	{in: "392"},
-	{in: "001", expectedError: stringISO3166NumericError},
-	{in: "84", expectedError: stringISO3166NumericError},
-	{in: "USA", expectedError: stringISO3166NumericError},
-	{in: "810", expectedError: stringISO3166NumericError},
-	{in: "530", expectedError: stringISO3166NumericError},
-	{in: "278", expectedError: stringISO3166NumericError},
-	{in: "983", expectedError: stringISO3166NumericError},
+var validStringISO3166NumericInputs = []string{
+	"840",
+	"616",
+	"392",
+}
+
+var invalidStringISO3166NumericInputs = []string{
+	"001",
+	"84",
+	"USA",
+	"810",
+	"530",
+	"278",
+	"983",
 }
 
 func TestStringISO3166Numeric(t *testing.T) {
-	for _, tc := range stringISO3166NumericTestCases {
-		err := StringISO3166Numeric().Validate(tc.in)
-		if tc.expectedError != "" {
-			assert.EqualError(t, err, tc.expectedError)
-			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringISO3166Numeric))
-		} else {
-			assert.NoError(t, err)
+	rule := StringISO3166Numeric()
+	t.Run("valid inputs", func(t *testing.T) {
+		for _, input := range validStringISO3166NumericInputs {
+			t.Run(fmt.Sprintf("%q", input), func(t *testing.T) {
+				assert.NoError(t, rule.Validate(input))
+			})
 		}
-	}
+	})
+	t.Run("invalid inputs", func(t *testing.T) {
+		for _, input := range invalidStringISO3166NumericInputs {
+			t.Run(fmt.Sprintf("%q", input), func(t *testing.T) {
+				assert.Error(t, rule.Validate(input))
+			})
+		}
+		err := rule.Validate(invalidStringISO3166NumericInputs[0])
+		assert.EqualError(
+			t,
+			err,
+			"string must be a valid ISO 3166-1 numeric-3 country code (e.g. '840', '616', '392')",
+		)
+		assert.True(t, govy.HasErrorCode(err, ErrorCodeStringISO3166Numeric))
+	})
 }
 
 func BenchmarkStringISO3166Numeric(b *testing.B) {
@@ -211,35 +265,48 @@ func BenchmarkStringISO3166Numeric(b *testing.B) {
 	}
 }
 
-var stringISO31662TestCases = []*struct {
-	in            string
-	expectedError string
-}{
-	{in: "US-CA"},
-	{in: "GB-ENG"},
-	{in: "PL-14"},
-	{in: "US-XXX", expectedError: stringISO31662Error},
-	{in: "FR-999", expectedError: stringISO31662Error},
-	{in: "ZZ-CA", expectedError: stringISO31662Error},
-	{in: "US-cal", expectedError: stringISO31662Error},
-	{in: "USA-CA", expectedError: stringISO31662Error},
-	{in: "UK-ENG", expectedError: stringISO31662Error},
-	{in: "SU-MOW", expectedError: stringISO31662Error},
-	{in: "AN-CW", expectedError: stringISO31662Error},
-	{in: "XK-01", expectedError: stringISO31662Error},
-	{in: "AC-SH", expectedError: stringISO31662Error},
+var validStringISO31662Inputs = []string{
+	"US-CA",
+	"GB-ENG",
+	"PL-14",
+}
+
+var invalidStringISO31662Inputs = []string{
+	"US-XXX",
+	"FR-999",
+	"ZZ-CA",
+	"US-cal",
+	"USA-CA",
+	"UK-ENG",
+	"SU-MOW",
+	"AN-CW",
+	"XK-01",
+	"AC-SH",
 }
 
 func TestStringISO31662(t *testing.T) {
-	for _, tc := range stringISO31662TestCases {
-		err := StringISO31662().Validate(tc.in)
-		if tc.expectedError != "" {
-			assert.EqualError(t, err, tc.expectedError)
-			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringISO31662))
-		} else {
-			assert.NoError(t, err)
+	rule := StringISO31662()
+	t.Run("valid inputs", func(t *testing.T) {
+		for _, input := range validStringISO31662Inputs {
+			t.Run(fmt.Sprintf("%q", input), func(t *testing.T) {
+				assert.NoError(t, rule.Validate(input))
+			})
 		}
-	}
+	})
+	t.Run("invalid inputs", func(t *testing.T) {
+		for _, input := range invalidStringISO31662Inputs {
+			t.Run(fmt.Sprintf("%q", input), func(t *testing.T) {
+				assert.Error(t, rule.Validate(input))
+			})
+		}
+		err := rule.Validate(invalidStringISO31662Inputs[0])
+		assert.EqualError(
+			t,
+			err,
+			"string must be a valid ISO 3166-2 country subdivision code (e.g. 'US-CA', 'GB-ENG', 'PL-14')",
+		)
+		assert.True(t, govy.HasErrorCode(err, ErrorCodeStringISO31662))
+	})
 }
 
 func BenchmarkStringISO31662(b *testing.B) {
@@ -249,36 +316,49 @@ func BenchmarkStringISO31662(b *testing.B) {
 	}
 }
 
-var stringISO4217TestCases = []*struct {
-	in            string
-	expectedError string
-}{
-	{in: "USD"},
-	{in: "EUR"},
-	{in: "JPY"},
-	{in: "XXX"},
-	{in: "XTS"},
-	{in: "XAU"},
-	{in: "usd", expectedError: stringISO4217Error},
-	{in: "ZZZ", expectedError: stringISO4217Error},
-	{in: "US", expectedError: stringISO4217Error},
-	{in: "ADP", expectedError: stringISO4217Error},
-	{in: "EEK", expectedError: stringISO4217Error},
-	{in: "ZWD", expectedError: stringISO4217Error},
-	{in: "RUR", expectedError: stringISO4217Error},
-	{in: "BYR", expectedError: stringISO4217Error},
+var validStringISO4217Inputs = []string{
+	"USD",
+	"EUR",
+	"JPY",
+	"XXX",
+	"XTS",
+	"XAU",
+}
+
+var invalidStringISO4217Inputs = []string{
+	"usd",
+	"ZZZ",
+	"US",
+	"ADP",
+	"EEK",
+	"ZWD",
+	"RUR",
+	"BYR",
 }
 
 func TestStringISO4217(t *testing.T) {
-	for _, tc := range stringISO4217TestCases {
-		err := StringISO4217().Validate(tc.in)
-		if tc.expectedError != "" {
-			assert.EqualError(t, err, tc.expectedError)
-			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringISO4217))
-		} else {
-			assert.NoError(t, err)
+	rule := StringISO4217()
+	t.Run("valid inputs", func(t *testing.T) {
+		for _, input := range validStringISO4217Inputs {
+			t.Run(fmt.Sprintf("%q", input), func(t *testing.T) {
+				assert.NoError(t, rule.Validate(input))
+			})
 		}
-	}
+	})
+	t.Run("invalid inputs", func(t *testing.T) {
+		for _, input := range invalidStringISO4217Inputs {
+			t.Run(fmt.Sprintf("%q", input), func(t *testing.T) {
+				assert.Error(t, rule.Validate(input))
+			})
+		}
+		err := rule.Validate(invalidStringISO4217Inputs[0])
+		assert.EqualError(
+			t,
+			err,
+			"string must be a valid ISO 4217 three-letter alphabetic currency code (e.g. 'USD', 'EUR', 'JPY')",
+		)
+		assert.True(t, govy.HasErrorCode(err, ErrorCodeStringISO4217))
+	})
 }
 
 func BenchmarkStringISO4217(b *testing.B) {
@@ -288,29 +368,38 @@ func BenchmarkStringISO4217(b *testing.B) {
 	}
 }
 
-var stringLatitudeTestCases = []*struct {
-	in            string
-	expectedError string
-}{
-	{in: "0"},
-	{in: "-45.25"},
-	{in: "+90"},
-	{in: ".5"},
-	{in: "90.1", expectedError: stringLatitudeError},
-	{in: "north", expectedError: stringLatitudeError},
-	{in: "1e2", expectedError: stringLatitudeError},
+var validStringLatitudeInputs = []string{
+	"0",
+	"-45.25",
+	"+90",
+	".5",
+}
+
+var invalidStringLatitudeInputs = []string{
+	"90.1",
+	"north",
+	"1e2",
 }
 
 func TestStringLatitude(t *testing.T) {
-	for _, tc := range stringLatitudeTestCases {
-		err := StringLatitude().Validate(tc.in)
-		if tc.expectedError != "" {
-			assert.EqualError(t, err, tc.expectedError)
-			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringLatitude))
-		} else {
-			assert.NoError(t, err)
+	rule := StringLatitude()
+	t.Run("valid inputs", func(t *testing.T) {
+		for _, input := range validStringLatitudeInputs {
+			t.Run(fmt.Sprintf("%q", input), func(t *testing.T) {
+				assert.NoError(t, rule.Validate(input))
+			})
 		}
-	}
+	})
+	t.Run("invalid inputs", func(t *testing.T) {
+		for _, input := range invalidStringLatitudeInputs {
+			t.Run(fmt.Sprintf("%q", input), func(t *testing.T) {
+				assert.Error(t, rule.Validate(input))
+			})
+		}
+		err := rule.Validate(invalidStringLatitudeInputs[0])
+		assert.EqualError(t, err, "string must be a valid latitude coordinate (e.g. '0', '-45.25', '90')")
+		assert.True(t, govy.HasErrorCode(err, ErrorCodeStringLatitude))
+	})
 }
 
 func BenchmarkStringLatitude(b *testing.B) {
@@ -320,29 +409,38 @@ func BenchmarkStringLatitude(b *testing.B) {
 	}
 }
 
-var stringLongitudeTestCases = []*struct {
-	in            string
-	expectedError string
-}{
-	{in: "0"},
-	{in: "-122.4194"},
-	{in: "+180"},
-	{in: ".5"},
-	{in: "180.1", expectedError: stringLongitudeError},
-	{in: "east", expectedError: stringLongitudeError},
-	{in: "1e2", expectedError: stringLongitudeError},
+var validStringLongitudeInputs = []string{
+	"0",
+	"-122.4194",
+	"+180",
+	".5",
+}
+
+var invalidStringLongitudeInputs = []string{
+	"180.1",
+	"east",
+	"1e2",
 }
 
 func TestStringLongitude(t *testing.T) {
-	for _, tc := range stringLongitudeTestCases {
-		err := StringLongitude().Validate(tc.in)
-		if tc.expectedError != "" {
-			assert.EqualError(t, err, tc.expectedError)
-			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringLongitude))
-		} else {
-			assert.NoError(t, err)
+	rule := StringLongitude()
+	t.Run("valid inputs", func(t *testing.T) {
+		for _, input := range validStringLongitudeInputs {
+			t.Run(fmt.Sprintf("%q", input), func(t *testing.T) {
+				assert.NoError(t, rule.Validate(input))
+			})
 		}
-	}
+	})
+	t.Run("invalid inputs", func(t *testing.T) {
+		for _, input := range invalidStringLongitudeInputs {
+			t.Run(fmt.Sprintf("%q", input), func(t *testing.T) {
+				assert.Error(t, rule.Validate(input))
+			})
+		}
+		err := rule.Validate(invalidStringLongitudeInputs[0])
+		assert.EqualError(t, err, "string must be a valid longitude coordinate (e.g. '0', '-122.4194', '180')")
+		assert.True(t, govy.HasErrorCode(err, ErrorCodeStringLongitude))
+	})
 }
 
 func BenchmarkStringLongitude(b *testing.B) {

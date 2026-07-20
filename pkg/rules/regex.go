@@ -21,6 +21,10 @@ var (
 	fqdnRegexp                 = lazyRegexCompile(
 		`^([a-zA-Z0-9]{1}[a-zA-Z0-9-]{0,62})(\.[a-zA-Z0-9]{1}[a-zA-Z0-9-]{0,62})*?(\.[a-zA-Z]{1}[a-zA-Z0-9]{0,62})\.?$`,
 	)
+	// Ref: https://www.iso.org/iso-3166-country-codes.html
+	iso31662Regexp = lazyRegexCompile(`^[A-Z]{2}-[A-Z0-9]{1,3}$`)
+	// Coordinates use signed decimal degrees without exponent notation.
+	decimalCoordinateRegexp = lazyRegexCompile(`^[+-]?(?:\d+(?:\.\d+)?|\.\d+)$`)
 )
 
 // lazyRegexCompile returns a function that compiles the regular expression
