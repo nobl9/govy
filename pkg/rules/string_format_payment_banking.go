@@ -42,7 +42,8 @@ func StringLuhnChecksum() govy.Rule[string] {
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
 }
 
-// StringBIC ensures the property's value matches the current BIC/SWIFT syntax.
+// StringBIC ensures the property's value matches the current Business
+// Identifier Code (BIC) syntax.
 func StringBIC() govy.Rule[string] {
 	tpl := messagetemplates.Get(messagetemplates.StringBICTemplate)
 
@@ -60,7 +61,7 @@ func StringBIC() govy.Rule[string] {
 }
 
 // StringBICISO93622014 ensures the property's value matches the ISO 9362:2014
-// BIC syntax.
+// Business Identifier Code (BIC) syntax.
 func StringBICISO93622014() govy.Rule[string] {
 	tpl := messagetemplates.Get(messagetemplates.StringBICISO93622014Template)
 
