@@ -22,7 +22,8 @@ const (
 
 // StringBTCAddress ensures the property's value is a mainnet legacy Bitcoin
 // Base58Check address.
-// It validates the Base58Check checksum and accepts P2PKH and P2SH version bytes.
+// It validates the Base58Check checksum and accepts pay-to-public-key-hash
+// (P2PKH) and pay-to-script-hash (P2SH) version bytes.
 func StringBTCAddress() govy.Rule[string] {
 	tpl := messagetemplates.Get(messagetemplates.StringBTCAddressTemplate)
 
@@ -40,8 +41,9 @@ func StringBTCAddress() govy.Rule[string] {
 }
 
 // StringBTCBech32Address ensures the property's value is a mainnet Bitcoin
-// Bech32 address as defined by BIP-173.
-// It validates the Bech32 checksum and accepts native v0 SegWit addresses.
+// Bech32 address as defined by Bitcoin Improvement Proposal 173 (BIP-173).
+// It validates the Bech32 checksum and accepts native version 0 Segregated
+// Witness (SegWit) addresses.
 // It does not accept Bech32m addresses such as Taproot addresses.
 func StringBTCBech32Address() govy.Rule[string] {
 	tpl := messagetemplates.Get(messagetemplates.StringBTCBech32AddressTemplate)
@@ -61,7 +63,8 @@ func StringBTCBech32Address() govy.Rule[string] {
 
 // StringETHAddress ensures the property's value is an Ethereum address with a
 // 0x prefix followed by 40 hexadecimal characters.
-// Mixed-case addresses must satisfy the EIP-55 checksum.
+// Mixed-case addresses must satisfy the Ethereum Improvement Proposal 55
+// (EIP-55) checksum.
 // All-lowercase and all-uppercase payloads are accepted as unchecksummed
 // addresses.
 func StringETHAddress() govy.Rule[string] {
