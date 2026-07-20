@@ -707,8 +707,8 @@ func BenchmarkStringJSON(b *testing.B) {
 }
 
 var stringJWTTestCases = map[string]struct {
-	in            string
-	expectedError string
+	in                   string
+	expectedErrorDetails string
 }{
 	"signed token": {
 		in: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9." +
@@ -719,39 +719,41 @@ var stringJWTTestCases = map[string]struct {
 		in: "eyJhbGciOiJub25lIn0.e30.",
 	},
 	"wrong segment count": {
-		in:            "not-a-jwt",
-		expectedError: "string must be a valid JSON Web Token: expected 3 JWT segments",
+		in:                   "not-a-jwt",
+		expectedErrorDetails: "expected 3 JWT segments",
 	},
 	"padded header segment": {
-		in:            "eyJhbGciOiJIUzI1NiJ9=.e30.c2ln",
-		expectedError: "string must be a valid JSON Web Token: JWT header segment must be base64url encoded without padding",
+		in:                   "eyJhbGciOiJIUzI1NiJ9=.e30.c2ln",
+		expectedErrorDetails: "JWT header segment must be base64url encoded without padding",
 	},
 	"claims segment is not JSON object": {
 		in: "eyJhbGciOiJIUzI1NiJ9." +
 			"bnVsbA." +
 			"c2ln",
-		expectedError: "string must be a valid JSON Web Token: JWT claims set segment must contain a JSON object",
+		expectedErrorDetails: "JWT claims set segment must contain a JSON object",
 	},
 	"missing algorithm": {
-		in:            "e30.e30.c2ln",
-		expectedError: `string must be a valid JSON Web Token: JWT header must contain an "alg" string`,
+		in:                   "e30.e30.c2ln",
+		expectedErrorDetails: `JWT header must contain an "alg" string`,
 	},
 	"missing signature for signed token": {
-		in:            "eyJhbGciOiJIUzI1NiJ9.e30.",
-		expectedError: `string must be a valid JSON Web Token: JWT signature segment must not be empty unless alg is "none"`,
+		in:                   "eyJhbGciOiJIUzI1NiJ9.e30.",
+		expectedErrorDetails: `JWT signature segment must not be empty unless alg is "none"`,
 	},
 	"signature present for none algorithm": {
-		in:            "eyJhbGciOiJub25lIn0.e30.c2ln",
-		expectedError: `string must be a valid JSON Web Token: JWT signature segment must be empty when alg is "none"`,
+		in:                   "eyJhbGciOiJub25lIn0.e30.c2ln",
+		expectedErrorDetails: `JWT signature segment must be empty when alg is "none"`,
 	},
 }
 
 func TestStringJWT(t *testing.T) {
+	const expectedErrorPrefix = "string must be a valid JSON Web Token (JWT): "
+
 	for name, tt := range stringJWTTestCases {
 		t.Run(name, func(t *testing.T) {
 			err := StringJWT().Validate(tt.in)
-			if tt.expectedError != "" {
-				assert.EqualError(t, err, tt.expectedError)
+			if tt.expectedErrorDetails != "" {
+				assert.EqualError(t, err, expectedErrorPrefix+tt.expectedErrorDetails)
 				assert.True(t, govy.HasErrorCode(err, ErrorCodeStringJWT))
 				return
 			}
