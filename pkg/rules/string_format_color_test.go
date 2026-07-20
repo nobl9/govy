@@ -8,238 +8,332 @@ import (
 )
 
 type stringFormatColorTestCase struct {
-	in            string
-	expectedError string
+	in      string
+	options []StringColorOption
 }
 
 const (
-	errStringHexColor = "string must be a valid CSS hex color"
-	errStringRGB      = "string must be a valid legacy comma-separated rgb(...) color"
-	errStringRGBA     = "string must be a valid legacy comma-separated rgba(...) color"
-	errStringHSL      = "string must be a valid legacy comma-separated hsl(...) color"
-	errStringHSLA     = "string must be a valid legacy comma-separated hsla(...) color"
-	errStringCMYK     = "string must be a valid comma-separated cmyk(...) color"
+	errStringHexColor         = "string must be a valid CSS hexadecimal color"
+	errStringRGB              = "string must be a valid CSS rgb(...) or rgba(...) color"
+	errStringRGBLegacy        = "string must be a valid legacy comma-separated CSS rgb(...) or rgba(...) color"
+	errStringHSL              = "string must be a valid CSS hsl(...) or hsla(...) color"
+	errStringHSLLegacy        = "string must be a valid legacy comma-separated CSS hsl(...) or hsla(...) color"
+	errStringDeviceCMYK       = "string must be a valid CSS device-cmyk(...) color"
+	errStringDeviceCMYKLegacy = "string must be a valid legacy comma-separated CSS device-cmyk(...) color"
 )
 
-var stringHexColorTestCases = []*stringFormatColorTestCase{
-	{in: "#000"},
-	{in: "#fff"},
-	{in: "#ABC"},
-	{in: "#0000"},
-	{in: "#abcd"},
-	{in: "#112233"},
-	{in: "#A1B2C3"},
-	{in: "#11223344"},
-	{in: "#AABBCCDD"},
-	{in: "", expectedError: errStringHexColor},
-	{in: "112233", expectedError: errStringHexColor},
-	{in: "#12", expectedError: errStringHexColor},
-	{in: "#12345", expectedError: errStringHexColor},
-	{in: "#1234567", expectedError: errStringHexColor},
-	{in: "#123456789", expectedError: errStringHexColor},
-	{in: "#ggg", expectedError: errStringHexColor},
-	{in: "#12x", expectedError: errStringHexColor},
-	{in: "#123456\n", expectedError: errStringHexColor},
-	{in: " #123", expectedError: errStringHexColor},
+func TestStringColorLegacySyntaxOnly(t *testing.T) {
+	t.Parallel()
+	config := newStringColorConfig([]StringColorOption{StringColorLegacySyntaxOnly()})
+	assert.True(t, config.legacySyntaxOnly)
 }
 
-func TestStringHexColor(t *testing.T) {
-	rule := StringHexColor()
-	for _, tc := range stringHexColorTestCases {
-		assertStringFormatColorRule(t, rule, tc.in, tc.expectedError, ErrorCodeStringHexColor)
+func BenchmarkStringColorLegacySyntaxOnly(b *testing.B) {
+	for b.Loop() {
+		_ = StringColorLegacySyntaxOnly()
 	}
+}
+
+var (
+	stringHexColorValidTestCases = map[string]stringFormatColorTestCase{
+		"three digits":           {in: "#000"},
+		"three uppercase digits": {in: "#ABC"},
+		"four digits":            {in: "#abcd"},
+		"six digits":             {in: "#A1B2C3"},
+		"eight digits":           {in: "#AABBCCDD"},
+	}
+	stringHexColorInvalidTestCases = map[string]stringFormatColorTestCase{
+		"empty":                       {in: ""},
+		"missing hash":                {in: "112233"},
+		"two digits":                  {in: "#12"},
+		"five digits":                 {in: "#12345"},
+		"seven digits":                {in: "#1234567"},
+		"nine digits":                 {in: "#123456789"},
+		"non-hex digit":               {in: "#ggg"},
+		"trailing newline":            {in: "#123456\n"},
+		"leading external whitespace": {in: " #123"},
+	}
+)
+
+func TestStringHexColor(t *testing.T) {
+	t.Parallel()
+	rule := StringHexColor()
+	assertStringFormatColorRuleTestCases(
+		t,
+		rule,
+		stringHexColorValidTestCases,
+		"",
+		ErrorCodeStringHexColor,
+	)
+	assertStringFormatColorRuleTestCases(
+		t,
+		rule,
+		stringHexColorInvalidTestCases,
+		errStringHexColor,
+		ErrorCodeStringHexColor,
+	)
 }
 
 func BenchmarkStringHexColor(b *testing.B) {
 	benchmarkStringFormatColorRule(b, StringHexColor(), "#112233")
 }
 
-var stringRGBTestCases = []*stringFormatColorTestCase{
-	{in: "rgb(0,0,0)"},
-	{in: "RGB(0,0,0)"},
-	{in: "rgb(255, 255, 255)"},
-	{in: "rgb(001, 002, 003)"},
-	{in: "rgb(100%, 0%, 50%)"},
-	{in: "rGb(33.3%, 100.0%, .5%)"},
-	{in: "rgb( 12 , 34 , 56 )"},
-	{in: "", expectedError: errStringRGB},
-	{in: "rgba(0,0,0)", expectedError: errStringRGB},
-	{in: "rgb()", expectedError: errStringRGB},
-	{in: "rgb(256,0,0)", expectedError: errStringRGB},
-	{in: "rgb(-1,0,0)", expectedError: errStringRGB},
-	{in: "rgb(101%,0%,0%)", expectedError: errStringRGB},
-	{in: "rgb(100.1%,0%,0%)", expectedError: errStringRGB},
-	{in: "rgb(0.%,0%,0%)", expectedError: errStringRGB},
-	{in: "rgb(0,0)", expectedError: errStringRGB},
-	{in: "rgb(0,0,0,0)", expectedError: errStringRGB},
-	{in: "rgb(0.5,0,0)", expectedError: errStringRGB},
-	{in: "rgb(0, 0%, 0)", expectedError: errStringRGB},
-	{in: "rgb(0 0 0)", expectedError: errStringRGB},
-}
+var (
+	stringRGBValidTestCases = map[string]stringFormatColorTestCase{
+		"legacy numeric":             {in: "rgb(0, 127.5, 255)"},
+		"legacy percentage":          {in: "RGB(+0%, 5e1%, 100%)"},
+		"legacy rgba alpha":          {in: "rgba(12, 34, 56, .25)"},
+		"legacy rgba optional alpha": {in: "rgba(12, 34, 56)"},
+		"modern numeric":             {in: "rgb(0 127.5 255)"},
+		"modern mixed components":    {in: "rgb(0 50% 2.55e2)"},
+		"modern alpha":               {in: "rgb(0 0 0 / 50%)"},
+		"modern rgba alias":          {in: "RGBA(100% 0% 33.3% / .5)"},
+		"modern CSS whitespace":      {in: "rgb(\t0\n50%\f255\r/\t1 )"},
+		"nil option":                 {in: "rgb(0 0 0)", options: []StringColorOption{nil}},
+		"legacy-only numeric":        {in: "rgb(+0, 1.27e2, 255)", options: legacyColorOptions()},
+		"legacy-only rgba alpha":     {in: "rgba(0%, 50%, 100%, 1)", options: legacyColorOptions()},
+	}
+	stringRGBInvalidLegacyTestCases = map[string]stringFormatColorTestCase{
+		"legacy-only rejects modern": {
+			in:      "rgb(0 0 0)",
+			options: legacyColorOptions(),
+		},
+	}
+	stringRGBInvalidTestCases = map[string]stringFormatColorTestCase{
+		"empty":                        {in: ""},
+		"wrong function":               {in: "hsl(0 0 0)"},
+		"component above number range": {in: "rgb(256 0 0)"},
+		"component below number range": {in: "rgb(-1 0 0)"},
+		"percentage above range":       {in: "rgb(100.1% 0% 0%)"},
+		"alpha above range":            {in: "rgb(0 0 0 / 1.1)"},
+		"alpha below range":            {in: "rgb(0 0 0 / -1%)"},
+		"legacy mixed components":      {in: "rgb(0, 0%, 0)"},
+		"legacy slash alpha":           {in: "rgb(0, 0, 0 / .5)"},
+		"modern comma alpha":           {in: "rgb(0 0 0, .5)"},
+		"missing modern separator":     {in: "rgb(0 0 0.5.5)"},
+		"missing component":            {in: "rgb(0 0)"},
+		"extra component":              {in: "rgb(0 0 0 0)"},
+		"trailing decimal point":       {in: "rgb(0. 0 0)"},
+		"malformed exponent":           {in: "rgb(1e 0 0)"},
+		"non-finite exponent":          {in: "rgb(1e999 0 0)"},
+		"none component":               {in: "rgb(none 0 0)"},
+		"calculated component":         {in: "rgb(calc(1) 0 0)"},
+		"variable component":           {in: "rgb(var(--red) 0 0)"},
+		"CSS comment":                  {in: "rgb(0/**/ 0 0)"},
+		"escaped function name":        {in: "r\\67 b(0 0 0)"},
+		"leading external whitespace":  {in: " rgb(0 0 0)"},
+		"trailing external whitespace": {in: "rgb(0 0 0) "},
+		"non-CSS whitespace":           {in: "rgb(0\u00a00\u00a00)"},
+	}
+)
 
 func TestStringRGB(t *testing.T) {
-	rule := StringRGB()
-	for _, tc := range stringRGBTestCases {
-		assertStringFormatColorRule(t, rule, tc.in, tc.expectedError, ErrorCodeStringRGB)
-	}
+	t.Parallel()
+	assertStringColorRuleTestCases(t, StringRGB, stringRGBValidTestCases, "", ErrorCodeStringRGB)
+	assertStringColorRuleTestCases(
+		t,
+		StringRGB,
+		stringRGBInvalidLegacyTestCases,
+		errStringRGBLegacy,
+		ErrorCodeStringRGB,
+	)
+	assertStringColorRuleTestCases(
+		t,
+		StringRGB,
+		stringRGBInvalidTestCases,
+		errStringRGB,
+		ErrorCodeStringRGB,
+	)
 }
 
 func BenchmarkStringRGB(b *testing.B) {
-	benchmarkStringFormatColorRule(b, StringRGB(), "rgb(12, 34, 56)")
+	benchmarkStringFormatColorRule(b, StringRGB(), "rgb(12 34 56 / .25)")
 }
 
-var stringRGBATestCases = []*stringFormatColorTestCase{
-	{in: "rgba(0,0,0,0)"},
-	{in: "RGBA(0,0,0,1.0)"},
-	{in: "rgba(255, 255, 255, 1)"},
-	{in: "rgba(100%, 0%, 50%, 0.5)"},
-	{in: "rgba(100%, 0%, 33.3%, 50%)"},
-	{in: "rgba(0%, 0%, .5%, 100.0%)"},
-	{in: "rgba(12, 34, 56, 0.25)"},
-	{in: "rGbA(12, 34, 56, .5)"},
-	{in: "rgba(12, 34, 56, 0.)"},
-	{in: "", expectedError: errStringRGBA},
-	{in: "rgba(0,0,0)", expectedError: errStringRGBA},
-	{in: "rgb(0,0,0)", expectedError: errStringRGBA},
-	{in: "rgba(256,0,0,1)", expectedError: errStringRGBA},
-	{in: "rgba(0,0,0,2)", expectedError: errStringRGBA},
-	{in: "rgba(0,0,0,1.1)", expectedError: errStringRGBA},
-	{in: "rgba(0,0,0,-0.1)", expectedError: errStringRGBA},
-	{in: "rgba(0,0,0,-1%)", expectedError: errStringRGBA},
-	{in: "rgba(0,0,0,100.1%)", expectedError: errStringRGBA},
-	{in: "rgba(0,0,0,100.%)", expectedError: errStringRGBA},
-	{in: "rgba(0,0,0,.)", expectedError: errStringRGBA},
-	{in: "rgba(0,0,0,1..0)", expectedError: errStringRGBA},
-	{in: "rgba(0,0,0,50%%)", expectedError: errStringRGBA},
-	{in: "rgba(0,0,0,50px)", expectedError: errStringRGBA},
-	{in: "rgba(101%,0%,0%,0.5)", expectedError: errStringRGBA},
-	{in: "rgba(0, 0%, 0, 0.5)", expectedError: errStringRGBA},
-}
-
-func TestStringRGBA(t *testing.T) {
-	rule := StringRGBA()
-	for _, tc := range stringRGBATestCases {
-		assertStringFormatColorRule(t, rule, tc.in, tc.expectedError, ErrorCodeStringRGBA)
+var (
+	stringHSLValidTestCases = map[string]stringFormatColorTestCase{
+		"legacy percentage":       {in: "hsl(120, 50%, 25%)"},
+		"legacy angle hue":        {in: "HSLA(-.5turn, 50%, 25%, .5)"},
+		"legacy cyclic hue":       {in: "hsl(720, 50%, 25%)"},
+		"modern percentage":       {in: "hsl(120 50% 25%)"},
+		"modern numeric":          {in: "hsl(1.2e2 50 25)"},
+		"modern mixed components": {in: "hsl(120deg 50 25%)"},
+		"modern alpha":            {in: "hsla(120 50% 25% / 50%)"},
+		"grad hue":                {in: "hsl(100grad 50% 25%)"},
+		"radian hue":              {in: "hsl(3.14rad 50% 25%)"},
+		"turn hue":                {in: "hsl(.5TURN 50% 25%)"},
+		"legacy-only percentage":  {in: "hsl(-120deg, 50%, 25%)", options: legacyColorOptions()},
+		"legacy-only alpha":       {in: "hsla(120, 50%, 25%, 25%)", options: legacyColorOptions()},
 	}
-}
-
-func BenchmarkStringRGBA(b *testing.B) {
-	benchmarkStringFormatColorRule(b, StringRGBA(), "rgba(12, 34, 56, 0.25)")
-}
-
-var stringHSLTestCases = []*stringFormatColorTestCase{
-	{in: "hsl(0,0%,0%)"},
-	{in: "HsL(0,0%,0%)"},
-	{in: "hsl(360, 100%, 100%)"},
-	{in: "hsl(120, 50%, 25%)"},
-	{in: "hsl(120, 33.3%, 100.0%)"},
-	{in: "hsl(120, .5%, 0%)"},
-	{in: "hsl( 42 , 7% , 99% )"},
-	{in: "", expectedError: errStringHSL},
-	{in: "hsla(0,0%,0%)", expectedError: errStringHSL},
-	{in: "hsl(361,0%,0%)", expectedError: errStringHSL},
-	{in: "hsl(-1,0%,0%)", expectedError: errStringHSL},
-	{in: "hsl(120,101%,0%)", expectedError: errStringHSL},
-	{in: "hsl(120,100.1%,0%)", expectedError: errStringHSL},
-	{in: "hsl(120,0.%,0%)", expectedError: errStringHSL},
-	{in: "hsl(120,50,0%)", expectedError: errStringHSL},
-	{in: "hsl(120,50%,0)", expectedError: errStringHSL},
-	{in: "hsl(120,50%,0%,1)", expectedError: errStringHSL},
-	{in: "hsl(120 50% 0%)", expectedError: errStringHSL},
-}
+	stringHSLInvalidLegacyTestCases = map[string]stringFormatColorTestCase{
+		"legacy-only rejects modern": {
+			in:      "hsl(120 50% 25%)",
+			options: legacyColorOptions(),
+		},
+	}
+	stringHSLInvalidTestCases = map[string]stringFormatColorTestCase{
+		"empty":                        {in: ""},
+		"wrong function":               {in: "rgb(0 0 0)"},
+		"legacy numeric saturation":    {in: "hsl(120, 50, 25%)"},
+		"saturation above range":       {in: "hsl(120 101% 25%)"},
+		"lightness below range":        {in: "hsl(120 50% -1)"},
+		"alpha above range":            {in: "hsl(120 50% 25% / 101%)"},
+		"unknown angle unit":           {in: "hsl(120foo 50% 25%)"},
+		"space before angle unit":      {in: "hsl(120 deg 50% 25%)"},
+		"trailing hue decimal point":   {in: "hsl(120. 50% 25%)"},
+		"none hue":                     {in: "hsl(none 50% 25%)"},
+		"none saturation":              {in: "hsl(120 none 25%)"},
+		"calculated hue":               {in: "hsl(calc(120) 50% 25%)"},
+		"legacy mixed delimiters":      {in: "hsl(120, 50%, 25% / .5)"},
+		"modern comma delimiter":       {in: "hsl(120 50%, 25%)"},
+		"leading external whitespace":  {in: " hsl(120 50% 25%)"},
+		"trailing external whitespace": {in: "hsl(120 50% 25%) "},
+	}
+)
 
 func TestStringHSL(t *testing.T) {
-	rule := StringHSL()
-	for _, tc := range stringHSLTestCases {
-		assertStringFormatColorRule(t, rule, tc.in, tc.expectedError, ErrorCodeStringHSL)
-	}
+	t.Parallel()
+	assertStringColorRuleTestCases(t, StringHSL, stringHSLValidTestCases, "", ErrorCodeStringHSL)
+	assertStringColorRuleTestCases(
+		t,
+		StringHSL,
+		stringHSLInvalidLegacyTestCases,
+		errStringHSLLegacy,
+		ErrorCodeStringHSL,
+	)
+	assertStringColorRuleTestCases(
+		t,
+		StringHSL,
+		stringHSLInvalidTestCases,
+		errStringHSL,
+		ErrorCodeStringHSL,
+	)
 }
 
 func BenchmarkStringHSL(b *testing.B) {
-	benchmarkStringFormatColorRule(b, StringHSL(), "hsl(120, 50%, 25%)")
+	benchmarkStringFormatColorRule(b, StringHSL(), "hsl(120 50% 25% / .5)")
 }
 
-var stringHSLATestCases = []*stringFormatColorTestCase{
-	{in: "hsla(0,0%,0%,0)"},
-	{in: "HsLa(0,0%,0%,1.0)"},
-	{in: "hsla(360, 100%, 100%, 1)"},
-	{in: "hsla(120, 50%, 25%, 0.5)"},
-	{in: "hsla(120, 33.3%, 100.0%, 50%)"},
-	{in: "hsla(120, .5%, 0%, 100.0%)"},
-	{in: "hsla( 42 , 7% , 99% , 0.25 )"},
-	{in: "hsla( 42 , 7% , 99% , .5 )"},
-	{in: "hsla( 42 , 7% , 99% , 0. )"},
-	{in: "", expectedError: errStringHSLA},
-	{in: "hsla(0,0%,0%)", expectedError: errStringHSLA},
-	{in: "hsl(0,0%,0%)", expectedError: errStringHSLA},
-	{in: "hsla(361,0%,0%,0)", expectedError: errStringHSLA},
-	{in: "hsla(120,101%,0%,0)", expectedError: errStringHSLA},
-	{in: "hsla(120,50%,0%,2)", expectedError: errStringHSLA},
-	{in: "hsla(120,50%,0%,1.1)", expectedError: errStringHSLA},
-	{in: "hsla(120,50%,0%,-0.1)", expectedError: errStringHSLA},
-	{in: "hsla(120,50%,0%,-1%)", expectedError: errStringHSLA},
-	{in: "hsla(120,50%,0%,100.1%)", expectedError: errStringHSLA},
-	{in: "hsla(120,50%,0%,100.%)", expectedError: errStringHSLA},
-	{in: "hsla(120,50%,0%,.)", expectedError: errStringHSLA},
-	{in: "hsla(120,50%,0%,1..0)", expectedError: errStringHSLA},
-	{in: "hsla(120,50%,0%,50%%)", expectedError: errStringHSLA},
-	{in: "hsla(120,50%,0%,50px)", expectedError: errStringHSLA},
-}
-
-func TestStringHSLA(t *testing.T) {
-	rule := StringHSLA()
-	for _, tc := range stringHSLATestCases {
-		assertStringFormatColorRule(t, rule, tc.in, tc.expectedError, ErrorCodeStringHSLA)
+var (
+	stringDeviceCMYKValidTestCases = map[string]stringFormatColorTestCase{
+		"legacy numeric":          {in: "device-cmyk(0, .25, 5e-1, 1)"},
+		"legacy uppercase":        {in: "DEVICE-CMYK(0, 0, 0, 0)"},
+		"modern numeric":          {in: "device-cmyk(0 .25 .5 1)"},
+		"modern percentage":       {in: "device-cmyk(0% 25% 50% 100%)"},
+		"modern mixed components": {in: "device-cmyk(0 25% .5 100%)"},
+		"modern alpha":            {in: "device-cmyk(0 0 0 1 / 50%)"},
+		"legacy-only numeric":     {in: "device-cmyk(0, .25, .5, 1)", options: legacyColorOptions()},
 	}
-}
-
-func BenchmarkStringHSLA(b *testing.B) {
-	benchmarkStringFormatColorRule(b, StringHSLA(), "hsla(120, 50%, 25%, 0.5)")
-}
-
-var stringCMYKTestCases = []*stringFormatColorTestCase{
-	{in: "cmyk(0%,0%,0%,0%)"},
-	{in: "CMYK(0%,0%,0%,0%)"},
-	{in: "cmyk(100%, 100%, 100%, 100%)"},
-	{in: "cmyk(1%, 2%, 3%, 4%)"},
-	{in: "cMyK(33.3%, 100.0%, .5%, 0%)"},
-	{in: "cmyk( 0% , 50% , 75% , 100% )"},
-	{in: "", expectedError: errStringCMYK},
-	{in: "cmyk(0,0,0,0)", expectedError: errStringCMYK},
-	{in: "cmyk(101%,0%,0%,0%)", expectedError: errStringCMYK},
-	{in: "cmyk(100.1%,0%,0%,0%)", expectedError: errStringCMYK},
-	{in: "cmyk(-1%,0%,0%,0%)", expectedError: errStringCMYK},
-	{in: "cmyk(0.%,0%,0%,0%)", expectedError: errStringCMYK},
-	{in: "cmyk(0%,0%,0%)", expectedError: errStringCMYK},
-	{in: "cmyk(0%,0%,0%,0%,0%)", expectedError: errStringCMYK},
-}
-
-func TestStringCMYK(t *testing.T) {
-	rule := StringCMYK()
-	for _, tc := range stringCMYKTestCases {
-		assertStringFormatColorRule(t, rule, tc.in, tc.expectedError, ErrorCodeStringCMYK)
+	stringDeviceCMYKInvalidLegacyTestCases = map[string]stringFormatColorTestCase{
+		"legacy-only rejects modern": {
+			in:      "device-cmyk(0 0 0 1)",
+			options: legacyColorOptions(),
+		},
 	}
+	stringDeviceCMYKInvalidTestCases = map[string]stringFormatColorTestCase{
+		"empty":                        {in: ""},
+		"non-standard function":        {in: "cmyk(0 0 0 1)"},
+		"legacy percentage":            {in: "device-cmyk(0%, 25%, 50%, 100%)"},
+		"legacy alpha":                 {in: "device-cmyk(0, 0, 0, 1, .5)"},
+		"number above range":           {in: "device-cmyk(0 0 0 1.1)"},
+		"number below range":           {in: "device-cmyk(-.1 0 0 1)"},
+		"percentage above range":       {in: "device-cmyk(0% 0% 0% 101%)"},
+		"alpha above range":            {in: "device-cmyk(0 0 0 1 / 1.1)"},
+		"missing component":            {in: "device-cmyk(0 0 1)"},
+		"extra component":              {in: "device-cmyk(0 0 0 1 0)"},
+		"none component":               {in: "device-cmyk(none 0 0 1)"},
+		"calculated component":         {in: "device-cmyk(calc(0) 0 0 1)"},
+		"fallback color":               {in: "device-cmyk(0 0 0 1, black)"},
+		"leading external whitespace":  {in: " device-cmyk(0 0 0 1)"},
+		"trailing external whitespace": {in: "device-cmyk(0 0 0 1) "},
+	}
+)
+
+func TestStringDeviceCMYK(t *testing.T) {
+	t.Parallel()
+	assertStringColorRuleTestCases(
+		t,
+		StringDeviceCMYK,
+		stringDeviceCMYKValidTestCases,
+		"",
+		ErrorCodeStringDeviceCMYK,
+	)
+	assertStringColorRuleTestCases(
+		t,
+		StringDeviceCMYK,
+		stringDeviceCMYKInvalidLegacyTestCases,
+		errStringDeviceCMYKLegacy,
+		ErrorCodeStringDeviceCMYK,
+	)
+	assertStringColorRuleTestCases(
+		t,
+		StringDeviceCMYK,
+		stringDeviceCMYKInvalidTestCases,
+		errStringDeviceCMYK,
+		ErrorCodeStringDeviceCMYK,
+	)
 }
 
-func BenchmarkStringCMYK(b *testing.B) {
-	benchmarkStringFormatColorRule(b, StringCMYK(), "cmyk(1%, 2%, 3%, 4%)")
+func BenchmarkStringDeviceCMYK(b *testing.B) {
+	benchmarkStringFormatColorRule(b, StringDeviceCMYK(), "device-cmyk(0 25% .5 100% / .5)")
 }
 
-func assertStringFormatColorRule(
+func assertStringColorRuleTestCases(
 	t *testing.T,
-	rule govy.Rule[string],
-	in string,
+	ruleFactory func(...StringColorOption) govy.Rule[string],
+	testCases map[string]stringFormatColorTestCase,
 	expectedError string,
 	errorCode govy.ErrorCode,
 ) {
 	t.Helper()
-	err := rule.Validate(in)
 	if expectedError != "" {
-		assert.EqualError(t, err, expectedError)
-		assert.True(t, govy.HasErrorCode(err, errorCode))
-		return
+		for _, tc := range testCases {
+			err := ruleFactory(tc.options...).Validate(tc.in)
+			assert.EqualError(t, err, expectedError)
+			assert.True(t, govy.HasErrorCode(err, errorCode))
+			break
+		}
 	}
-	assert.NoError(t, err)
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			if expectedError != "" {
+				assert.Error(t, ruleFactory(tc.options...).Validate(tc.in))
+				return
+			}
+			assert.NoError(t, ruleFactory(tc.options...).Validate(tc.in))
+		})
+	}
+}
+
+func assertStringFormatColorRuleTestCases(
+	t *testing.T,
+	rule govy.Rule[string],
+	testCases map[string]stringFormatColorTestCase,
+	expectedError string,
+	errorCode govy.ErrorCode,
+) {
+	t.Helper()
+	if expectedError != "" {
+		for _, tc := range testCases {
+			err := rule.Validate(tc.in)
+			assert.EqualError(t, err, expectedError)
+			assert.True(t, govy.HasErrorCode(err, errorCode))
+			break
+		}
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			if expectedError != "" {
+				assert.Error(t, rule.Validate(tc.in))
+				return
+			}
+			assert.NoError(t, rule.Validate(tc.in))
+		})
+	}
 }
 
 func benchmarkStringFormatColorRule(
@@ -250,5 +344,13 @@ func benchmarkStringFormatColorRule(
 	b.Helper()
 	for b.Loop() {
 		_ = rule.Validate(in)
+	}
+}
+
+func legacyColorOptions() []StringColorOption {
+	return []StringColorOption{
+		StringColorLegacySyntaxOnly(),
+		nil,
+		StringColorLegacySyntaxOnly(),
 	}
 }
