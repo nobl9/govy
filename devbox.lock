@@ -193,99 +193,79 @@
         }
       }
     },
-    "govulncheck@1.5.0": {
-      "last_modified": "2026-06-27T07:37:20Z",
-      "resolved": "github:NixOS/nixpkgs/3d46470bb3030020f7e1361f33514854f5bfa86d#govulncheck",
+    "govulncheck@1.6.0": {
+      "last_modified": "2026-07-11T07:21:12Z",
+      "resolved": "github:NixOS/nixpkgs/770b9bbb84018993c8f009d437fff6c2e3077037#govulncheck",
       "source": "devbox-search",
-      "version": "1.5.0",
+      "version": "1.6.0",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/ri0i08k8kwhhwlvk8n7ncx0rbw54pfpb-govulncheck-1.5.0",
+              "path": "/nix/store/y70ac1nc3p0va5b95n1jar3z6nl4w6a2-govulncheck-1.6.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/ri0i08k8kwhhwlvk8n7ncx0rbw54pfpb-govulncheck-1.5.0"
+          "store_path": "/nix/store/y70ac1nc3p0va5b95n1jar3z6nl4w6a2-govulncheck-1.6.0"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/8a8000jbwsandkxcyi2f0s5zbfljap8b-govulncheck-1.5.0",
+              "path": "/nix/store/3irdknqp739y8wc4farhdz3xj93fdamk-govulncheck-1.6.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/8a8000jbwsandkxcyi2f0s5zbfljap8b-govulncheck-1.5.0"
-        },
-        "x86_64-darwin": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/ghn47vhrvnjhxfi6mhyvxp7px2xy5z76-govulncheck-1.5.0",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/ghn47vhrvnjhxfi6mhyvxp7px2xy5z76-govulncheck-1.5.0"
+          "store_path": "/nix/store/3irdknqp739y8wc4farhdz3xj93fdamk-govulncheck-1.6.0"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/2r583m9ngrisf9nx6i12fwvpr5g3as0i-govulncheck-1.5.0",
+              "path": "/nix/store/wrjh9zhw6bl7h7ampn9x4ligvfv1022i-govulncheck-1.6.0",
               "default": true
             }
           ],
-          "store_path": "/nix/store/2r583m9ngrisf9nx6i12fwvpr5g3as0i-govulncheck-1.5.0"
+          "store_path": "/nix/store/wrjh9zhw6bl7h7ampn9x4ligvfv1022i-govulncheck-1.6.0"
         }
       }
     },
-    "markdownlint-cli@0.49.0": {
-      "last_modified": "2026-06-22T09:00:13Z",
-      "resolved": "github:NixOS/nixpkgs/b3c092d3c36d91e2f61f3dfb39a159f180a56659#markdownlint-cli",
+    "markdownlint-cli@0.49.1": {
+      "last_modified": "2026-07-15T11:37:32Z",
+      "resolved": "github:NixOS/nixpkgs/35d3407a3816f3b341d8cf1d60abaf2b7b8166ac#markdownlint-cli",
       "source": "devbox-search",
-      "version": "0.49.0",
+      "version": "0.49.1",
       "systems": {
         "aarch64-darwin": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/74mx4pgzxqx0x4r0fdw6lja2pkzicpqi-markdownlint-cli-0.49.0",
+              "path": "/nix/store/ck6739c55rxyxyijdxk7rkg9k9753mz6-markdownlint-cli-0.49.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/74mx4pgzxqx0x4r0fdw6lja2pkzicpqi-markdownlint-cli-0.49.0"
+          "store_path": "/nix/store/ck6739c55rxyxyijdxk7rkg9k9753mz6-markdownlint-cli-0.49.1"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/8mwbs7vf91f11wsjqchmxflkracimylk-markdownlint-cli-0.49.0",
+              "path": "/nix/store/513mavccmz5isbli1r2zdxww2alf5pg1-markdownlint-cli-0.49.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/8mwbs7vf91f11wsjqchmxflkracimylk-markdownlint-cli-0.49.0"
-        },
-        "x86_64-darwin": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/adklib32rc8l12hd317a8wiw1lln6r1a-markdownlint-cli-0.49.0",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/adklib32rc8l12hd317a8wiw1lln6r1a-markdownlint-cli-0.49.0"
+          "store_path": "/nix/store/513mavccmz5isbli1r2zdxww2alf5pg1-markdownlint-cli-0.49.1"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/yrr6c3n5livkr3vg78biivkyhv0s9acv-markdownlint-cli-0.49.0",
+              "path": "/nix/store/jbzr5jziwlpqj3iv7pqp1jh44i4k5sj1-markdownlint-cli-0.49.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/yrr6c3n5livkr3vg78biivkyhv0s9acv-markdownlint-cli-0.49.0"
+          "store_path": "/nix/store/jbzr5jziwlpqj3iv7pqp1jh44i4k5sj1-markdownlint-cli-0.49.1"
         }
       }
     }
