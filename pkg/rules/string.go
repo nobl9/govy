@@ -290,7 +290,8 @@ func StringUUID() govy.Rule[string] {
 		WithErrorCode(ErrorCodeStringUUID)
 }
 
-// StringUUIDRFC4122 ensures the property's value is an RFC 4122 UUID string.
+// StringUUIDRFC4122 ensures the property's value is a Universally Unique Identifier (UUID)
+// string as defined by RFC 4122.
 // It requires the canonical 36-character form, a version from 1 through 5, and RFC 4122 variant bits.
 func StringUUIDRFC4122() govy.Rule[string] {
 	tpl := messagetemplates.Get(messagetemplates.StringUUIDRFC4122Template)
@@ -308,7 +309,8 @@ func StringUUIDRFC4122() govy.Rule[string] {
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
 }
 
-// StringUUIDv3 ensures the property's value is a version 3 RFC 4122 UUID string.
+// StringUUIDv3 ensures the property's value is a version 3 Universally Unique Identifier (UUID)
+// string as defined by RFC 4122.
 func StringUUIDv3() govy.Rule[string] {
 	tpl := messagetemplates.Get(messagetemplates.StringUUIDv3Template)
 
@@ -325,7 +327,8 @@ func StringUUIDv3() govy.Rule[string] {
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
 }
 
-// StringUUIDv4 ensures the property's value is a version 4 RFC 4122 UUID string.
+// StringUUIDv4 ensures the property's value is a version 4 Universally Unique Identifier (UUID)
+// string as defined by RFC 4122.
 func StringUUIDv4() govy.Rule[string] {
 	tpl := messagetemplates.Get(messagetemplates.StringUUIDv4Template)
 
@@ -342,7 +345,8 @@ func StringUUIDv4() govy.Rule[string] {
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
 }
 
-// StringUUIDv5 ensures the property's value is a version 5 RFC 4122 UUID string.
+// StringUUIDv5 ensures the property's value is a version 5 Universally Unique Identifier (UUID)
+// string as defined by RFC 4122.
 func StringUUIDv5() govy.Rule[string] {
 	tpl := messagetemplates.Get(messagetemplates.StringUUIDv5Template)
 
@@ -359,7 +363,8 @@ func StringUUIDv5() govy.Rule[string] {
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
 }
 
-// StringULID ensures the property's value is a 26-character Crockford-base32 ULID string.
+// StringULID ensures the property's value is a 26-character Crockford Base32
+// Universally Unique Lexicographically Sortable Identifier (ULID) string.
 func StringULID() govy.Rule[string] {
 	tpl := messagetemplates.Get(messagetemplates.StringULIDTemplate)
 

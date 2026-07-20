@@ -227,11 +227,6 @@ func BenchmarkStringDNSSubdomain(b *testing.B) {
 	}
 }
 
-type stringFormatIDTestCase struct {
-	in            string
-	expectedError string
-}
-
 type stringUUIDTestCase struct {
 	in         string
 	shouldFail bool
@@ -277,193 +272,197 @@ func BenchmarkStringUUID(b *testing.B) {
 	}
 }
 
-var stringUUIDRFC4122TestCases = []*stringFormatIDTestCase{
-	{in: "f81d4fae-7dec-11d0-a765-00a0c91e6bf6"},
-	{in: "A987FBC9-4BED-3078-8F07-9141BA07C9F3"},
-	{in: "57b73598-8764-4ad0-a76a-679bb6640eb1"},
-	{in: "987fbc97-4bed-5078-9f07-9141ba07c9f3"},
-	{
-		in:            "00000000-0000-0000-0000-000000000000",
-		expectedError: "string must be a valid RFC 4122 UUID",
-	},
-	{
-		in:            "a987fbc9-4bed-3078-cf07-9141ba07c9f3",
-		expectedError: "string must be a valid RFC 4122 UUID",
-	},
-	{
-		in:            "01890f3e-23b4-7d68-9c2a-8f56c8a87f1b",
-		expectedError: "string must be a valid RFC 4122 UUID",
-	},
-	{
-		in:            "a987fbc94bed30788f079141ba07c9f3",
-		expectedError: "string must be a valid RFC 4122 UUID",
-	},
-	{
-		in:            "aaaaaaaa-1111-1111-aaaG-111111111111",
-		expectedError: "string must be a valid RFC 4122 UUID",
-	},
-	{
-		in:            "",
-		expectedError: "string must be a valid RFC 4122 UUID",
-	},
+var stringUUIDRFC4122ValidInputs = map[string]string{
+	"version 1 lowercase": "f81d4fae-7dec-11d0-a765-00a0c91e6bf6",
+	"version 3 uppercase": "A987FBC9-4BED-3078-8F07-9141BA07C9F3",
+	"version 4":           "57b73598-8764-4ad0-a76a-679bb6640eb1",
+	"version 5":           "987fbc97-4bed-5078-9f07-9141ba07c9f3",
+}
+
+var stringUUIDRFC4122InvalidInputs = map[string]string{
+	"nil UUID":            "00000000-0000-0000-0000-000000000000",
+	"non-RFC variant":     "a987fbc9-4bed-3078-cf07-9141ba07c9f3",
+	"unsupported version": "01890f3e-23b4-7d68-9c2a-8f56c8a87f1b",
+	"missing hyphens":     "a987fbc94bed30788f079141ba07c9f3",
+	"non-hex character":   "aaaaaaaa-1111-1111-aaaG-111111111111",
+	"empty":               "",
 }
 
 func TestStringUUIDRFC4122(t *testing.T) {
-	testStringFormatIDRule(t, StringUUIDRFC4122(), ErrorCodeStringUUIDRFC4122, stringUUIDRFC4122TestCases)
+	testStringFormatIDRule(
+		t,
+		StringUUIDRFC4122(),
+		ErrorCodeStringUUIDRFC4122,
+		"string must be a valid Universally Unique Identifier (UUID) as defined by RFC 4122",
+		stringUUIDRFC4122ValidInputs,
+		stringUUIDRFC4122InvalidInputs,
+	)
 }
 
 func BenchmarkStringUUIDRFC4122(b *testing.B) {
-	benchmarkStringFormatIDRule(b, StringUUIDRFC4122(), stringUUIDRFC4122TestCases)
+	benchmarkStringFormatIDRule(
+		b,
+		StringUUIDRFC4122(),
+		stringUUIDRFC4122ValidInputs,
+		stringUUIDRFC4122InvalidInputs,
+	)
 }
 
-var stringUUIDv3TestCases = []*stringFormatIDTestCase{
-	{in: "a987fbc9-4bed-3078-8f07-9141ba07c9f3"},
-	{in: "A987FBC9-4BED-3078-BF07-9141BA07C9F3"},
-	{
-		in:            "57b73598-8764-4ad0-a76a-679bb6640eb1",
-		expectedError: "string must be a valid version 3 RFC 4122 UUID",
-	},
-	{
-		in:            "a987fbc9-4bed-3078-cf07-9141ba07c9f3",
-		expectedError: "string must be a valid version 3 RFC 4122 UUID",
-	},
-	{
-		in:            "a987fbc9-4bed-3078-8f07-9141ba07c9fg",
-		expectedError: "string must be a valid version 3 RFC 4122 UUID",
-	},
+var stringUUIDv3ValidInputs = map[string]string{
+	"lowercase": "a987fbc9-4bed-3078-8f07-9141ba07c9f3",
+	"uppercase": "A987FBC9-4BED-3078-BF07-9141BA07C9F3",
+}
+
+var stringUUIDv3InvalidInputs = map[string]string{
+	"version 4":         "57b73598-8764-4ad0-a76a-679bb6640eb1",
+	"non-RFC variant":   "a987fbc9-4bed-3078-cf07-9141ba07c9f3",
+	"non-hex character": "a987fbc9-4bed-3078-8f07-9141ba07c9fg",
 }
 
 func TestStringUUIDv3(t *testing.T) {
-	testStringFormatIDRule(t, StringUUIDv3(), ErrorCodeStringUUIDv3, stringUUIDv3TestCases)
+	testStringFormatIDRule(
+		t,
+		StringUUIDv3(),
+		ErrorCodeStringUUIDv3,
+		"string must be a valid version 3 Universally Unique Identifier (UUID) as defined by RFC 4122",
+		stringUUIDv3ValidInputs,
+		stringUUIDv3InvalidInputs,
+	)
 }
 
 func BenchmarkStringUUIDv3(b *testing.B) {
-	benchmarkStringFormatIDRule(b, StringUUIDv3(), stringUUIDv3TestCases)
+	benchmarkStringFormatIDRule(b, StringUUIDv3(), stringUUIDv3ValidInputs, stringUUIDv3InvalidInputs)
 }
 
-var stringUUIDv4TestCases = []*stringFormatIDTestCase{
-	{in: "57b73598-8764-4ad0-a76a-679bb6640eb1"},
-	{in: "57B73598-8764-4AD0-B76A-679BB6640EB1"},
-	{
-		in:            "a987fbc9-4bed-3078-8f07-9141ba07c9f3",
-		expectedError: "string must be a valid version 4 RFC 4122 UUID",
-	},
-	{
-		in:            "57b73598-8764-4ad0-c76a-679bb6640eb1",
-		expectedError: "string must be a valid version 4 RFC 4122 UUID",
-	},
-	{
-		in:            "57b73598-8764-4ad0-a76a-679bb6640eg1",
-		expectedError: "string must be a valid version 4 RFC 4122 UUID",
-	},
+var stringUUIDv4ValidInputs = map[string]string{
+	"lowercase": "57b73598-8764-4ad0-a76a-679bb6640eb1",
+	"uppercase": "57B73598-8764-4AD0-B76A-679BB6640EB1",
+}
+
+var stringUUIDv4InvalidInputs = map[string]string{
+	"version 3":         "a987fbc9-4bed-3078-8f07-9141ba07c9f3",
+	"non-RFC variant":   "57b73598-8764-4ad0-c76a-679bb6640eb1",
+	"non-hex character": "57b73598-8764-4ad0-a76a-679bb6640eg1",
 }
 
 func TestStringUUIDv4(t *testing.T) {
-	testStringFormatIDRule(t, StringUUIDv4(), ErrorCodeStringUUIDv4, stringUUIDv4TestCases)
+	testStringFormatIDRule(
+		t,
+		StringUUIDv4(),
+		ErrorCodeStringUUIDv4,
+		"string must be a valid version 4 Universally Unique Identifier (UUID) as defined by RFC 4122",
+		stringUUIDv4ValidInputs,
+		stringUUIDv4InvalidInputs,
+	)
 }
 
 func BenchmarkStringUUIDv4(b *testing.B) {
-	benchmarkStringFormatIDRule(b, StringUUIDv4(), stringUUIDv4TestCases)
+	benchmarkStringFormatIDRule(b, StringUUIDv4(), stringUUIDv4ValidInputs, stringUUIDv4InvalidInputs)
 }
 
-var stringUUIDv5TestCases = []*stringFormatIDTestCase{
-	{in: "987fbc97-4bed-5078-9f07-9141ba07c9f3"},
-	{in: "987FBC97-4BED-5078-AF07-9141BA07C9F3"},
-	{
-		in:            "57b73598-8764-4ad0-a76a-679bb6640eb1",
-		expectedError: "string must be a valid version 5 RFC 4122 UUID",
-	},
-	{
-		in:            "987fbc97-4bed-5078-cf07-9141ba07c9f3",
-		expectedError: "string must be a valid version 5 RFC 4122 UUID",
-	},
-	{
-		in:            "987fbc97-4bed-5078-9f07-9141ba07c9fg",
-		expectedError: "string must be a valid version 5 RFC 4122 UUID",
-	},
+var stringUUIDv5ValidInputs = map[string]string{
+	"lowercase": "987fbc97-4bed-5078-9f07-9141ba07c9f3",
+	"uppercase": "987FBC97-4BED-5078-AF07-9141BA07C9F3",
+}
+
+var stringUUIDv5InvalidInputs = map[string]string{
+	"version 4":         "57b73598-8764-4ad0-a76a-679bb6640eb1",
+	"non-RFC variant":   "987fbc97-4bed-5078-cf07-9141ba07c9f3",
+	"non-hex character": "987fbc97-4bed-5078-9f07-9141ba07c9fg",
 }
 
 func TestStringUUIDv5(t *testing.T) {
-	testStringFormatIDRule(t, StringUUIDv5(), ErrorCodeStringUUIDv5, stringUUIDv5TestCases)
+	testStringFormatIDRule(
+		t,
+		StringUUIDv5(),
+		ErrorCodeStringUUIDv5,
+		"string must be a valid version 5 Universally Unique Identifier (UUID) as defined by RFC 4122",
+		stringUUIDv5ValidInputs,
+		stringUUIDv5InvalidInputs,
+	)
 }
 
 func BenchmarkStringUUIDv5(b *testing.B) {
-	benchmarkStringFormatIDRule(b, StringUUIDv5(), stringUUIDv5TestCases)
+	benchmarkStringFormatIDRule(b, StringUUIDv5(), stringUUIDv5ValidInputs, stringUUIDv5InvalidInputs)
 }
 
-var stringULIDTestCases = []*stringFormatIDTestCase{
-	{in: "01ARZ3NDEKTSV4RRFFQ69G5FAV"},
-	{in: "01arz3ndektsv4rrffq69g5fav"},
-	{in: "7ZZZZZZZZZZZZZZZZZZZZZZZZZ"},
-	{
-		in:            "01ARZ3NDEKTSV4RRFFQ69G5FA",
-		expectedError: "string must be a valid ULID",
-	},
-	{
-		in:            "01ARZ3NDEKTSV4RRFFQ69G5FAV0",
-		expectedError: "string must be a valid ULID",
-	},
-	{
-		in:            "8ZZZZZZZZZZZZZZZZZZZZZZZZZ",
-		expectedError: "string must be a valid ULID",
-	},
-	{
-		in:            "01ARZ3NDEKTSV4RRFFQ69G5FIV",
-		expectedError: "string must be a valid ULID",
-	},
-	{
-		in:            "01ARZ3NDEKTSV4RRFFQ69G5FLV",
-		expectedError: "string must be a valid ULID",
-	},
-	{
-		in:            "01ARZ3NDEKTSV4RRFFQ69G5FOV",
-		expectedError: "string must be a valid ULID",
-	},
-	{
-		in:            "01ARZ3NDEKTSV4RRFFQ69G5FUV",
-		expectedError: "string must be a valid ULID",
-	},
-	{
-		in:            "01ARZ3NDEKTSV4RRFFQ69G5F-V",
-		expectedError: "string must be a valid ULID",
-	},
+var stringULIDValidInputs = map[string]string{
+	"uppercase":     "01ARZ3NDEKTSV4RRFFQ69G5FAV",
+	"lowercase":     "01arz3ndektsv4rrffq69g5fav",
+	"maximum value": "7ZZZZZZZZZZZZZZZZZZZZZZZZZ",
+}
+
+var stringULIDInvalidInputs = map[string]string{
+	"too short":              "01ARZ3NDEKTSV4RRFFQ69G5FA",
+	"too long":               "01ARZ3NDEKTSV4RRFFQ69G5FAV0",
+	"overflow":               "8ZZZZZZZZZZZZZZZZZZZZZZZZZ",
+	"forbidden I":            "01ARZ3NDEKTSV4RRFFQ69G5FIV",
+	"forbidden L":            "01ARZ3NDEKTSV4RRFFQ69G5FLV",
+	"forbidden O":            "01ARZ3NDEKTSV4RRFFQ69G5FOV",
+	"forbidden U":            "01ARZ3NDEKTSV4RRFFQ69G5FUV",
+	"non-alphanumeric value": "01ARZ3NDEKTSV4RRFFQ69G5F-V",
 }
 
 func TestStringULID(t *testing.T) {
-	testStringFormatIDRule(t, StringULID(), ErrorCodeStringULID, stringULIDTestCases)
+	testStringFormatIDRule(
+		t,
+		StringULID(),
+		ErrorCodeStringULID,
+		"string must be a valid Universally Unique Lexicographically Sortable Identifier (ULID)",
+		stringULIDValidInputs,
+		stringULIDInvalidInputs,
+	)
 }
 
 func BenchmarkStringULID(b *testing.B) {
-	benchmarkStringFormatIDRule(b, StringULID(), stringULIDTestCases)
+	benchmarkStringFormatIDRule(b, StringULID(), stringULIDValidInputs, stringULIDInvalidInputs)
 }
 
 func testStringFormatIDRule(
 	t *testing.T,
 	rule govy.Rule[string],
 	errorCode govy.ErrorCode,
-	testCases []*stringFormatIDTestCase,
+	expectedError string,
+	validInputs map[string]string,
+	invalidInputs map[string]string,
 ) {
 	t.Helper()
-	for _, tc := range testCases {
-		err := rule.Validate(tc.in)
-		if tc.expectedError != "" {
-			assert.EqualError(t, err, tc.expectedError)
-			assert.True(t, govy.HasErrorCode(err, errorCode))
-		} else {
-			assert.NoError(t, err)
+	t.Run("valid", func(t *testing.T) {
+		for name, input := range validInputs {
+			t.Run(name, func(t *testing.T) {
+				assert.NoError(t, rule.Validate(input))
+			})
 		}
-	}
+	})
+	t.Run("invalid", func(t *testing.T) {
+		for _, input := range invalidInputs {
+			err := rule.Validate(input)
+			assert.EqualError(t, err, expectedError)
+			assert.True(t, govy.HasErrorCode(err, errorCode))
+			break
+		}
+
+		for name, input := range invalidInputs {
+			t.Run(name, func(t *testing.T) {
+				assert.Error(t, rule.Validate(input))
+			})
+		}
+	})
 }
 
 func benchmarkStringFormatIDRule(
 	b *testing.B,
 	rule govy.Rule[string],
-	testCases []*stringFormatIDTestCase,
+	validInputs map[string]string,
+	invalidInputs map[string]string,
 ) {
 	b.Helper()
 	for b.Loop() {
-		for _, tc := range testCases {
-			_ = rule.Validate(tc.in)
+		for _, input := range validInputs {
+			_ = rule.Validate(input)
+		}
+		for _, input := range invalidInputs {
+			_ = rule.Validate(input)
 		}
 	}
 }
