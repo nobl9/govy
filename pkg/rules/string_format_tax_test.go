@@ -7,62 +7,42 @@ import (
 	"github.com/nobl9/govy/pkg/govy"
 )
 
-var stringEINTestCases = map[string]struct {
-	in            string
-	expectedError string
-}{
-	"valid prefix": {
-		in: "12-3456789",
-	},
-	"valid internet prefix": {
-		in: "99-3456789",
-	},
-	"zero prefix": {
-		in:            "00-0000000",
-		expectedError: "string must be a valid EIN",
-	},
-	"unassigned prefix": {
-		in:            "07-3456789",
-		expectedError: "string must be a valid EIN",
-	},
-	"missing dash": {
-		in:            "123456789",
-		expectedError: "string must be a valid EIN",
-	},
-	"short prefix": {
-		in:            "1-23456789",
-		expectedError: "string must be a valid EIN",
-	},
-	"short serial": {
-		in:            "12-345678",
-		expectedError: "string must be a valid EIN",
-	},
-	"long serial": {
-		in:            "12-34567890",
-		expectedError: "string must be a valid EIN",
-	},
-	"letters": {
-		in:            "AB-3456789",
-		expectedError: "string must be a valid EIN",
-	},
-	"underscore separator": {
-		in:            "12_3456789",
-		expectedError: "string must be a valid EIN",
-	},
+var validEINTestCases = map[string]string{
+	"valid prefix":          "12-3456789",
+	"valid internet prefix": "99-3456789",
+}
+
+var invalidEINTestCases = map[string]string{
+	"zero prefix":          "00-0000000",
+	"unassigned prefix":    "07-3456789",
+	"missing dash":         "123456789",
+	"short prefix":         "1-23456789",
+	"short serial":         "12-345678",
+	"long serial":          "12-34567890",
+	"letters":              "AB-3456789",
+	"underscore separator": "12_3456789",
 }
 
 func TestStringEIN(t *testing.T) {
-	for name, tt := range stringEINTestCases {
-		t.Run(name, func(t *testing.T) {
-			err := StringEIN().Validate(tt.in)
-			if tt.expectedError != "" {
-				assert.EqualError(t, err, tt.expectedError)
-				assert.True(t, govy.HasErrorCode(err, ErrorCodeStringEIN))
-			} else {
-				assert.NoError(t, err)
-			}
-		})
-	}
+	rule := StringEIN()
+	t.Run("valid EINs", func(t *testing.T) {
+		for name, in := range validEINTestCases {
+			t.Run(name, func(t *testing.T) {
+				assert.NoError(t, rule.Validate(in))
+			})
+		}
+	})
+	t.Run("invalid EINs", func(t *testing.T) {
+		err := rule.Validate(invalidEINTestCases["zero prefix"])
+		assert.EqualError(t, err, "string must be a valid Employer Identification Number (EIN)")
+		assert.True(t, govy.HasErrorCode(err, ErrorCodeStringEIN))
+
+		for name, in := range invalidEINTestCases {
+			t.Run(name, func(t *testing.T) {
+				assert.Error(t, rule.Validate(in))
+			})
+		}
+	})
 }
 
 func BenchmarkStringEIN(b *testing.B) {
@@ -72,65 +52,43 @@ func BenchmarkStringEIN(b *testing.B) {
 	}
 }
 
-var stringSSNTestCases = map[string]struct {
-	in            string
-	expectedError string
-}{
-	"valid": {
-		in: "123-45-6789",
-	},
-	"valid high area": {
-		in: "899-99-9999",
-	},
-	"valid low groups": {
-		in: "001-01-0001",
-	},
-	"zero area": {
-		in:            "000-45-6789",
-		expectedError: "string must be a valid SSN",
-	},
-	"666 area": {
-		in:            "666-45-6789",
-		expectedError: "string must be a valid SSN",
-	},
-	"900 area": {
-		in:            "900-45-6789",
-		expectedError: "string must be a valid SSN",
-	},
-	"999 area": {
-		in:            "999-45-6789",
-		expectedError: "string must be a valid SSN",
-	},
-	"zero group": {
-		in:            "123-00-6789",
-		expectedError: "string must be a valid SSN",
-	},
-	"zero serial": {
-		in:            "123-45-0000",
-		expectedError: "string must be a valid SSN",
-	},
-	"missing dashes": {
-		in:            "123456789",
-		expectedError: "string must be a valid SSN",
-	},
-	"letters": {
-		in:            "12A-45-6789",
-		expectedError: "string must be a valid SSN",
-	},
+var validSSNTestCases = map[string]string{
+	"valid":            "123-45-6789",
+	"valid high area":  "899-99-9999",
+	"valid low groups": "001-01-0001",
+}
+
+var invalidSSNTestCases = map[string]string{
+	"zero area":      "000-45-6789",
+	"666 area":       "666-45-6789",
+	"900 area":       "900-45-6789",
+	"999 area":       "999-45-6789",
+	"zero group":     "123-00-6789",
+	"zero serial":    "123-45-0000",
+	"missing dashes": "123456789",
+	"letters":        "12A-45-6789",
 }
 
 func TestStringSSN(t *testing.T) {
-	for name, tt := range stringSSNTestCases {
-		t.Run(name, func(t *testing.T) {
-			err := StringSSN().Validate(tt.in)
-			if tt.expectedError != "" {
-				assert.EqualError(t, err, tt.expectedError)
-				assert.True(t, govy.HasErrorCode(err, ErrorCodeStringSSN))
-			} else {
-				assert.NoError(t, err)
-			}
-		})
-	}
+	rule := StringSSN()
+	t.Run("valid SSNs", func(t *testing.T) {
+		for name, in := range validSSNTestCases {
+			t.Run(name, func(t *testing.T) {
+				assert.NoError(t, rule.Validate(in))
+			})
+		}
+	})
+	t.Run("invalid SSNs", func(t *testing.T) {
+		err := rule.Validate(invalidSSNTestCases["zero area"])
+		assert.EqualError(t, err, "string must be a valid Social Security Number (SSN)")
+		assert.True(t, govy.HasErrorCode(err, ErrorCodeStringSSN))
+
+		for name, in := range invalidSSNTestCases {
+			t.Run(name, func(t *testing.T) {
+				assert.Error(t, rule.Validate(in))
+			})
+		}
+	})
 }
 
 func BenchmarkStringSSN(b *testing.B) {
