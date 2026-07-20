@@ -706,89 +706,114 @@ func BenchmarkStringJSON(b *testing.B) {
 	}
 }
 
-var stringSemverTestCases = map[string]struct {
-	in            string
-	expectedError string
-}{
-	"zero major": {
-		in: "0.1.0",
-	},
-	"release": {
-		in: "1.0.0",
-	},
-	"prerelease": {
-		in: "1.0.0-alpha",
-	},
-	"prerelease numeric identifier": {
-		in: "1.0.0-alpha.1",
-	},
-	"build metadata": {
-		in: "1.0.0+20130313144700",
-	},
-	"prerelease with build metadata": {
-		in: "1.0.0-beta+exp.sha.5114f85",
-	},
-	"complex prerelease and build": {
-		in: "2.7.3-rc.1+build.11.e0f985a",
-	},
-	"empty": {
-		in:            "",
-		expectedError: "string must be a valid semantic version",
-	},
-	"major only": {
-		in:            "1",
-		expectedError: "string must be a valid semantic version",
-	},
-	"major minor only": {
-		in:            "1.2",
-		expectedError: "string must be a valid semantic version",
-	},
-	"too many numeric components": {
-		in:            "1.2.3.4",
-		expectedError: "string must be a valid semantic version",
-	},
-	"leading zero major": {
-		in:            "01.2.3",
-		expectedError: "string must be a valid semantic version",
-	},
-	"leading zero minor": {
-		in:            "1.02.3",
-		expectedError: "string must be a valid semantic version",
-	},
-	"leading zero patch": {
-		in:            "1.2.03",
-		expectedError: "string must be a valid semantic version",
-	},
-	"empty prerelease": {
-		in:            "1.2.3-",
-		expectedError: "string must be a valid semantic version",
-	},
-	"leading zero prerelease number": {
-		in:            "1.2.3-01",
-		expectedError: "string must be a valid semantic version",
-	},
-	"v prefix": {
-		in:            "v1.2.3",
-		expectedError: "string must be a valid semantic version",
-	},
-	"empty build identifier": {
-		in:            "1.2.3+build..1",
-		expectedError: "string must be a valid semantic version",
-	},
+var validSemverTestCases = []string{
+	"0.0.4",
+	"1.2.3",
+	"10.20.30",
+	"1.1.2-prerelease+meta",
+	"1.1.2+meta",
+	"1.1.2+meta-valid",
+	"1.0.0-alpha",
+	"1.0.0-beta",
+	"1.0.0-alpha.beta",
+	"1.0.0-alpha.beta.1",
+	"1.0.0-alpha.1",
+	"1.0.0-alpha0.valid",
+	"1.0.0-alpha.0valid",
+	"1.0.0-alpha-a.b-c-somethinglong+build.1-aef.1-its-okay",
+	"1.0.0-rc.1+build.1",
+	"2.0.0-rc.1+build.123",
+	"1.2.3-beta",
+	"10.2.3-DEV-SNAPSHOT",
+	"1.2.3-SNAPSHOT-123",
+	"1.0.0",
+	"2.0.0",
+	"1.1.7",
+	"2.0.0+build.1848",
+	"2.0.1-alpha.1227",
+	"1.0.0-alpha+beta",
+	"1.2.3----RC-SNAPSHOT.12.9.1--.12+788",
+	"1.2.3----R-S.12.9.1--.12+meta",
+	"1.2.3----RC-SNAPSHOT.12.9.1--.12",
+	"1.0.0+0.build.1-rc.10000aaa-kk-0.1",
+	"99999999999999999999999.999999999999999999.99999999999999999",
+	"1.0.0-0A.is.legal",
+	"0.1.0",
+	"1.0.0+20130313144700",
+	"1.0.0-beta+exp.sha.5114f85",
+	"2.7.3-rc.1+build.11.e0f985a",
+}
+
+var invalidSemverTestCases = []string{
+	"1",
+	"1.2",
+	"1.2.3-0123",
+	"1.2.3-0123.0123",
+	"1.1.2+.123",
+	"+invalid",
+	"-invalid",
+	"-invalid+invalid",
+	"-invalid.01",
+	"alpha",
+	"alpha.beta",
+	"alpha.beta.1",
+	"alpha.1",
+	"alpha+beta",
+	"alpha_beta",
+	"alpha.",
+	"alpha..",
+	"beta",
+	"1.0.0-alpha_beta",
+	"-alpha.",
+	"1.0.0-alpha..",
+	"1.0.0-alpha..1",
+	"1.0.0-alpha...1",
+	"1.0.0-alpha....1",
+	"1.0.0-alpha.....1",
+	"1.0.0-alpha......1",
+	"1.0.0-alpha.......1",
+	"01.1.1",
+	"1.01.1",
+	"1.1.01",
+	"1.2",
+	"1.2.3.DEV",
+	"1.2-SNAPSHOT",
+	"1.2.31.2.3----RC-SNAPSHOT.12.09.1--..12+788",
+	"1.2-RC-SNAPSHOT",
+	"-1.0.3-gamma+b7718",
+	"+justmeta",
+	"9.8.7+meta+meta",
+	"9.8.7-whatever+meta+meta",
+	"99999999999999999999999.999999999999999999.99999999999999999----RC-SNAPSHOT.12.09.1--------------------------------..12",
+	"",
+	"1.2.3.4",
+	"01.2.3",
+	"1.02.3",
+	"1.2.03",
+	"1.2.3-",
+	"1.2.3-01",
+	"v1.2.3",
+	"1.2.3+build..1",
 }
 
 func TestStringSemver(t *testing.T) {
-	for name, tt := range stringSemverTestCases {
-		t.Run(name, func(t *testing.T) {
-			err := StringSemver().Validate(tt.in)
-			if tt.expectedError != "" {
-				assert.EqualError(t, err, tt.expectedError)
+	rule := StringSemver()
+	t.Run("valid versions", func(t *testing.T) {
+		for _, version := range validSemverTestCases {
+			t.Run(fmt.Sprintf("%q", version), func(t *testing.T) {
+				assert.NoError(t, rule.Validate(version))
+			})
+		}
+	})
+	t.Run("invalid versions", func(t *testing.T) {
+		for _, version := range invalidSemverTestCases {
+			t.Run(fmt.Sprintf("%q", version), func(t *testing.T) {
+				err := rule.Validate(version)
+				assert.EqualError(t, err, "string must be a valid semantic version")
 				assert.True(t, govy.HasErrorCode(err, ErrorCodeStringSemver))
-			} else {
-				assert.NoError(t, err)
-			}
-		})
-	}
+			})
+		}
+	})
 }
 
 func BenchmarkStringSemver(b *testing.B) {
