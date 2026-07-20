@@ -312,6 +312,23 @@ func StringJSON() govy.Rule[string] {
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
 }
 
+// StringE164 ensures the property's value is a valid E.164 phone number.
+func StringE164() govy.Rule[string] {
+	tpl := messagetemplates.Get(messagetemplates.StringE164Template)
+
+	return govy.NewRule(func(s string) error {
+		if !e164Regexp().MatchString(s) {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringE164).
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+}
+
 // StringContains ensures the property's value contains all the provided substrings.
 func StringContains(substrings ...string) govy.Rule[string] {
 	tpl := messagetemplates.Get(messagetemplates.StringContainsTemplate)
