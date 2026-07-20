@@ -505,6 +505,22 @@ func TestPropertyRulesWithID(t *testing.T) {
 		assert.Equal(t, "custom-id", modified.GetID())
 		assert.True(t, originalID != modified.GetID())
 	})
+
+	t.Run("generated IDs are unique for derived copies", func(t *testing.T) {
+		base := govy.For(func(m mockStruct) string { return m.Field })
+
+		propertyRules := base.WithName("field")
+		sliceRules := govy.ForSlice(func(m mockStruct) []string { return []string{m.Field} })
+		sliceForEachRules := sliceRules.RulesForEach(rules.StringNotEmpty())
+		mapRules := govy.ForMap(func(m mockStruct) map[string]string {
+			return map[string]string{"key": m.Field}
+		})
+		mapForKeyRules := mapRules.RulesForKeys(rules.StringNotEmpty())
+
+		assert.True(t, base.GetID() != propertyRules.GetID())
+		assert.True(t, sliceRules.GetID() != sliceForEachRules.GetID())
+		assert.True(t, mapRules.GetID() != mapForKeyRules.GetID())
+	})
 }
 
 func BenchmarkFor(b *testing.B) {

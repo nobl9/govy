@@ -2,7 +2,7 @@ package govy
 
 import "github.com/nobl9/govy/internal/uuid"
 
-// instanceID is a composite identifier used to identify [Validator] and [PropertyRules] variations.
+// instanceID is a composite identifier used to identify [PropertyRules] variations.
 type instanceID struct {
 	// generatedID is always filled and generated upon creation of [instanceID].
 	generatedID string
@@ -17,6 +17,13 @@ func newInstanceID() instanceID {
 func (i instanceID) WithUserSuppliedID(id string) instanceID {
 	i.userSuppliedID = id
 	return i
+}
+
+func (i instanceID) withNextGeneratedID() instanceID {
+	if i.userSuppliedID != "" {
+		return i
+	}
+	return newInstanceID()
 }
 
 func (i instanceID) GetID() string {
