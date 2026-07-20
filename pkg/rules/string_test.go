@@ -706,33 +706,38 @@ func BenchmarkStringJSON(b *testing.B) {
 	}
 }
 
-type stringHashDigestRuleTestCase struct {
-	in            string
-	expectedError string
+var validMD5TestCases = []string{
+	"d41d8cd98f00b204e9800998ecf8427e",
 }
 
-var stringMD5TestCases = map[string]stringHashDigestRuleTestCase{
-	"lowercase digest": {in: "d41d8cd98f00b204e9800998ecf8427e"},
-	"empty": {
-		in:            "",
-		expectedError: "string must be a valid lowercase MD5 hexadecimal digest",
-	},
-	"uppercase digest": {
-		in:            "D41D8CD98F00B204E9800998ECF8427E",
-		expectedError: "string must be a valid lowercase MD5 hexadecimal digest",
-	},
-	"too short": {
-		in:            "d41d8cd98f00b204e9800998ecf8427",
-		expectedError: "string must be a valid lowercase MD5 hexadecimal digest",
-	},
-	"non hexadecimal": {
-		in:            "d41d8cd98f00b204e9800998ecf8427g",
-		expectedError: "string must be a valid lowercase MD5 hexadecimal digest",
-	},
+var invalidMD5TestCases = []string{
+	"",
+	"D41D8CD98F00B204E9800998ECF8427E",
+	"d41d8cd98f00b204e9800998ecf8427",
+	"d41d8cd98f00b204e9800998ecf8427e0",
+	"d41d8cd98f00b204e9800998ecf8427g",
 }
 
 func TestStringMD5(t *testing.T) {
-	runStringHashDigestRuleTest(t, StringMD5(), ErrorCodeStringMD5, stringMD5TestCases)
+	rule := StringMD5()
+	t.Run("valid digests", func(t *testing.T) {
+		for _, digest := range validMD5TestCases {
+			t.Run(fmt.Sprintf("%q", digest), func(t *testing.T) {
+				assert.NoError(t, rule.Validate(digest))
+			})
+		}
+	})
+	t.Run("invalid digests", func(t *testing.T) {
+		err := rule.Validate(invalidMD5TestCases[0])
+		assert.EqualError(t, err, "string must be a valid lowercase MD5 hexadecimal digest")
+		assert.True(t, govy.HasErrorCode(err, ErrorCodeStringMD5))
+
+		for _, digest := range invalidMD5TestCases {
+			t.Run(fmt.Sprintf("%q", digest), func(t *testing.T) {
+				assert.Error(t, rule.Validate(digest))
+			})
+		}
+	})
 }
 
 func BenchmarkStringMD5(b *testing.B) {
@@ -742,28 +747,38 @@ func BenchmarkStringMD5(b *testing.B) {
 	})
 }
 
-var stringSHA256TestCases = map[string]stringHashDigestRuleTestCase{
-	"lowercase digest": {in: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"},
-	"empty": {
-		in:            "",
-		expectedError: "string must be a valid lowercase SHA-256 hexadecimal digest",
-	},
-	"uppercase digest": {
-		in:            "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
-		expectedError: "string must be a valid lowercase SHA-256 hexadecimal digest",
-	},
-	"too short": {
-		in:            "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b85",
-		expectedError: "string must be a valid lowercase SHA-256 hexadecimal digest",
-	},
-	"non hexadecimal": {
-		in:            "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b85g",
-		expectedError: "string must be a valid lowercase SHA-256 hexadecimal digest",
-	},
+var validSHA256TestCases = []string{
+	"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+}
+
+var invalidSHA256TestCases = []string{
+	"",
+	"E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+	"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b85",
+	"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b8550",
+	"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b85g",
 }
 
 func TestStringSHA256(t *testing.T) {
-	runStringHashDigestRuleTest(t, StringSHA256(), ErrorCodeStringSHA256, stringSHA256TestCases)
+	rule := StringSHA256()
+	t.Run("valid digests", func(t *testing.T) {
+		for _, digest := range validSHA256TestCases {
+			t.Run(fmt.Sprintf("%q", digest), func(t *testing.T) {
+				assert.NoError(t, rule.Validate(digest))
+			})
+		}
+	})
+	t.Run("invalid digests", func(t *testing.T) {
+		err := rule.Validate(invalidSHA256TestCases[0])
+		assert.EqualError(t, err, "string must be a valid lowercase SHA-256 hexadecimal digest")
+		assert.True(t, govy.HasErrorCode(err, ErrorCodeStringSHA256))
+
+		for _, digest := range invalidSHA256TestCases {
+			t.Run(fmt.Sprintf("%q", digest), func(t *testing.T) {
+				assert.Error(t, rule.Validate(digest))
+			})
+		}
+	})
 }
 
 func BenchmarkStringSHA256(b *testing.B) {
@@ -773,30 +788,38 @@ func BenchmarkStringSHA256(b *testing.B) {
 	})
 }
 
-var stringSHA384TestCases = map[string]stringHashDigestRuleTestCase{
-	"lowercase digest": {
-		in: "38b060a751ac96384cd9327eb1b1e36a21fdb71114be07434c0cc7bf63f6e1da274edebfe76f65fbd51ad2f14898b95b",
-	},
-	"empty": {
-		in:            "",
-		expectedError: "string must be a valid lowercase SHA-384 hexadecimal digest",
-	},
-	"uppercase digest": {
-		in:            "38B060A751AC96384CD9327EB1B1E36A21FDB71114BE07434C0CC7BF63F6E1DA274EDEBFE76F65FBD51AD2F14898B95B",
-		expectedError: "string must be a valid lowercase SHA-384 hexadecimal digest",
-	},
-	"too short": {
-		in:            "38b060a751ac96384cd9327eb1b1e36a21fdb71114be07434c0cc7bf63f6e1da274edebfe76f65fbd51ad2f14898b95",
-		expectedError: "string must be a valid lowercase SHA-384 hexadecimal digest",
-	},
-	"non hexadecimal": {
-		in:            "38b060a751ac96384cd9327eb1b1e36a21fdb71114be07434c0cc7bf63f6e1da274edebfe76f65fbd51ad2f14898b95g",
-		expectedError: "string must be a valid lowercase SHA-384 hexadecimal digest",
-	},
+var validSHA384TestCases = []string{
+	"38b060a751ac96384cd9327eb1b1e36a21fdb71114be07434c0cc7bf63f6e1da274edebfe76f65fbd51ad2f14898b95b",
+}
+
+var invalidSHA384TestCases = []string{
+	"",
+	"38B060A751AC96384CD9327EB1B1E36A21FDB71114BE07434C0CC7BF63F6E1DA274EDEBFE76F65FBD51AD2F14898B95B",
+	"38b060a751ac96384cd9327eb1b1e36a21fdb71114be07434c0cc7bf63f6e1da274edebfe76f65fbd51ad2f14898b95",
+	"38b060a751ac96384cd9327eb1b1e36a21fdb71114be07434c0cc7bf63f6e1da274edebfe76f65fbd51ad2f14898b95b0",
+	"38b060a751ac96384cd9327eb1b1e36a21fdb71114be07434c0cc7bf63f6e1da274edebfe76f65fbd51ad2f14898b95g",
 }
 
 func TestStringSHA384(t *testing.T) {
-	runStringHashDigestRuleTest(t, StringSHA384(), ErrorCodeStringSHA384, stringSHA384TestCases)
+	rule := StringSHA384()
+	t.Run("valid digests", func(t *testing.T) {
+		for _, digest := range validSHA384TestCases {
+			t.Run(fmt.Sprintf("%q", digest), func(t *testing.T) {
+				assert.NoError(t, rule.Validate(digest))
+			})
+		}
+	})
+	t.Run("invalid digests", func(t *testing.T) {
+		err := rule.Validate(invalidSHA384TestCases[0])
+		assert.EqualError(t, err, "string must be a valid lowercase SHA-384 hexadecimal digest")
+		assert.True(t, govy.HasErrorCode(err, ErrorCodeStringSHA384))
+
+		for _, digest := range invalidSHA384TestCases {
+			t.Run(fmt.Sprintf("%q", digest), func(t *testing.T) {
+				assert.Error(t, rule.Validate(digest))
+			})
+		}
+	})
 }
 
 func BenchmarkStringSHA384(b *testing.B) {
@@ -806,30 +829,38 @@ func BenchmarkStringSHA384(b *testing.B) {
 	})
 }
 
-var stringSHA512TestCases = map[string]stringHashDigestRuleTestCase{
-	"lowercase digest": {
-		in: "cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927da3e",
-	},
-	"empty": {
-		in:            "",
-		expectedError: "string must be a valid lowercase SHA-512 hexadecimal digest",
-	},
-	"uppercase digest": {
-		in:            "CF83E1357EEFB8BDF1542850D66D8007D620E4050B5715DC83F4A921D36CE9CE47D0D13C5D85F2B0FF8318D2877EEC2F63B931BD47417A81A538327AF927DA3E",
-		expectedError: "string must be a valid lowercase SHA-512 hexadecimal digest",
-	},
-	"too short": {
-		in:            "cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927da3",
-		expectedError: "string must be a valid lowercase SHA-512 hexadecimal digest",
-	},
-	"non hexadecimal": {
-		in:            "cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927dag",
-		expectedError: "string must be a valid lowercase SHA-512 hexadecimal digest",
-	},
+var validSHA512TestCases = []string{
+	"cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927da3e",
+}
+
+var invalidSHA512TestCases = []string{
+	"",
+	"CF83E1357EEFB8BDF1542850D66D8007D620E4050B5715DC83F4A921D36CE9CE47D0D13C5D85F2B0FF8318D2877EEC2F63B931BD47417A81A538327AF927DA3E",
+	"cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927da3",
+	"cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927da3e0",
+	"cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927dag",
 }
 
 func TestStringSHA512(t *testing.T) {
-	runStringHashDigestRuleTest(t, StringSHA512(), ErrorCodeStringSHA512, stringSHA512TestCases)
+	rule := StringSHA512()
+	t.Run("valid digests", func(t *testing.T) {
+		for _, digest := range validSHA512TestCases {
+			t.Run(fmt.Sprintf("%q", digest), func(t *testing.T) {
+				assert.NoError(t, rule.Validate(digest))
+			})
+		}
+	})
+	t.Run("invalid digests", func(t *testing.T) {
+		err := rule.Validate(invalidSHA512TestCases[0])
+		assert.EqualError(t, err, "string must be a valid lowercase SHA-512 hexadecimal digest")
+		assert.True(t, govy.HasErrorCode(err, ErrorCodeStringSHA512))
+
+		for _, digest := range invalidSHA512TestCases {
+			t.Run(fmt.Sprintf("%q", digest), func(t *testing.T) {
+				assert.Error(t, rule.Validate(digest))
+			})
+		}
+	})
 }
 
 func BenchmarkStringSHA512(b *testing.B) {
@@ -837,26 +868,6 @@ func BenchmarkStringSHA512(b *testing.B) {
 		"cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927da3e",
 		"CF83E1357EEFB8BDF1542850D66D8007D620E4050B5715DC83F4A921D36CE9CE47D0D13C5D85F2B0FF8318D2877EEC2F63B931BD47417A81A538327AF927DA3E",
 	})
-}
-
-func runStringHashDigestRuleTest(
-	t *testing.T,
-	rule govy.Rule[string],
-	errorCode govy.ErrorCode,
-	testCases map[string]stringHashDigestRuleTestCase,
-) {
-	t.Helper()
-	for name, tc := range testCases {
-		t.Run(name, func(t *testing.T) {
-			err := rule.Validate(tc.in)
-			if tc.expectedError != "" {
-				assert.EqualError(t, err, tc.expectedError)
-				assert.True(t, govy.HasErrorCode(err, errorCode))
-			} else {
-				assert.NoError(t, err)
-			}
-		})
-	}
 }
 
 func benchmarkStringHashDigestRule(b *testing.B, rule govy.Rule[string], inputs []string) {
