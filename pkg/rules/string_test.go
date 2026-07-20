@@ -706,6 +706,194 @@ func BenchmarkStringJSON(b *testing.B) {
 	}
 }
 
+var validSemverTestCases = []string{
+	"0.0.4",
+	"1.2.3",
+	"10.20.30",
+	"1.1.2-prerelease+meta",
+	"1.1.2+meta",
+	"1.1.2+meta-valid",
+	"1.0.0-alpha",
+	"1.0.0-beta",
+	"1.0.0-alpha.beta",
+	"1.0.0-alpha.beta.1",
+	"1.0.0-alpha.1",
+	"1.0.0-alpha0.valid",
+	"1.0.0-alpha.0valid",
+	"1.0.0-alpha-a.b-c-somethinglong+build.1-aef.1-its-okay",
+	"1.0.0-rc.1+build.1",
+	"2.0.0-rc.1+build.123",
+	"1.2.3-beta",
+	"10.2.3-DEV-SNAPSHOT",
+	"1.2.3-SNAPSHOT-123",
+	"1.0.0",
+	"2.0.0",
+	"1.1.7",
+	"2.0.0+build.1848",
+	"2.0.1-alpha.1227",
+	"1.0.0-alpha+beta",
+	"1.2.3----RC-SNAPSHOT.12.9.1--.12+788",
+	"1.2.3----R-S.12.9.1--.12+meta",
+	"1.2.3----RC-SNAPSHOT.12.9.1--.12",
+	"1.0.0+0.build.1-rc.10000aaa-kk-0.1",
+	"99999999999999999999999.999999999999999999.99999999999999999",
+	"1.0.0-0A.is.legal",
+	"0.1.0",
+	"1.0.0+20130313144700",
+	"1.0.0-beta+exp.sha.5114f85",
+	"2.7.3-rc.1+build.11.e0f985a",
+}
+
+var invalidSemverTestCases = []string{
+	"1",
+	"1.2",
+	"1.2.3-0123",
+	"1.2.3-0123.0123",
+	"1.1.2+.123",
+	"+invalid",
+	"-invalid",
+	"-invalid+invalid",
+	"-invalid.01",
+	"alpha",
+	"alpha.beta",
+	"alpha.beta.1",
+	"alpha.1",
+	"alpha+beta",
+	"alpha_beta",
+	"alpha.",
+	"alpha..",
+	"beta",
+	"1.0.0-alpha_beta",
+	"-alpha.",
+	"1.0.0-alpha..",
+	"1.0.0-alpha..1",
+	"1.0.0-alpha...1",
+	"1.0.0-alpha....1",
+	"1.0.0-alpha.....1",
+	"1.0.0-alpha......1",
+	"1.0.0-alpha.......1",
+	"01.1.1",
+	"1.01.1",
+	"1.1.01",
+	"1.2",
+	"1.2.3.DEV",
+	"1.2-SNAPSHOT",
+	"1.2.31.2.3----RC-SNAPSHOT.12.09.1--..12+788",
+	"1.2-RC-SNAPSHOT",
+	"-1.0.3-gamma+b7718",
+	"+justmeta",
+	"9.8.7+meta+meta",
+	"9.8.7-whatever+meta+meta",
+	"99999999999999999999999.999999999999999999.99999999999999999----RC-SNAPSHOT.12.09.1--------------------------------..12",
+	"",
+	"1.2.3.4",
+	"01.2.3",
+	"1.02.3",
+	"1.2.03",
+	"1.2.3-",
+	"1.2.3-01",
+	"v1.2.3",
+	"1.2.3+build..1",
+}
+
+func TestStringSemver(t *testing.T) {
+	rule := StringSemver()
+	t.Run("valid versions", func(t *testing.T) {
+		for _, version := range validSemverTestCases {
+			t.Run(fmt.Sprintf("%q", version), func(t *testing.T) {
+				assert.NoError(t, rule.Validate(version))
+			})
+		}
+	})
+	t.Run("invalid versions", func(t *testing.T) {
+		for _, version := range invalidSemverTestCases {
+			t.Run(fmt.Sprintf("%q", version), func(t *testing.T) {
+				err := rule.Validate(version)
+				assert.EqualError(t, err, "string must be a valid semantic version")
+				assert.True(t, govy.HasErrorCode(err, ErrorCodeStringSemver))
+			})
+		}
+	})
+}
+
+func BenchmarkStringSemver(b *testing.B) {
+	rule := StringSemver()
+	for b.Loop() {
+		_ = rule.Validate("2.7.3-rc.1+build.11.e0f985a")
+	}
+}
+
+var stringCVETestCases = map[string]struct {
+	in            string
+	expectedError string
+}{
+	"four digit sequence": {
+		in: "CVE-1999-0001",
+	},
+	"four digit year before 1999": {
+		in: "CVE-1998-0001",
+	},
+	"zero sequence": {
+		in: "CVE-2021-0000",
+	},
+	"sequence with leading zero": {
+		in: "CVE-2014-0160",
+	},
+	"five digit sequence with leading zero": {
+		in: "CVE-2021-00001",
+	},
+	"sequence with two leading zeroes": {
+		in: "CVE-2021-0990",
+	},
+	"five digit sequence": {
+		in: "CVE-2021-44228",
+	},
+	"long sequence": {
+		in: "CVE-2024-12345",
+	},
+	"nineteen digit sequence": {
+		in: "CVE-2024-1234567890123456789",
+	},
+	"empty": {
+		in:            "",
+		expectedError: "string must be a valid CVE ID",
+	},
+	"lowercase prefix": {
+		in:            "cve-2021-44228",
+		expectedError: "string must be a valid CVE ID",
+	},
+	"short sequence": {
+		in:            "CVE-2021-123",
+		expectedError: "string must be a valid CVE ID",
+	},
+	"letters in sequence": {
+		in:            "CVE-2021-ABCD",
+		expectedError: "string must be a valid CVE ID",
+	},
+	"five digit year": {
+		in:            "CVE-10000-0001",
+		expectedError: "string must be a valid CVE ID",
+	},
+	"twenty digit sequence": {
+		in:            "CVE-2024-12345678901234567890",
+		expectedError: "string must be a valid CVE ID",
+	},
+}
+
+func TestStringCVE(t *testing.T) {
+	for name, tt := range stringCVETestCases {
+		t.Run(name, func(t *testing.T) {
+			err := StringCVE().Validate(tt.in)
+			if tt.expectedError != "" {
+				assert.EqualError(t, err, tt.expectedError)
+				assert.True(t, govy.HasErrorCode(err, ErrorCodeStringCVE))
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
 var stringE164TestCases = map[string]struct {
 	in            string
 	expectedError string
@@ -780,6 +968,13 @@ func BenchmarkStringE164(b *testing.B) {
 				_ = rule.Validate(in)
 			}
 		})
+	}
+}
+
+func BenchmarkStringCVE(b *testing.B) {
+	rule := StringCVE()
+	for b.Loop() {
+		_ = rule.Validate("CVE-2021-44228")
 	}
 }
 
