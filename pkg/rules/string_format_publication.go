@@ -7,7 +7,8 @@ import (
 	"github.com/nobl9/govy/pkg/govy"
 )
 
-// StringISBN ensures the property's value is a valid ISBN-10 or ISBN-13.
+// StringISBN ensures the property's value is a valid International Standard
+// Book Number (ISBN) in ISBN-10 or ISBN-13 format.
 // It accepts digits separated by single spaces or hyphens and validates the check digit.
 // It does not validate ISBN registration-group or publisher ranges.
 func StringISBN() govy.Rule[string] {
@@ -23,10 +24,11 @@ func StringISBN() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringISBN).
 		WithMessageTemplate(tpl).
-		WithDescription("string must be a valid ISBN-10 or ISBN-13")
+		WithDescription("string must be a valid International Standard Book Number (ISBN) in ISBN-10 or ISBN-13 format")
 }
 
-// StringISBN10 ensures the property's value is a valid ISBN-10.
+// StringISBN10 ensures the property's value is a valid International Standard
+// Book Number (ISBN) in ISBN-10 format.
 // It accepts digits separated by single spaces or hyphens and validates the check digit.
 // It does not validate ISBN registration-group or publisher ranges.
 func StringISBN10() govy.Rule[string] {
@@ -42,10 +44,11 @@ func StringISBN10() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringISBN10).
 		WithMessageTemplate(tpl).
-		WithDescription("string must be a valid ISBN-10")
+		WithDescription("string must be a valid International Standard Book Number (ISBN) in ISBN-10 format")
 }
 
-// StringISBN13 ensures the property's value is a valid ISBN-13.
+// StringISBN13 ensures the property's value is a valid International Standard
+// Book Number (ISBN) in ISBN-13 format.
 // It accepts digits separated by single spaces or hyphens and validates the check digit.
 // It does not validate ISBN registration-group or publisher ranges.
 func StringISBN13() govy.Rule[string] {
@@ -61,10 +64,11 @@ func StringISBN13() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringISBN13).
 		WithMessageTemplate(tpl).
-		WithDescription("string must be a valid ISBN-13")
+		WithDescription("string must be a valid International Standard Book Number (ISBN) in ISBN-13 format")
 }
 
-// StringISSN ensures the property's value is a valid ISSN.
+// StringISSN ensures the property's value is a valid International Standard
+// Serial Number (ISSN).
 // It accepts 4 digits, a hyphen, 3 digits, and a final check character.
 func StringISSN() govy.Rule[string] {
 	tpl := messagetemplates.Get(messagetemplates.StringISSNTemplate)
@@ -79,7 +83,7 @@ func StringISSN() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringISSN).
 		WithMessageTemplate(tpl).
-		WithDescription("string must be a valid hyphenated ISSN")
+		WithDescription("string must be a valid hyphenated International Standard Serial Number (ISSN)")
 }
 
 func isISBN10(s string) bool {

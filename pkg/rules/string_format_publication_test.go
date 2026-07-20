@@ -7,47 +7,49 @@ import (
 	"github.com/nobl9/govy/pkg/govy"
 )
 
-type stringPublicationRuleTestCase struct {
-	in            string
-	expectedError string
+var validISBNTestCases = map[string]string{
+	"isbn 10 hyphenated": "0-306-40615-2",
+	"isbn 10 plain":      "0306406152",
+	"isbn 10 x check":    "0-9752298-0-X",
+	"isbn 10 spaced":     "0 9752298 0 x",
+	"isbn 13 hyphenated": "978-0-306-40615-7",
+	"isbn 13 plain":      "9780306406157",
+	"isbn 13 grouped":    "978-3-16-148410-0",
 }
 
-var stringISBNTestCases = map[string]stringPublicationRuleTestCase{
-	"isbn 10 hyphenated": {in: "0-306-40615-2"},
-	"isbn 10 plain":      {in: "0306406152"},
-	"isbn 10 x check":    {in: "0-9752298-0-X"},
-	"isbn 10 spaced":     {in: "0 9752298 0 x"},
-	"isbn 13 hyphenated": {in: "978-0-306-40615-7"},
-	"isbn 13 plain":      {in: "9780306406157"},
-	"isbn 13 grouped":    {in: "978-3-16-148410-0"},
-	"empty": {
-		in:            "",
-		expectedError: "string must be a valid ISBN",
-	},
-	"isbn 10 failed check": {
-		in:            "0-306-40615-3",
-		expectedError: "string must be a valid ISBN",
-	},
-	"isbn 13 failed check": {
-		in:            "978-0-306-40615-8",
-		expectedError: "string must be a valid ISBN",
-	},
-	"isbn 13 x check": {
-		in:            "978030640615X",
-		expectedError: "string must be a valid ISBN",
-	},
-	"repeated separator": {
-		in:            "978--0-306-40615-7",
-		expectedError: "string must be a valid ISBN",
-	},
-	"letters": {
-		in:            "abc",
-		expectedError: "string must be a valid ISBN",
-	},
+var invalidISBNTestCases = map[string]string{
+	"empty":                "",
+	"isbn 10 failed check": "0-306-40615-3",
+	"isbn 13 failed check": "978-0-306-40615-8",
+	"isbn 13 x check":      "978030640615X",
+	"repeated separator":   "978--0-306-40615-7",
+	"letters":              "abc",
 }
 
 func TestStringISBN(t *testing.T) {
-	runStringPublicationRuleTest(t, StringISBN(), ErrorCodeStringISBN, stringISBNTestCases)
+	rule := StringISBN()
+	t.Run("valid inputs", func(t *testing.T) {
+		for name, input := range validISBNTestCases {
+			t.Run(name, func(t *testing.T) {
+				assert.NoError(t, rule.Validate(input))
+			})
+		}
+	})
+	t.Run("invalid inputs", func(t *testing.T) {
+		err := rule.Validate(invalidISBNTestCases["empty"])
+		assert.EqualError(
+			t,
+			err,
+			"string must be a valid International Standard Book Number (ISBN) in ISBN-10 or ISBN-13 format",
+		)
+		assert.True(t, govy.HasErrorCode(err, ErrorCodeStringISBN))
+
+		for name, input := range invalidISBNTestCases {
+			t.Run(name, func(t *testing.T) {
+				assert.Error(t, rule.Validate(input))
+			})
+		}
+	})
 }
 
 func BenchmarkStringISBN(b *testing.B) {
@@ -58,35 +60,45 @@ func BenchmarkStringISBN(b *testing.B) {
 	})
 }
 
-var stringISBN10TestCases = map[string]stringPublicationRuleTestCase{
-	"hyphenated": {in: "0-306-40615-2"},
-	"plain":      {in: "0306406152"},
-	"x check":    {in: "0-9752298-0-X"},
-	"spaced":     {in: "0 9752298 0 x"},
-	"empty": {
-		in:            "",
-		expectedError: "string must be a valid ISBN-10",
-	},
-	"failed check": {
-		in:            "0-306-40615-3",
-		expectedError: "string must be a valid ISBN-10",
-	},
-	"isbn 13": {
-		in:            "978-0-306-40615-7",
-		expectedError: "string must be a valid ISBN-10",
-	},
-	"isbn 13 plain": {
-		in:            "9780306406157",
-		expectedError: "string must be a valid ISBN-10",
-	},
-	"repeated separator": {
-		in:            "0-306--40615-2",
-		expectedError: "string must be a valid ISBN-10",
-	},
+var validISBN10TestCases = map[string]string{
+	"hyphenated": "0-306-40615-2",
+	"plain":      "0306406152",
+	"x check":    "0-9752298-0-X",
+	"spaced":     "0 9752298 0 x",
+}
+
+var invalidISBN10TestCases = map[string]string{
+	"empty":              "",
+	"failed check":       "0-306-40615-3",
+	"isbn 13":            "978-0-306-40615-7",
+	"isbn 13 plain":      "9780306406157",
+	"repeated separator": "0-306--40615-2",
 }
 
 func TestStringISBN10(t *testing.T) {
-	runStringPublicationRuleTest(t, StringISBN10(), ErrorCodeStringISBN10, stringISBN10TestCases)
+	rule := StringISBN10()
+	t.Run("valid inputs", func(t *testing.T) {
+		for name, input := range validISBN10TestCases {
+			t.Run(name, func(t *testing.T) {
+				assert.NoError(t, rule.Validate(input))
+			})
+		}
+	})
+	t.Run("invalid inputs", func(t *testing.T) {
+		err := rule.Validate(invalidISBN10TestCases["empty"])
+		assert.EqualError(
+			t,
+			err,
+			"string must be a valid International Standard Book Number (ISBN) in ISBN-10 format",
+		)
+		assert.True(t, govy.HasErrorCode(err, ErrorCodeStringISBN10))
+
+		for name, input := range invalidISBN10TestCases {
+			t.Run(name, func(t *testing.T) {
+				assert.Error(t, rule.Validate(input))
+			})
+		}
+	})
 }
 
 func BenchmarkStringISBN10(b *testing.B) {
@@ -97,21 +109,46 @@ func BenchmarkStringISBN10(b *testing.B) {
 	})
 }
 
-var stringISBN13TestCases = map[string]stringPublicationRuleTestCase{
-	"hyphenated":     {in: "978-0-306-40615-7"},
-	"plain":          {in: "9780306406157"},
-	"grouped":        {in: "978-3-16-148410-0"},
-	"979 prefix":     {in: "979-10-90636-07-1"},
-	"empty":          {in: "", expectedError: "string must be a valid ISBN-13"},
-	"isbn 10":        {in: "0-306-40615-2", expectedError: "string must be a valid ISBN-13"},
-	"failed check":   {in: "978-0-306-40615-8", expectedError: "string must be a valid ISBN-13"},
-	"x check":        {in: "978030640615X", expectedError: "string must be a valid ISBN-13"},
-	"invalid prefix": {in: "9770306406157", expectedError: "string must be a valid ISBN-13"},
-	"trailing space": {in: "978 0 306 40615 7 ", expectedError: "string must be a valid ISBN-13"},
+var validISBN13TestCases = map[string]string{
+	"hyphenated": "978-0-306-40615-7",
+	"plain":      "9780306406157",
+	"grouped":    "978-3-16-148410-0",
+	"979 prefix": "979-10-90636-07-1",
+}
+
+var invalidISBN13TestCases = map[string]string{
+	"empty":          "",
+	"isbn 10":        "0-306-40615-2",
+	"failed check":   "978-0-306-40615-8",
+	"x check":        "978030640615X",
+	"invalid prefix": "9770306406157",
+	"trailing space": "978 0 306 40615 7 ",
 }
 
 func TestStringISBN13(t *testing.T) {
-	runStringPublicationRuleTest(t, StringISBN13(), ErrorCodeStringISBN13, stringISBN13TestCases)
+	rule := StringISBN13()
+	t.Run("valid inputs", func(t *testing.T) {
+		for name, input := range validISBN13TestCases {
+			t.Run(name, func(t *testing.T) {
+				assert.NoError(t, rule.Validate(input))
+			})
+		}
+	})
+	t.Run("invalid inputs", func(t *testing.T) {
+		err := rule.Validate(invalidISBN13TestCases["empty"])
+		assert.EqualError(
+			t,
+			err,
+			"string must be a valid International Standard Book Number (ISBN) in ISBN-13 format",
+		)
+		assert.True(t, govy.HasErrorCode(err, ErrorCodeStringISBN13))
+
+		for name, input := range invalidISBN13TestCases {
+			t.Run(name, func(t *testing.T) {
+				assert.Error(t, rule.Validate(input))
+			})
+		}
+	})
 }
 
 func BenchmarkStringISBN13(b *testing.B) {
@@ -122,21 +159,42 @@ func BenchmarkStringISBN13(b *testing.B) {
 	})
 }
 
-var stringISSNTestCases = map[string]stringPublicationRuleTestCase{
-	"numeric check":   {in: "2049-3630"},
-	"numeric example": {in: "0378-5955"},
-	"uppercase x":     {in: "2434-561X"},
-	"lowercase x":     {in: "2434-561x"},
-	"empty":           {in: "", expectedError: "string must be a valid ISSN"},
-	"missing hyphen":  {in: "20493630", expectedError: "string must be a valid ISSN"},
-	"failed check":    {in: "2049-3631", expectedError: "string must be a valid ISSN"},
-	"wrong grouping":  {in: "204-93630", expectedError: "string must be a valid ISSN"},
-	"x before check":  {in: "2049-36X0", expectedError: "string must be a valid ISSN"},
-	"hyphen as check": {in: "2049-363-", expectedError: "string must be a valid ISSN"},
+var validISSNTestCases = map[string]string{
+	"numeric check":   "2049-3630",
+	"numeric example": "0378-5955",
+	"uppercase x":     "2434-561X",
+	"lowercase x":     "2434-561x",
+}
+
+var invalidISSNTestCases = map[string]string{
+	"empty":           "",
+	"missing hyphen":  "20493630",
+	"failed check":    "2049-3631",
+	"wrong grouping":  "204-93630",
+	"x before check":  "2049-36X0",
+	"hyphen as check": "2049-363-",
 }
 
 func TestStringISSN(t *testing.T) {
-	runStringPublicationRuleTest(t, StringISSN(), ErrorCodeStringISSN, stringISSNTestCases)
+	rule := StringISSN()
+	t.Run("valid inputs", func(t *testing.T) {
+		for name, input := range validISSNTestCases {
+			t.Run(name, func(t *testing.T) {
+				assert.NoError(t, rule.Validate(input))
+			})
+		}
+	})
+	t.Run("invalid inputs", func(t *testing.T) {
+		err := rule.Validate(invalidISSNTestCases["empty"])
+		assert.EqualError(t, err, "string must be a valid International Standard Serial Number (ISSN)")
+		assert.True(t, govy.HasErrorCode(err, ErrorCodeStringISSN))
+
+		for name, input := range invalidISSNTestCases {
+			t.Run(name, func(t *testing.T) {
+				assert.Error(t, rule.Validate(input))
+			})
+		}
+	})
 }
 
 func BenchmarkStringISSN(b *testing.B) {
@@ -145,26 +203,6 @@ func BenchmarkStringISSN(b *testing.B) {
 		"2434-561X",
 		"2049-3631",
 	})
-}
-
-func runStringPublicationRuleTest(
-	t *testing.T,
-	rule govy.Rule[string],
-	errorCode govy.ErrorCode,
-	testCases map[string]stringPublicationRuleTestCase,
-) {
-	t.Helper()
-	for name, tc := range testCases {
-		t.Run(name, func(t *testing.T) {
-			err := rule.Validate(tc.in)
-			if tc.expectedError != "" {
-				assert.EqualError(t, err, tc.expectedError)
-				assert.True(t, govy.HasErrorCode(err, errorCode))
-			} else {
-				assert.NoError(t, err)
-			}
-		})
-	}
 }
 
 func benchmarkStringPublicationRule(b *testing.B, rule govy.Rule[string], inputs []string) {
