@@ -313,21 +313,34 @@ func BenchmarkStringUUID(b *testing.B) {
 
 const stringMongoDBObjectIDErrorMessage = "string must be a 24-character hexadecimal MongoDB ObjectID"
 
+// The fixed source corpora are copied verbatim from these pinned revisions:
+//   - MongoDB BSON ObjectID corpus (3/3 values):
+//     https://github.com/mongodb/specifications/blob/b00d61ca19da7d7e25836ec56930048a8d1de501/source/bson-corpus/tests/oid.json
+//   - MongoDB Go driver ObjectID tests (6/6 fixed ObjectIDFromHex inputs):
+//     https://github.com/mongodb/mongo-go-driver/blob/25724e5ddec775c78be6a4794279068f3de03b1e/bson/objectid_test.go
+//
+// The driver's TestFromHex_RoundTrip is excluded because NewObjectID generates
+// its input dynamically, so the test publishes no stable literal to copy.
 var stringMongoDBObjectIDTestCases = map[string]struct {
 	in                 string
 	shouldFail         bool
 	includeInBenchmark bool
 }{
-	"standard lowercase": {in: "507f1f77bcf86cd799439011", includeInBenchmark: true},
-	"all zeros":          {in: "000000000000000000000000", includeInBenchmark: true},
-	"all lowercase f":    {in: "ffffffffffffffffffffffff"},
-	"BSON corpus sample": {in: "56e1fc72e0c917e9c4714161"},
-	"uppercase prefix":   {in: "FFFFFFFF1111111111111111", includeInBenchmark: true},
-	"mixed case":         {in: "0123456789abcdefABCDEF01", includeInBenchmark: true},
+	"standard lowercase":               {in: "507f1f77bcf86cd799439011", includeInBenchmark: true},
+	"BSON corpus all zeroes":           {in: "000000000000000000000000", includeInBenchmark: true},
+	"BSON corpus all ones":             {in: "ffffffffffffffffffffffff"},
+	"BSON corpus random":               {in: "56e1fc72e0c917e9c4714161"},
+	"Go driver Unix epoch timestamp":   {in: "000000001111111111111111"},
+	"Go driver signed timestamp limit": {in: "7FFFFFFF1111111111111111"},
+	"Go driver timestamp sign bit":     {in: "800000001111111111111111"},
+	"Go driver uint32 timestamp limit": {in: "FFFFFFFF1111111111111111", includeInBenchmark: true},
+	"mixed case":                       {in: "0123456789abcdefABCDEF01", includeInBenchmark: true},
 
 	"empty":                   {shouldFail: true, includeInBenchmark: true},
 	"23 characters":           {in: "507f1f77bcf86cd79943901", shouldFail: true, includeInBenchmark: true},
 	"25 characters":           {in: "507f1f77bcf86cd7994390110", shouldFail: true, includeInBenchmark: true},
+	"Go driver invalid hex":   {in: "this is not a valid hex string!", shouldFail: true},
+	"Go driver wrong length":  {in: "deadbeef", shouldFail: true},
 	"lowercase non-hex digit": {in: "507f1f77bcf86cd79943901g", shouldFail: true, includeInBenchmark: true},
 	"uppercase non-hex digit": {in: "507F1F77BCF86CD79943901G", shouldFail: true, includeInBenchmark: true},
 	"trailing hyphen":         {in: "507f1f77bcf86cd79943901-", shouldFail: true},
