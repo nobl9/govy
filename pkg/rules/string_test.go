@@ -227,65 +227,82 @@ func BenchmarkStringDNSSubdomain(b *testing.B) {
 	}
 }
 
-type stringUUIDTestCase struct {
-	in         string
-	shouldFail bool
+var stringUUIDValidInputs = map[string]string{
+	"RFC format example": "f81d4fae-7dec-11d0-a765-00a0c91e6bf6",
+	"nil UUID":           "00000000-0000-0000-0000-000000000000",
+	"max UUID uppercase": "FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF",
+	"version 1":          "C232AB00-9414-11EC-B3C8-9F6BDECED846",
+	"version 3":          "5df41881-3aed-3515-88a7-2f4a814cf09e",
+	"version 4":          "919108f7-52d1-4320-9bac-f847db4148a8",
+	"version 5":          "2ed6657d-e927-568b-95e1-2665a8aea6a2",
+	"version 6":          "1EC9414C-232A-6B00-B3C8-9F6BDECED846",
+	"version 7":          "017F22E2-79B0-7CC3-98C4-DC0C0C07398F",
+	"version 8":          "2489E9AD-2EE2-8E00-8EC9-32D5F69181C0",
 }
 
-var stringUUIDTestCases = []*stringUUIDTestCase{
-	{in: "00000000-0000-0000-0000-000000000000"},
-	{in: "e190c630-8873-11ee-b9d1-0242ac120002"},
-	{in: "79258D24-01A7-47E5-ACBB-7E762DE52298"},
-	{in: "a987Fbc9-4bed-3078-cf07-9141ba07c9f3"},
-	{in: "foobar", shouldFail: true},
-	{in: "0987654321", shouldFail: true},
-	{in: "AXAXAXAX-AAAA-AAAA-AAAA-AAAAAAAAAAAA", shouldFail: true},
-	{in: "00000000-0000-0000-0000-0000000000", shouldFail: true},
-	{in: "", shouldFail: true},
-	{in: "xxxa987Fbc9-4bed-3078-cf07-9141ba07c9f3", shouldFail: true},
-	{in: "a987Fbc9-4bed-3078-cf07-9141ba07c9f3xxx", shouldFail: true},
-	{in: "a987Fbc94bed3078cf079141ba07c9f3", shouldFail: true},
-	{in: "934859", shouldFail: true},
-	{in: "987fbc9-4bed-3078-cf07a-9141ba07c9F3", shouldFail: true},
-	{in: "aaaaaaaa-1111-1111-aaaG-111111111111", shouldFail: true},
+var stringUUIDInvalidInputs = map[string]string{
+	"empty":                  "",
+	"URN representation":     "urn:uuid:f81d4fae-7dec-11d0-a765-00a0c91e6bf6",
+	"brace representation":   "{f81d4fae-7dec-11d0-a765-00a0c91e6bf6}",
+	"compact representation": "f81d4fae7dec11d0a76500a0c91e6bf6",
+	"leading space":          " f81d4fae-7dec-11d0-a765-00a0c91e6bf6",
+	"trailing newline":       "f81d4fae-7dec-11d0-a765-00a0c91e6bf6\n",
+	"too short":              "f81d4fae-7dec-11d0-a765-00a0c91e6bf",
+	"too long":               "f81d4fae-7dec-11d0-a765-00a0c91e6bf60",
+	"underscore separators":  "f81d4fae_7dec_11d0_a765_00a0c91e6bf6",
+	"non-hex character":      "g81d4fae-7dec-11d0-a765-00a0c91e6bf6",
 }
 
 func TestStringUUID(t *testing.T) {
-	rule := StringUUID()
-	for _, tc := range stringUUIDTestCases {
-		err := rule.Validate(tc.in)
-		if tc.shouldFail {
-			assert.Error(t, err)
-			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringUUID))
-		} else {
-			assert.NoError(t, err)
-		}
-	}
+	testStringFormatIDRule(
+		t,
+		StringUUID(),
+		ErrorCodeStringUUID,
+		"string must match regular expression: '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$' (e.g. '00000000-0000-0000-0000-000000000000', 'e190c630-8873-11ee-b9d1-0242ac120002', '79258D24-01A7-47E5-ACBB-7E762DE52298'); expected RFC-4122 compliant UUID string",
+		stringUUIDValidInputs,
+		stringUUIDInvalidInputs,
+	)
 }
 
 func BenchmarkStringUUID(b *testing.B) {
-	rule := StringUUID()
-	for b.Loop() {
-		for _, tc := range stringUUIDTestCases {
-			_ = rule.Validate(tc.in)
-		}
-	}
+	benchmarkStringFormatIDRule(b, StringUUID(), stringUUIDValidInputs, stringUUIDInvalidInputs)
 }
 
 var stringUUIDRFC4122ValidInputs = map[string]string{
-	"version 1 lowercase": "f81d4fae-7dec-11d0-a765-00a0c91e6bf6",
-	"version 3 uppercase": "A987FBC9-4BED-3078-8F07-9141BA07C9F3",
-	"version 4":           "57b73598-8764-4ad0-a76a-679bb6640eb1",
-	"version 5":           "987fbc97-4bed-5078-9f07-9141ba07c9f3",
+	"RFC 4122 Appendix B version 1": "7d444840-9dc0-11d1-b245-5ffdce74fad2",
+	"RFC 4122 Appendix B version 3": "e902893a-9d22-3c7e-a7b8-d6e313b71d9f",
+	"version 1":                     "C232AB00-9414-11EC-B3C8-9F6BDECED846",
+	"version 2":                     "f81d4fae-7dec-21d0-a765-00a0c91e6bf6",
+	"version 3":                     "5df41881-3aed-3515-88a7-2f4a814cf09e",
+	"version 4":                     "919108f7-52d1-4320-9bac-f847db4148a8",
+	"version 5":                     "2ed6657d-e927-568b-95e1-2665a8aea6a2",
+	"IETF variant lower bound":      "f81d4fae-7dec-11d0-8765-00a0c91e6bf6",
+	"IETF variant upper bound":      "f81d4fae-7dec-11d0-b765-00a0c91e6bf6",
 }
 
 var stringUUIDRFC4122InvalidInputs = map[string]string{
-	"nil UUID":            "00000000-0000-0000-0000-000000000000",
-	"non-RFC variant":     "a987fbc9-4bed-3078-cf07-9141ba07c9f3",
-	"unsupported version": "01890f3e-23b4-7d68-9c2a-8f56c8a87f1b",
-	"missing hyphens":     "a987fbc94bed30788f079141ba07c9f3",
-	"non-hex character":   "aaaaaaaa-1111-1111-aaaG-111111111111",
-	"empty":               "",
+	"empty":                  "",
+	"nil UUID":               "00000000-0000-0000-0000-000000000000",
+	"max UUID":               "FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF",
+	"version 0":              "f81d4fae-7dec-01d0-a765-00a0c91e6bf6",
+	"version 6":              "1EC9414C-232A-6B00-B3C8-9F6BDECED846",
+	"version 7":              "017F22E2-79B0-7CC3-98C4-DC0C0C07398F",
+	"version 8":              "2489E9AD-2EE2-8E00-8EC9-32D5F69181C0",
+	"version 9":              "f81d4fae-7dec-91d0-a765-00a0c91e6bf6",
+	"version F":              "f81d4fae-7dec-f1d0-a765-00a0c91e6bf6",
+	"non-IETF variant lower": "f81d4fae-7dec-11d0-7765-00a0c91e6bf6",
+	"non-IETF variant upper": "f81d4fae-7dec-11d0-c765-00a0c91e6bf6",
+	"future variant lower":   "00000000-0000-4000-E000-000000000000",
+	"future variant upper":   "00000000-0000-4000-F000-000000000000",
+	"URN representation":     "urn:uuid:f81d4fae-7dec-11d0-a765-00a0c91e6bf6",
+	"brace representation":   "{f81d4fae-7dec-11d0-a765-00a0c91e6bf6}",
+	"compact representation": "f81d4fae7dec11d0a76500a0c91e6bf6",
+	"leading space":          " f81d4fae-7dec-11d0-a765-00a0c91e6bf6",
+	"trailing newline":       "f81d4fae-7dec-11d0-a765-00a0c91e6bf6\n",
+	"too short":              "f81d4fae-7dec-11d0-a765-00a0c91e6bf",
+	"too long":               "f81d4fae-7dec-11d0-a765-00a0c91e6bf60",
+	"underscore separators":  "f81d4fae_7dec_11d0_a765_00a0c91e6bf6",
+	"non-hex character":      "g81d4fae-7dec-11d0-a765-00a0c91e6bf6",
 }
 
 func TestStringUUIDRFC4122(t *testing.T) {
@@ -309,14 +326,27 @@ func BenchmarkStringUUIDRFC4122(b *testing.B) {
 }
 
 var stringUUIDv3ValidInputs = map[string]string{
-	"lowercase": "a987fbc9-4bed-3078-8f07-9141ba07c9f3",
-	"uppercase": "A987FBC9-4BED-3078-BF07-9141BA07C9F3",
+	"official vector, IETF variant lower bound": "5df41881-3aed-3515-88a7-2f4a814cf09e",
+	"uppercase":                "5DF41881-3AED-3515-88A7-2F4A814CF09E",
+	"mixed case":               "5dF41881-3aED-3515-88A7-2f4A814cF09E",
+	"IETF variant upper bound": "5df41881-3aed-3515-b8a7-2f4a814cf09e",
 }
 
 var stringUUIDv3InvalidInputs = map[string]string{
-	"version 4":         "57b73598-8764-4ad0-a76a-679bb6640eb1",
-	"non-RFC variant":   "a987fbc9-4bed-3078-cf07-9141ba07c9f3",
-	"non-hex character": "a987fbc9-4bed-3078-8f07-9141ba07c9fg",
+	"empty":                  "",
+	"adjacent version 2":     "5df41881-3aed-2515-88a7-2f4a814cf09e",
+	"adjacent version 4":     "5df41881-3aed-4515-88a7-2f4a814cf09e",
+	"non-IETF variant lower": "5df41881-3aed-3515-78a7-2f4a814cf09e",
+	"non-IETF variant upper": "5df41881-3aed-3515-c8a7-2f4a814cf09e",
+	"URN representation":     "urn:uuid:5df41881-3aed-3515-88a7-2f4a814cf09e",
+	"brace representation":   "{5df41881-3aed-3515-88a7-2f4a814cf09e}",
+	"compact representation": "5df418813aed351588a72f4a814cf09e",
+	"leading space":          " 5df41881-3aed-3515-88a7-2f4a814cf09e",
+	"trailing newline":       "5df41881-3aed-3515-88a7-2f4a814cf09e\n",
+	"too short":              "5df41881-3aed-3515-88a7-2f4a814cf09",
+	"too long":               "5df41881-3aed-3515-88a7-2f4a814cf09e0",
+	"underscore separators":  "5df41881_3aed_3515_88a7_2f4a814cf09e",
+	"non-hex character":      "gdf41881-3aed-3515-88a7-2f4a814cf09e",
 }
 
 func TestStringUUIDv3(t *testing.T) {
@@ -335,14 +365,28 @@ func BenchmarkStringUUIDv3(b *testing.B) {
 }
 
 var stringUUIDv4ValidInputs = map[string]string{
-	"lowercase": "57b73598-8764-4ad0-a76a-679bb6640eb1",
-	"uppercase": "57B73598-8764-4AD0-B76A-679BB6640EB1",
+	"official vector":          "919108f7-52d1-4320-9bac-f847db4148a8",
+	"uppercase":                "919108F7-52D1-4320-9BAC-F847DB4148A8",
+	"mixed case":               "919108F7-52d1-4320-9bAc-F847dB4148a8",
+	"IETF variant lower bound": "919108f7-52d1-4320-8bac-f847db4148a8",
+	"IETF variant upper bound": "919108f7-52d1-4320-bbac-f847db4148a8",
 }
 
 var stringUUIDv4InvalidInputs = map[string]string{
-	"version 3":         "a987fbc9-4bed-3078-8f07-9141ba07c9f3",
-	"non-RFC variant":   "57b73598-8764-4ad0-c76a-679bb6640eb1",
-	"non-hex character": "57b73598-8764-4ad0-a76a-679bb6640eg1",
+	"empty":                  "",
+	"adjacent version 3":     "919108f7-52d1-3320-9bac-f847db4148a8",
+	"adjacent version 5":     "919108f7-52d1-5320-9bac-f847db4148a8",
+	"non-IETF variant lower": "919108f7-52d1-4320-7bac-f847db4148a8",
+	"non-IETF variant upper": "919108f7-52d1-4320-cbac-f847db4148a8",
+	"URN representation":     "urn:uuid:919108f7-52d1-4320-9bac-f847db4148a8",
+	"brace representation":   "{919108f7-52d1-4320-9bac-f847db4148a8}",
+	"compact representation": "919108f752d143209bacf847db4148a8",
+	"leading space":          " 919108f7-52d1-4320-9bac-f847db4148a8",
+	"trailing newline":       "919108f7-52d1-4320-9bac-f847db4148a8\n",
+	"too short":              "919108f7-52d1-4320-9bac-f847db4148a",
+	"too long":               "919108f7-52d1-4320-9bac-f847db4148a80",
+	"underscore separators":  "919108f7_52d1_4320_9bac_f847db4148a8",
+	"non-hex character":      "g19108f7-52d1-4320-9bac-f847db4148a8",
 }
 
 func TestStringUUIDv4(t *testing.T) {
@@ -361,14 +405,28 @@ func BenchmarkStringUUIDv4(b *testing.B) {
 }
 
 var stringUUIDv5ValidInputs = map[string]string{
-	"lowercase": "987fbc97-4bed-5078-9f07-9141ba07c9f3",
-	"uppercase": "987FBC97-4BED-5078-AF07-9141BA07C9F3",
+	"official vector":          "2ed6657d-e927-568b-95e1-2665a8aea6a2",
+	"uppercase":                "2ED6657D-E927-568B-95E1-2665A8AEA6A2",
+	"mixed case":               "2Ed6657D-e927-568b-95E1-2665a8AeA6a2",
+	"IETF variant lower bound": "2ed6657d-e927-568b-85e1-2665a8aea6a2",
+	"IETF variant upper bound": "2ed6657d-e927-568b-b5e1-2665a8aea6a2",
 }
 
 var stringUUIDv5InvalidInputs = map[string]string{
-	"version 4":         "57b73598-8764-4ad0-a76a-679bb6640eb1",
-	"non-RFC variant":   "987fbc97-4bed-5078-cf07-9141ba07c9f3",
-	"non-hex character": "987fbc97-4bed-5078-9f07-9141ba07c9fg",
+	"empty":                  "",
+	"adjacent version 4":     "2ed6657d-e927-468b-95e1-2665a8aea6a2",
+	"adjacent version 6":     "2ed6657d-e927-668b-95e1-2665a8aea6a2",
+	"non-IETF variant lower": "2ed6657d-e927-568b-75e1-2665a8aea6a2",
+	"non-IETF variant upper": "2ed6657d-e927-568b-c5e1-2665a8aea6a2",
+	"URN representation":     "urn:uuid:2ed6657d-e927-568b-95e1-2665a8aea6a2",
+	"brace representation":   "{2ed6657d-e927-568b-95e1-2665a8aea6a2}",
+	"compact representation": "2ed6657de927568b95e12665a8aea6a2",
+	"leading space":          " 2ed6657d-e927-568b-95e1-2665a8aea6a2",
+	"trailing newline":       "2ed6657d-e927-568b-95e1-2665a8aea6a2\n",
+	"too short":              "2ed6657d-e927-568b-95e1-2665a8aea6a",
+	"too long":               "2ed6657d-e927-568b-95e1-2665a8aea6a20",
+	"underscore separators":  "2ed6657d_e927_568b_95e1_2665a8aea6a2",
+	"non-hex character":      "ged6657d-e927-568b-95e1-2665a8aea6a2",
 }
 
 func TestStringUUIDv5(t *testing.T) {
@@ -387,20 +445,39 @@ func BenchmarkStringUUIDv5(b *testing.B) {
 }
 
 var stringULIDValidInputs = map[string]string{
-	"uppercase":     "01ARZ3NDEKTSV4RRFFQ69G5FAV",
-	"lowercase":     "01arz3ndektsv4rrffq69g5fav",
-	"maximum value": "7ZZZZZZZZZZZZZZZZZZZZZZZZZ",
+	// cspell:disable
+	"specification example":             "01AN4Z07BY79KA1307SR9X4MV3",
+	"monotonic predecessor":             "01BX5ZZKBKACTAV9WEVGEMMVRZ",
+	"monotonic successor":               "01BX5ZZKBKACTAV9WEVGEMMVS0",
+	"maintained implementation example": "01ARYZ6S41TSV4RRFFQ69G5FAV",
+	"all zero":                          "00000000000000000000000000",
+	"maximum value":                     "7ZZZZZZZZZZZZZZZZZZZZZZZZZ",
+	"lowercase":                         "01arz3ndektsv4rrffq69g5fav",
+	"lowercase maximum":                 "7zzzzzzzzzzzzzzzzzzzzzzzzz",
+	// cspell:enable
 }
 
 var stringULIDInvalidInputs = map[string]string{
-	"too short":              "01ARZ3NDEKTSV4RRFFQ69G5FA",
-	"too long":               "01ARZ3NDEKTSV4RRFFQ69G5FAV0",
-	"overflow":               "8ZZZZZZZZZZZZZZZZZZZZZZZZZ",
-	"forbidden I":            "01ARZ3NDEKTSV4RRFFQ69G5FIV",
-	"forbidden L":            "01ARZ3NDEKTSV4RRFFQ69G5FLV",
-	"forbidden O":            "01ARZ3NDEKTSV4RRFFQ69G5FOV",
-	"forbidden U":            "01ARZ3NDEKTSV4RRFFQ69G5FUV",
-	"non-alphanumeric value": "01ARZ3NDEKTSV4RRFFQ69G5F-V",
+	"empty":                        "",
+	"too short":                    "01ARZ3NDEKTSV4RRFFQ69G5FA",
+	"too long":                     "01ARZ3NDEKTSV4RRFFQ69G5FAV0",
+	"minimum overflow":             "80000000000000000000000000",
+	"overflow with maximum suffix": "8ZZZZZZZZZZZZZZZZZZZZZZZZZ",
+	"all Z":                        "ZZZZZZZZZZZZZZZZZZZZZZZZZZ",
+	"forbidden uppercase I":        "01ARZ3NDEKTSV4RRFFQ69G5FIV",
+	"forbidden uppercase L":        "01ARZ3NDEKTSV4RRFFQ69G5FLV",
+	"forbidden uppercase O":        "01ARZ3NDEKTSV4RRFFQ69G5FOV",
+	"forbidden uppercase U":        "01ARZ3NDEKTSV4RRFFQ69G5FUV",
+	"forbidden lowercase I":        "01arz3ndektsv4rrffq69g5fiv",
+	"forbidden lowercase L":        "01arz3ndektsv4rrffq69g5flv",
+	"forbidden lowercase O":        "01arz3ndektsv4rrffq69g5fov",
+	"forbidden lowercase U":        "01arz3ndektsv4rrffq69g5fuv",
+	"leading space":                " 1ARZ3NDEKTSV4RRFFQ69G5FAV",
+	"trailing space":               "01ARZ3NDEKTSV4RRFFQ69G5FA ",
+	"leading newline":              "\n1ARZ3NDEKTSV4RRFFQ69G5FAV",
+	"trailing newline":             "01ARZ3NDEKTSV4RRFFQ69G5FA\n",
+	"hyphen":                       "01ARZ3NDEKTSV4RRFFQ69G5F-V",
+	"full-width characters":        "０１ＡＮ４Ｚ０７ＢＹ７９ＫＡ１３０７ＳＲ９Ｘ４ＭＶ３",
 }
 
 func TestStringULID(t *testing.T) {
@@ -416,55 +493,6 @@ func TestStringULID(t *testing.T) {
 
 func BenchmarkStringULID(b *testing.B) {
 	benchmarkStringFormatIDRule(b, StringULID(), stringULIDValidInputs, stringULIDInvalidInputs)
-}
-
-func testStringFormatIDRule(
-	t *testing.T,
-	rule govy.Rule[string],
-	errorCode govy.ErrorCode,
-	expectedError string,
-	validInputs map[string]string,
-	invalidInputs map[string]string,
-) {
-	t.Helper()
-	t.Run("valid", func(t *testing.T) {
-		for name, input := range validInputs {
-			t.Run(name, func(t *testing.T) {
-				assert.NoError(t, rule.Validate(input))
-			})
-		}
-	})
-	t.Run("invalid", func(t *testing.T) {
-		for _, input := range invalidInputs {
-			err := rule.Validate(input)
-			assert.EqualError(t, err, expectedError)
-			assert.True(t, govy.HasErrorCode(err, errorCode))
-			break
-		}
-
-		for name, input := range invalidInputs {
-			t.Run(name, func(t *testing.T) {
-				assert.Error(t, rule.Validate(input))
-			})
-		}
-	})
-}
-
-func benchmarkStringFormatIDRule(
-	b *testing.B,
-	rule govy.Rule[string],
-	validInputs map[string]string,
-	invalidInputs map[string]string,
-) {
-	b.Helper()
-	for b.Loop() {
-		for _, input := range validInputs {
-			_ = rule.Validate(input)
-		}
-		for _, input := range invalidInputs {
-			_ = rule.Validate(input)
-		}
-	}
 }
 
 var stringASCIITestCases = []*struct {
@@ -2369,6 +2397,50 @@ func BenchmarkStringKubernetesQualifiedName(b *testing.B) {
 		rule := StringKubernetesQualifiedName()
 		for range b.N {
 			_ = rule.Validate(tc.in)
+		}
+	}
+}
+
+func testStringFormatIDRule(
+	t *testing.T,
+	rule govy.Rule[string],
+	errorCode govy.ErrorCode,
+	expectedError string,
+	validInputs map[string]string,
+	invalidInputs map[string]string,
+) {
+	t.Helper()
+	t.Run("valid", func(t *testing.T) {
+		for name, input := range validInputs {
+			t.Run(name, func(t *testing.T) {
+				assert.NoError(t, rule.Validate(input))
+			})
+		}
+	})
+	t.Run("invalid", func(t *testing.T) {
+		for name, input := range invalidInputs {
+			t.Run(name, func(t *testing.T) {
+				err := rule.Validate(input)
+				assert.EqualError(t, err, expectedError)
+				assert.True(t, govy.HasErrorCode(err, errorCode))
+			})
+		}
+	})
+}
+
+func benchmarkStringFormatIDRule(
+	b *testing.B,
+	rule govy.Rule[string],
+	validInputs map[string]string,
+	invalidInputs map[string]string,
+) {
+	b.Helper()
+	for b.Loop() {
+		for _, input := range validInputs {
+			_ = rule.Validate(input)
+		}
+		for _, input := range invalidInputs {
+			_ = rule.Validate(input)
 		}
 	}
 }
