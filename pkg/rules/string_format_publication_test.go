@@ -22,6 +22,10 @@ var validISBNTestCases = map[string]string{
 	"isbn 13 agency manual hyphenated":    "978-92-95055-12-4",
 	"isbn 13 agency manual spaced":        "978 92 95055 12 4",
 	"isbn 13 agency manual compact":       "9789295055124",
+	"isbn 13 agency manual hardback":      "978-951-45-9693-3",
+	"isbn 13 agency manual paperback":     "978-951-45-9694-0",
+	"isbn 13 agency manual PDF":           "978-951-45-9695-7",
+	"isbn 13 agency manual EPUB":          "978-951-45-9696-4",
 	"isbn 13 library converter first":     "9780060723804",
 	"isbn 13 library converter second":    "9780060799748",
 	"isbn 13 979 prefix":                  "979-10-90636-07-1",
@@ -32,6 +36,7 @@ var invalidISBNTestCases = map[string]string{
 	"isbn 10 failed check":                "0-306-40615-3",
 	"isbn 10 x check mutation":            "0877794430",
 	"isbn 10 x in body":                   "08777X443X",
+	"isbn 10 x in fourth position":        "087X79443X",
 	"isbn 10 short":                       "087779443",
 	"isbn 10 trailing space":              "087779443X ",
 	"isbn 13 failed check":                "978-0-306-40615-8",
@@ -90,15 +95,16 @@ var validISBN10TestCases = map[string]string{
 }
 
 var invalidISBN10TestCases = map[string]string{
-	"empty":              "",
-	"failed check":       "0-306-40615-3",
-	"x check mutation":   "0877794430",
-	"x in body":          "08777X443X",
-	"short":              "087779443",
-	"trailing space":     "087779443X ",
-	"isbn 13":            "978-0-306-40615-7",
-	"isbn 13 plain":      "9780306406157",
-	"repeated separator": "0-306--40615-2",
+	"empty":                "",
+	"failed check":         "0-306-40615-3",
+	"x check mutation":     "0877794430",
+	"x in body":            "08777X443X",
+	"x in fourth position": "087X79443X",
+	"short":                "087779443",
+	"trailing space":       "087779443X ",
+	"isbn 13":              "978-0-306-40615-7",
+	"isbn 13 plain":        "9780306406157",
+	"repeated separator":   "0-306--40615-2",
 }
 
 func TestStringISBN10(t *testing.T) {
@@ -140,6 +146,10 @@ var validISBN13TestCases = map[string]string{
 	"agency manual hyphenated": "978-92-95055-12-4",
 	"agency manual spaced":     "978 92 95055 12 4",
 	"agency manual compact":    "9789295055124",
+	"agency manual hardback":   "978-951-45-9693-3",
+	"agency manual paperback":  "978-951-45-9694-0",
+	"agency manual PDF":        "978-951-45-9695-7",
+	"agency manual EPUB":       "978-951-45-9696-4",
 	"library converter first":  "9780060723804",
 	"library converter second": "9780060799748",
 	"979 prefix":               "979-10-90636-07-1",
@@ -205,9 +215,16 @@ var validISSNTestCases = map[string]string{
 	"uppercase x 1204":    "1204-539X",
 }
 
+// invalidISSNTestCases includes exact compact construction examples from the
+// [ISSN Manual, May 2025] because StringISSN requires the ASCII-hyphenated form.
+// Their derived hyphenated forms are accepted in validISSNTestCases.
+//
+// [ISSN Manual, May 2025]: https://www.issn.org/wp-content/uploads/2025/05/Manual-ISSN_ENG-marc21_May2025.pdf
 var invalidISSNTestCases = map[string]string{
 	"empty":                      "",
 	"missing hyphen":             "20493630",
+	"manual compact 2162":        "21623546",
+	"manual compact 1548":        "15487180",
 	"failed check":               "2049-3631",
 	"numeric check mutation":     "1106-1112",
 	"uppercase x check mutation": "1092-0030",
@@ -215,6 +232,7 @@ var invalidISSNTestCases = map[string]string{
 	"x before check":             "2049-36X0",
 	"hyphen as check":            "2049-363-",
 	"unicode hyphen":             "1106–1111",
+	"U+2010 hyphen":              "1092‐003X",
 	"space separator":            "1106 1111",
 	"display prefix":             "ISSN 1106-1111",
 	"trailing newline":           "1106-1111\n",
