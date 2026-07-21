@@ -978,9 +978,16 @@ func BenchmarkStringCVE(b *testing.B) {
 	}
 }
 
+// The first seven values are the complete RFC 1321 Appendix A.5 output suite:
+// https://www.rfc-editor.org/rfc/rfc1321.html#appendix-A.5
 var validMD5TestCases = map[string]string{
-	"letter-leading":                 "d41d8cd98f00b204e9800998ecf8427e",
-	"nonzero-digit-leading":          "900150983cd24fb0d6963f7d28e17f72",
+	"RFC 1321 empty message":         "d41d8cd98f00b204e9800998ecf8427e",
+	"RFC 1321 single letter":         "0cc175b9c0f1b6a831c399e269772661",
+	"RFC 1321 abc":                   "900150983cd24fb0d6963f7d28e17f72",
+	"RFC 1321 message digest":        "f96b697d7cb7938d525a2f31aaf161d0",
+	"RFC 1321 lowercase alphabet":    "c3fcd3d76192e4007dfb496cca67e13b",
+	"RFC 1321 alphanumeric":          "d174ab98d277d9f5a5611c2c9f419d9f",
+	"RFC 1321 numeric sequence":      "57edf4a22be3c955ac49da2e2107b67a",
 	"zero-leading repeated sequence": "0123456789abcdef0123456789abcdef",
 }
 
@@ -1168,6 +1175,61 @@ func BenchmarkStringSHA512(b *testing.B) {
 		"cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927da3e",
 		"CF83E1357EEFB8BDF1542850D66D8007D620E4050B5715DC83F4A921D36CE9CE47D0D13C5D85F2B0FF8318D2877EEC2F63B931BD47417A81A538327AF927DA3E",
 	})
+}
+
+// The fixtures contain every distinct digest output from the NIST
+// byte-oriented SHA test vector archive:
+// https://csrc.nist.gov/CSRC/media/Projects/Cryptographic-Algorithm-Validation-Program/documents/shs/shabytetestvectors.zip
+// The archive is pinned by SHA-256
+// 929ef80b7b3418aca026643f6f248815913b60e01741a44bba9e118067f4c9b8.
+// Short- and long-message vectors use validation-system revision 11.0
+// (2011-03-15); Monte Carlo response and trace vectors use revision 11.1
+// (2011-05-11). The fixtures include every distinct MD and MDi output value
+// exactly once: 729 SHA-256, 857 SHA-384, and 857 SHA-512 values. M, Msg, and
+// Seed fields are input material, not digest outputs. SHA-1, SHA-224,
+// SHA-512/224, and SHA-512/256 are excluded because this package does not
+// expose corresponding string rules.
+func TestStringSHANISTDigestOutputs(t *testing.T) {
+	tests := []struct {
+		name          string
+		fixture       string
+		expectedCount int
+		digestLength  int
+		rule          govy.Rule[string]
+	}{
+		{
+			name:          "SHA-256",
+			fixture:       "nist_sha256_digest_outputs.txt",
+			expectedCount: 729,
+			digestLength:  64,
+			rule:          StringSHA256(),
+		},
+		{
+			name:          "SHA-384",
+			fixture:       "nist_sha384_digest_outputs.txt",
+			expectedCount: 857,
+			digestLength:  96,
+			rule:          StringSHA384(),
+		},
+		{
+			name:          "SHA-512",
+			fixture:       "nist_sha512_digest_outputs.txt",
+			expectedCount: 857,
+			digestLength:  128,
+			rule:          StringSHA512(),
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			digests := loadNISTDigestOutputs(t, tc.fixture, tc.expectedCount, tc.digestLength)
+			for line, digest := range digests {
+				if err := tc.rule.Validate(digest); err != nil {
+					t.Fatalf("testdata/%s:%d: digest rejected: %v", tc.fixture, line+1, err)
+				}
+			}
+		})
+	}
 }
 
 func benchmarkStringHashDigestRule(b *testing.B, rule govy.Rule[string], inputs []string) {
@@ -2376,4 +2438,34 @@ func BenchmarkStringKubernetesQualifiedName(b *testing.B) {
 			_ = rule.Validate(tc.in)
 		}
 	}
+}
+
+func loadNISTDigestOutputs(t *testing.T, fixture string, expectedCount, digestLength int) []string {
+	t.Helper()
+
+	path := filepath.Join("testdata", fixture)
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read %s: %v", path, err)
+	}
+	if len(data) == 0 || data[len(data)-1] != '\n' {
+		t.Fatalf("%s must be non-empty and end with a newline", path)
+	}
+
+	digests := strings.Split(strings.TrimSuffix(string(data), "\n"), "\n")
+	if len(digests) != expectedCount {
+		t.Fatalf("%s contains %d digests; want %d", path, len(digests), expectedCount)
+	}
+
+	seen := make(map[string]int, len(digests))
+	for line, digest := range digests {
+		if len(digest) != digestLength {
+			t.Fatalf("%s:%d: digest length is %d; want %d", path, line+1, len(digest), digestLength)
+		}
+		if firstLine, ok := seen[digest]; ok {
+			t.Fatalf("%s:%d: duplicate digest first seen on line %d", path, line+1, firstLine)
+		}
+		seen[digest] = line + 1
+	}
+	return digests
 }
