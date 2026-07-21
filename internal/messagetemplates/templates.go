@@ -43,6 +43,7 @@ const (
 	StringMatchRegexpTemplate
 	StringDenyRegexpTemplate
 	StringEmailTemplate
+	StringE164Template
 	StringMACTemplate
 	StringIPTemplate
 	StringIPv4Template
@@ -55,6 +56,8 @@ const (
 	StringBICTemplate
 	StringBICISO93622014Template
 	StringJSONTemplate
+	StringSemverTemplate
+	StringCVETemplate
 	StringContainsTemplate
 	StringExcludesTemplate
 	StringStartsWithTemplate
@@ -118,6 +121,7 @@ var rawMessageTemplates = map[templateKey]string{
 	StringMatchRegexpTemplate:    "string must match regular expression: '{{ .ComparisonValue }}'",
 	StringDenyRegexpTemplate:     "string must not match regular expression: '{{ .ComparisonValue }}'",
 	StringEmailTemplate:          "string must be a valid email address: {{ .Error }}",
+	StringE164Template:           "string must be a valid E.164 phone number",
 	StringMACTemplate:            "string must be a valid MAC address",
 	StringIPTemplate:             "string must be a valid IP address",
 	StringIPv4Template:           "string must be a valid IPv4 address",
@@ -130,6 +134,8 @@ var rawMessageTemplates = map[templateKey]string{
 	StringBICTemplate:            "string must be a valid Business Identifier Code (BIC)",
 	StringBICISO93622014Template: "string must be a valid ISO 9362:2014 Business Identifier Code (BIC)",
 	StringJSONTemplate:           "string must be a valid JSON",
+	StringSemverTemplate:         "string must be a valid semantic version",
+	StringCVETemplate:            "string must be a valid CVE ID",
 	StringContainsTemplate:       `string must contain the following substrings: {{ joinSlice .ComparisonValue "'" }}`,
 	StringExcludesTemplate:       `string must not contain any of the following substrings: {{ joinSlice .ComparisonValue "'" }}`,
 	StringStartsWithTemplate: `
