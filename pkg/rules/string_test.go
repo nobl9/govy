@@ -987,18 +987,109 @@ var stringJWTTestCases = map[string]struct {
 			"eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ." +
 			"SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
 	},
-	"unsecured token": {
+	"RFC 7519 signed token": {
+		in: "eyJ0eXAiOiJKV1QiLA0KICJhbGciOiJIUzI1NiJ9." +
+			"eyJpc3MiOiJqb2UiLA0KICJleHAiOjEzMDA4MTkzODAsDQogImh0dHA6Ly9leGFtcGxlLmNvbS9pc19yb290Ijp0cnVlfQ." +
+			"dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk",
+	},
+	"RFC 7519 unsecured token": {
+		in: "eyJhbGciOiJub25lIn0." +
+			"eyJpc3MiOiJqb2UiLA0KICJleHAiOjEzMDA4MTkzODAsDQogImh0dHA6Ly9leGFtcGxlLmNvbS9pc19yb290Ijp0cnVlfQ.",
+	},
+	"whitespace and Unicode JSON": {
+		in: "ew0KICJhbGciIDogIm5vbmUiLA0KICJraWQiIDogIs66zrvOtc65zrTOryINCn0." +
+			"ewogIm5hbWUiOiAiSsO2aG4g6ZuqIiwKICJhZG1pbiI6IHRydWUKfQ.",
+	},
+	"minimal unsecured token": {
 		in: "eyJhbGciOiJub25lIn0.e30.",
 	},
-	"wrong segment count": {
+	"empty token": {
+		expectedErrorDetails: "expected 3 JWT segments",
+	},
+	"one segment": {
 		in:                   "not-a-jwt",
 		expectedErrorDetails: "expected 3 JWT segments",
+	},
+	"two segments": {
+		in:                   "eyJhbGciOiJIUzI1NiJ9.e30",
+		expectedErrorDetails: "expected 3 JWT segments",
+	},
+	"four segments": {
+		in:                   "eyJhbGciOiJIUzI1NiJ9.e30.c2ln.ZXh0cmE",
+		expectedErrorDetails: "expected 3 JWT segments",
+	},
+	"empty header segment": {
+		in:                   ".e30.c2ln",
+		expectedErrorDetails: "JWT header segment must not be empty",
+	},
+	"empty claims set segment": {
+		in:                   "eyJhbGciOiJIUzI1NiJ9..c2ln",
+		expectedErrorDetails: "JWT claims set segment must not be empty",
 	},
 	"padded header segment": {
 		in:                   "eyJhbGciOiJIUzI1NiJ9=.e30.c2ln",
 		expectedErrorDetails: "JWT header segment must be base64url encoded without padding",
 	},
-	"claims segment is not JSON object": {
+	"padded claims set segment": {
+		in:                   "eyJhbGciOiJIUzI1NiJ9.e30=.c2ln",
+		expectedErrorDetails: "JWT claims set segment must be base64url encoded without padding",
+	},
+	"padded signature segment": {
+		in:                   "eyJhbGciOiJIUzI1NiJ9.e30.c2ln=",
+		expectedErrorDetails: "JWT signature segment must be base64url encoded without padding",
+	},
+	"illegal alphabet in header segment": {
+		in:                   "*.e30.c2ln",
+		expectedErrorDetails: "JWT header segment must be base64url encoded without padding",
+	},
+	"illegal alphabet in claims set segment": {
+		in:                   "eyJhbGciOiJIUzI1NiJ9.*.c2ln",
+		expectedErrorDetails: "JWT claims set segment must be base64url encoded without padding",
+	},
+	"illegal alphabet in signature segment": {
+		in:                   "eyJhbGciOiJIUzI1NiJ9.e30.*",
+		expectedErrorDetails: "JWT signature segment must be base64url encoded without padding",
+	},
+	"impossible base64url length in header segment": {
+		in: "A.e30.c2ln",
+		expectedErrorDetails: "JWT header segment must be base64url encoded without padding: " +
+			"illegal base64 data at input byte 0",
+	},
+	"impossible base64url length in claims set segment": {
+		in: "eyJhbGciOiJIUzI1NiJ9.A.c2ln",
+		expectedErrorDetails: "JWT claims set segment must be base64url encoded without padding: " +
+			"illegal base64 data at input byte 0",
+	},
+	"impossible base64url length in signature segment": {
+		in: "eyJhbGciOiJIUzI1NiJ9.e30.A",
+		expectedErrorDetails: "JWT signature segment must be base64url encoded without padding: " +
+			"illegal base64 data at input byte 0",
+	},
+	"malformed header JSON": {
+		in: "eyJhbGciOiJIUzI1NiI.e30.c2ln",
+		expectedErrorDetails: "JWT header segment must contain a JSON object: " +
+			"unexpected end of JSON input",
+	},
+	"malformed claims set JSON": {
+		in: "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOg.c2ln",
+		expectedErrorDetails: "JWT claims set segment must contain a JSON object: " +
+			"unexpected end of JSON input",
+	},
+	"header segment is JSON array": {
+		in: "W10.e30.c2ln",
+		expectedErrorDetails: "JWT header segment must contain a JSON object: " +
+			"json: cannot unmarshal array into Go value of type map[string]json.RawMessage",
+	},
+	"claims set segment is JSON array": {
+		in: "eyJhbGciOiJIUzI1NiJ9.W10.c2ln",
+		expectedErrorDetails: "JWT claims set segment must contain a JSON object: " +
+			"json: cannot unmarshal array into Go value of type map[string]json.RawMessage",
+	},
+	"header segment is JSON null": {
+		in:                   "bnVsbA.e30.c2ln",
+		expectedErrorDetails: "JWT header segment must contain a JSON object",
+	},
+	"claims set segment is JSON null": {
 		in: "eyJhbGciOiJIUzI1NiJ9." +
 			"bnVsbA." +
 			"c2ln",
@@ -1006,6 +1097,18 @@ var stringJWTTestCases = map[string]struct {
 	},
 	"missing algorithm": {
 		in:                   "e30.e30.c2ln",
+		expectedErrorDetails: `JWT header must contain an "alg" string`,
+	},
+	"empty algorithm": {
+		in:                   "eyJhbGciOiIifQ.e30.c2ln",
+		expectedErrorDetails: `JWT header must contain an "alg" string`,
+	},
+	"null algorithm": {
+		in:                   "eyJhbGciOm51bGx9.e30.c2ln",
+		expectedErrorDetails: `JWT header must contain an "alg" string`,
+	},
+	"numeric algorithm": {
+		in:                   "eyJhbGciOjEyM30.e30.c2ln",
 		expectedErrorDetails: `JWT header must contain an "alg" string`,
 	},
 	"missing signature for signed token": {
@@ -1016,6 +1119,14 @@ var stringJWTTestCases = map[string]struct {
 		in:                   "eyJhbGciOiJub25lIn0.e30.c2ln",
 		expectedErrorDetails: `JWT signature segment must be empty when alg is "none"`,
 	},
+	"leading token whitespace": {
+		in:                   " eyJhbGciOiJIUzI1NiJ9.e30.c2ln",
+		expectedErrorDetails: "JWT header segment must be base64url encoded without padding",
+	},
+	"raw Unicode signature": {
+		in:                   "eyJhbGciOiJIUzI1NiJ9.e30.雪",
+		expectedErrorDetails: "JWT signature segment must be base64url encoded without padding",
+	},
 }
 
 func TestStringJWT(t *testing.T) {
@@ -1025,6 +1136,7 @@ func TestStringJWT(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			err := StringJWT().Validate(tt.in)
 			if tt.expectedErrorDetails != "" {
+				assert.Require(t, assert.Error(t, err))
 				assert.EqualError(t, err, expectedErrorPrefix+tt.expectedErrorDetails)
 				assert.True(t, govy.HasErrorCode(err, ErrorCodeStringJWT))
 				return
