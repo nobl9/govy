@@ -1,6 +1,8 @@
 package govy
 
 import (
+	"fmt"
+
 	"github.com/nobl9/govy/internal"
 	"github.com/nobl9/govy/pkg/jsonpath"
 )
@@ -241,7 +243,7 @@ func (r PropertyRulesForMap[M, K, V, P]) plan(builder planBuilder) {
 }
 
 func (r PropertyRulesForMap[M, K, V, P]) getPathForKey(key any) jsonpath.Path {
-	return r.mapRules.getPath().Key(key)
+	return r.mapRules.getPath().Name(fmt.Sprint(key))
 }
 
 func (r PropertyRulesForMap[M, K, V, P]) getPath() jsonpath.Path {

@@ -43,6 +43,7 @@ Use this when choosing an existing rule before writing a custom one.
 - `StringCIDR` - StringCIDR ensures property's value is a valid CIDR notation IP address.
 - `StringCIDRv4` - StringCIDRv4 ensures property's value is a valid CIDR notation IPv4 address.
 - `StringCIDRv6` - StringCIDRv6 ensures property's value is a valid CIDR notation IPv6 address.
+- `StringCVE` - StringCVE ensures the property's value is a valid CVE ID.
 - `StringContains` - StringContains ensures the property's value contains all the provided substrings.
 - `StringCrontab` - StringCrontab ensures the property's value is a valid crontab schedule expression.
 - `StringDNSLabel` - StringDNSLabel ensures the property's value is a valid DNS label as defined by [RFC 1123].
@@ -50,6 +51,7 @@ Use this when choosing an existing rule before writing a custom one.
 - `StringDateTime` - StringDateTime ensures the property's value is a valid date and time in the specified layout.
 - `StringDenyRegexp` - StringDenyRegexp ensures the property's value does not match the regular expression.
 - `StringDirPath` - StringDirPath ensures the property's value is a file system path pointing to an existing directory.
+- `StringE164` - StringE164 ensures the property's value is a valid E.164 phone number.
 - `StringEmail` - StringEmail ensures the property's value is a valid email address.
 - `StringEndsWith` - StringEndsWith ensures the property's value ends with one of the provided suffixes.
 - `StringExcludes` - StringExcludes ensures the property's value does not contain any of the provided substrings.
@@ -70,6 +72,7 @@ Use this when choosing an existing rule before writing a custom one.
 - `StringMinLength` - StringMinLength ensures the string's length is greater than or equal to the limit.
 - `StringNotEmpty` - StringNotEmpty ensures the property's value is not empty.
 - `StringRegexp` - StringRegexp ensures the property's value is a valid regular expression.
+- `StringSemver` - StringSemver ensures the property's value is a valid Semantic Versioning 2.0.0 version.
 - `StringStartsWith` - StringStartsWith ensures the property's value starts with one of the provided prefixes.
 - `StringTimeZone` - StringTimeZone ensures the property's value is a valid time zone name which uniquely identifies a time zone in the IANA Time Zone database.
 - `StringTitle` - StringTitle ensures each word in a string starts with a capital letter.

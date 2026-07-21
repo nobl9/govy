@@ -43,6 +43,7 @@ const (
 	StringMatchRegexpTemplate
 	StringDenyRegexpTemplate
 	StringEmailTemplate
+	StringE164Template
 	StringMACTemplate
 	StringIPTemplate
 	StringIPv4Template
@@ -51,6 +52,8 @@ const (
 	StringCIDRv4Template
 	StringCIDRv6Template
 	StringJSONTemplate
+	StringSemverTemplate
+	StringCVETemplate
 	StringContainsTemplate
 	StringExcludesTemplate
 	StringStartsWithTemplate
@@ -114,6 +117,7 @@ var rawMessageTemplates = map[templateKey]string{
 	StringMatchRegexpTemplate: "string must match regular expression: '{{ .ComparisonValue }}'",
 	StringDenyRegexpTemplate:  "string must not match regular expression: '{{ .ComparisonValue }}'",
 	StringEmailTemplate:       "string must be a valid email address: {{ .Error }}",
+	StringE164Template:        "string must be a valid E.164 phone number",
 	StringMACTemplate:         "string must be a valid MAC address",
 	StringIPTemplate:          "string must be a valid IP address",
 	StringIPv4Template:        "string must be a valid IPv4 address",
@@ -122,6 +126,8 @@ var rawMessageTemplates = map[templateKey]string{
 	StringCIDRv4Template:      "string must be a valid CIDR notation IPv4 address",
 	StringCIDRv6Template:      "string must be a valid CIDR notation IPv6 address",
 	StringJSONTemplate:        "string must be a valid JSON",
+	StringSemverTemplate:      "string must be a valid semantic version",
+	StringCVETemplate:         "string must be a valid CVE ID",
 	StringContainsTemplate:    `string must contain the following substrings: {{ joinSlice .ComparisonValue "'" }}`,
 	StringExcludesTemplate:    `string must not contain any of the following substrings: {{ joinSlice .ComparisonValue "'" }}`,
 	StringStartsWithTemplate: `
@@ -187,7 +193,21 @@ var rawMessageTemplates = map[templateKey]string{
 {{- if gt (len .Custom.Constraints) 0 }} based on constraints: {{ joinSlice .Custom.Constraints "" }}{{- end }}`,
 	UniquePropertiesTemplate: `all of [{{ joinSlice .ComparisonValue "" }}] properties must be unique, but '{{ .Custom.FirstProperty }}' collides with '{{ .Custom.SecondProperty }}'
 {{- if gt (len .Custom.Constraints) 0 }}, based on constraints: {{ joinSlice .Custom.Constraints "" }}{{- end }}`,
-	URLTemplate: "{{ .Error }}",
+	URLTemplate: `
+{{- if .Error -}}
+	{{ .Error }}
+{{- else if .Custom.Scheme -}}
+	valid URL must use one of the following schemes: {{ joinSlice .ComparisonValue "'" }}
+{{- else if .Custom.HostRequired -}}
+	valid URL must have a host
+{{- else if .Custom.UserInfoForbidden -}}
+	valid URL must not contain user information
+{{- else if .Custom.HostDenyList -}}
+	valid URL must not use any of the following hostnames: {{ joinSlice .ComparisonValue "'" }}
+{{- else if .Custom.HostAllowList -}}
+	valid URL must use one of the following hostnames: {{ joinSlice .ComparisonValue "'" }}
+{{- end }}
+`,
 }
 
 // templateDependencies defines dependency templates for a given template.

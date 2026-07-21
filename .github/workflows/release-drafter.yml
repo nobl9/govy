@@ -4,28 +4,11 @@ on:
   push:
     branches:
       - main
-  # pull_request event is required only for autolabeler
-  # 'edited' event is required to account for initial invalid PR names
-  pull_request:
-    types: [opened, reopened, synchronize, edited]
-
 permissions:
   contents: read
 
 jobs:
-  autolabeler:
-    if: github.event_name == 'pull_request'
-    permissions:
-      # write permission is required to add labels to pull requests
-      pull-requests: write
-    runs-on: ubuntu-latest
-    steps:
-      - uses: release-drafter/release-drafter/autolabeler@v7.3.0
-        with:
-          token: ${{ secrets.RELEASE_LABELER_TOKEN }}
-
   update_release_draft:
-    if: github.event_name == 'push'
     permissions:
       # write permission is required to create a github release
       contents: write
@@ -35,7 +18,7 @@ jobs:
     steps:
       # Drafts your next Release notes as Pull Requests are merged into "main"
       - id: drafter
-        uses: release-drafter/release-drafter@v7.3.0
+        uses: release-drafter/release-drafter@v7.6.0
         with:
           token: ${{ secrets.RELEASE_LABELER_TOKEN }}
 
@@ -49,7 +32,7 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.RELEASE_LABELER_TOKEN }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6.0.2
+        uses: actions/checkout@v7.0.1
         with:
           ref: main
       - name: Add release notes to the draft
