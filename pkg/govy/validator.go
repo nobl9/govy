@@ -99,7 +99,7 @@ func (v Validator[T]) RemovePropertiesByID(ids ...string) Validator[T] {
 func (v Validator[T]) InferPath(mode InferPathMode) Validator[T] {
 	props := make([]PropertyRulesInterface[T], 0, len(v.props))
 	for _, prop := range v.props {
-		props = append(props, prop.inferPathModeInternal(mode))
+		props = append(props, prop.inferPathInternal(mode))
 	}
 	v.props = props
 	return v

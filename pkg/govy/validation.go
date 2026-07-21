@@ -20,7 +20,7 @@ type PropertyRulesInterface[T any] interface {
 	cascadeInternal(mode CascadeMode) PropertyRulesInterface[T]
 	GetID() string
 	getPath() jsonpath.Path
-	inferPathModeInternal(mode InferPathMode) PropertyRulesInterface[T]
+	inferPathInternal(mode InferPathMode) PropertyRulesInterface[T]
 	isPropertyRules()
 }
 

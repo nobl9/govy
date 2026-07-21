@@ -239,10 +239,8 @@ func (r PropertyRulesForMap[M, K, V, P]) cascadeInternal(mode CascadeMode) Prope
 	return r
 }
 
-// inferPathModeInternal is an internal wrapper around [PropertyRulesForMap.InferPath] which
-// fulfills [PropertyRulesInterface] interface.
-// If the [InferPathMode] is already set, it won't change it.
-func (r PropertyRulesForMap[M, K, V, P]) inferPathModeInternal(mode InferPathMode) PropertyRulesInterface[P] {
+// inferPathInternal sets the [InferPathMode] unless it was already configured.
+func (r PropertyRulesForMap[M, K, V, P]) inferPathInternal(mode InferPathMode) PropertyRulesInterface[P] {
 	if r.inferPathModeSet {
 		return r
 	}

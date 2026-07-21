@@ -297,9 +297,8 @@ func (r PropertyRules[T, P]) cascadeInternal(mode CascadeMode) PropertyRulesInte
 	return r
 }
 
-// inferPathModeInternal is an internal wrapper around [PropertyRules.InferPath] which
-// fulfills [PropertyRulesInterface] interface.
-func (r PropertyRules[T, P]) inferPathModeInternal(mode InferPathMode) PropertyRulesInterface[P] {
+// inferPathInternal sets the [InferPathMode] unless it was already configured.
+func (r PropertyRules[T, P]) inferPathInternal(mode InferPathMode) PropertyRulesInterface[P] {
 	if r.inferPathModeSet {
 		return r
 	}

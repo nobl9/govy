@@ -610,6 +610,22 @@ func TestValidatorInferPath(t *testing.T) {
 			},
 		)
 	})
+
+	t.Run("preserves property IDs", func(t *testing.T) {
+		v := govy.New(
+			propertyRules,
+			propertyRulesForSlice,
+			propertyRulesForMap,
+		).
+			InferPath(govy.InferPathModeRuntime).
+			RemovePropertiesByID(
+				propertyRules.GetID(),
+				propertyRulesForSlice.GetID(),
+				propertyRulesForMap.GetID(),
+			)
+
+		assert.NoError(t, v.Validate(mockInferPathStruct{}))
+	})
 }
 
 func TestValidatorRemovePropertiesByID(t *testing.T) {

@@ -160,10 +160,8 @@ func (r PropertyRulesForSlice[S, T, P]) cascadeInternal(mode CascadeMode) Proper
 	return r
 }
 
-// inferPathModeInternal is an internal wrapper around [PropertyRulesForSlice.InferPath] which
-// fulfills [PropertyRulesInterface] interface.
-// If the [InferPathMode] is already set, it won't change it.
-func (r PropertyRulesForSlice[S, T, P]) inferPathModeInternal(mode InferPathMode) PropertyRulesInterface[P] {
+// inferPathInternal sets the [InferPathMode] unless it was already configured.
+func (r PropertyRulesForSlice[S, T, P]) inferPathInternal(mode InferPathMode) PropertyRulesInterface[P] {
 	if r.inferPathModeSet {
 		return r
 	}
