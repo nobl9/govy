@@ -8,7 +8,9 @@ import (
 
 // New creates a new [Validator] aggregating the provided property rules.
 func New[T any](props ...PropertyRulesInterface[T]) Validator[T] {
-	return Validator[T]{props: props}
+	return Validator[T]{
+		props: props,
+	}
 }
 
 // Validator is the top level validation entity.
@@ -75,12 +77,29 @@ func (v Validator[T]) RemovePropertiesByPath(paths ...jsonpath.Path) Validator[T
 	return v
 }
 
+// RemovePropertiesByID removes any [PropertyRules] matching the provided identifiers.
+// It returns a modified [Validator] instance without these rules,
+// the original [Validator] is not changed.
+func (v Validator[T]) RemovePropertiesByID(ids ...string) Validator[T] {
+	if len(ids) == 0 {
+		return v
+	}
+	filtered := make([]PropertyRulesInterface[T], 0, len(v.props))
+	for _, prop := range v.props {
+		if !slices.Contains(ids, prop.GetID()) {
+			filtered = append(filtered, prop)
+		}
+	}
+	v.props = filtered
+	return v
+}
+
 // InferPath sets the [InferPathMode] for the validator,
 // which controls relative property path inference for validation rules.
 func (v Validator[T]) InferPath(mode InferPathMode) Validator[T] {
 	props := make([]PropertyRulesInterface[T], 0, len(v.props))
 	for _, prop := range v.props {
-		props = append(props, prop.inferPathModeInternal(mode))
+		props = append(props, prop.inferPathInternal(mode))
 	}
 	v.props = props
 	return v
