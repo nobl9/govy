@@ -1,6 +1,8 @@
 package rules
 
 import (
+	"crypto/sha256"
+	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -106,6 +108,111 @@ func BenchmarkStringLuhnChecksum(b *testing.B) {
 	}
 }
 
+func TestStringPaymentCardProcessorFixtures(t *testing.T) {
+	fixtures := []struct {
+		name                   string
+		path                   string
+		source                 string
+		sourceSnapshotSHA256   string
+		normalizedValuesSHA256 string
+		expectedCount          int
+	}{
+		{
+			name:                   "Stripe",
+			path:                   "testdata/stripe_test_card_numbers_2026-07-21.txt",
+			source:                 "https://docs.stripe.com/testing",
+			sourceSnapshotSHA256:   "bcc37c3f58146fcadf2290b67058d66841b9adfbf207a56ae0bef557c675fc4e",
+			normalizedValuesSHA256: "00176aa47882a48d54cc1db7cb654536cd8889406d59ce67c88ae00897e54da9",
+			expectedCount:          148,
+		},
+		{
+			name:                   "Braintree",
+			path:                   "testdata/braintree_test_card_numbers_2026-07-21.txt",
+			source:                 "https://developer.paypal.com/braintree/docs/reference/general/testing/php",
+			sourceSnapshotSHA256:   "85231b65e2b6fa674d7ada4cd71512d0fe1756398e83564244af1bbf3cb27211",
+			normalizedValuesSHA256: "3ff5fb628215867a24156654d3a026a86bc5d2a089846b8de129ff444c0c1db7",
+			expectedCount:          44,
+		},
+		{
+			name:                   "Adyen",
+			path:                   "testdata/adyen_test_card_numbers_2026-07-21.txt",
+			source:                 "https://docs.adyen.com/development-resources/test-cards-and-credentials/test-card-numbers",
+			sourceSnapshotSHA256:   "be12e0c40e9d3cabbfe1025d956c13dbd4250dbc6574c23a7a3178ce06eff82e",
+			normalizedValuesSHA256: "636787e0d1b9af8aa73287d6e7e058b9f6f499f47756537dbdf9f322c44f23da",
+			expectedCount:          86,
+		},
+	}
+	rules := []struct {
+		name          string
+		rule          govy.Rule[string]
+		expectedError string
+		errorCode     govy.ErrorCode
+	}{
+		{
+			name:          "StringCreditCard",
+			rule:          StringCreditCard(),
+			expectedError: "string must be a valid payment card number",
+			errorCode:     ErrorCodeStringCreditCard,
+		},
+		{
+			name:          "StringLuhnChecksum",
+			rule:          StringLuhnChecksum(),
+			expectedError: "string must pass the Luhn checksum",
+			errorCode:     ErrorCodeStringLuhnChecksum,
+		},
+	}
+
+	const (
+		invalidProcessorCardNumber         = "4242424242424241"
+		expectedUniqueProcessorCardNumbers = 264
+	)
+	union := make(map[string]struct{}, expectedUniqueProcessorCardNumbers)
+	invalidOccurrences := 0
+	for _, fixture := range fixtures {
+		t.Run(fixture.name, func(t *testing.T) {
+			rawFixture, inputs := readTestDataFields(t, fixture.path)
+			assert.Require(t, assert.Len(t, inputs, fixture.expectedCount))
+			assert.True(t, strings.Contains(rawFixture, "# Source: "+fixture.source+"\n"))
+			assert.True(t, strings.Contains(
+				rawFixture,
+				"# Source snapshot SHA-256: "+fixture.sourceSnapshotSHA256+"\n",
+			))
+			normalizedValues := strings.Join(inputs, "\n") + "\n"
+			actualValuesSHA256 := fmt.Sprintf("%x", sha256.Sum256([]byte(normalizedValues)))
+			assert.Equal(t, fixture.normalizedValuesSHA256, actualValuesSHA256)
+
+			uniqueInputs := make(map[string]struct{}, len(inputs))
+			for _, input := range inputs {
+				uniqueInputs[input] = struct{}{}
+				union[input] = struct{}{}
+				if input == invalidProcessorCardNumber {
+					invalidOccurrences++
+				}
+				t.Run(input, func(t *testing.T) {
+					for _, testRule := range rules {
+						t.Run(testRule.name, func(t *testing.T) {
+							err := testRule.rule.Validate(input)
+							if input == invalidProcessorCardNumber {
+								assertPaymentBankingRuleError(
+									t,
+									err,
+									testRule.expectedError,
+									testRule.errorCode,
+								)
+								return
+							}
+							assert.NoError(t, err)
+						})
+					}
+				})
+			}
+			assert.Len(t, uniqueInputs, len(inputs))
+		})
+	}
+	assert.Len(t, union, expectedUniqueProcessorCardNumbers)
+	assert.Equal(t, 1, invalidOccurrences)
+}
+
 // cspell:disable
 var stringBICTestCases = stringPaymentBankingTestCases{
 	validInputs: map[string]string{
@@ -115,7 +222,11 @@ var stringBICTestCases = stringPaymentBankingTestCases{
 		"ISO 9362 eight character example":  "ABCDFRPP",
 		"ISO 9362 eleven character example": "WG11US335AB",
 		"TC68 eight character example":      "ABCDBE22",
+		"TC68 eleven character example":     "ABCDBE22XYZ",
 		"alphanumeric party prefix":         "A1B2US33XXX",
+		"zero in party suffix":              "ABCDUS0A",
+		"one in party suffix":               "ABCDUS1A",
+		"letter O in party suffix":          "ABCDUSAO",
 		"Kosovo bank example":               "EKOMXKPR",
 		"Kosovo bank identifier":            "BPBXXKPR",
 	},
@@ -164,13 +275,19 @@ func BenchmarkStringBIC(b *testing.B) {
 // cspell:disable
 var stringBICISO93622014TestCases = stringPaymentBankingTestCases{
 	validInputs: map[string]string{
-		"eight characters":                 "DEUTDEFF",
-		"eleven characters":                "DEUTDEFF500",
-		"branch placeholder":               "NEDSZAJJXXX",
-		"ISO 9362 eight character example": "ABCDFRPP",
-		"TC68 eight character example":     "ABCDBE22",
-		"Kosovo bank example":              "EKOMXKPR",
-		"Kosovo bank identifier":           "BPBXXKPR",
+		"eight characters":                  "DEUTDEFF",
+		"eleven characters":                 "DEUTDEFF500",
+		"branch placeholder":                "NEDSZAJJXXX",
+		"ISO 9362 eight character example":  "ABCDFRPP",
+		"ISO 9362 eleven character example": "WG11US335AB",
+		"TC68 eight character example":      "ABCDBE22",
+		"TC68 eleven character example":     "ABCDBE22XYZ",
+		"alphanumeric party prefix":         "A1B2US33XXX",
+		"zero in party suffix":              "ABCDUS0A",
+		"one in party suffix":               "ABCDUS1A",
+		"letter O in party suffix":          "ABCDUSAO",
+		"Kosovo bank example":               "EKOMXKPR",
+		"Kosovo bank identifier":            "BPBXXKPR",
 	},
 	invalidInputs: map[string]string{
 		"empty":                       "",
@@ -262,29 +379,44 @@ func assertPaymentBankingRule(
 	t.Run("invalid inputs", func(t *testing.T) {
 		for name, in := range testCases.invalidInputs {
 			t.Run(name, func(t *testing.T) {
-				err := rule.Validate(in)
-				assert.Require(t, assert.EqualError(t, err, expectedError))
-				assert.Require(t, assert.IsType[*govy.RuleError](t, err))
-				ruleError := err.(*govy.RuleError)
-				assert.Equal(t, expectedError, ruleError.Description)
-				assert.Equal(t, errorCode, ruleError.Code)
+				assertPaymentBankingRuleError(t, rule.Validate(in), expectedError, errorCode)
 			})
 		}
 	})
 }
 
+func assertPaymentBankingRuleError(
+	t *testing.T,
+	err error,
+	expectedError string,
+	errorCode govy.ErrorCode,
+) {
+	t.Helper()
+	assert.Require(t, assert.EqualError(t, err, expectedError))
+	assert.Require(t, assert.IsType[*govy.RuleError](t, err))
+	ruleError := err.(*govy.RuleError)
+	assert.Equal(t, expectedError, ruleError.Description)
+	assert.Equal(t, errorCode, ruleError.Code)
+}
+
 func readISOAlpha2CountryCodes(t *testing.T) []string {
 	t.Helper()
-	data, err := os.ReadFile("testdata/iso_3166_1_alpha2_2026-07-21.txt")
+	_, codes := readTestDataFields(t, "testdata/iso_3166_1_alpha2_2026-07-21.txt")
+	return codes
+}
+
+func readTestDataFields(t *testing.T, path string) (raw string, fields []string) {
+	t.Helper()
+	data, err := os.ReadFile(path)
 	assert.Require(t, assert.NoError(t, err))
 
-	var codes []string
-	for line := range strings.Lines(string(data)) {
+	raw = string(data)
+	for line := range strings.Lines(raw) {
 		line = strings.TrimSpace(line)
 		if line == "" || strings.HasPrefix(line, "#") {
 			continue
 		}
-		codes = append(codes, strings.Fields(line)...)
+		fields = append(fields, strings.Fields(line)...)
 	}
-	return codes
+	return raw, fields
 }
