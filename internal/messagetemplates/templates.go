@@ -51,6 +51,11 @@ const (
 	StringCIDRTemplate
 	StringCIDRv4Template
 	StringCIDRv6Template
+	StringUUIDRFC4122Template
+	StringUUIDv3Template
+	StringUUIDv4Template
+	StringUUIDv5Template
+	StringULIDTemplate
 	StringJSONTemplate
 	StringSemverTemplate
 	StringCVETemplate
@@ -125,6 +130,11 @@ var rawMessageTemplates = map[templateKey]string{
 	StringCIDRTemplate:        "string must be a valid CIDR notation IP address",
 	StringCIDRv4Template:      "string must be a valid CIDR notation IPv4 address",
 	StringCIDRv6Template:      "string must be a valid CIDR notation IPv6 address",
+	StringUUIDRFC4122Template: "string must be a valid Universally Unique Identifier (UUID) as defined by RFC 4122",
+	StringUUIDv3Template:      "string must be a valid version 3 Universally Unique Identifier (UUID) as defined by RFC 4122",
+	StringUUIDv4Template:      "string must be a valid version 4 Universally Unique Identifier (UUID) as defined by RFC 4122",
+	StringUUIDv5Template:      "string must be a valid version 5 Universally Unique Identifier (UUID) as defined by RFC 4122",
+	StringULIDTemplate:        "string must be a valid Universally Unique Lexicographically Sortable Identifier (ULID)",
 	StringJSONTemplate:        "string must be a valid JSON",
 	StringSemverTemplate:      "string must be a valid semantic version",
 	StringCVETemplate:         "string must be a valid CVE ID",

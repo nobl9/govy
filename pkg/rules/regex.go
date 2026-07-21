@@ -8,7 +8,21 @@ import (
 // Define all regular expressions here:
 var (
 	// Ref: https://www.ietf.org/rfc/rfc4122.txt
-	uuidRegexp  = lazyRegexCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
+	uuidRegexp = lazyRegexCompile(
+		`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`,
+	)
+	uuidRFC4122Regexp = lazyRegexCompile(
+		`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89aAbB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$`,
+	)
+	uuidv3Regexp = lazyRegexCompile(
+		`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-3[0-9a-fA-F]{3}-[89aAbB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$`,
+	)
+	uuidv4Regexp = lazyRegexCompile(
+		`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89aAbB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$`,
+	)
+	uuidv5Regexp = lazyRegexCompile(
+		`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-5[0-9a-fA-F]{3}-[89aAbB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$`,
+	)
 	asciiRegexp = lazyRegexCompile(`^[\x00-\x7F]*$`)
 	e164Regexp  = lazyRegexCompile(`^\+[1-9][0-9]{1,14}$`)
 	// Ref: https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
