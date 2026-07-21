@@ -979,18 +979,52 @@ func BenchmarkStringCVE(b *testing.B) {
 }
 
 var stringBase64ValidInputs = map[string]string{
-	"empty":             "",
-	"single byte":       "Zg==",
-	"two bytes":         "Zm8=",
-	"three bytes":       "Zm9v",
-	"standard alphabet": "+/8=",
+	"empty":                           "",
+	"rfc 4648 one byte":               "Zg==",
+	"rfc 4648 two bytes":              "Zm8=",
+	"rfc 4648 three bytes":            "Zm9v",
+	"rfc 4648 four bytes":             "Zm9vYg==",
+	"rfc 4648 five bytes":             "Zm9vYmE=",
+	"rfc 4648 six bytes":              "Zm9vYmFy",
+	"rfc 4648 six-byte illustration":  "FPucA9l+",
+	"rfc 4648 five-byte illustration": "FPucA9k=",
+	"rfc 4648 four-byte illustration": "FPucAw==",
+	"single zero byte":                "AA==",
+	"two zero bytes":                  "AAA=",
+	"three zero bytes":                "AAAA",
+	"standard alphabet characters":    "+/8=",
 }
 
 var stringBase64InvalidInputs = map[string]string{
-	"missing padding": "Zg",
-	"url alphabet":    "-_8=",
-	"new line":        "Zm9v\n",
-	"extra padding":   "Zm9v====",
+	"noncanonical one-byte pad bits":           "Zh==",
+	"noncanonical two-byte pad bits":           "Zm9=",
+	"invalid alphabet characters":              "!!!!",
+	"padding only":                             "====",
+	"one symbol with three padding characters": "x===",
+	"leading padding":                          "=AAA",
+	"padding in second position":               "A=AA",
+	"padding in third position":                "AA=A",
+	"data after double padding":                "AA==A",
+	"data after padding":                       "AAA=AAAA",
+	"length modulo four is one":                "AAAAA",
+	"six symbols without required padding":     "AAAAAA",
+	"one symbol with one padding character":    "A=",
+	"one symbol with two padding characters":   "A==",
+	"two symbols with one padding character":   "AA=",
+	"six symbols with one padding character":   "AAAAAA=",
+	"excess padding":                           "YWJjZA=====",
+	"missing double padding":                   "Zg",
+	"missing single padding":                   "Zm8",
+	"padding after complete quantum":           "Zm9v=",
+	"three padding characters after one byte":  "Zg===",
+	"concatenated padded values":               "Zg==AA==",
+	"url-safe alphabet":                        "-_8=",
+	"line feed":                                "Zm9v\n",
+	"carriage return and line feed":            "Zm9v\r\n",
+	"embedded space":                           "Zm 9v",
+	"trailing tab":                             "Zm9v\t",
+	"NUL byte":                                 "Zm9v\x00",
+	"zero-width space":                         "Zm9v\u200b",
 }
 
 func TestStringBase64(t *testing.T) {
@@ -1009,18 +1043,53 @@ func BenchmarkStringBase64(b *testing.B) {
 }
 
 var stringBase64URLValidInputs = map[string]string{
-	"empty":        "",
-	"single byte":  "Zg==",
-	"two bytes":    "Zm8=",
-	"three bytes":  "Zm9v",
-	"url alphabet": "-_8=",
+	"empty":                           "",
+	"rfc 4648 one byte":               "Zg==",
+	"rfc 4648 two bytes":              "Zm8=",
+	"rfc 4648 three bytes":            "Zm9v",
+	"rfc 4648 four bytes":             "Zm9vYg==",
+	"rfc 4648 five bytes":             "Zm9vYmE=",
+	"rfc 4648 six bytes":              "Zm9vYmFy",
+	"rfc 4648 six-byte URL form":      "FPucA9l-",
+	"rfc 4648 five-byte URL form":     "FPucA9k=",
+	"rfc 4648 four-byte URL form":     "FPucAw==",
+	"single zero byte":                "AA==",
+	"two zero bytes":                  "AAA=",
+	"three zero bytes":                "AAAA",
+	"rfc 7515 appendix C padded form": "A-z_4ME=",
+	"url-safe alphabet characters":    "-_8=",
 }
 
 var stringBase64URLInvalidInputs = map[string]string{
-	"standard alphabet": "+/8=",
-	"missing padding":   "Zm8",
-	"new line":          "Zm9v\n",
-	"extra padding":     "Zm9v====",
+	"noncanonical one-byte pad bits":           "Zh==",
+	"noncanonical two-byte pad bits":           "Zm9=",
+	"invalid alphabet characters":              "!!!!",
+	"padding only":                             "====",
+	"one symbol with three padding characters": "x===",
+	"leading padding":                          "=AAA",
+	"padding in second position":               "A=AA",
+	"padding in third position":                "AA=A",
+	"data after double padding":                "AA==A",
+	"data after padding":                       "AAA=AAAA",
+	"length modulo four is one":                "AAAAA",
+	"six symbols without required padding":     "AAAAAA",
+	"one symbol with one padding character":    "A=",
+	"one symbol with two padding characters":   "A==",
+	"two symbols with one padding character":   "AA=",
+	"six symbols with one padding character":   "AAAAAA=",
+	"excess padding":                           "YWJjZA=====",
+	"missing double padding":                   "Zg",
+	"missing single padding":                   "Zm8",
+	"padding after complete quantum":           "Zm9v=",
+	"three padding characters after one byte":  "Zg===",
+	"concatenated padded values":               "Zg==AA==",
+	"standard alphabet":                        "+/8=",
+	"line feed":                                "Zm9v\n",
+	"carriage return and line feed":            "Zm9v\r\n",
+	"embedded space":                           "Zm 9v",
+	"trailing tab":                             "Zm9v\t",
+	"NUL byte":                                 "Zm9v\x00",
+	"zero-width space":                         "Zm9v\u200b",
 }
 
 func TestStringBase64URL(t *testing.T) {
@@ -1039,18 +1108,36 @@ func BenchmarkStringBase64URL(b *testing.B) {
 }
 
 var stringBase64RawURLValidInputs = map[string]string{
-	"empty":        "",
-	"single byte":  "Zg",
-	"two bytes":    "Zm8",
-	"three bytes":  "Zm9v",
-	"url alphabet": "-_8",
+	"empty":                            "",
+	"one byte without padding":         "Zg",
+	"two bytes without padding":        "Zm8",
+	"three bytes":                      "Zm9v",
+	"four bytes without padding":       "Zm9vYg",
+	"five bytes without padding":       "Zm9vYmE",
+	"six bytes":                        "Zm9vYmFy",
+	"rfc 4648 six-byte raw URL form":   "FPucA9l-",
+	"rfc 4648 five-byte raw URL form":  "FPucA9k",
+	"rfc 4648 four-byte raw URL form":  "FPucAw",
+	"single zero byte without padding": "AA",
+	"two zero bytes without padding":   "AAA",
+	"three zero bytes":                 "AAAA",
+	"rfc 7515 appendix C":              "A-z_4ME",
+	"url-safe alphabet characters":     "-_8",
 }
 
 var stringBase64RawURLInvalidInputs = map[string]string{
-	"padded":            "Zg==",
-	"standard alphabet": "+/8",
-	"invalid length":    "A",
-	"new line":          "Zm9v\n",
+	"noncanonical one-byte pad bits": "Zh",
+	"noncanonical two-byte pad bits": "Zm9",
+	"length modulo four is one":      "A",
+	"single padding character":       "Zm8=",
+	"double padding characters":      "Zg==",
+	"standard alphabet":              "+/8",
+	"line feed":                      "Zm9v\n",
+	"carriage return and line feed":  "Zm9v\r\n",
+	"embedded space":                 "Zm 9v",
+	"trailing tab":                   "Zm9v\t",
+	"NUL byte":                       "Zm9v\x00",
+	"zero-width space":               "Zm9v\u200b",
 }
 
 func TestStringBase64RawURL(t *testing.T) {
@@ -1069,18 +1156,40 @@ func BenchmarkStringBase64RawURL(b *testing.B) {
 }
 
 var stringHexadecimalValidInputs = map[string]string{
-	"single digit":     "0",
-	"lowercase":        "deadbeef",
-	"uppercase":        "DEADBEEF",
-	"lowercase prefix": "0xdeadBEEF",
-	"uppercase prefix": "0XABCDEF",
+	"two digits":                            "66",
+	"four digits":                           "666F",
+	"six digits":                            "666F6F",
+	"eight digits":                          "666F6F62",
+	"ten digits":                            "666F6F6261",
+	"twelve digits":                         "666F6F626172",
+	"single digit":                          "F",
+	"two zero digits":                       "00",
+	"lowercase":                             "deadbeef",
+	"uppercase":                             "DEADBEEF",
+	"lowercase prefix":                      "0xdeadBEEF",
+	"uppercase prefix":                      "0XABCDEF",
+	"lowercase prefix with one digit":       "0x0",
+	"uppercase prefix with one digit":       "0Xf",
+	"hex digits beginning with lowercase b": "0b1010",
+	"hex digits beginning with uppercase B": "0B1010",
 }
 
 var stringHexadecimalInvalidInputs = map[string]string{
-	"empty":         "",
-	"prefix only":   "0x",
-	"invalid digit": "0xabcdefg",
-	"minus sign":    "-0x1",
+	"empty":                 "",
+	"lowercase prefix only": "0x",
+	"uppercase prefix only": "0X",
+	"repeated prefix":       "0x0x1",
+	"prefix after digit":    "10x1",
+	"minus sign":            "-0x1",
+	"plus sign":             "+F",
+	"underscore":            "dead_beef",
+	"leading whitespace":    " deadbeef",
+	"trailing whitespace":   "deadbeef ",
+	"invalid digit G":       "G",
+	"full-width F":          "\uff26",
+	"Arabic-Indic digit":    "\u0660",
+	"NUL byte":              "00\x00",
+	"octal prefix":          "0o755",
 }
 
 func TestStringHexadecimal(t *testing.T) {
@@ -1115,16 +1224,11 @@ func runStringEncodingRuleTest(
 		}
 	})
 	t.Run("invalid", func(t *testing.T) {
-		for _, in := range invalidInputs {
-			err := rule.Validate(in)
-			assert.EqualError(t, err, expectedError)
-			assert.True(t, govy.HasErrorCode(err, errorCode))
-			break
-		}
-
 		for name, in := range invalidInputs {
 			t.Run(name, func(t *testing.T) {
-				assert.Error(t, rule.Validate(in))
+				err := rule.Validate(in)
+				assert.EqualError(t, err, expectedError)
+				assert.True(t, govy.HasErrorCode(err, errorCode))
 			})
 		}
 	})
