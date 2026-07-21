@@ -8,8 +8,14 @@ import (
 // Define all regular expressions here:
 var (
 	// Ref: https://www.ietf.org/rfc/rfc4122.txt
-	uuidRegexp   = lazyRegexCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
-	asciiRegexp  = lazyRegexCompile(`^[\x00-\x7F]*$`)
+	uuidRegexp  = lazyRegexCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
+	asciiRegexp = lazyRegexCompile(`^[\x00-\x7F]*$`)
+	e164Regexp  = lazyRegexCompile(`^\+[1-9][0-9]{1,14}$`)
+	// Ref: https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
+	semverRegexp = lazyRegexCompile(
+		`^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$`,
+	)
+	cveRegexp    = lazyRegexCompile(`^CVE-[0-9]{4}-[0-9]{4,19}$`)
 	md5Regexp    = lazyRegexCompile(`^[0-9a-f]{32}$`)
 	sha256Regexp = lazyRegexCompile(`^[0-9a-f]{64}$`)
 	sha384Regexp = lazyRegexCompile(`^[0-9a-f]{96}$`)
