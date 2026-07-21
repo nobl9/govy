@@ -978,10 +978,15 @@ func BenchmarkStringCVE(b *testing.B) {
 	}
 }
 
+// RFC 7519 sections 3.1, 6.1, A.1, and A.2 provide the four complete JWT
+// examples: https://www.rfc-editor.org/rfc/rfc7519.html.
+// The b64=false case comes from the immutable RFC 7797 section 7 prohibition:
+// https://www.rfc-editor.org/rfc/rfc7797.html#section-7.
 var stringJWTTestCases = map[string]struct {
 	in                   string
 	expectedErrorDetails string
 }{
+	// cspell:disable
 	"signed token": {
 		in: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9." +
 			"eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ." +
@@ -1016,6 +1021,43 @@ var stringJWTTestCases = map[string]struct {
 	},
 	"four segments": {
 		in:                   "eyJhbGciOiJIUzI1NiJ9.e30.c2ln.ZXh0cmE",
+		expectedErrorDetails: "expected 3 JWT segments",
+	},
+	"RFC 7519 encrypted JWE": {
+		in: "eyJhbGciOiJSU0ExXzUiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0." +
+			"QR1Owv2ug2WyPBnbQrRARTeEk9kDO2w8qDcjiHnSJflSdv1iNqhWXaKH4MqAkQtM" +
+			"oNfABIPJaZm0HaA415sv3aeuBWnD8J-Ui7Ah6cWafs3ZwwFKDFUUsWHSK-IPKxLG" +
+			"TkND09XyjORj_CHAgOPJ-Sd8ONQRnJvWn_hXV1BNMHzUjPyYwEsRhDhzjAD26ima" +
+			"sOTsgruobpYGoQcXUwFDn7moXPRfDE8-NoQX7N7ZYMmpUDkR-Cx9obNGwJQ3nM52" +
+			"YCitxoQVPzjbl7WBuB7AohdBoZOdZ24WlN1lVIeh8v1K4krB8xgKvRU8kgFrEn_a" +
+			"1rZgN5TiysnmzTROF869lQ." +
+			"AxY8DCtDaGlsbGljb3RoZQ." +
+			"MKOle7UQrG6nSxTLX6Mqwt0orbHvAKeWnDYvpIAeZ72deHxz3roJDXQyhxx0wKaM" +
+			"HDjUEOKIwrtkHthpqEanSBNYHZgmNOV7sln1Eu9g3J8." +
+			"fiK51VwhsxJ-siBMR-YFiA",
+		expectedErrorDetails: "expected 3 JWT segments",
+	},
+	"RFC 7519 nested JWT": {
+		in: "eyJhbGciOiJSU0ExXzUiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2IiwiY3R5IjoiSldU" +
+			"In0." +
+			"g_hEwksO1Ax8Qn7HoN-BVeBoa8FXe0kpyk_XdcSmxvcM5_P296JXXtoHISr_DD_M" +
+			"qewaQSH4dZOQHoUgKLeFly-9RI11TG-_Ge1bZFazBPwKC5lJ6OLANLMd0QSL4fYE" +
+			"b9ERe-epKYE3xb2jfY1AltHqBO-PM6j23Guj2yDKnFv6WO72tteVzm_2n17SBFvh" +
+			"DuR9a2nHTE67pe0XGBUS_TK7ecA-iVq5COeVdJR4U4VZGGlxRGPLRHvolVLEHx6D" +
+			"YyLpw30Ay9R6d68YCLi9FYTq3hIXPK_-dmPlOUlKvPr1GgJzRoeC9G5qCvdcHWsq" +
+			"JGTO_z3Wfo5zsqwkxruxwA." +
+			"UmVkbW9uZCBXQSA5ODA1Mg." +
+			"VwHERHPvCNcHHpTjkoigx3_ExK0Qc71RMEParpatm0X_qpg-w8kozSjfNIPPXiTB" +
+			"BLXR65CIPkFqz4l1Ae9w_uowKiwyi9acgVztAi-pSL8GQSXnaamh9kX1mdh3M_TT" +
+			"-FZGQFQsFhu0Z72gJKGdfGE-OE7hS1zuBD5oEUfk0Dmb0VzWEzpxxiSSBbBAzP10" +
+			"l56pPfAtrjEYw-7ygeMkwBl6Z_mLS6w6xUgKlvW6ULmkV-uLC4FUiyKECK4e3WZY" +
+			"Kw1bpgIqGYsw2v_grHjszJZ-_I5uM-9RA8ycX9KqPRp9gc6pXmoU_-27ATs9XCvr" +
+			"ZXUtK2902AUzqpeEUJYjWWxSNsS-r1TJ1I-FMJ4XyAiGrfmo9hQPcNBYxPz3GQb2" +
+			"8Y5CLSQfNgKSGt0A4isp1hBUXBHAndgtcslt7ZoQJaKe_nNJgNliWtWpJ_ebuOpE" +
+			"l8jdhehdccnRMIwAmU1n7SPkmhIl1HlSOpvcvDfhUN5wuqU955vOBvfkBOh5A11U" +
+			"zBuo2WlgZ6hYi9-e3w29bR0C2-pp3jbqxEDw3iWaf2dc5b-LnR0FEYXvI_tYk5rd" +
+			"_J9N0mg0tQ6RbpxNEMNoA9QWk5lgdPvbh9BaO195abQ." +
+			"AVO9iT5AV4CzvDJCdhSFlQ",
 		expectedErrorDetails: "expected 3 JWT segments",
 	},
 	"empty header segment": {
@@ -1111,6 +1153,10 @@ var stringJWTTestCases = map[string]struct {
 		in:                   "eyJhbGciOjEyM30.e30.c2ln",
 		expectedErrorDetails: `JWT header must contain an "alg" string`,
 	},
+	"non-ASCII algorithm": {
+		in:                   "eyJhbGciOiLimIMifQ.e30.c2ln",
+		expectedErrorDetails: `JWT header must contain an "alg" string`,
+	},
 	"missing signature for signed token": {
 		in:                   "eyJhbGciOiJIUzI1NiJ9.e30.",
 		expectedErrorDetails: `JWT signature segment must not be empty unless alg is "none"`,
@@ -1127,6 +1173,96 @@ var stringJWTTestCases = map[string]struct {
 		in:                   "eyJhbGciOiJIUzI1NiJ9.e30.雪",
 		expectedErrorDetails: "JWT signature segment must be base64url encoded without padding",
 	},
+	"invalid UTF-8 in header JSON": {
+		in:                   "eyJhbGciOiJIUzI1NiIsIngiOiL_In0.e30.c2ln",
+		expectedErrorDetails: "JWT header segment must contain valid UTF-8 JSON",
+	},
+	"invalid UTF-8 in claims set JSON": {
+		in:                   "eyJhbGciOiJIUzI1NiJ9.eyJ4Ijoi_yJ9.c2ln",
+		expectedErrorDetails: "JWT claims set segment must contain valid UTF-8 JSON",
+	},
+	"derived encoded payload option": {
+		in: "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6WyJiNjQiXX0." +
+			"e30.c2ln",
+	},
+	"RFC 7797 unencoded payload option": {
+		in: "eyJhbGciOiJIUzI1NiIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19." +
+			"e30.c2ln",
+		expectedErrorDetails: `JWT header must not set "b64" to false`,
+	},
+	"null b64 option": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6bnVsbH0.e30.c2ln",
+		expectedErrorDetails: `JWT header "b64" must be a boolean`,
+	},
+	"string b64 option": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6ImZhbHNlIn0.e30.c2ln",
+		expectedErrorDetails: `JWT header "b64" must be a boolean`,
+	},
+	"number b64 option": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6MH0.e30.c2ln",
+		expectedErrorDetails: `JWT header "b64" must be a boolean`,
+	},
+	"object b64 option": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6e319.e30.c2ln",
+		expectedErrorDetails: `JWT header "b64" must be a boolean`,
+	},
+	"array b64 option": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6W119.e30.c2ln",
+		expectedErrorDetails: `JWT header "b64" must be a boolean`,
+	},
+	"b64 option without crit": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZX0.e30.c2ln",
+		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
+	},
+	"b64 option with null crit": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6bnVsbH0.e30.c2ln",
+		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
+	},
+	"b64 option with string crit": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6ImI2NCJ9.e30.c2ln",
+		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
+	},
+	"b64 option with number crit": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6MH0.e30.c2ln",
+		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
+	},
+	"b64 option with object crit": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6e319.e30.c2ln",
+		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
+	},
+	"b64 option with empty crit": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6W119.e30.c2ln",
+		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
+	},
+	"b64 option with unrelated crit": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6WyJleHAiXX0.e30.c2ln",
+		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
+	},
+	"b64 option with non-string crit member": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6WzBdfQ.e30.c2ln",
+		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
+	},
+	"b64 option with null crit member": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6W251bGxdfQ.e30.c2ln",
+		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
+	},
+	"b64 option with boolean crit member": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6W3RydWVdfQ.e30.c2ln",
+		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
+	},
+	"b64 option with object crit member": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6W3t9XX0.e30.c2ln",
+		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
+	},
+	"b64 option with array crit member": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6W1tdXX0.e30.c2ln",
+		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
+	},
+	"b64 option with mixed crit members": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6WyJiNjQiLDBdfQ.e30.c2ln",
+		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
+	},
+	// cspell:enable
 }
 
 func TestStringJWT(t *testing.T) {

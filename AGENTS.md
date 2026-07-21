@@ -101,6 +101,14 @@ Tests use the standard `testing` package with local helpers from
 `internal/assert` and public helpers from `pkg/govytest`.
 Use the helper style already present in the package you are editing.
 
+When an authoritative source publishes a finite valid/invalid corpus,
+record its URL and immutable version or revision alongside the test table,
+then copy every input applicable to the documented contract verbatim.
+Do not replace source vectors with representative or equivalent inputs.
+Keep derived boundary cases in addition to, not instead of, the source corpus.
+If a source vector is intentionally excluded,
+enumerate the literal and explain why it falls outside the documented contract.
+
 For rules, keep table data close to the rule test and cover both passing and
 failing inputs.
 When expected output includes validation messages, assert the exact message

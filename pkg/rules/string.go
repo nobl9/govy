@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 	"unicode"
+	"unicode/utf8"
 
 	"github.com/nobl9/govy/internal/messagetemplates"
 	"github.com/nobl9/govy/pkg/govy"
@@ -367,7 +368,8 @@ func StringCVE() govy.Rule[string] {
 		WithDescription("string must be a valid CVE ID in CVE-YEAR-SEQUENCE format")
 }
 
-// StringJWT ensures the property's value is a compact JSON Web Token (JWT).
+// StringJWT ensures the property's value is a JSON Web Token (JWT) represented
+// using JWS Compact Serialization.
 // It validates the three base64url-encoded segments, JSON object header,
 // JSON object claims set, and required `alg` header.
 // It does not verify the signature, algorithm trust, or claim values.
@@ -385,7 +387,7 @@ func StringJWT() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringJWT).
 		WithMessageTemplate(tpl).
-		WithDescription("string must be a compact JSON Web Token (JWT) with three base64url-encoded segments")
+		WithDescription("string must be a JSON Web Token (JWT) using JWS Compact Serialization")
 }
 
 func validateJWT(s string) error {
@@ -405,6 +407,34 @@ func validateJWT(s string) error {
 	alg, err := getJWTAlgorithm(header)
 	if err != nil {
 		return err
+	}
+	if rawB64, ok := header["b64"]; ok {
+		var encodePayload *bool
+		if err := json.Unmarshal(rawB64, &encodePayload); err != nil || encodePayload == nil {
+			return fmt.Errorf(`JWT header "b64" must be a boolean`)
+		}
+
+		rawCritical, ok := header["crit"]
+		var critical []any
+		if !ok || json.Unmarshal(rawCritical, &critical) != nil {
+			return fmt.Errorf(`JWT header "crit" must be an array containing "b64" when "b64" is present`)
+		}
+		hasB64 := false
+		for _, parameter := range critical {
+			name, isString := parameter.(string)
+			if !isString {
+				return fmt.Errorf(`JWT header "crit" must be an array containing "b64" when "b64" is present`)
+			}
+			if name == "b64" {
+				hasB64 = true
+			}
+		}
+		if !hasB64 {
+			return fmt.Errorf(`JWT header "crit" must be an array containing "b64" when "b64" is present`)
+		}
+		if !*encodePayload {
+			return fmt.Errorf(`JWT header must not set "b64" to false`)
+		}
 	}
 	if alg == "none" {
 		if parts[2] == "" {
@@ -428,7 +458,8 @@ func getJWTAlgorithm(header map[string]json.RawMessage) (string, error) {
 	}
 
 	var algorithm string
-	if err := json.Unmarshal(rawAlgorithm, &algorithm); err != nil || algorithm == "" {
+	if err := json.Unmarshal(rawAlgorithm, &algorithm); err != nil ||
+		algorithm == "" || !asciiRegexp().MatchString(algorithm) {
 		return "", fmt.Errorf(`JWT header must contain an "alg" string`)
 	}
 	return algorithm, nil
@@ -438,6 +469,9 @@ func decodeJWTJSONObject(segment, segmentName string) (map[string]json.RawMessag
 	decoded, err := decodeJWTBase64URLSegment(segment, segmentName)
 	if err != nil {
 		return nil, err
+	}
+	if !utf8.Valid(decoded) {
+		return nil, fmt.Errorf("%s segment must contain valid UTF-8 JSON", segmentName)
 	}
 
 	var object map[string]json.RawMessage
