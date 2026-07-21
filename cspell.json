@@ -32,7 +32,11 @@
     "CODEOWNERS",
     "bin/**",
     "docs/assets/**",
-    "context7.json"
+    "context7.json",
+    "pkg/rules/testdata/bip173_segwit_vectors.json",
+    "pkg/rules/testdata/bip350_segwit_vectors.json",
+    "pkg/rules/testdata/bitcoin_core_key_io_invalid.json",
+    "pkg/rules/testdata/bitcoin_core_key_io_valid.json"
   ],
   "words": [
     "Bech",
@@ -45,6 +49,7 @@
     "Skłodowska",
     "atoi",
     "bech",
+    "bips",
     "cidrv",
     "devbox",
     "endef",
@@ -68,6 +73,7 @@
     "pkgs",
     "println",
     "rtmp",
+    "segwit",
     "sloctl",
     "strconv",
     "structs",
