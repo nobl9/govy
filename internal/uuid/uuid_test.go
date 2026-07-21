@@ -1,54 +1,35 @@
 package uuid
 
 import (
-	"regexp"
+	"bytes"
+	cryptorand "crypto/rand"
+	"encoding/hex"
+	"strings"
 	"testing"
 
 	"github.com/nobl9/govy/internal/assert"
 )
 
 func TestGenerateUUID(t *testing.T) {
-	t.Run("generates valid UUID format", func(t *testing.T) {
-		id := GenerateUUID()
+	randomBytes, err := hex.DecodeString("919108f752d133205bacf847db4148a8")
+	assert.Require(t, assert.NoError(t, err))
+	originalReader := cryptorand.Reader
+	cryptorand.Reader = bytes.NewReader(randomBytes)
+	t.Cleanup(func() { cryptorand.Reader = originalReader })
 
-		// UUID v4 format:
-		pattern := `^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$`
-		matched, err := regexp.MatchString(pattern, id)
-		assert.NoError(t, err)
-		assert.True(t, matched)
-	})
+	id := GenerateUUID()
+	assert.Equal(t, "919108f7-52d1-4320-9bac-f847db4148a8", id)
 
-	t.Run("generates unique IDs", func(t *testing.T) {
-		ids := make(map[string]bool)
-		iterations := 1000
+	assert.Require(t, assert.Len(t, id, 36))
+	assert.Equal(t, byte('-'), id[8])
+	assert.Equal(t, byte('-'), id[13])
+	assert.Equal(t, byte('-'), id[18])
+	assert.Equal(t, byte('-'), id[23])
+	assert.Equal(t, strings.ToLower(id), id)
 
-		for range iterations {
-			id := GenerateUUID()
-
-			assert.False(t, ids[id])
-			ids[id] = true
-		}
-
-		assert.Equal(t, iterations, len(ids))
-	})
-
-	t.Run("has correct length", func(t *testing.T) {
-		id := GenerateUUID()
-
-		expectedLen := 36 // 32 hex chars + 4 hyphens
-		assert.Equal(t, expectedLen, len(id))
-	})
-
-	t.Run("has correct version bits", func(t *testing.T) {
-		id := GenerateUUID()
-		// Version should be 4 (at position 14)
-		assert.Equal(t, byte('4'), id[14])
-	})
-
-	t.Run("has correct variant bits", func(t *testing.T) {
-		id := GenerateUUID()
-		// Variant should be 8, 9, a, or b (at position 19)
-		variant := id[19]
-		assert.True(t, variant == '8' || variant == '9' || variant == 'a' || variant == 'b')
-	})
+	decoded, err := hex.DecodeString(strings.ReplaceAll(id, "-", ""))
+	assert.Require(t, assert.NoError(t, err))
+	assert.Require(t, assert.Len(t, decoded, 16))
+	assert.Equal(t, byte(4), decoded[6]>>4)
+	assert.Equal(t, byte(2), decoded[8]>>6)
 }

@@ -1,6 +1,8 @@
 package govy_test
 
 import (
+	"bytes"
+	cryptorand "crypto/rand"
 	"errors"
 	"strconv"
 	"testing"
@@ -464,62 +466,261 @@ type mockStruct struct {
 }
 
 func TestPropertyRulesWithID(t *testing.T) {
-	t.Run("property rules", func(t *testing.T) {
-		prop := govy.For(func(m mockStruct) string { return m.Field }).
-			WithName("field").
-			WithID("custom-field-id").
-			Rules(rules.EQ("test"))
+	t.Run("generated IDs remain stable across validation and plan generation", func(t *testing.T) {
+		propertyRules := []govy.PropertyRulesInterface[mockStruct]{
+			govy.For(func(m mockStruct) string { return m.Field }).
+				WithName("scalar").
+				Rules(govy.NewRule(func(string) error { return nil }).WithDescription("scalar rule")),
+			govy.ForPointer(func(m mockStruct) *string { return &m.Field }).
+				WithName("pointer").
+				Rules(govy.NewRule(func(string) error { return nil }).WithDescription("pointer rule")),
+			govy.Transform(
+				func(m mockStruct) string { return m.Field },
+				func(value string) (int, error) { return len(value), nil },
+			).
+				WithName("transformed").
+				Rules(govy.NewRule(func(int) error { return nil }).WithDescription("transformed rule")),
+			govy.ForSlice(func(m mockStruct) []string { return []string{m.Field} }).
+				WithName("slice").
+				Rules(govy.NewRule(func([]string) error { return nil }).WithDescription("slice rule")),
+			govy.ForMap(func(m mockStruct) map[string]string {
+				return map[string]string{"key": m.Field}
+			}).
+				WithName("map").
+				Rules(govy.NewRule(func(map[string]string) error { return nil }).WithDescription("map rule")),
+		}
+		ids := make([]string, len(propertyRules))
+		for i, property := range propertyRules {
+			ids[i] = property.GetID()
+			assert.True(t, ids[i] != "")
+		}
 
-		assert.Equal(t, "custom-field-id", prop.GetID())
+		validator := govy.New(propertyRules...)
+		assert.NoError(t, validator.Validate(mockStruct{Field: "value"}))
+		plan, err := govy.Plan(validator)
+		assert.Require(t, assert.NoError(t, err))
+		assert.Len(t, plan.Properties, len(propertyRules))
+
+		for i, property := range propertyRules {
+			assert.Equal(t, ids[i], property.GetID())
+		}
 	})
 
-	t.Run("slice property rules", func(t *testing.T) {
-		prop := govy.ForSlice(func(m mockStruct) []string { return []string{m.Field} }).
-			WithName("items").
-			WithID("custom-slice-id").
-			Rules(rules.SliceMaxLength[[]string](10))
+	t.Run("scalar builders preserve custom ID", func(t *testing.T) {
+		included := govy.New(
+			govy.For(govy.GetSelf[string]()).
+				WithName("value").
+				Rules(govy.NewRule(func(string) error { return nil })),
+		)
+		base := govy.For(func(m mockStruct) string { return m.Field }).WithID("stable")
+		derived := []struct {
+			name string
+			id   string
+		}{
+			{"WithName", base.WithName("field").GetID()},
+			{"WithPath", base.WithPath(jsonpath.New().Name("field")).GetID()},
+			{"WithExamples", base.WithExamples("example").GetID()},
+			{"Rules", base.Rules(govy.NewRule(func(string) error { return nil })).GetID()},
+			{"Include", base.Include(included).GetID()},
+			{"When", base.When(func(mockStruct) bool { return true }).GetID()},
+			{"Required", base.Required().GetID()},
+			{"OmitEmpty", base.OmitEmpty().GetID()},
+			{"HideValue", base.HideValue().GetID()},
+			{"Cascade", base.Cascade(govy.CascadeModeStop).GetID()},
+			{"InferPath", base.InferPath(govy.InferPathModeRuntime).GetID()},
+		}
 
-		assert.Equal(t, "custom-slice-id", prop.GetID())
+		for _, tc := range derived {
+			t.Run(tc.name, func(t *testing.T) {
+				assert.Equal(t, "stable", base.GetID())
+				assert.Equal(t, "stable", tc.id)
+			})
+		}
 	})
 
-	t.Run("map property rules", func(t *testing.T) {
-		prop := govy.ForMap(func(m mockStruct) map[string]string {
+	t.Run("slice builders preserve custom ID", func(t *testing.T) {
+		wholeSlice := govy.New(
+			govy.For(govy.GetSelf[[]string]()).
+				WithName("slice").
+				Rules(govy.NewRule(func([]string) error { return nil })),
+		)
+		element := govy.New(
+			govy.For(govy.GetSelf[string]()).
+				WithName("element").
+				Rules(govy.NewRule(func(string) error { return nil })),
+		)
+		base := govy.ForSlice(func(m mockStruct) []string { return []string{m.Field} }).WithID("stable")
+		derived := []struct {
+			name string
+			id   string
+		}{
+			{"WithName", base.WithName("items").GetID()},
+			{"WithPath", base.WithPath(jsonpath.New().Name("items")).GetID()},
+			{"WithExamples", base.WithExamples("example").GetID()},
+			{"Rules", base.Rules(govy.NewRule(func([]string) error { return nil })).GetID()},
+			{"RulesForEach", base.RulesForEach(govy.NewRule(func(string) error { return nil })).GetID()},
+			{"When", base.When(func(mockStruct) bool { return true }).GetID()},
+			{"Include", base.Include(wholeSlice).GetID()},
+			{"IncludeForEach", base.IncludeForEach(element).GetID()},
+			{"Cascade", base.Cascade(govy.CascadeModeStop).GetID()},
+			{"InferPath", base.InferPath(govy.InferPathModeRuntime).GetID()},
+		}
+
+		for _, tc := range derived {
+			t.Run(tc.name, func(t *testing.T) {
+				assert.Equal(t, "stable", base.GetID())
+				assert.Equal(t, "stable", tc.id)
+			})
+		}
+	})
+
+	t.Run("map builders preserve custom ID", func(t *testing.T) {
+		wholeMap := govy.New(
+			govy.For(govy.GetSelf[map[string]string]()).
+				WithName("map").
+				Rules(govy.NewRule(func(map[string]string) error { return nil })),
+		)
+		stringValue := govy.New(
+			govy.For(govy.GetSelf[string]()).
+				WithName("value").
+				Rules(govy.NewRule(func(string) error { return nil })),
+		)
+		item := govy.New(
+			govy.For(func(value govy.MapItem[string, string]) string { return value.Value }).
+				WithName("item").
+				Rules(govy.NewRule(func(string) error { return nil })),
+		)
+		base := govy.ForMap(func(m mockStruct) map[string]string {
+			return map[string]string{"key": m.Field}
+		}).WithID("stable")
+		derived := []struct {
+			name string
+			id   string
+		}{
+			{"WithName", base.WithName("data").GetID()},
+			{"WithPath", base.WithPath(jsonpath.New().Name("data")).GetID()},
+			{"WithExamples", base.WithExamples("example").GetID()},
+			{"Rules", base.Rules(govy.NewRule(func(map[string]string) error { return nil })).GetID()},
+			{"RulesForKeys", base.RulesForKeys(govy.NewRule(func(string) error { return nil })).GetID()},
+			{"RulesForValues", base.RulesForValues(govy.NewRule(func(string) error { return nil })).GetID()},
+			{
+				"RulesForItems",
+				base.RulesForItems(govy.NewRule(func(govy.MapItem[string, string]) error { return nil })).GetID(),
+			},
+			{"When", base.When(func(mockStruct) bool { return true }).GetID()},
+			{"Include", base.Include(wholeMap).GetID()},
+			{"IncludeForKeys", base.IncludeForKeys(stringValue).GetID()},
+			{"IncludeForValues", base.IncludeForValues(stringValue).GetID()},
+			{"IncludeForItems", base.IncludeForItems(item).GetID()},
+			{"Cascade", base.Cascade(govy.CascadeModeStop).GetID()},
+			{"InferPath", base.InferPath(govy.InferPathModeRuntime).GetID()},
+		}
+
+		for _, tc := range derived {
+			t.Run(tc.name, func(t *testing.T) {
+				assert.Equal(t, "stable", base.GetID())
+				assert.Equal(t, "stable", tc.id)
+			})
+		}
+	})
+
+	t.Run("custom ID overrides create independent copies", func(t *testing.T) {
+		testCases := []struct {
+			name string
+			ids  func() []string
+		}{
+			{
+				name: "scalar",
+				ids: func() []string {
+					base := govy.For(func(m mockStruct) string { return m.Field })
+					baseID := base.GetID()
+					first := base.WithID("first")
+					second := first.WithID("second")
+					return []string{baseID, base.GetID(), first.GetID(), second.GetID()}
+				},
+			},
+			{
+				name: "slice",
+				ids: func() []string {
+					base := govy.ForSlice(func(m mockStruct) []string { return []string{m.Field} })
+					baseID := base.GetID()
+					first := base.WithID("first")
+					second := first.WithID("second")
+					return []string{baseID, base.GetID(), first.GetID(), second.GetID()}
+				},
+			},
+			{
+				name: "map",
+				ids: func() []string {
+					base := govy.ForMap(func(m mockStruct) map[string]string {
+						return map[string]string{"key": m.Field}
+					})
+					baseID := base.GetID()
+					first := base.WithID("first")
+					second := first.WithID("second")
+					return []string{baseID, base.GetID(), first.GetID(), second.GetID()}
+				},
+			},
+		}
+
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+				ids := tc.ids()
+				assert.True(t, ids[0] != "")
+				assert.Equal(t, ids[0], ids[1])
+				assert.Equal(t, "first", ids[2])
+				assert.Equal(t, "second", ids[3])
+			})
+		}
+	})
+
+	t.Run("generated ID belongs to the final derived instance", func(t *testing.T) {
+		entropy := make([]byte, 16*32)
+		for block := range 32 {
+			entropy[block*16+15] = byte(block + 1)
+		}
+		originalReader := cryptorand.Reader
+		cryptorand.Reader = bytes.NewReader(entropy)
+		t.Cleanup(func() { cryptorand.Reader = originalReader })
+
+		failingStringRule := govy.NewRule(func(string) error { return errors.New("string") })
+		failingSliceRule := govy.NewRule(func([]string) error { return errors.New("slice") })
+		failingMapRule := govy.NewRule(func(map[string]string) error { return errors.New("map") })
+
+		scalarBase := govy.For(func(m mockStruct) string { return m.Field }).
+			WithName("scalar").
+			Rules(failingStringRule)
+		scalarDerived := scalarBase.WithExamples("example")
+		sliceBase := govy.ForSlice(func(m mockStruct) []string { return []string{m.Field} }).
+			WithName("slice").
+			Rules(failingSliceRule)
+		sliceDerived := sliceBase.WithExamples("example")
+		mapBase := govy.ForMap(func(m mockStruct) map[string]string {
 			return map[string]string{"key": m.Field}
 		}).
-			WithName("data").
-			WithID("custom-map-id").
-			Rules(rules.MapMaxLength[map[string]string](10))
+			WithName("map").
+			Rules(failingMapRule)
+		mapDerived := mapBase.WithExamples("example")
 
-		assert.Equal(t, "custom-map-id", prop.GetID())
-	})
-
-	t.Run("WithID creates a copy", func(t *testing.T) {
-		original := govy.For(func(m mockStruct) string { return m.Field }).
-			WithName("field").
-			Rules(rules.EQ("test"))
-
-		originalID := original.GetID()
-		modified := original.WithID("custom-id")
-
-		assert.Equal(t, originalID, original.GetID())
-		assert.Equal(t, "custom-id", modified.GetID())
-		assert.True(t, originalID != modified.GetID())
-	})
-
-	t.Run("generated IDs are unique for derived copies", func(t *testing.T) {
-		base := govy.For(func(m mockStruct) string { return m.Field })
-
-		propertyRules := base.WithName("field")
-		sliceRules := govy.ForSlice(func(m mockStruct) []string { return []string{m.Field} })
-		sliceForEachRules := sliceRules.RulesForEach(rules.StringNotEmpty())
-		mapRules := govy.ForMap(func(m mockStruct) map[string]string {
-			return map[string]string{"key": m.Field}
-		})
-		mapForKeyRules := mapRules.RulesForKeys(rules.StringNotEmpty())
-
-		assert.True(t, base.GetID() != propertyRules.GetID())
-		assert.True(t, sliceRules.GetID() != sliceForEachRules.GetID())
-		assert.True(t, mapRules.GetID() != mapForKeyRules.GetID())
+		testCases := []struct {
+			name      string
+			baseID    string
+			derivedID string
+			property  govy.PropertyRulesInterface[mockStruct]
+		}{
+			{"scalar", scalarBase.GetID(), scalarDerived.GetID(), scalarDerived},
+			{"slice", sliceBase.GetID(), sliceDerived.GetID(), sliceDerived},
+			{"map", mapBase.GetID(), mapDerived.GetID(), mapDerived},
+		}
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+				assert.True(t, tc.baseID != tc.derivedID)
+				validator := govy.New(tc.property)
+				assert.Error(t, validator.Validate(mockStruct{}))
+				assert.Error(t, validator.RemovePropertiesByID(tc.baseID).Validate(mockStruct{}))
+				assert.NoError(t, validator.RemovePropertiesByID(tc.derivedID).Validate(mockStruct{}))
+			})
+		}
 	})
 }
 
