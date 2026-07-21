@@ -444,16 +444,35 @@ func BenchmarkStringUUIDv5(b *testing.B) {
 	benchmarkStringFormatIDRule(b, StringUUIDv5(), stringUUIDv5ValidInputs, stringUUIDv5InvalidInputs)
 }
 
+// cspell:ignore ttttttttttrrrrrrrrrrrrrrrr
+
+// stringULIDValidInputs includes every concrete valid ULID from ulid/spec at
+// revision d0c7170df4517939e70129b4d6462cc162f2d5bf and every concrete ULID
+// from ulid/javascript's tests at revision 11c2067821ee19e4dc787ca4e0125a025485edc6.
+//
+// The specification's `ttttttttttrrrrrrrrrrrrrrrr` representation describes
+// the field layout; it is not a concrete ULID and is intentionally excluded.
 var stringULIDValidInputs = map[string]string{
 	// cspell:disable
-	"specification example":             "01AN4Z07BY79KA1307SR9X4MV3",
-	"monotonic predecessor":             "01BX5ZZKBKACTAV9WEVGEMMVRZ",
-	"monotonic successor":               "01BX5ZZKBKACTAV9WEVGEMMVS0",
-	"maintained implementation example": "01ARYZ6S41TSV4RRFFQ69G5FAV",
-	"all zero":                          "00000000000000000000000000",
-	"maximum value":                     "7ZZZZZZZZZZZZZZZZZZZZZZZZZ",
-	"lowercase":                         "01arz3ndektsv4rrffq69g5fav",
-	"lowercase maximum":                 "7zzzzzzzzzzzzzzzzzzzzzzzzz",
+	"spec introductory example":      "01ARZ3NDEKTSV4RRFFQ69G5FAV",
+	"spec layout example":            "01AN4Z07BY79KA1307SR9X4MV3",
+	"spec monotonic first":           "01BX5ZZKBKACTAV9WEVGEMMVRY",
+	"spec monotonic second":          "01BX5ZZKBKACTAV9WEVGEMMVRZ",
+	"spec monotonic third":           "01BX5ZZKBKACTAV9WEVGEMMVS0",
+	"spec monotonic fourth":          "01BX5ZZKBKACTAV9WEVGEMMVS1",
+	"spec near-overflow X":           "01BX5ZZKBKZZZZZZZZZZZZZZZX",
+	"spec near-overflow Y":           "01BX5ZZKBKZZZZZZZZZZZZZZZY",
+	"spec near-overflow Z":           "01BX5ZZKBKZZZZZZZZZZZZZZZZ",
+	"spec maximum value":             "7ZZZZZZZZZZZZZZZZZZZZZZZZZ",
+	"JavaScript decode-time example": "01ARYZ6S41TSV4RRFFQ69G5FAV",
+	"JavaScript monotonic first":     "01ARYZ6S41YYYYYYYYYYYYYYYY",
+	"JavaScript monotonic second":    "01ARYZ6S41YYYYYYYYYYYYYYYZ",
+	"JavaScript monotonic third":     "01ARYZ6S41YYYYYYYYYYYYYYZ0",
+	"JavaScript monotonic fourth":    "01ARYZ6S41YYYYYYYYYYYYYYZ1",
+	"JavaScript next millisecond":    "01ARYZ6S42YYYYYYYYYYYYYYYY",
+	"derived minimum value":          "00000000000000000000000000",
+	"derived lowercase example":      "01arz3ndektsv4rrffq69g5fav",
+	"derived lowercase maximum":      "7zzzzzzzzzzzzzzzzzzzzzzzzz",
 	// cspell:enable
 }
 
