@@ -978,35 +978,42 @@ func BenchmarkStringCVE(b *testing.B) {
 	}
 }
 
-var validMD5TestCases = []string{
-	"d41d8cd98f00b204e9800998ecf8427e",
+var validMD5TestCases = map[string]string{
+	"letter-leading":                 "d41d8cd98f00b204e9800998ecf8427e",
+	"nonzero-digit-leading":          "900150983cd24fb0d6963f7d28e17f72",
+	"zero-leading repeated sequence": "0123456789abcdef0123456789abcdef",
 }
 
-var invalidMD5TestCases = []string{
-	"",
-	"D41D8CD98F00B204E9800998ECF8427E",
-	"d41d8cd98f00b204e9800998ecf8427",
-	"d41d8cd98f00b204e9800998ecf8427e0",
-	"d41d8cd98f00b204e9800998ecf8427g",
+var invalidMD5TestCases = map[string]string{
+	"empty":                              "",
+	"all uppercase":                      "D41D8CD98F00B204E9800998ECF8427E",
+	"mixed case":                         "d41d8cd98f00b204e9800998ecf8427E",
+	"one character short":                "d41d8cd98f00b204e9800998ecf8427",
+	"one character long":                 "d41d8cd98f00b204e9800998ecf8427e0",
+	"terminal non-hexadecimal character": "d41d8cd98f00b204e9800998ecf8427g",
+	"0x prefix":                          "0x0123456789abcdef0123456789abcdef",
+	"leading space":                      " 0123456789abcdef0123456789abcdef",
+	"trailing space":                     "0123456789abcdef0123456789abcdef ",
+	"trailing newline":                   "0123456789abcdef0123456789abcdef\n",
+	"embedded hyphen":                    "01234567-9abcdef0123456789abcdef",
+	"embedded Unicode letter":            "01234567é9abcdef0123456789abcdef",
 }
 
 func TestStringMD5(t *testing.T) {
 	rule := StringMD5()
 	t.Run("valid digests", func(t *testing.T) {
-		for _, digest := range validMD5TestCases {
-			t.Run(fmt.Sprintf("%q", digest), func(t *testing.T) {
+		for name, digest := range validMD5TestCases {
+			t.Run(name, func(t *testing.T) {
 				assert.NoError(t, rule.Validate(digest))
 			})
 		}
 	})
 	t.Run("invalid digests", func(t *testing.T) {
-		err := rule.Validate(invalidMD5TestCases[0])
-		assert.EqualError(t, err, "string must be a valid lowercase MD5 hexadecimal digest")
-		assert.True(t, govy.HasErrorCode(err, ErrorCodeStringMD5))
-
-		for _, digest := range invalidMD5TestCases {
-			t.Run(fmt.Sprintf("%q", digest), func(t *testing.T) {
-				assert.Error(t, rule.Validate(digest))
+		for name, digest := range invalidMD5TestCases {
+			t.Run(name, func(t *testing.T) {
+				err := rule.Validate(digest)
+				assert.EqualError(t, err, "string must be a valid lowercase MD5 hexadecimal digest")
+				assert.True(t, govy.HasErrorCode(err, ErrorCodeStringMD5))
 			})
 		}
 	})
@@ -1019,35 +1026,42 @@ func BenchmarkStringMD5(b *testing.B) {
 	})
 }
 
-var validSHA256TestCases = []string{
-	"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+var validSHA256TestCases = map[string]string{
+	"letter-leading":                 "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+	"nonzero-digit-leading":          "28969cdfa74a12c82f3bad960b0b000aca2ac329deea5c2328ebc6f2ba9802c1",
+	"zero-leading repeated sequence": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
 }
 
-var invalidSHA256TestCases = []string{
-	"",
-	"E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
-	"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b85",
-	"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b8550",
-	"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b85g",
+var invalidSHA256TestCases = map[string]string{
+	"empty":                              "",
+	"all uppercase":                      "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+	"mixed case":                         "E3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+	"one character short":                "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b85",
+	"one character long":                 "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b8550",
+	"terminal non-hexadecimal character": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b85g",
+	"0x prefix":                          "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+	"leading space":                      " 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+	"trailing space":                     "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef ",
+	"trailing newline":                   "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\n",
+	"embedded hyphen":                    "01234567-9abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+	"embedded Unicode letter":            "01234567é9abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
 }
 
 func TestStringSHA256(t *testing.T) {
 	rule := StringSHA256()
 	t.Run("valid digests", func(t *testing.T) {
-		for _, digest := range validSHA256TestCases {
-			t.Run(fmt.Sprintf("%q", digest), func(t *testing.T) {
+		for name, digest := range validSHA256TestCases {
+			t.Run(name, func(t *testing.T) {
 				assert.NoError(t, rule.Validate(digest))
 			})
 		}
 	})
 	t.Run("invalid digests", func(t *testing.T) {
-		err := rule.Validate(invalidSHA256TestCases[0])
-		assert.EqualError(t, err, "string must be a valid lowercase SHA-256 hexadecimal digest")
-		assert.True(t, govy.HasErrorCode(err, ErrorCodeStringSHA256))
-
-		for _, digest := range invalidSHA256TestCases {
-			t.Run(fmt.Sprintf("%q", digest), func(t *testing.T) {
-				assert.Error(t, rule.Validate(digest))
+		for name, digest := range invalidSHA256TestCases {
+			t.Run(name, func(t *testing.T) {
+				err := rule.Validate(digest)
+				assert.EqualError(t, err, "string must be a valid lowercase SHA-256 hexadecimal digest")
+				assert.True(t, govy.HasErrorCode(err, ErrorCodeStringSHA256))
 			})
 		}
 	})
@@ -1060,35 +1074,42 @@ func BenchmarkStringSHA256(b *testing.B) {
 	})
 }
 
-var validSHA384TestCases = []string{
-	"38b060a751ac96384cd9327eb1b1e36a21fdb71114be07434c0cc7bf63f6e1da274edebfe76f65fbd51ad2f14898b95b",
+var validSHA384TestCases = map[string]string{
+	"digit-leading":                  "38b060a751ac96384cd9327eb1b1e36a21fdb71114be07434c0cc7bf63f6e1da274edebfe76f65fbd51ad2f14898b95b",
+	"letter-leading":                 "b52b72da75d0666379e20f9b4a79c33a329a01f06a2fb7865c9062a28c1de860ba432edfd86b4cb1cb8a75b46076e3b1",
+	"zero-leading repeated sequence": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
 }
 
-var invalidSHA384TestCases = []string{
-	"",
-	"38B060A751AC96384CD9327EB1B1E36A21FDB71114BE07434C0CC7BF63F6E1DA274EDEBFE76F65FBD51AD2F14898B95B",
-	"38b060a751ac96384cd9327eb1b1e36a21fdb71114be07434c0cc7bf63f6e1da274edebfe76f65fbd51ad2f14898b95",
-	"38b060a751ac96384cd9327eb1b1e36a21fdb71114be07434c0cc7bf63f6e1da274edebfe76f65fbd51ad2f14898b95b0",
-	"38b060a751ac96384cd9327eb1b1e36a21fdb71114be07434c0cc7bf63f6e1da274edebfe76f65fbd51ad2f14898b95g",
+var invalidSHA384TestCases = map[string]string{
+	"empty":                              "",
+	"all uppercase":                      "38B060A751AC96384CD9327EB1B1E36A21FDB71114BE07434C0CC7BF63F6E1DA274EDEBFE76F65FBD51AD2F14898B95B",
+	"mixed case":                         "38B060a751ac96384cd9327eb1b1e36a21fdb71114be07434c0cc7bf63f6e1da274edebfe76f65fbd51ad2f14898b95b",
+	"one character short":                "38b060a751ac96384cd9327eb1b1e36a21fdb71114be07434c0cc7bf63f6e1da274edebfe76f65fbd51ad2f14898b95",
+	"one character long":                 "38b060a751ac96384cd9327eb1b1e36a21fdb71114be07434c0cc7bf63f6e1da274edebfe76f65fbd51ad2f14898b95b0",
+	"terminal non-hexadecimal character": "38b060a751ac96384cd9327eb1b1e36a21fdb71114be07434c0cc7bf63f6e1da274edebfe76f65fbd51ad2f14898b95g",
+	"0x prefix":                          "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+	"leading space":                      " 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+	"trailing space":                     "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef ",
+	"trailing newline":                   "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\n",
+	"embedded hyphen":                    "01234567-9abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+	"embedded Unicode letter":            "01234567é9abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
 }
 
 func TestStringSHA384(t *testing.T) {
 	rule := StringSHA384()
 	t.Run("valid digests", func(t *testing.T) {
-		for _, digest := range validSHA384TestCases {
-			t.Run(fmt.Sprintf("%q", digest), func(t *testing.T) {
+		for name, digest := range validSHA384TestCases {
+			t.Run(name, func(t *testing.T) {
 				assert.NoError(t, rule.Validate(digest))
 			})
 		}
 	})
 	t.Run("invalid digests", func(t *testing.T) {
-		err := rule.Validate(invalidSHA384TestCases[0])
-		assert.EqualError(t, err, "string must be a valid lowercase SHA-384 hexadecimal digest")
-		assert.True(t, govy.HasErrorCode(err, ErrorCodeStringSHA384))
-
-		for _, digest := range invalidSHA384TestCases {
-			t.Run(fmt.Sprintf("%q", digest), func(t *testing.T) {
-				assert.Error(t, rule.Validate(digest))
+		for name, digest := range invalidSHA384TestCases {
+			t.Run(name, func(t *testing.T) {
+				err := rule.Validate(digest)
+				assert.EqualError(t, err, "string must be a valid lowercase SHA-384 hexadecimal digest")
+				assert.True(t, govy.HasErrorCode(err, ErrorCodeStringSHA384))
 			})
 		}
 	})
@@ -1101,35 +1122,42 @@ func BenchmarkStringSHA384(b *testing.B) {
 	})
 }
 
-var validSHA512TestCases = []string{
-	"cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927da3e",
+var validSHA512TestCases = map[string]string{
+	"letter-leading":                 "cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927da3e",
+	"digit-leading":                  "3831a6a6155e509dee59a7f451eb35324d8f8f2df6e3708894740f98fdee23889f4de5adb0c5010dfb555cda77c8ab5dc902094c52de3278f35a75ebc25f093a",
+	"zero-leading repeated sequence": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
 }
 
-var invalidSHA512TestCases = []string{
-	"",
-	"CF83E1357EEFB8BDF1542850D66D8007D620E4050B5715DC83F4A921D36CE9CE47D0D13C5D85F2B0FF8318D2877EEC2F63B931BD47417A81A538327AF927DA3E",
-	"cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927da3",
-	"cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927da3e0",
-	"cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927dag",
+var invalidSHA512TestCases = map[string]string{
+	"empty":                              "",
+	"all uppercase":                      "CF83E1357EEFB8BDF1542850D66D8007D620E4050B5715DC83F4A921D36CE9CE47D0D13C5D85F2B0FF8318D2877EEC2F63B931BD47417A81A538327AF927DA3E",
+	"mixed case":                         "Cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927da3e",
+	"one character short":                "cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927da3",
+	"one character long":                 "cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927da3e0",
+	"terminal non-hexadecimal character": "cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927da3g",
+	"0x prefix":                          "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+	"leading space":                      " 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+	"trailing space":                     "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef ",
+	"trailing newline":                   "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\n",
+	"embedded hyphen":                    "01234567-9abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+	"embedded Unicode letter":            "01234567é9abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
 }
 
 func TestStringSHA512(t *testing.T) {
 	rule := StringSHA512()
 	t.Run("valid digests", func(t *testing.T) {
-		for _, digest := range validSHA512TestCases {
-			t.Run(fmt.Sprintf("%q", digest), func(t *testing.T) {
+		for name, digest := range validSHA512TestCases {
+			t.Run(name, func(t *testing.T) {
 				assert.NoError(t, rule.Validate(digest))
 			})
 		}
 	})
 	t.Run("invalid digests", func(t *testing.T) {
-		err := rule.Validate(invalidSHA512TestCases[0])
-		assert.EqualError(t, err, "string must be a valid lowercase SHA-512 hexadecimal digest")
-		assert.True(t, govy.HasErrorCode(err, ErrorCodeStringSHA512))
-
-		for _, digest := range invalidSHA512TestCases {
-			t.Run(fmt.Sprintf("%q", digest), func(t *testing.T) {
-				assert.Error(t, rule.Validate(digest))
+		for name, digest := range invalidSHA512TestCases {
+			t.Run(name, func(t *testing.T) {
+				err := rule.Validate(digest)
+				assert.EqualError(t, err, "string must be a valid lowercase SHA-512 hexadecimal digest")
+				assert.True(t, govy.HasErrorCode(err, ErrorCodeStringSHA512))
 			})
 		}
 	})
