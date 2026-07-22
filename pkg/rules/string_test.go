@@ -322,27 +322,26 @@ const stringMongoDBObjectIDErrorMessage = "string must be a 24-character hexadec
 // The driver's TestFromHex_RoundTrip is excluded because NewObjectID generates
 // its input dynamically, so the test publishes no stable literal to copy.
 var stringMongoDBObjectIDTestCases = map[string]struct {
-	in                 string
-	shouldFail         bool
-	includeInBenchmark bool
+	in         string
+	shouldFail bool
 }{
-	"standard lowercase":               {in: "507f1f77bcf86cd799439011", includeInBenchmark: true},
-	"BSON corpus all zeroes":           {in: "000000000000000000000000", includeInBenchmark: true},
+	"standard lowercase":               {in: "507f1f77bcf86cd799439011"},
+	"BSON corpus all zeroes":           {in: "000000000000000000000000"},
 	"BSON corpus all ones":             {in: "ffffffffffffffffffffffff"},
 	"BSON corpus random":               {in: "56e1fc72e0c917e9c4714161"},
 	"Go driver Unix epoch timestamp":   {in: "000000001111111111111111"},
 	"Go driver signed timestamp limit": {in: "7FFFFFFF1111111111111111"},
 	"Go driver timestamp sign bit":     {in: "800000001111111111111111"},
-	"Go driver uint32 timestamp limit": {in: "FFFFFFFF1111111111111111", includeInBenchmark: true},
-	"mixed case":                       {in: "0123456789abcdefABCDEF01", includeInBenchmark: true},
+	"Go driver uint32 timestamp limit": {in: "FFFFFFFF1111111111111111"},
+	"mixed case":                       {in: "0123456789abcdefABCDEF01"},
 
-	"empty":                   {shouldFail: true, includeInBenchmark: true},
-	"23 characters":           {in: "507f1f77bcf86cd79943901", shouldFail: true, includeInBenchmark: true},
-	"25 characters":           {in: "507f1f77bcf86cd7994390110", shouldFail: true, includeInBenchmark: true},
+	"empty":                   {shouldFail: true},
+	"23 characters":           {in: "507f1f77bcf86cd79943901", shouldFail: true},
+	"25 characters":           {in: "507f1f77bcf86cd7994390110", shouldFail: true},
 	"Go driver invalid hex":   {in: "this is not a valid hex string!", shouldFail: true},
 	"Go driver wrong length":  {in: "deadbeef", shouldFail: true},
-	"lowercase non-hex digit": {in: "507f1f77bcf86cd79943901g", shouldFail: true, includeInBenchmark: true},
-	"uppercase non-hex digit": {in: "507F1F77BCF86CD79943901G", shouldFail: true, includeInBenchmark: true},
+	"lowercase non-hex digit": {in: "507f1f77bcf86cd79943901g", shouldFail: true},
+	"uppercase non-hex digit": {in: "507F1F77BCF86CD79943901G", shouldFail: true},
 	"trailing hyphen":         {in: "507f1f77bcf86cd79943901-", shouldFail: true},
 	"trailing colon":          {in: "507f1f77bcf86cd79943901:", shouldFail: true},
 	"0x prefix":               {in: "0x507f1f77bcf86cd799439011", shouldFail: true},
@@ -373,32 +372,12 @@ func TestStringMongoDBObjectID(t *testing.T) {
 }
 
 func BenchmarkStringMongoDBObjectID(b *testing.B) {
-	b.Run("valid MongoDB ObjectIDs", func(b *testing.B) {
+	rule := StringMongoDBObjectID()
+	for b.Loop() {
 		for _, tt := range stringMongoDBObjectIDTestCases {
-			if tt.shouldFail || !tt.includeInBenchmark {
-				continue
-			}
-			b.Run(fmt.Sprintf("%q", tt.in), func(b *testing.B) {
-				rule := StringMongoDBObjectID()
-				for b.Loop() {
-					_ = rule.Validate(tt.in)
-				}
-			})
+			_ = rule.Validate(tt.in)
 		}
-	})
-	b.Run("invalid MongoDB ObjectIDs", func(b *testing.B) {
-		for _, tt := range stringMongoDBObjectIDTestCases {
-			if !tt.shouldFail || !tt.includeInBenchmark {
-				continue
-			}
-			b.Run(fmt.Sprintf("%q", tt.in), func(b *testing.B) {
-				rule := StringMongoDBObjectID()
-				for b.Loop() {
-					_ = rule.Validate(tt.in)
-				}
-			})
-		}
-	})
+	}
 }
 
 var stringEmailTestCases = []*struct {
