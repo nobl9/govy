@@ -5,13 +5,34 @@ import "strings"
 var iso31662Codes = lazyLookupMap(buildISO31662Codes)
 
 func buildISO31662Codes() map[string]struct{} {
-	codes := strings.Fields(iso31662CodesData)
+	codes := strings.Fields(iso31662CodesData + iso31662Codes2024_2AdditionsData)
 	lookup := make(map[string]struct{}, len(codes))
 	for _, code := range codes {
 		lookup[code] = struct{}{}
 	}
 	return lookup
 }
+
+// iso31662Codes2024_2AdditionsData supplements the copied lookup data with
+// every identifier it lacks from UNECE's ISO 3166-2-derived 2024-2 list at
+// commit 03032eb5f0eed1db15dc5255f7dcc0942d7b6238. The source SHA-256 is
+// b6fcf7c4a554598db32a372fd935a6e12291490ca76a8a0dd712ad849ff7cac6.
+const iso31662Codes2024_2AdditionsData = `
+BI-MY BW-FR BW-GA BW-JW BW-LO BW-SP BW-ST CD-BU CD-HL CD-HU CD-KL CD-LO CD-MN CD-MO CD-NU CD-SU
+CD-TU CN-HK CN-MO CN-TW DM-11 DO-32 DO-33 DO-34 DO-35 DO-36 DO-37 DO-38 DO-39 DO-40 DO-41 DO-42
+DZ-50 DZ-52 DZ-54 DZ-58 ET-SI ET-SW FJ-01 FJ-02 FJ-03 FJ-04 FJ-05 FJ-06 FJ-07 FJ-08 FJ-09 FJ-10
+FJ-11 FJ-12 FJ-13 FJ-14 FR-69M FR-6AE FR-75C FR-H GB-BCP GB-NNH GB-WNH GH-NE GH-OT GH-SV GH-WN GQ-DJ
+IT-SU KH-25 KP-14 KP-15 LC-12 LR-GP LR-RG LT-01 LT-02 LT-03 LT-04 LT-05 LT-06 LT-07 LT-08 LT-09
+LT-10 LT-11 LT-12 LT-13 LT-14 LT-15 LT-16 LT-17 LT-18 LT-19 LT-20 LT-21 LT-22 LT-23 LT-24 LT-25
+LT-26 LT-27 LT-28 LT-29 LT-30 LT-31 LT-32 LT-33 LT-34 LT-35 LT-36 LT-37 LT-38 LT-39 LT-40 LT-41
+LT-42 LT-43 LT-44 LT-45 LT-46 LT-47 LT-48 LT-49 LT-50 LT-51 LT-52 LT-53 LT-54 LT-55 LT-56 LT-57
+LT-58 LT-59 LT-60 MA-BRR MA-DRI MA-FQH MA-GUF MA-MAR MA-MDF MA-MID MA-OUZ MA-REH MA-SIB MA-SIF MA-SIL MA-TAF
+MA-TIN MA-YUS MH-WTH MK-203 MK-204 MK-304 MK-313 MK-407 MK-504 MK-603 MK-706 MK-801 MK-802 MK-805 MK-808 MK-815
+MK-817 ML-10 ML-9 MR-14 MR-15 PA-10 PA-NT PG-HLA PG-JWK PH-DVO QA-SH SC-26 SC-27 SL-NW ST-02 ST-03
+ST-04 ST-05 ST-06 TD-EE TD-EO TV-NIU UG-119 UG-125 UG-126 UG-231 UG-232 UG-233 UG-234 UG-235 UG-236 UG-237
+UG-244 UG-329 UG-331 UG-332 UG-333 UG-334 UG-335 UG-336 UG-337 UG-427 UG-428 UG-429 UG-430 UG-431 UG-432 UG-433
+UG-434 UG-435 UZ-KH YE-SU
+`
 
 // The code list is derived from go-playground/validator's MIT-licensed country_codes.go.
 // It is stored as text so the lookup map is allocated only when [StringISO31662] is used.
