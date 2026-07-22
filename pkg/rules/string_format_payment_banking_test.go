@@ -61,9 +61,7 @@ func TestStringCreditCard(t *testing.T) {
 
 func BenchmarkStringCreditCard(b *testing.B) {
 	rule := StringCreditCard()
-	for b.Loop() {
-		_ = rule.Validate("4111111111111111")
-	}
+	benchmarkStringPaymentBankingRule(b, rule, stringCreditCardTestCases)
 }
 
 var stringLuhnChecksumTestCases = stringPaymentBankingTestCases{
@@ -103,9 +101,7 @@ func TestStringLuhnChecksum(t *testing.T) {
 
 func BenchmarkStringLuhnChecksum(b *testing.B) {
 	rule := StringLuhnChecksum()
-	for b.Loop() {
-		_ = rule.Validate("79927398713")
-	}
+	benchmarkStringPaymentBankingRule(b, rule, stringLuhnChecksumTestCases)
 }
 
 func TestStringPaymentCardProcessorFixtures(t *testing.T) {
@@ -267,9 +263,7 @@ func TestStringBIC(t *testing.T) {
 
 func BenchmarkStringBIC(b *testing.B) {
 	rule := StringBIC()
-	for b.Loop() {
-		_ = rule.Validate("DEUTDEFF500")
-	}
+	benchmarkStringPaymentBankingRule(b, rule, stringBICTestCases)
 }
 
 // cspell:disable
@@ -356,8 +350,22 @@ func TestStringBICCountryCodes(t *testing.T) {
 
 func BenchmarkStringBICISO93622014(b *testing.B) {
 	rule := StringBICISO93622014()
+	benchmarkStringPaymentBankingRule(b, rule, stringBICISO93622014TestCases)
+}
+
+func benchmarkStringPaymentBankingRule(
+	b *testing.B,
+	rule govy.Rule[string],
+	testCases stringPaymentBankingTestCases,
+) {
+	b.Helper()
 	for b.Loop() {
-		_ = rule.Validate("DEUTDEFF500")
+		for _, in := range testCases.validInputs {
+			_ = rule.Validate(in)
+		}
+		for _, in := range testCases.invalidInputs {
+			_ = rule.Validate(in)
+		}
 	}
 }
 
