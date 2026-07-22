@@ -101,6 +101,14 @@ Tests use the standard `testing` package with local helpers from
 `internal/assert` and public helpers from `pkg/govytest`.
 Use the helper style already present in the package you are editing.
 
+When an authoritative source publishes a finite valid/invalid corpus,
+record its URL and immutable version or revision alongside the test table,
+then copy every input applicable to the documented contract verbatim.
+Do not replace source vectors with representative or equivalent inputs.
+Keep derived boundary cases in addition to, not instead of, the source corpus.
+If a source vector is intentionally excluded,
+enumerate the literal and explain why it falls outside the documented contract.
+
 For rules, keep table data close to the rule test and cover both passing and
 failing inputs.
 When expected output includes validation messages, assert the exact message
@@ -111,6 +119,10 @@ Examples in `internal/examples` are embedded into `README.md`, so changes there
 must still pass `make test` and `make generate/readme`.
 
 Benchmarks live next to the related tests.
+When a table-driven rule has a benchmark,
+that benchmark must consume the same shared test-case collection
+as the standard test.
+Do not maintain a separate representative subset of benchmark inputs.
 If a change affects validation hot paths, run `make test/benchmark` or explain
 why it was not run.
 

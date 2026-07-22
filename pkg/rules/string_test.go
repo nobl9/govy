@@ -978,6 +978,320 @@ func BenchmarkStringCVE(b *testing.B) {
 	}
 }
 
+// RFC 7519 sections 3.1, 6.1, A.1, and A.2 provide the four complete JWT
+// examples: https://www.rfc-editor.org/rfc/rfc7519.html.
+// The b64=false case comes from the immutable RFC 7797 section 7 prohibition:
+// https://www.rfc-editor.org/rfc/rfc7797.html#section-7.
+var stringJWTTestCases = map[string]struct {
+	in                   string
+	expectedErrorDetails string
+}{
+	// cspell:disable
+	"signed token": {
+		in: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9." +
+			"eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ." +
+			"SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+	},
+	"RFC 7519 signed token": {
+		in: "eyJ0eXAiOiJKV1QiLA0KICJhbGciOiJIUzI1NiJ9." +
+			"eyJpc3MiOiJqb2UiLA0KICJleHAiOjEzMDA4MTkzODAsDQogImh0dHA6Ly9leGFtcGxlLmNvbS9pc19yb290Ijp0cnVlfQ." +
+			"dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk",
+	},
+	"RFC 7519 unsecured token": {
+		in: "eyJhbGciOiJub25lIn0." +
+			"eyJpc3MiOiJqb2UiLA0KICJleHAiOjEzMDA4MTkzODAsDQogImh0dHA6Ly9leGFtcGxlLmNvbS9pc19yb290Ijp0cnVlfQ.",
+	},
+	"whitespace and Unicode JSON": {
+		in: "ew0KICJhbGciIDogIm5vbmUiLA0KICJraWQiIDogIs66zrvOtc65zrTOryINCn0." +
+			"ewogIm5hbWUiOiAiSsO2aG4g6ZuqIiwKICJhZG1pbiI6IHRydWUKfQ.",
+	},
+	"minimal unsecured token": {
+		in: "eyJhbGciOiJub25lIn0.e30.",
+	},
+	"empty token": {
+		expectedErrorDetails: "expected 3 JWT segments",
+	},
+	"one segment": {
+		in:                   "not-a-jwt",
+		expectedErrorDetails: "expected 3 JWT segments",
+	},
+	"two segments": {
+		in:                   "eyJhbGciOiJIUzI1NiJ9.e30",
+		expectedErrorDetails: "expected 3 JWT segments",
+	},
+	"four segments": {
+		in:                   "eyJhbGciOiJIUzI1NiJ9.e30.c2ln.ZXh0cmE",
+		expectedErrorDetails: "expected 3 JWT segments",
+	},
+	"RFC 7519 encrypted JWE": {
+		in: "eyJhbGciOiJSU0ExXzUiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0." +
+			"QR1Owv2ug2WyPBnbQrRARTeEk9kDO2w8qDcjiHnSJflSdv1iNqhWXaKH4MqAkQtM" +
+			"oNfABIPJaZm0HaA415sv3aeuBWnD8J-Ui7Ah6cWafs3ZwwFKDFUUsWHSK-IPKxLG" +
+			"TkND09XyjORj_CHAgOPJ-Sd8ONQRnJvWn_hXV1BNMHzUjPyYwEsRhDhzjAD26ima" +
+			"sOTsgruobpYGoQcXUwFDn7moXPRfDE8-NoQX7N7ZYMmpUDkR-Cx9obNGwJQ3nM52" +
+			"YCitxoQVPzjbl7WBuB7AohdBoZOdZ24WlN1lVIeh8v1K4krB8xgKvRU8kgFrEn_a" +
+			"1rZgN5TiysnmzTROF869lQ." +
+			"AxY8DCtDaGlsbGljb3RoZQ." +
+			"MKOle7UQrG6nSxTLX6Mqwt0orbHvAKeWnDYvpIAeZ72deHxz3roJDXQyhxx0wKaM" +
+			"HDjUEOKIwrtkHthpqEanSBNYHZgmNOV7sln1Eu9g3J8." +
+			"fiK51VwhsxJ-siBMR-YFiA",
+		expectedErrorDetails: "expected 3 JWT segments",
+	},
+	"RFC 7519 nested JWT": {
+		in: "eyJhbGciOiJSU0ExXzUiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2IiwiY3R5IjoiSldU" +
+			"In0." +
+			"g_hEwksO1Ax8Qn7HoN-BVeBoa8FXe0kpyk_XdcSmxvcM5_P296JXXtoHISr_DD_M" +
+			"qewaQSH4dZOQHoUgKLeFly-9RI11TG-_Ge1bZFazBPwKC5lJ6OLANLMd0QSL4fYE" +
+			"b9ERe-epKYE3xb2jfY1AltHqBO-PM6j23Guj2yDKnFv6WO72tteVzm_2n17SBFvh" +
+			"DuR9a2nHTE67pe0XGBUS_TK7ecA-iVq5COeVdJR4U4VZGGlxRGPLRHvolVLEHx6D" +
+			"YyLpw30Ay9R6d68YCLi9FYTq3hIXPK_-dmPlOUlKvPr1GgJzRoeC9G5qCvdcHWsq" +
+			"JGTO_z3Wfo5zsqwkxruxwA." +
+			"UmVkbW9uZCBXQSA5ODA1Mg." +
+			"VwHERHPvCNcHHpTjkoigx3_ExK0Qc71RMEParpatm0X_qpg-w8kozSjfNIPPXiTB" +
+			"BLXR65CIPkFqz4l1Ae9w_uowKiwyi9acgVztAi-pSL8GQSXnaamh9kX1mdh3M_TT" +
+			"-FZGQFQsFhu0Z72gJKGdfGE-OE7hS1zuBD5oEUfk0Dmb0VzWEzpxxiSSBbBAzP10" +
+			"l56pPfAtrjEYw-7ygeMkwBl6Z_mLS6w6xUgKlvW6ULmkV-uLC4FUiyKECK4e3WZY" +
+			"Kw1bpgIqGYsw2v_grHjszJZ-_I5uM-9RA8ycX9KqPRp9gc6pXmoU_-27ATs9XCvr" +
+			"ZXUtK2902AUzqpeEUJYjWWxSNsS-r1TJ1I-FMJ4XyAiGrfmo9hQPcNBYxPz3GQb2" +
+			"8Y5CLSQfNgKSGt0A4isp1hBUXBHAndgtcslt7ZoQJaKe_nNJgNliWtWpJ_ebuOpE" +
+			"l8jdhehdccnRMIwAmU1n7SPkmhIl1HlSOpvcvDfhUN5wuqU955vOBvfkBOh5A11U" +
+			"zBuo2WlgZ6hYi9-e3w29bR0C2-pp3jbqxEDw3iWaf2dc5b-LnR0FEYXvI_tYk5rd" +
+			"_J9N0mg0tQ6RbpxNEMNoA9QWk5lgdPvbh9BaO195abQ." +
+			"AVO9iT5AV4CzvDJCdhSFlQ",
+		expectedErrorDetails: "expected 3 JWT segments",
+	},
+	"empty header segment": {
+		in:                   ".e30.c2ln",
+		expectedErrorDetails: "JWT header segment must not be empty",
+	},
+	"empty claims set segment": {
+		in:                   "eyJhbGciOiJIUzI1NiJ9..c2ln",
+		expectedErrorDetails: "JWT claims set segment must not be empty",
+	},
+	"padded header segment": {
+		in:                   "eyJhbGciOiJIUzI1NiJ9=.e30.c2ln",
+		expectedErrorDetails: "JWT header segment must be base64url encoded without padding",
+	},
+	"padded claims set segment": {
+		in:                   "eyJhbGciOiJIUzI1NiJ9.e30=.c2ln",
+		expectedErrorDetails: "JWT claims set segment must be base64url encoded without padding",
+	},
+	"padded signature segment": {
+		in:                   "eyJhbGciOiJIUzI1NiJ9.e30.c2ln=",
+		expectedErrorDetails: "JWT signature segment must be base64url encoded without padding",
+	},
+	"illegal alphabet in header segment": {
+		in:                   "*.e30.c2ln",
+		expectedErrorDetails: "JWT header segment must be base64url encoded without padding",
+	},
+	"illegal alphabet in claims set segment": {
+		in:                   "eyJhbGciOiJIUzI1NiJ9.*.c2ln",
+		expectedErrorDetails: "JWT claims set segment must be base64url encoded without padding",
+	},
+	"illegal alphabet in signature segment": {
+		in:                   "eyJhbGciOiJIUzI1NiJ9.e30.*",
+		expectedErrorDetails: "JWT signature segment must be base64url encoded without padding",
+	},
+	"impossible base64url length in header segment": {
+		in: "A.e30.c2ln",
+		expectedErrorDetails: "JWT header segment must be base64url encoded without padding: " +
+			"illegal base64 data at input byte 0",
+	},
+	"impossible base64url length in claims set segment": {
+		in: "eyJhbGciOiJIUzI1NiJ9.A.c2ln",
+		expectedErrorDetails: "JWT claims set segment must be base64url encoded without padding: " +
+			"illegal base64 data at input byte 0",
+	},
+	"impossible base64url length in signature segment": {
+		in: "eyJhbGciOiJIUzI1NiJ9.e30.A",
+		expectedErrorDetails: "JWT signature segment must be base64url encoded without padding: " +
+			"illegal base64 data at input byte 0",
+	},
+	"malformed header JSON": {
+		in: "eyJhbGciOiJIUzI1NiI.e30.c2ln",
+		expectedErrorDetails: "JWT header segment must contain a JSON object: " +
+			"unexpected end of JSON input",
+	},
+	"malformed claims set JSON": {
+		in: "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOg.c2ln",
+		expectedErrorDetails: "JWT claims set segment must contain a JSON object: " +
+			"unexpected end of JSON input",
+	},
+	"header segment is JSON array": {
+		in: "W10.e30.c2ln",
+		expectedErrorDetails: "JWT header segment must contain a JSON object: " +
+			"json: cannot unmarshal array into Go value of type map[string]json.RawMessage",
+	},
+	"claims set segment is JSON array": {
+		in: "eyJhbGciOiJIUzI1NiJ9.W10.c2ln",
+		expectedErrorDetails: "JWT claims set segment must contain a JSON object: " +
+			"json: cannot unmarshal array into Go value of type map[string]json.RawMessage",
+	},
+	"header segment is JSON null": {
+		in:                   "bnVsbA.e30.c2ln",
+		expectedErrorDetails: "JWT header segment must contain a JSON object",
+	},
+	"claims set segment is JSON null": {
+		in: "eyJhbGciOiJIUzI1NiJ9." +
+			"bnVsbA." +
+			"c2ln",
+		expectedErrorDetails: "JWT claims set segment must contain a JSON object",
+	},
+	"missing algorithm": {
+		in:                   "e30.e30.c2ln",
+		expectedErrorDetails: `JWT header must contain an "alg" string`,
+	},
+	"empty algorithm": {
+		in:                   "eyJhbGciOiIifQ.e30.c2ln",
+		expectedErrorDetails: `JWT header must contain an "alg" string`,
+	},
+	"null algorithm": {
+		in:                   "eyJhbGciOm51bGx9.e30.c2ln",
+		expectedErrorDetails: `JWT header must contain an "alg" string`,
+	},
+	"numeric algorithm": {
+		in:                   "eyJhbGciOjEyM30.e30.c2ln",
+		expectedErrorDetails: `JWT header must contain an "alg" string`,
+	},
+	"non-ASCII algorithm": {
+		in:                   "eyJhbGciOiLimIMifQ.e30.c2ln",
+		expectedErrorDetails: `JWT header must contain an "alg" string`,
+	},
+	"missing signature for signed token": {
+		in:                   "eyJhbGciOiJIUzI1NiJ9.e30.",
+		expectedErrorDetails: `JWT signature segment must not be empty unless alg is "none"`,
+	},
+	"signature present for none algorithm": {
+		in:                   "eyJhbGciOiJub25lIn0.e30.c2ln",
+		expectedErrorDetails: `JWT signature segment must be empty when alg is "none"`,
+	},
+	"leading token whitespace": {
+		in:                   " eyJhbGciOiJIUzI1NiJ9.e30.c2ln",
+		expectedErrorDetails: "JWT header segment must be base64url encoded without padding",
+	},
+	"raw Unicode signature": {
+		in:                   "eyJhbGciOiJIUzI1NiJ9.e30.雪",
+		expectedErrorDetails: "JWT signature segment must be base64url encoded without padding",
+	},
+	"invalid UTF-8 in header JSON": {
+		in:                   "eyJhbGciOiJIUzI1NiIsIngiOiL_In0.e30.c2ln",
+		expectedErrorDetails: "JWT header segment must contain valid UTF-8 JSON",
+	},
+	"invalid UTF-8 in claims set JSON": {
+		in:                   "eyJhbGciOiJIUzI1NiJ9.eyJ4Ijoi_yJ9.c2ln",
+		expectedErrorDetails: "JWT claims set segment must contain valid UTF-8 JSON",
+	},
+	"derived encoded payload option": {
+		in: "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6WyJiNjQiXX0." +
+			"e30.c2ln",
+	},
+	"RFC 7797 unencoded payload option": {
+		in: "eyJhbGciOiJIUzI1NiIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19." +
+			"e30.c2ln",
+		expectedErrorDetails: `JWT header must not set "b64" to false`,
+	},
+	"null b64 option": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6bnVsbH0.e30.c2ln",
+		expectedErrorDetails: `JWT header "b64" must be a boolean`,
+	},
+	"string b64 option": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6ImZhbHNlIn0.e30.c2ln",
+		expectedErrorDetails: `JWT header "b64" must be a boolean`,
+	},
+	"number b64 option": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6MH0.e30.c2ln",
+		expectedErrorDetails: `JWT header "b64" must be a boolean`,
+	},
+	"object b64 option": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6e319.e30.c2ln",
+		expectedErrorDetails: `JWT header "b64" must be a boolean`,
+	},
+	"array b64 option": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6W119.e30.c2ln",
+		expectedErrorDetails: `JWT header "b64" must be a boolean`,
+	},
+	"b64 option without crit": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZX0.e30.c2ln",
+		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
+	},
+	"b64 option with null crit": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6bnVsbH0.e30.c2ln",
+		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
+	},
+	"b64 option with string crit": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6ImI2NCJ9.e30.c2ln",
+		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
+	},
+	"b64 option with number crit": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6MH0.e30.c2ln",
+		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
+	},
+	"b64 option with object crit": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6e319.e30.c2ln",
+		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
+	},
+	"b64 option with empty crit": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6W119.e30.c2ln",
+		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
+	},
+	"b64 option with unrelated crit": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6WyJleHAiXX0.e30.c2ln",
+		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
+	},
+	"b64 option with non-string crit member": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6WzBdfQ.e30.c2ln",
+		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
+	},
+	"b64 option with null crit member": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6W251bGxdfQ.e30.c2ln",
+		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
+	},
+	"b64 option with boolean crit member": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6W3RydWVdfQ.e30.c2ln",
+		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
+	},
+	"b64 option with object crit member": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6W3t9XX0.e30.c2ln",
+		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
+	},
+	"b64 option with array crit member": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6W1tdXX0.e30.c2ln",
+		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
+	},
+	"b64 option with mixed crit members": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6WyJiNjQiLDBdfQ.e30.c2ln",
+		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
+	},
+	// cspell:enable
+}
+
+func TestStringJWT(t *testing.T) {
+	const expectedErrorPrefix = "string must be a valid JSON Web Token (JWT): "
+
+	for name, tt := range stringJWTTestCases {
+		t.Run(name, func(t *testing.T) {
+			err := StringJWT().Validate(tt.in)
+			if tt.expectedErrorDetails != "" {
+				assert.Require(t, assert.Error(t, err))
+				assert.EqualError(t, err, expectedErrorPrefix+tt.expectedErrorDetails)
+				assert.True(t, govy.HasErrorCode(err, ErrorCodeStringJWT))
+				return
+			}
+			assert.NoError(t, err)
+		})
+	}
+}
+
+func BenchmarkStringJWT(b *testing.B) {
+	rule := StringJWT()
+
+	for b.Loop() {
+		for _, tt := range stringJWTTestCases {
+			_ = rule.Validate(tt.in)
+		}
+	}
+}
+
 var stringContainsTestCases = []*struct {
 	in            string
 	substrings    []string

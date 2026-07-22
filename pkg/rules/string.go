@@ -1,6 +1,7 @@
 package rules
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -13,6 +14,7 @@ import (
 	"strings"
 	"time"
 	"unicode"
+	"unicode/utf8"
 
 	"github.com/nobl9/govy/internal/messagetemplates"
 	"github.com/nobl9/govy/pkg/govy"
@@ -364,6 +366,145 @@ func StringCVE() govy.Rule[string] {
 		WithErrorCode(ErrorCodeStringCVE).
 		WithMessageTemplate(tpl).
 		WithDescription("string must be a valid CVE ID in CVE-YEAR-SEQUENCE format")
+}
+
+// StringJWT ensures the property's value is a JSON Web Token (JWT) represented
+// using JWS Compact Serialization.
+// It validates the three base64url-encoded segments, JSON object header,
+// JSON object claims set, and required `alg` header.
+// It does not verify the signature, algorithm trust, or claim values.
+func StringJWT() govy.Rule[string] {
+	tpl := messagetemplates.Get(messagetemplates.StringJWTTemplate)
+
+	return govy.NewRule(func(s string) error {
+		if err := validateJWT(s); err != nil {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+				Error:         err.Error(),
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringJWT).
+		WithMessageTemplate(tpl).
+		WithDescription("string must be a JSON Web Token (JWT) using JWS Compact Serialization")
+}
+
+func validateJWT(s string) error {
+	parts := strings.Split(s, ".")
+	if len(parts) != 3 {
+		return fmt.Errorf("expected 3 JWT segments")
+	}
+
+	header, err := decodeJWTJSONObject(parts[0], "JWT header")
+	if err != nil {
+		return err
+	}
+	if _, err = decodeJWTJSONObject(parts[1], "JWT claims set"); err != nil {
+		return err
+	}
+
+	alg, err := getJWTAlgorithm(header)
+	if err != nil {
+		return err
+	}
+	if rawB64, ok := header["b64"]; ok {
+		var encodePayload *bool
+		if err := json.Unmarshal(rawB64, &encodePayload); err != nil || encodePayload == nil {
+			return fmt.Errorf(`JWT header "b64" must be a boolean`)
+		}
+
+		rawCritical, ok := header["crit"]
+		var critical []any
+		if !ok || json.Unmarshal(rawCritical, &critical) != nil {
+			return fmt.Errorf(`JWT header "crit" must be an array containing "b64" when "b64" is present`)
+		}
+		hasB64 := false
+		for _, parameter := range critical {
+			name, isString := parameter.(string)
+			if !isString {
+				return fmt.Errorf(`JWT header "crit" must be an array containing "b64" when "b64" is present`)
+			}
+			if name == "b64" {
+				hasB64 = true
+			}
+		}
+		if !hasB64 {
+			return fmt.Errorf(`JWT header "crit" must be an array containing "b64" when "b64" is present`)
+		}
+		if !*encodePayload {
+			return fmt.Errorf(`JWT header must not set "b64" to false`)
+		}
+	}
+	if alg == "none" {
+		if parts[2] == "" {
+			return nil
+		}
+		return fmt.Errorf(`JWT signature segment must be empty when alg is "none"`)
+	}
+	if parts[2] == "" {
+		return fmt.Errorf(`JWT signature segment must not be empty unless alg is "none"`)
+	}
+	if _, err = decodeJWTBase64URLSegment(parts[2], "JWT signature"); err != nil {
+		return err
+	}
+	return nil
+}
+
+func getJWTAlgorithm(header map[string]json.RawMessage) (string, error) {
+	rawAlgorithm, ok := header["alg"]
+	if !ok {
+		return "", fmt.Errorf(`JWT header must contain an "alg" string`)
+	}
+
+	var algorithm string
+	if err := json.Unmarshal(rawAlgorithm, &algorithm); err != nil ||
+		algorithm == "" || !asciiRegexp().MatchString(algorithm) {
+		return "", fmt.Errorf(`JWT header must contain an "alg" string`)
+	}
+	return algorithm, nil
+}
+
+func decodeJWTJSONObject(segment, segmentName string) (map[string]json.RawMessage, error) {
+	decoded, err := decodeJWTBase64URLSegment(segment, segmentName)
+	if err != nil {
+		return nil, err
+	}
+	if !utf8.Valid(decoded) {
+		return nil, fmt.Errorf("%s segment must contain valid UTF-8 JSON", segmentName)
+	}
+
+	var object map[string]json.RawMessage
+	if err = json.Unmarshal(decoded, &object); err != nil {
+		return nil, fmt.Errorf("%s segment must contain a JSON object: %w", segmentName, err)
+	}
+	if object == nil {
+		return nil, fmt.Errorf("%s segment must contain a JSON object", segmentName)
+	}
+	return object, nil
+}
+
+func decodeJWTBase64URLSegment(segment, segmentName string) ([]byte, error) {
+	if segment == "" {
+		return nil, fmt.Errorf("%s segment must not be empty", segmentName)
+	}
+	if strings.Contains(segment, "=") {
+		return nil, fmt.Errorf("%s segment must be base64url encoded without padding", segmentName)
+	}
+	for i := range len(segment) {
+		c := segment[i]
+		if (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') ||
+			c == '-' || c == '_' {
+			continue
+		}
+		return nil, fmt.Errorf("%s segment must be base64url encoded without padding", segmentName)
+	}
+
+	decoded, err := base64.RawURLEncoding.DecodeString(segment)
+	if err != nil {
+		return nil, fmt.Errorf("%s segment must be base64url encoded without padding: %w", segmentName, err)
+	}
+	return decoded, nil
 }
 
 // StringContains ensures the property's value contains all the provided substrings.
