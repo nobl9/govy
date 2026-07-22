@@ -68,6 +68,15 @@ const (
 	StringCrontabTemplate
 	StringDateTimeTemplate
 	StringTimeZoneTemplate
+	StringBCP47LanguageTagTemplate
+	StringBCP47StrictLanguageTagTemplate
+	StringISO3166Alpha2Template
+	StringISO3166Alpha3Template
+	StringISO3166NumericTemplate
+	StringISO31662Template
+	StringISO4217Template
+	StringLatitudeTemplate
+	StringLongitudeTemplate
 	StringKubernetesQualifiedNameTemplate
 	URLTemplate
 	SliceUniqueTemplate
@@ -162,14 +171,23 @@ var rawMessageTemplates = map[templateKey]string{
 	string must be a valid git reference
 {{- end }}
 `,
-	StringFileSystemPathTemplate:      "string must be an existing file system path{{- if .Error }}: {{ .Error }}{{- end }}",
-	StringFilePathTemplate:            "string must be a file system path to an existing file{{- if .Error }}: {{ .Error }}{{- end }}",
-	StringDirPathTemplate:             "string must be a file system path to an existing directory{{- if .Error }}: {{ .Error }}{{- end }}",
-	StringMatchFileSystemPathTemplate: "string must match file path pattern: '{{ .ComparisonValue }}'{{- if .Error }}: {{ .Error }}{{- end }}",
-	StringRegexpTemplate:              "string must be a valid regular expression{{- if .Error }}: {{ .Error }}{{- end }}",
-	StringCrontabTemplate:             "string must be a valid cron schedule expression",
-	StringDateTimeTemplate:            "string must be a valid date and time in '{{ .ComparisonValue }}' format{{- if .Error }}: {{ .Error }}{{- end }}",
-	StringTimeZoneTemplate:            "string must be a valid IANA Time Zone Database code{{- if .Error }}: {{ .Error }}{{- end }}",
+	StringFileSystemPathTemplate:         "string must be an existing file system path{{- if .Error }}: {{ .Error }}{{- end }}",
+	StringFilePathTemplate:               "string must be a file system path to an existing file{{- if .Error }}: {{ .Error }}{{- end }}",
+	StringDirPathTemplate:                "string must be a file system path to an existing directory{{- if .Error }}: {{ .Error }}{{- end }}",
+	StringMatchFileSystemPathTemplate:    "string must match file path pattern: '{{ .ComparisonValue }}'{{- if .Error }}: {{ .Error }}{{- end }}",
+	StringRegexpTemplate:                 "string must be a valid regular expression{{- if .Error }}: {{ .Error }}{{- end }}",
+	StringCrontabTemplate:                "string must be a valid cron schedule expression",
+	StringDateTimeTemplate:               "string must be a valid date and time in '{{ .ComparisonValue }}' format{{- if .Error }}: {{ .Error }}{{- end }}",
+	StringTimeZoneTemplate:               "string must be a valid IANA Time Zone Database code{{- if .Error }}: {{ .Error }}{{- end }}",
+	StringBCP47LanguageTagTemplate:       "string must be a valid BCP 47 language tag",
+	StringBCP47StrictLanguageTagTemplate: "string must be a valid canonical BCP 47 language tag",
+	StringISO3166Alpha2Template:          "string must be a valid ISO 3166-1 alpha-2 country code",
+	StringISO3166Alpha3Template:          "string must be a valid ISO 3166-1 alpha-3 country code",
+	StringISO3166NumericTemplate:         "string must be a valid ISO 3166-1 numeric-3 country code",
+	StringISO31662Template:               "string must be a valid ISO 3166-2 country subdivision code",
+	StringISO4217Template:                "string must be a valid ISO 4217 three-letter alphabetic currency code",
+	StringLatitudeTemplate:               "string must be a valid latitude coordinate",
+	StringLongitudeTemplate:              "string must be a valid longitude coordinate",
 	StringKubernetesQualifiedNameTemplate: `
 {{- if eq .Custom.EmptyPrefixPart true -}}
 	prefix part must not be empty
