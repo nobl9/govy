@@ -15,7 +15,11 @@ var (
 	semverRegexp = lazyRegexCompile(
 		`^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$`,
 	)
-	cveRegexp = lazyRegexCompile(`^CVE-[0-9]{4}-[0-9]{4,19}$`)
+	cveRegexp    = lazyRegexCompile(`^CVE-[0-9]{4}-[0-9]{4,19}$`)
+	md5Regexp    = lazyRegexCompile(`^[0-9a-f]{32}$`)
+	sha256Regexp = lazyRegexCompile(`^[0-9a-f]{64}$`)
+	sha384Regexp = lazyRegexCompile(`^[0-9a-f]{96}$`)
+	sha512Regexp = lazyRegexCompile(`^[0-9a-f]{128}$`)
 	// Ref: https://www.ietf.org/rfc/rfc1123.txt
 	rfc1123DnsLabelRegexp      = lazyRegexCompile(`^[a-z0-9]([-a-z0-9]*[a-z0-9])?$`)
 	rfc1123DnsSubdomainRegexp  = lazyRegexCompile(`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`)

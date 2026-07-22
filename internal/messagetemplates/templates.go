@@ -42,6 +42,10 @@ const (
 	StringNonEmptyTemplate
 	StringMatchRegexpTemplate
 	StringDenyRegexpTemplate
+	StringMD5Template
+	StringSHA256Template
+	StringSHA384Template
+	StringSHA512Template
 	StringEmailTemplate
 	StringE164Template
 	StringMACTemplate
@@ -116,6 +120,10 @@ var rawMessageTemplates = map[templateKey]string{
 	StringNonEmptyTemplate:    "string must not be empty",
 	StringMatchRegexpTemplate: "string must match regular expression: '{{ .ComparisonValue }}'",
 	StringDenyRegexpTemplate:  "string must not match regular expression: '{{ .ComparisonValue }}'",
+	StringMD5Template:         "string must be a valid lowercase MD5 hexadecimal digest",
+	StringSHA256Template:      "string must be a valid lowercase SHA-256 hexadecimal digest",
+	StringSHA384Template:      "string must be a valid lowercase SHA-384 hexadecimal digest",
+	StringSHA512Template:      "string must be a valid lowercase SHA-512 hexadecimal digest",
 	StringEmailTemplate:       "string must be a valid email address: {{ .Error }}",
 	StringE164Template:        "string must be a valid E.164 phone number",
 	StringMACTemplate:         "string must be a valid MAC address",
