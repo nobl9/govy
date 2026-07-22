@@ -27,6 +27,7 @@ var (
 	fqdnRegexp                 = lazyRegexCompile(
 		`^([a-zA-Z0-9]{1}[a-zA-Z0-9-]{0,62})(\.[a-zA-Z0-9]{1}[a-zA-Z0-9-]{0,62})*?(\.[a-zA-Z]{1}[a-zA-Z0-9]{0,62})\.?$`,
 	)
+	issnRegexp = lazyRegexCompile(`^[0-9]{4}-[0-9]{3}[0-9Xx]$`)
 )
 
 // lazyRegexCompile returns a function that compiles the regular expression

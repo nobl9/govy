@@ -54,6 +54,10 @@ const (
 	StringJSONTemplate
 	StringSemverTemplate
 	StringCVETemplate
+	StringISBNTemplate
+	StringISBN10Template
+	StringISBN13Template
+	StringISSNTemplate
 	StringContainsTemplate
 	StringExcludesTemplate
 	StringStartsWithTemplate
@@ -128,6 +132,10 @@ var rawMessageTemplates = map[templateKey]string{
 	StringJSONTemplate:        "string must be a valid JSON",
 	StringSemverTemplate:      "string must be a valid semantic version",
 	StringCVETemplate:         "string must be a valid CVE ID",
+	StringISBNTemplate:        "string must be a valid International Standard Book Number (ISBN) in ISBN-10 or ISBN-13 format",
+	StringISBN10Template:      "string must be a valid International Standard Book Number (ISBN) in ISBN-10 format",
+	StringISBN13Template:      "string must be a valid International Standard Book Number (ISBN) in ISBN-13 format",
+	StringISSNTemplate:        "string must be a valid International Standard Serial Number (ISSN)",
 	StringContainsTemplate:    `string must contain the following substrings: {{ joinSlice .ComparisonValue "'" }}`,
 	StringExcludesTemplate:    `string must not contain any of the following substrings: {{ joinSlice .ComparisonValue "'" }}`,
 	StringStartsWithTemplate: `
