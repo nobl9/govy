@@ -92,10 +92,12 @@ func TestStringBCP47LanguageTag(t *testing.T) {
 }
 
 func BenchmarkStringBCP47LanguageTag(b *testing.B) {
-	rule := StringBCP47LanguageTag()
-	for b.Loop() {
-		_ = rule.Validate("zh-Hant-TW")
-	}
+	benchmarkStringRuleCases(
+		b,
+		StringBCP47LanguageTag(),
+		validStringBCP47LanguageTagCases,
+		invalidStringBCP47LanguageTagCases,
+	)
 }
 
 var validStringBCP47StrictLanguageTagCases = []stringRuleCase{
@@ -161,10 +163,12 @@ func TestStringBCP47StrictLanguageTag(t *testing.T) {
 }
 
 func BenchmarkStringBCP47StrictLanguageTag(b *testing.B) {
-	rule := StringBCP47StrictLanguageTag()
-	for b.Loop() {
-		_ = rule.Validate("zh-Hant-TW")
-	}
+	benchmarkStringRuleCases(
+		b,
+		StringBCP47StrictLanguageTag(),
+		validStringBCP47StrictLanguageTagCases,
+		invalidStringBCP47StrictLanguageTagCases,
+	)
 }
 
 // The fixture contains every independently complete language-tag input in the
@@ -353,10 +357,12 @@ func TestStringISO3166Alpha2(t *testing.T) {
 }
 
 func BenchmarkStringISO3166Alpha2(b *testing.B) {
-	rule := StringISO3166Alpha2()
-	for b.Loop() {
-		_ = rule.Validate("US")
-	}
+	benchmarkStringRuleCases(
+		b,
+		StringISO3166Alpha2(),
+		validStringISO3166Alpha2Cases,
+		invalidStringISO3166Alpha2Cases,
+	)
 }
 
 var validStringISO3166Alpha3Cases = []stringRuleCase{
@@ -408,10 +414,12 @@ func TestStringISO3166Alpha3(t *testing.T) {
 }
 
 func BenchmarkStringISO3166Alpha3(b *testing.B) {
-	rule := StringISO3166Alpha3()
-	for b.Loop() {
-		_ = rule.Validate("USA")
-	}
+	benchmarkStringRuleCases(
+		b,
+		StringISO3166Alpha3(),
+		validStringISO3166Alpha3Cases,
+		invalidStringISO3166Alpha3Cases,
+	)
 }
 
 var validStringISO3166NumericCases = []stringRuleCase{
@@ -461,10 +469,12 @@ func TestStringISO3166Numeric(t *testing.T) {
 }
 
 func BenchmarkStringISO3166Numeric(b *testing.B) {
-	rule := StringISO3166Numeric()
-	for b.Loop() {
-		_ = rule.Validate("840")
-	}
+	benchmarkStringRuleCases(
+		b,
+		StringISO3166Numeric(),
+		validStringISO3166NumericCases,
+		invalidStringISO3166NumericCases,
+	)
 }
 
 // The fixture contains all 249 current ISO 3166-1 alpha-2, alpha-3, and
@@ -547,10 +557,12 @@ func TestStringISO31662(t *testing.T) {
 }
 
 func BenchmarkStringISO31662(b *testing.B) {
-	rule := StringISO31662()
-	for b.Loop() {
-		_ = rule.Validate("US-CA")
-	}
+	benchmarkStringRuleCases(
+		b,
+		StringISO31662(),
+		validStringISO31662Cases,
+		invalidStringISO31662Cases,
+	)
 }
 
 // The fixture projects the country and subdivision fields from every record
@@ -644,10 +656,12 @@ func TestStringISO4217(t *testing.T) {
 }
 
 func BenchmarkStringISO4217(b *testing.B) {
-	rule := StringISO4217()
-	for b.Loop() {
-		_ = rule.Validate("USD")
-	}
+	benchmarkStringRuleCases(
+		b,
+		StringISO4217(),
+		validStringISO4217Cases,
+		invalidStringISO4217Cases,
+	)
 }
 
 // The fixture contains every distinct populated Ccy value from SIX ISO 4217
@@ -713,10 +727,12 @@ func TestStringLatitude(t *testing.T) {
 }
 
 func BenchmarkStringLatitude(b *testing.B) {
-	rule := StringLatitude()
-	for b.Loop() {
-		_ = rule.Validate("-45.25")
-	}
+	benchmarkStringRuleCases(
+		b,
+		StringLatitude(),
+		validStringLatitudeCases,
+		invalidStringLatitudeCases,
+	)
 }
 
 var validStringLongitudeCases = []stringRuleCase{
@@ -764,10 +780,12 @@ func TestStringLongitude(t *testing.T) {
 }
 
 func BenchmarkStringLongitude(b *testing.B) {
-	rule := StringLongitude()
-	for b.Loop() {
-		_ = rule.Validate("-122.4194")
-	}
+	benchmarkStringRuleCases(
+		b,
+		StringLongitude(),
+		validStringLongitudeCases,
+		invalidStringLongitudeCases,
+	)
 }
 
 // These tables contain every distinct latitude and longitude scalar literal
@@ -1204,5 +1222,22 @@ func testStringRuleRejects(t *testing.T, rule govy.Rule[string], cases []stringR
 		t.Run(testCase.name, func(t *testing.T) {
 			assert.Error(t, rule.Validate(testCase.input))
 		})
+	}
+}
+
+func benchmarkStringRuleCases(
+	b *testing.B,
+	rule govy.Rule[string],
+	validCases []stringRuleCase,
+	invalidCases []stringRuleCase,
+) {
+	b.Helper()
+	for b.Loop() {
+		for _, testCase := range validCases {
+			_ = rule.Validate(testCase.input)
+		}
+		for _, testCase := range invalidCases {
+			_ = rule.Validate(testCase.input)
+		}
 	}
 }
