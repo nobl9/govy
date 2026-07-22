@@ -87,7 +87,12 @@ func TestStringHexColor(t *testing.T) {
 }
 
 func BenchmarkStringHexColor(b *testing.B) {
-	benchmarkStringFormatColorRule(b, StringHexColor(), "#112233")
+	benchmarkStringFormatColorRule(
+		b,
+		func(...StringColorOption) govy.Rule[string] { return StringHexColor() },
+		stringHexColorValidTestCases,
+		stringHexColorInvalidTestCases,
+	)
 }
 
 var (
@@ -206,7 +211,13 @@ func TestStringRGB(t *testing.T) {
 }
 
 func BenchmarkStringRGB(b *testing.B) {
-	benchmarkStringFormatColorRule(b, StringRGB(), "rgb(12 34 56 / .25)")
+	benchmarkStringFormatColorRule(
+		b,
+		StringRGB,
+		stringRGBValidTestCases,
+		stringRGBInvalidLegacyTestCases,
+		stringRGBInvalidTestCases,
+	)
 }
 
 var (
@@ -309,7 +320,13 @@ func TestStringHSL(t *testing.T) {
 }
 
 func BenchmarkStringHSL(b *testing.B) {
-	benchmarkStringFormatColorRule(b, StringHSL(), "hsl(120 50% 25% / .5)")
+	benchmarkStringFormatColorRule(
+		b,
+		StringHSL,
+		stringHSLValidTestCases,
+		stringHSLInvalidLegacyTestCases,
+		stringHSLInvalidTestCases,
+	)
 }
 
 var (
@@ -394,7 +411,13 @@ func TestStringDeviceCMYK(t *testing.T) {
 }
 
 func BenchmarkStringDeviceCMYK(b *testing.B) {
-	benchmarkStringFormatColorRule(b, StringDeviceCMYK(), "device-cmyk(0 25% .5 100% / .5)")
+	benchmarkStringFormatColorRule(
+		b,
+		StringDeviceCMYK,
+		stringDeviceCMYKValidTestCases,
+		stringDeviceCMYKInvalidLegacyTestCases,
+		stringDeviceCMYKInvalidTestCases,
+	)
 }
 
 func assertStringColorRuleTestCases(
@@ -443,12 +466,31 @@ func assertStringFormatColorRuleTestCases(
 
 func benchmarkStringFormatColorRule(
 	b *testing.B,
-	rule govy.Rule[string],
-	in string,
+	ruleFactory func(...StringColorOption) govy.Rule[string],
+	testCaseGroups ...map[string]stringFormatColorTestCase,
 ) {
 	b.Helper()
+	type benchmarkCase struct {
+		rule govy.Rule[string]
+		in   string
+	}
+	testCaseCount := 0
+	for _, testCases := range testCaseGroups {
+		testCaseCount += len(testCases)
+	}
+	testCases := make([]benchmarkCase, 0, testCaseCount)
+	for _, testCaseGroup := range testCaseGroups {
+		for _, tc := range testCaseGroup {
+			testCases = append(testCases, benchmarkCase{
+				rule: ruleFactory(tc.options...),
+				in:   tc.in,
+			})
+		}
+	}
 	for b.Loop() {
-		_ = rule.Validate(in)
+		for _, tc := range testCases {
+			_ = tc.rule.Validate(tc.in)
+		}
 	}
 }
 
