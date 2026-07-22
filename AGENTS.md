@@ -119,6 +119,10 @@ Examples in `internal/examples` are embedded into `README.md`, so changes there
 must still pass `make test` and `make generate/readme`.
 
 Benchmarks live next to the related tests.
+When a table-driven rule has a benchmark,
+that benchmark must consume the same shared test-case collection
+as the standard test.
+Do not maintain a separate representative subset of benchmark inputs.
 If a change affects validation hot paths, run `make test/benchmark` or explain
 why it was not run.
 

@@ -1284,17 +1284,10 @@ func TestStringJWT(t *testing.T) {
 
 func BenchmarkStringJWT(b *testing.B) {
 	rule := StringJWT()
-	values := []string{
-		"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9." +
-			"eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ." +
-			"SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
-		"eyJhbGciOiJub25lIn0.e30.",
-		"not-a-jwt",
-	}
 
 	for b.Loop() {
-		for _, value := range values {
-			_ = rule.Validate(value)
+		for _, tt := range stringJWTTestCases {
+			_ = rule.Validate(tt.in)
 		}
 	}
 }
