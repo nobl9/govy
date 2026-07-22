@@ -69,6 +69,7 @@ const (
 	StringDateTimeTemplate
 	StringTimeZoneTemplate
 	StringKubernetesQualifiedNameTemplate
+	StringMongoDBObjectIDTemplate
 	URLTemplate
 	SliceUniqueTemplate
 	UniquePropertiesTemplate
@@ -189,6 +190,7 @@ var rawMessageTemplates = map[templateKey]string{
 	string must be a valid Kubernetes Qualified Name
 {{- end }}
 `,
+	StringMongoDBObjectIDTemplate: "string must be a 24-character hexadecimal MongoDB ObjectID",
 	SliceUniqueTemplate: `elements are not unique, {{ .Custom.FirstOrdinal }} and {{ .Custom.SecondOrdinal }} elements collide
 {{- if gt (len .Custom.Constraints) 0 }} based on constraints: {{ joinSlice .Custom.Constraints "" }}{{- end }}`,
 	UniquePropertiesTemplate: `all of [{{ joinSlice .ComparisonValue "" }}] properties must be unique, but '{{ .Custom.FirstProperty }}' collides with '{{ .Custom.SecondProperty }}'

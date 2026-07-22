@@ -290,6 +290,24 @@ func StringUUID() govy.Rule[string] {
 		WithErrorCode(ErrorCodeStringUUID)
 }
 
+// StringMongoDBObjectID ensures the property's value is a 24-character
+// hexadecimal MongoDB ObjectID.
+func StringMongoDBObjectID() govy.Rule[string] {
+	tpl := messagetemplates.Get(messagetemplates.StringMongoDBObjectIDTemplate)
+
+	return govy.NewRule(func(s string) error {
+		if !mongoDBObjectIDRegexp().MatchString(s) {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringMongoDBObjectID).
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+}
+
 // StringASCII ensures property's value contains only ASCII characters.
 func StringASCII() govy.Rule[string] {
 	return StringMatchRegexp(asciiRegexp()).WithErrorCode(ErrorCodeStringASCII)
