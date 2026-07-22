@@ -978,6 +978,451 @@ func BenchmarkStringCVE(b *testing.B) {
 	}
 }
 
+// Corpus sources: RFC 4648 sections 9-10 and golang/go commit
+// fefb02adf45c4bcc879bd406a8d61f2a292c26a9 (Go 1.25.5),
+// src/encoding/base64/base64_test.go. The tables cover all 17 unique Go
+// pairs, all 24 TestDecodeCorrupt inputs, all 11 TestNewLineCharacters
+// inputs, and both strict-decoder issue 15656 inputs. Go's duplicate
+// "sure." pair is represented once. CR and LF are invalid under this rule's
+// RFC 4648 generic profile even though Go's decoder ignores them.
+var stringBase64ValidInputs = map[string]string{
+	"empty":                           "",
+	"rfc 4648 one byte":               "Zg==",
+	"rfc 4648 two bytes":              "Zm8=",
+	"rfc 4648 three bytes":            "Zm9v",
+	"rfc 4648 four bytes":             "Zm9vYg==",
+	"rfc 4648 five bytes":             "Zm9vYmE=",
+	"rfc 4648 six bytes":              "Zm9vYmFy",
+	"rfc 4648 six-byte illustration":  "FPucA9l+",
+	"rfc 4648 five-byte illustration": "FPucA9k=",
+	"rfc 4648 four-byte illustration": "FPucAw==",
+	"single zero byte":                "AA==",
+	"two zero bytes":                  "AAA=",
+	"three zero bytes":                "AAAA",
+	"standard alphabet characters":    "+/8=",
+	"go corpus sure with period":      "c3VyZS4=",
+	"go corpus sure":                  "c3VyZQ==",
+	"go corpus sur":                   "c3Vy",
+	"go corpus su":                    "c3U=",
+	"go corpus eight-byte variant":    "bGVhc3VyZS4=",
+	"go corpus seven-byte variant":    "ZWFzdXJlLg==",
+	"go corpus six-byte variant":      "YXN1cmUu",
+	"go strict canonical pad bits":    "WvLTlMrX9NpYDQlEIFlnDA==",
+}
+
+var stringBase64InvalidInputs = map[string]string{
+	"noncanonical one-byte pad bits":                              "Zh==",
+	"noncanonical two-byte pad bits":                              "Zm9=",
+	"invalid alphabet characters":                                 "!!!!",
+	"padding only":                                                "====",
+	"one symbol with three padding characters":                    "x===",
+	"leading padding":                                             "=AAA",
+	"padding in second position":                                  "A=AA",
+	"padding in third position":                                   "AA=A",
+	"data after double padding":                                   "AA==A",
+	"data after padding":                                          "AAA=AAAA",
+	"length modulo four is one":                                   "AAAAA",
+	"six symbols without required padding":                        "AAAAAA",
+	"one symbol with one padding character":                       "A=",
+	"one symbol with two padding characters":                      "A==",
+	"two symbols with one padding character":                      "AA=",
+	"six symbols with one padding character":                      "AAAAAA=",
+	"excess padding":                                              "YWJjZA=====",
+	"missing double padding":                                      "Zg",
+	"missing single padding":                                      "Zm8",
+	"padding after complete quantum":                              "Zm9v=",
+	"three padding characters after one byte":                     "Zg===",
+	"concatenated padded values":                                  "Zg==AA==",
+	"url-safe alphabet":                                           "-_8=",
+	"line feed":                                                   "Zm9v\n",
+	"carriage return and line feed":                               "Zm9v\r\n",
+	"embedded carriage return and line feed":                      "Zm\r\n9v",
+	"newline only":                                                "\n",
+	"padded data followed by newline":                             "AAA=\n",
+	"complete quantum followed by newline":                        "AAAA\n",
+	"invalid symbol followed by newline":                          "A!\n",
+	"incomplete padding followed by newline":                      "A=\n",
+	"go newline corpus trailing carriage return":                  "c3VyZQ==\r",
+	"go newline corpus trailing line feed":                        "c3VyZQ==\n",
+	"go newline corpus trailing CRLF":                             "c3VyZQ==\r\n",
+	"go newline corpus embedded CRLF":                             "c3VyZ\r\nQ==",
+	"go newline corpus interleaved carriage return and line feed": "c3V\ryZ\nQ==",
+	"go newline corpus interleaved line feed and carriage return": "c3V\nyZ\rQ==",
+	"go newline corpus before fourth symbol":                      "c3VyZ\nQ==",
+	"go newline corpus before padding":                            "c3VyZQ\n==",
+	"go newline corpus between padding":                           "c3VyZQ=\n=",
+	"go newline corpus repeated CRLF between padding":             "c3VyZQ=\r\n\r\n=",
+	"embedded space":                                              "Zm 9v",
+	"leading space":                                               " Zm9v",
+	"trailing tab":                                                "Zm9v\t",
+	"NUL byte":                                                    "Zm9v\x00",
+	"zero-width space":                                            "Zm9v\u200b",
+	"non-ASCII letter":                                            "Zm9vé",
+	"mixed standard and URL-safe alphabet":                        "AA+_",
+	"go strict noncanonical pad bits":                             "WvLTlMrX9NpYDQlEIFlnDB==",
+}
+
+func TestStringBase64(t *testing.T) {
+	runStringEncodingRuleTest(
+		t,
+		StringBase64(),
+		ErrorCodeStringBase64,
+		"string must be a valid padded Base64 value using the standard alphabet",
+		stringBase64ValidInputs,
+		stringBase64InvalidInputs,
+	)
+}
+
+func BenchmarkStringBase64(b *testing.B) {
+	benchmarkStringEncodingRule(
+		b,
+		StringBase64(),
+		stringBase64ValidInputs,
+		stringBase64InvalidInputs,
+	)
+}
+
+// The padded URL-safe corpus applies the same complete Go tables after the
+// standard-to-URL alphabet conversion and includes RFC 7515 Appendix C.
+var stringBase64URLValidInputs = map[string]string{
+	"empty":                             "",
+	"rfc 4648 one byte":                 "Zg==",
+	"rfc 4648 two bytes":                "Zm8=",
+	"rfc 4648 three bytes":              "Zm9v",
+	"rfc 4648 four bytes":               "Zm9vYg==",
+	"rfc 4648 five bytes":               "Zm9vYmE=",
+	"rfc 4648 six bytes":                "Zm9vYmFy",
+	"rfc 4648 six-byte URL form":        "FPucA9l-",
+	"rfc 4648 five-byte URL form":       "FPucA9k=",
+	"rfc 4648 four-byte URL form":       "FPucAw==",
+	"single zero byte":                  "AA==",
+	"two zero bytes":                    "AAA=",
+	"three zero bytes":                  "AAAA",
+	"six zero-bit symbols with padding": "AAAAAA==",
+	"rfc 7515 appendix C padded form":   "A-z_4ME=",
+	"url-safe alphabet characters":      "-_8=",
+	"go corpus sure with period":        "c3VyZS4=",
+	"go corpus sure":                    "c3VyZQ==",
+	"go corpus sur":                     "c3Vy",
+	"go corpus su":                      "c3U=",
+	"go corpus eight-byte variant":      "bGVhc3VyZS4=",
+	"go corpus seven-byte variant":      "ZWFzdXJlLg==",
+	"go corpus six-byte variant":        "YXN1cmUu",
+	"go strict canonical pad bits":      "WvLTlMrX9NpYDQlEIFlnDA==",
+}
+
+var stringBase64URLInvalidInputs = map[string]string{
+	"noncanonical one-byte pad bits":                              "Zh==",
+	"noncanonical two-byte pad bits":                              "Zm9=",
+	"invalid alphabet characters":                                 "!!!!",
+	"padding only":                                                "====",
+	"one symbol with three padding characters":                    "x===",
+	"leading padding":                                             "=AAA",
+	"padding in second position":                                  "A=AA",
+	"padding in third position":                                   "AA=A",
+	"data after double padding":                                   "AA==A",
+	"data after padding":                                          "AAA=AAAA",
+	"length modulo four is one":                                   "AAAAA",
+	"six symbols without required padding":                        "AAAAAA",
+	"one symbol with one padding character":                       "A=",
+	"one symbol with two padding characters":                      "A==",
+	"two symbols with one padding character":                      "AA=",
+	"six symbols with one padding character":                      "AAAAAA=",
+	"excess padding":                                              "YWJjZA=====",
+	"missing double padding":                                      "Zg",
+	"missing single padding":                                      "Zm8",
+	"padding after complete quantum":                              "Zm9v=",
+	"three padding characters after one byte":                     "Zg===",
+	"concatenated padded values":                                  "Zg==AA==",
+	"standard alphabet":                                           "+/8=",
+	"line feed":                                                   "Zm9v\n",
+	"carriage return and line feed":                               "Zm9v\r\n",
+	"embedded carriage return and line feed":                      "Zm\r\n9v",
+	"newline only":                                                "\n",
+	"padded data followed by newline":                             "AAA=\n",
+	"complete quantum followed by newline":                        "AAAA\n",
+	"invalid symbol followed by newline":                          "A!\n",
+	"incomplete padding followed by newline":                      "A=\n",
+	"go newline corpus trailing carriage return":                  "c3VyZQ==\r",
+	"go newline corpus trailing line feed":                        "c3VyZQ==\n",
+	"go newline corpus trailing CRLF":                             "c3VyZQ==\r\n",
+	"go newline corpus embedded CRLF":                             "c3VyZ\r\nQ==",
+	"go newline corpus interleaved carriage return and line feed": "c3V\ryZ\nQ==",
+	"go newline corpus interleaved line feed and carriage return": "c3V\nyZ\rQ==",
+	"go newline corpus before fourth symbol":                      "c3VyZ\nQ==",
+	"go newline corpus before padding":                            "c3VyZQ\n==",
+	"go newline corpus between padding":                           "c3VyZQ=\n=",
+	"go newline corpus repeated CRLF between padding":             "c3VyZQ=\r\n\r\n=",
+	"embedded space":                                              "Zm 9v",
+	"leading space":                                               " Zm9v",
+	"trailing tab":                                                "Zm9v\t",
+	"NUL byte":                                                    "Zm9v\x00",
+	"zero-width space":                                            "Zm9v\u200b",
+	"non-ASCII letter":                                            "Zm9vé",
+	"mixed standard and URL-safe alphabet":                        "AA+_",
+	"go strict noncanonical pad bits":                             "WvLTlMrX9NpYDQlEIFlnDB==",
+}
+
+func TestStringBase64URL(t *testing.T) {
+	runStringEncodingRuleTest(
+		t,
+		StringBase64URL(),
+		ErrorCodeStringBase64URL,
+		"string must be a valid padded URL-safe Base64 value",
+		stringBase64URLValidInputs,
+		stringBase64URLInvalidInputs,
+	)
+}
+
+func BenchmarkStringBase64URL(b *testing.B) {
+	benchmarkStringEncodingRule(
+		b,
+		StringBase64URL(),
+		stringBase64URLValidInputs,
+		stringBase64URLInvalidInputs,
+	)
+}
+
+// The raw URL-safe tables contain all 17 unique Go pairs after rawURLRef,
+// all 24 exact TestDecodeCorrupt inputs (3 valid and 21 invalid), and all 11
+// exact TestNewLineCharacters inputs (all invalid), plus RFC 7515 Appendix C
+// and strict canonical pad-bit boundaries. Overlapping literals are represented
+// once, and exact corpus inputs are not replaced by rawURLRef transformations.
+var stringBase64RawURLValidInputs = map[string]string{
+	"empty":                            "",
+	"one byte without padding":         "Zg",
+	"two bytes without padding":        "Zm8",
+	"three bytes":                      "Zm9v",
+	"four bytes without padding":       "Zm9vYg",
+	"five bytes without padding":       "Zm9vYmE",
+	"six bytes":                        "Zm9vYmFy",
+	"rfc 4648 six-byte raw URL form":   "FPucA9l-",
+	"rfc 4648 five-byte raw URL form":  "FPucA9k",
+	"rfc 4648 four-byte raw URL form":  "FPucAw",
+	"single zero byte without padding": "AA",
+	"two zero bytes without padding":   "AAA",
+	"three zero bytes":                 "AAAA",
+	"six zero-bit symbols":             "AAAAAA",
+	"rfc 7515 appendix C":              "A-z_4ME",
+	"url-safe alphabet characters":     "-_8",
+	"go corpus sure with period":       "c3VyZS4",
+	"go corpus sure":                   "c3VyZQ",
+	"go corpus sur":                    "c3Vy",
+	"go corpus su":                     "c3U",
+	"go corpus eight-byte variant":     "bGVhc3VyZS4",
+	"go corpus seven-byte variant":     "ZWFzdXJlLg",
+	"go corpus six-byte variant":       "YXN1cmUu",
+	"go strict canonical pad bits":     "WvLTlMrX9NpYDQlEIFlnDA",
+}
+
+var stringBase64RawURLInvalidInputs = map[string]string{
+	"noncanonical one-byte pad bits":                              "Zh",
+	"noncanonical two-byte pad bits":                              "Zm9",
+	"length modulo four is one":                                   "A",
+	"longer length modulo four is one":                            "AAAAA",
+	"single padding character":                                    "Zm8=",
+	"double padding characters":                                   "Zg==",
+	"padding after complete quantum":                              "Zm9v=",
+	"standard alphabet":                                           "+/8",
+	"line feed":                                                   "Zm9v\n",
+	"carriage return and line feed":                               "Zm9v\r\n",
+	"embedded carriage return and line feed":                      "Zm\r\n9v",
+	"embedded space":                                              "Zm 9v",
+	"leading space":                                               " Zm9v",
+	"trailing tab":                                                "Zm9v\t",
+	"NUL byte":                                                    "Zm9v\x00",
+	"zero-width space":                                            "Zm9v\u200b",
+	"non-ASCII letter":                                            "Zm9vé",
+	"mixed standard and URL-safe alphabet":                        "AA+_",
+	"go strict noncanonical pad bits":                             "WvLTlMrX9NpYDQlEIFlnDB",
+	"go corrupt corpus newline only":                              "\n",
+	"go corrupt corpus padded data followed by newline":           "AAA=\n",
+	"go corrupt corpus complete quantum followed by newline":      "AAAA\n",
+	"go corrupt corpus invalid alphabet":                          "!!!!",
+	"go corrupt corpus padding only":                              "====",
+	"go corrupt corpus excess padding after one symbol":           "x===",
+	"go corrupt corpus leading padding":                           "=AAA",
+	"go corrupt corpus padding in second position":                "A=AA",
+	"go corrupt corpus padding in third position":                 "AA=A",
+	"go corrupt corpus data after double padding":                 "AA==A",
+	"go corrupt corpus data after padding":                        "AAA=AAAA",
+	"go corrupt corpus one symbol with padding":                   "A=",
+	"go corrupt corpus one symbol with double padding":            "A==",
+	"go corrupt corpus two symbols with padding":                  "AA=",
+	"go corrupt corpus two symbols with double padding":           "AA==",
+	"go corrupt corpus three symbols with padding":                "AAA=",
+	"go corrupt corpus excess padding after six symbols":          "AAAAAA=",
+	"go corrupt corpus excess terminal padding":                   "YWJjZA=====",
+	"go corrupt corpus invalid symbol followed by newline":        "A!\n",
+	"go corrupt corpus incomplete padding followed by newline":    "A=\n",
+	"go newline corpus padded base":                               "c3VyZQ==",
+	"go newline corpus trailing carriage return":                  "c3VyZQ==\r",
+	"go newline corpus trailing line feed":                        "c3VyZQ==\n",
+	"go newline corpus trailing CRLF":                             "c3VyZQ==\r\n",
+	"go newline corpus embedded CRLF":                             "c3VyZ\r\nQ==",
+	"go newline corpus interleaved carriage return and line feed": "c3V\ryZ\nQ==",
+	"go newline corpus interleaved line feed and carriage return": "c3V\nyZ\rQ==",
+	"go newline corpus before fourth symbol":                      "c3VyZ\nQ==",
+	"go newline corpus before padding":                            "c3VyZQ\n==",
+	"go newline corpus between padding":                           "c3VyZQ=\n=",
+	"go newline corpus repeated CRLF between padding":             "c3VyZQ=\r\n\r\n=",
+}
+
+func TestStringBase64RawURL(t *testing.T) {
+	runStringEncodingRuleTest(
+		t,
+		StringBase64RawURL(),
+		ErrorCodeStringBase64RawURL,
+		"string must be a valid URL-safe Base64 value without padding",
+		stringBase64RawURLValidInputs,
+		stringBase64RawURLInvalidInputs,
+	)
+}
+
+func BenchmarkStringBase64RawURL(b *testing.B) {
+	benchmarkStringEncodingRule(
+		b,
+		StringBase64RawURL(),
+		stringBase64RawURLValidInputs,
+		stringBase64RawURLInvalidInputs,
+	)
+}
+
+// Corpus sources: RFC 4648 section 10 and golang/go commit
+// fefb02adf45c4bcc879bd406a8d61f2a292c26a9 (Go 1.25.5),
+// src/encoding/hex/hex_test.go. All 8 Go encode/decode inputs and all 9
+// error-table inputs are represented. Empty is invalid under this rule's
+// nonempty digit-string contract, while Go's three odd-length error inputs are
+// valid here.
+var stringHexadecimalValidInputs = map[string]string{
+	"two digits":                            "66",
+	"four digits":                           "666F",
+	"six digits":                            "666F6F",
+	"eight digits":                          "666F6F62",
+	"ten digits":                            "666F6F6261",
+	"twelve digits":                         "666F6F626172",
+	"single digit":                          "F",
+	"two zero digits":                       "00",
+	"lowercase":                             "deadbeef",
+	"uppercase":                             "DEADBEEF",
+	"lowercase prefix":                      "0xdeadBEEF",
+	"uppercase prefix":                      "0XABCDEF",
+	"lowercase prefix with one digit":       "0x0",
+	"uppercase prefix with one digit":       "0Xf",
+	"hex digits beginning with lowercase b": "0b1010",
+	"hex digits beginning with uppercase B": "0B1010",
+	"go byte range zero through seven":      "0001020304050607",
+	"go byte range eight through fifteen":   "08090a0b0c0d0e0f",
+	"go byte range f0 through f7":           "f0f1f2f3f4f5f6f7",
+	"go byte range f8 through ff":           "f8f9fafbfcfdfeff",
+	"go single byte":                        "67",
+	"go two bytes":                          "e3a1",
+	"go uppercase byte range":               "F8F9FAFBFCFDFEFF",
+	"go odd single digit":                   "0",
+	"go odd numeric sequence":               "30313",
+	// cspell:disable
+	"go odd alphabetic sequence": "ffeed",
+	// cspell:enable
+}
+
+var stringHexadecimalInvalidInputs = map[string]string{
+	"empty":                            "",
+	"lowercase prefix only":            "0x",
+	"uppercase prefix only":            "0X",
+	"repeated prefix":                  "0x0x1",
+	"prefix after digit":               "10x1",
+	"minus sign":                       "-0x1",
+	"plus sign":                        "+F",
+	"underscore":                       "dead_beef",
+	"leading whitespace":               " deadbeef",
+	"trailing whitespace":              "deadbeef ",
+	"invalid digit G":                  "G",
+	"full-width F":                     "\uff26",
+	"Arabic-Indic digit":               "\u0660",
+	"NUL byte":                         "00\x00",
+	"octal prefix":                     "0o755",
+	"go invalid first digit":           "zd4aa",
+	"go invalid final digit":           "d4aaz",
+	"go invalid second digit":          "0g",
+	"go invalid trailing digits":       "00gg",
+	"go control byte":                  "0\x01",
+	"prefix after zero digit":          "00x1",
+	"plus before prefix":               "+0x1",
+	"underscore after prefix":          "0x1_2",
+	"leading whitespace before prefix": " 0x1",
+	"trailing whitespace after prefix": "0x1 ",
+	"whitespace after prefix":          "0x 1",
+	"invalid prefixed digit G":         "0xG",
+	"full-width digits":                "１２",
+	"non-ASCII letter":                 "é",
+	"NUL byte only":                    "\x00",
+	"audit octal prefix":               "0o77",
+}
+
+func TestStringHexadecimal(t *testing.T) {
+	runStringEncodingRuleTest(
+		t,
+		StringHexadecimal(),
+		ErrorCodeStringHexadecimal,
+		"string must be a valid hexadecimal value",
+		stringHexadecimalValidInputs,
+		stringHexadecimalInvalidInputs,
+	)
+}
+
+func BenchmarkStringHexadecimal(b *testing.B) {
+	benchmarkStringEncodingRule(
+		b,
+		StringHexadecimal(),
+		stringHexadecimalValidInputs,
+		stringHexadecimalInvalidInputs,
+	)
+}
+
+func runStringEncodingRuleTest(
+	t *testing.T,
+	rule govy.Rule[string],
+	errorCode govy.ErrorCode,
+	expectedError string,
+	validInputs map[string]string,
+	invalidInputs map[string]string,
+) {
+	t.Helper()
+	t.Run("valid", func(t *testing.T) {
+		for name, in := range validInputs {
+			t.Run(name, func(t *testing.T) {
+				assert.NoError(t, rule.Validate(in))
+			})
+		}
+	})
+	t.Run("invalid", func(t *testing.T) {
+		for name, in := range invalidInputs {
+			t.Run(name, func(t *testing.T) {
+				err := rule.Validate(in)
+				assert.EqualError(t, err, expectedError)
+				assert.True(t, govy.HasErrorCode(err, errorCode))
+			})
+		}
+	})
+}
+
+func benchmarkStringEncodingRule(
+	b *testing.B,
+	rule govy.Rule[string],
+	validInputs map[string]string,
+	invalidInputs map[string]string,
+) {
+	b.Helper()
+	for b.Loop() {
+		for _, in := range validInputs {
+			_ = rule.Validate(in)
+		}
+		for _, in := range invalidInputs {
+			_ = rule.Validate(in)
+		}
+	}
+}
+
 var stringContainsTestCases = []*struct {
 	in            string
 	substrings    []string

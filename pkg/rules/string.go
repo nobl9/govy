@@ -1,6 +1,7 @@
 package rules
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -364,6 +365,86 @@ func StringCVE() govy.Rule[string] {
 		WithErrorCode(ErrorCodeStringCVE).
 		WithMessageTemplate(tpl).
 		WithDescription("string must be a valid CVE ID in CVE-YEAR-SEQUENCE format")
+}
+
+// StringBase64 ensures the property's value is a standard padded base64 string.
+// It validates input with [base64.StdEncoding].
+func StringBase64() govy.Rule[string] {
+	tpl := messagetemplates.Get(messagetemplates.StringBase64Template)
+
+	return govy.NewRule(func(s string) error {
+		if !standardBase64Regexp().MatchString(s) ||
+			!decodesBase64(base64.StdEncoding.Strict(), s) {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringBase64).
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+}
+
+// StringBase64URL ensures the property's value is a URL-safe padded base64 string.
+// It validates input with [base64.URLEncoding].
+func StringBase64URL() govy.Rule[string] {
+	tpl := messagetemplates.Get(messagetemplates.StringBase64URLTemplate)
+
+	return govy.NewRule(func(s string) error {
+		if !base64URLRegexp().MatchString(s) ||
+			!decodesBase64(base64.URLEncoding.Strict(), s) {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringBase64URL).
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+}
+
+// StringBase64RawURL ensures the property's value is a URL-safe base64 string without padding.
+// It validates input with [base64.RawURLEncoding].
+func StringBase64RawURL() govy.Rule[string] {
+	tpl := messagetemplates.Get(messagetemplates.StringBase64RawURLTemplate)
+
+	return govy.NewRule(func(s string) error {
+		if !base64RawURLRegexp().MatchString(s) ||
+			!decodesBase64(base64.RawURLEncoding.Strict(), s) {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringBase64RawURL).
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+}
+
+// StringHexadecimal ensures the property's value is a hexadecimal string.
+// It allows an optional `0x` or `0X` prefix.
+func StringHexadecimal() govy.Rule[string] {
+	tpl := messagetemplates.Get(messagetemplates.StringHexadecimalTemplate)
+
+	return govy.NewRule(func(s string) error {
+		if !hexadecimalRegexp().MatchString(s) {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringHexadecimal).
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+}
+
+func decodesBase64(encoding *base64.Encoding, s string) bool {
+	_, err := encoding.DecodeString(s)
+	return err == nil
 }
 
 // StringContains ensures the property's value contains all the provided substrings.
