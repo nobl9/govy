@@ -103,6 +103,10 @@ Use the helper style already present in the package you are editing.
 
 For rules, keep table data close to the rule test and cover both passing and
 failing inputs.
+Organize each rule's test declarations as one adjacent group in this order:
+test-case inputs, the `Test*` function, and the `Benchmark*` function.
+Finish that group before declaring the next rule's test cases.
+Place shared test-case types above the rule groups and shared helpers below them.
 When expected output includes validation messages, assert the exact message
 unless the existing package uses a looser helper for that case.
 

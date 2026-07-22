@@ -54,6 +54,10 @@ const (
 	StringJSONTemplate
 	StringSemverTemplate
 	StringCVETemplate
+	StringHexColorTemplate
+	StringRGBTemplate
+	StringHSLTemplate
+	StringDeviceCMYKTemplate
 	StringContainsTemplate
 	StringExcludesTemplate
 	StringStartsWithTemplate
@@ -128,8 +132,15 @@ var rawMessageTemplates = map[templateKey]string{
 	StringJSONTemplate:        "string must be a valid JSON",
 	StringSemverTemplate:      "string must be a valid semantic version",
 	StringCVETemplate:         "string must be a valid CVE ID",
-	StringContainsTemplate:    `string must contain the following substrings: {{ joinSlice .ComparisonValue "'" }}`,
-	StringExcludesTemplate:    `string must not contain any of the following substrings: {{ joinSlice .ComparisonValue "'" }}`,
+	StringHexColorTemplate:    "string must be a valid CSS hexadecimal color",
+	StringRGBTemplate: "string must be a valid{{ if .Custom.LegacySyntaxOnly }} legacy comma-separated{{ end }} " +
+		"CSS rgb(...) or rgba(...) color",
+	StringHSLTemplate: "string must be a valid{{ if .Custom.LegacySyntaxOnly }} legacy comma-separated{{ end }} " +
+		"CSS hsl(...) or hsla(...) color",
+	StringDeviceCMYKTemplate: "string must be a valid{{ if .Custom.LegacySyntaxOnly }} legacy comma-separated{{ end }} " +
+		"CSS device-cmyk(...) color",
+	StringContainsTemplate: `string must contain the following substrings: {{ joinSlice .ComparisonValue "'" }}`,
+	StringExcludesTemplate: `string must not contain any of the following substrings: {{ joinSlice .ComparisonValue "'" }}`,
 	StringStartsWithTemplate: `
 {{- if eq (len .ComparisonValue) 1 -}}
 	string must start with '{{ index .ComparisonValue 0 }}' prefix
