@@ -1027,10 +1027,8 @@ func TestStringMD5(t *testing.T) {
 }
 
 func BenchmarkStringMD5(b *testing.B) {
-	benchmarkStringHashDigestRule(b, StringMD5(), []string{
-		"d41d8cd98f00b204e9800998ecf8427e",
-		"D41D8CD98F00B204E9800998ECF8427E",
-	})
+	rule := StringMD5()
+	benchmarkStringHashDigestRule(b, rule, validMD5TestCases, invalidMD5TestCases)
 }
 
 var validSHA256TestCases = map[string]string{
@@ -1075,10 +1073,8 @@ func TestStringSHA256(t *testing.T) {
 }
 
 func BenchmarkStringSHA256(b *testing.B) {
-	benchmarkStringHashDigestRule(b, StringSHA256(), []string{
-		"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-		"E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
-	})
+	rule := StringSHA256()
+	benchmarkStringHashDigestRule(b, rule, validSHA256TestCases, invalidSHA256TestCases)
 }
 
 var validSHA384TestCases = map[string]string{
@@ -1123,10 +1119,8 @@ func TestStringSHA384(t *testing.T) {
 }
 
 func BenchmarkStringSHA384(b *testing.B) {
-	benchmarkStringHashDigestRule(b, StringSHA384(), []string{
-		"38b060a751ac96384cd9327eb1b1e36a21fdb71114be07434c0cc7bf63f6e1da274edebfe76f65fbd51ad2f14898b95b",
-		"38B060A751AC96384CD9327EB1B1E36A21FDB71114BE07434C0CC7BF63F6E1DA274EDEBFE76F65FBD51AD2F14898B95B",
-	})
+	rule := StringSHA384()
+	benchmarkStringHashDigestRule(b, rule, validSHA384TestCases, invalidSHA384TestCases)
 }
 
 var validSHA512TestCases = map[string]string{
@@ -1171,10 +1165,8 @@ func TestStringSHA512(t *testing.T) {
 }
 
 func BenchmarkStringSHA512(b *testing.B) {
-	benchmarkStringHashDigestRule(b, StringSHA512(), []string{
-		"cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927da3e",
-		"CF83E1357EEFB8BDF1542850D66D8007D620E4050B5715DC83F4A921D36CE9CE47D0D13C5D85F2B0FF8318D2877EEC2F63B931BD47417A81A538327AF927DA3E",
-	})
+	rule := StringSHA512()
+	benchmarkStringHashDigestRule(b, rule, validSHA512TestCases, invalidSHA512TestCases)
 }
 
 // The fixtures contain every distinct digest output from the NIST
@@ -1232,10 +1224,18 @@ func TestStringSHANISTDigestOutputs(t *testing.T) {
 	}
 }
 
-func benchmarkStringHashDigestRule(b *testing.B, rule govy.Rule[string], inputs []string) {
+func benchmarkStringHashDigestRule(
+	b *testing.B,
+	rule govy.Rule[string],
+	validTestCases map[string]string,
+	invalidTestCases map[string]string,
+) {
 	b.Helper()
 	for b.Loop() {
-		for _, in := range inputs {
+		for _, in := range validTestCases {
+			_ = rule.Validate(in)
+		}
+		for _, in := range invalidTestCases {
 			_ = rule.Validate(in)
 		}
 	}
