@@ -29,6 +29,8 @@ const (
 	ErrorCodeStringCIDRv6                  govy.ErrorCode = "string_cidrv6"
 	ErrorCodeStringASCII                   govy.ErrorCode = "string_ascii"
 	ErrorCodeStringUUID                    govy.ErrorCode = "string_uuid"
+	ErrorCodeStringEIN                     govy.ErrorCode = "string_ein"
+	ErrorCodeStringSSN                     govy.ErrorCode = "string_ssn"
 	ErrorCodeStringEmail                   govy.ErrorCode = "string_email"
 	ErrorCodeStringE164                    govy.ErrorCode = "string_e164"
 	ErrorCodeStringJSON                    govy.ErrorCode = "string_json"
