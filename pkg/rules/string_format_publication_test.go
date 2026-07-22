@@ -76,11 +76,12 @@ func TestStringISBN(t *testing.T) {
 }
 
 func BenchmarkStringISBN(b *testing.B) {
-	benchmarkStringPublicationRule(b, StringISBN(), []string{
-		"0-306-40615-2",
-		"978-0-306-40615-7",
-		"978--0-306-40615-7",
-	})
+	benchmarkStringPublicationRule(
+		b,
+		StringISBN(),
+		validISBNTestCases,
+		invalidISBNTestCases,
+	)
 }
 
 var validISBN10TestCases = map[string]string{
@@ -132,11 +133,12 @@ func TestStringISBN10(t *testing.T) {
 }
 
 func BenchmarkStringISBN10(b *testing.B) {
-	benchmarkStringPublicationRule(b, StringISBN10(), []string{
-		"0-306-40615-2",
-		"0-9752298-0-X",
-		"978-0-306-40615-7",
-	})
+	benchmarkStringPublicationRule(
+		b,
+		StringISBN10(),
+		validISBN10TestCases,
+		invalidISBN10TestCases,
+	)
 }
 
 var validISBN13TestCases = map[string]string{
@@ -195,11 +197,12 @@ func TestStringISBN13(t *testing.T) {
 }
 
 func BenchmarkStringISBN13(b *testing.B) {
-	benchmarkStringPublicationRule(b, StringISBN13(), []string{
-		"978-0-306-40615-7",
-		"979-10-90636-07-1",
-		"0-306-40615-2",
-	})
+	benchmarkStringPublicationRule(
+		b,
+		StringISBN13(),
+		validISBN13TestCases,
+		invalidISBN13TestCases,
+	)
 }
 
 var validISSNTestCases = map[string]string{
@@ -260,17 +263,26 @@ func TestStringISSN(t *testing.T) {
 }
 
 func BenchmarkStringISSN(b *testing.B) {
-	benchmarkStringPublicationRule(b, StringISSN(), []string{
-		"2049-3630",
-		"2434-561X",
-		"2049-3631",
-	})
+	benchmarkStringPublicationRule(
+		b,
+		StringISSN(),
+		validISSNTestCases,
+		invalidISSNTestCases,
+	)
 }
 
-func benchmarkStringPublicationRule(b *testing.B, rule govy.Rule[string], inputs []string) {
+func benchmarkStringPublicationRule(
+	b *testing.B,
+	rule govy.Rule[string],
+	validInputs map[string]string,
+	invalidInputs map[string]string,
+) {
 	b.Helper()
 	for b.Loop() {
-		for _, in := range inputs {
+		for _, in := range validInputs {
+			_ = rule.Validate(in)
+		}
+		for _, in := range invalidInputs {
 			_ = rule.Validate(in)
 		}
 	}
