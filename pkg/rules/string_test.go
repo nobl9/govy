@@ -1074,7 +1074,12 @@ func TestStringBase64(t *testing.T) {
 }
 
 func BenchmarkStringBase64(b *testing.B) {
-	benchmarkStringEncodingRule(b, StringBase64(), []string{"", "Zg==", "Zm9v", "+/8=", "Zg"})
+	benchmarkStringEncodingRule(
+		b,
+		StringBase64(),
+		stringBase64ValidInputs,
+		stringBase64InvalidInputs,
+	)
 }
 
 // The padded URL-safe corpus applies the same complete Go tables after the
@@ -1170,7 +1175,12 @@ func TestStringBase64URL(t *testing.T) {
 }
 
 func BenchmarkStringBase64URL(b *testing.B) {
-	benchmarkStringEncodingRule(b, StringBase64URL(), []string{"", "Zg==", "Zm9v", "-_8=", "+/8="})
+	benchmarkStringEncodingRule(
+		b,
+		StringBase64URL(),
+		stringBase64URLValidInputs,
+		stringBase64URLInvalidInputs,
+	)
 }
 
 // The raw URL-safe tables contain all 17 unique Go pairs after rawURLRef,
@@ -1270,7 +1280,12 @@ func TestStringBase64RawURL(t *testing.T) {
 }
 
 func BenchmarkStringBase64RawURL(b *testing.B) {
-	benchmarkStringEncodingRule(b, StringBase64RawURL(), []string{"", "Zg", "Zm9v", "-_8", "Zg=="})
+	benchmarkStringEncodingRule(
+		b,
+		StringBase64RawURL(),
+		stringBase64RawURLValidInputs,
+		stringBase64RawURLInvalidInputs,
+	)
 }
 
 // Corpus sources: RFC 4648 section 10 and golang/go commit
@@ -1356,7 +1371,12 @@ func TestStringHexadecimal(t *testing.T) {
 }
 
 func BenchmarkStringHexadecimal(b *testing.B) {
-	benchmarkStringEncodingRule(b, StringHexadecimal(), []string{"0", "deadbeef", "0XABCDEF", "0x"})
+	benchmarkStringEncodingRule(
+		b,
+		StringHexadecimal(),
+		stringHexadecimalValidInputs,
+		stringHexadecimalInvalidInputs,
+	)
 }
 
 func runStringEncodingRuleTest(
@@ -1386,10 +1406,18 @@ func runStringEncodingRuleTest(
 	})
 }
 
-func benchmarkStringEncodingRule(b *testing.B, rule govy.Rule[string], inputs []string) {
+func benchmarkStringEncodingRule(
+	b *testing.B,
+	rule govy.Rule[string],
+	validInputs map[string]string,
+	invalidInputs map[string]string,
+) {
 	b.Helper()
 	for b.Loop() {
-		for _, in := range inputs {
+		for _, in := range validInputs {
+			_ = rule.Validate(in)
+		}
+		for _, in := range invalidInputs {
 			_ = rule.Validate(in)
 		}
 	}
