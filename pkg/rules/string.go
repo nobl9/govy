@@ -384,6 +384,24 @@ func StringUUID() govy.Rule[string] {
 		WithErrorCode(ErrorCodeStringUUID)
 }
 
+// StringMongoDBObjectID ensures the property's value is a 24-character
+// hexadecimal MongoDB ObjectID.
+func StringMongoDBObjectID() govy.Rule[string] {
+	tpl := messagetemplates.Get(messagetemplates.StringMongoDBObjectIDTemplate)
+
+	return govy.NewRule(func(s string) error {
+		if !isMongoDBObjectID(s) {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringMongoDBObjectID).
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+}
+
 // StringASCII ensures property's value contains only ASCII characters.
 func StringASCII() govy.Rule[string] {
 	return StringMatchRegexp(asciiRegexp()).WithErrorCode(ErrorCodeStringASCII)
@@ -1059,6 +1077,22 @@ func isStringSeparator(r rune) bool {
 	}
 	// Otherwise, all we can do for now is treat spaces as separators.
 	return unicode.IsSpace(r)
+}
+
+func isMongoDBObjectID(s string) bool {
+	if len(s) != 24 {
+		return false
+	}
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if '0' <= c && c <= '9' ||
+			'a' <= c && c <= 'f' ||
+			'A' <= c && c <= 'F' {
+			continue
+		}
+		return false
+	}
+	return true
 }
 
 var gitRefDisallowedStrings = map[rune]struct{}{
