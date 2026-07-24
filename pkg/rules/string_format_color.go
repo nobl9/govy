@@ -44,7 +44,7 @@ func StringColorLegacySyntaxOnly() StringColorOption {
 func StringHexColor() govy.Rule[string] {
 	tpl := messagetemplates.Get(messagetemplates.StringHexColorTemplate)
 	return govy.NewRule(func(s string) error {
-		if !hexColorRegexp().MatchString(s) {
+		if !validHexColor(s) {
 			return govy.NewRuleErrorTemplate(govy.TemplateVars{PropertyValue: s})
 		}
 		return nil
@@ -162,6 +162,27 @@ func stringDeviceCMYKDescription(config stringColorConfig) string {
 		return "string must be a CSS device-cmyk(...) color in legacy comma-separated syntax with in-range literal components"
 	}
 	return "string must be a CSS device-cmyk(...) color in modern or legacy syntax with in-range literal components"
+}
+
+func validHexColor(s string) bool {
+	switch len(s) {
+	case 4, 5, 7, 9:
+	default:
+		return false
+	}
+	if s[0] != '#' {
+		return false
+	}
+	for position := 1; position < len(s); position++ {
+		b := s[position]
+		if (b >= '0' && b <= '9') ||
+			(b >= 'a' && b <= 'f') ||
+			(b >= 'A' && b <= 'F') {
+			continue
+		}
+		return false
+	}
+	return true
 }
 
 func validRGBColor(s string, legacyOnly bool) bool {

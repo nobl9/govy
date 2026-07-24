@@ -366,6 +366,15 @@ func TestStringColorWPTCorpora(t *testing.T) {
 	})
 }
 
+func BenchmarkStringHexColorWPTCorpora(b *testing.B) {
+	benchmarkWPTColorRule(
+		b,
+		StringHexColor(),
+		wptHexSourceValidInputs,
+		wptHexSourceInvalidInputs,
+	)
+}
+
 func assertWPTColorContractExclusions(
 	t *testing.T,
 	rule govy.Rule[string],
@@ -415,6 +424,26 @@ func assertWPTColorInputs(
 			assert.NoError(t, err)
 		})
 	}
+}
+
+func benchmarkWPTColorRule(
+	b *testing.B,
+	rule govy.Rule[string],
+	inputGroups ...[]wptColorInput,
+) {
+	b.Helper()
+	validationCount := 0
+	for _, inputs := range inputGroups {
+		validationCount += len(inputs)
+	}
+	for b.Loop() {
+		for _, inputs := range inputGroups {
+			for _, input := range inputs {
+				_ = rule.Validate(input.value)
+			}
+		}
+	}
+	b.ReportMetric(float64(validationCount), "validations/op")
 }
 
 func enumerateWPTColorInputs(firstSourceOrdinal int, values ...string) []wptColorInput {

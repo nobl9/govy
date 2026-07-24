@@ -1,6 +1,8 @@
 package rules
 
 import (
+	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/nobl9/govy/internal/assert"
@@ -84,6 +86,37 @@ func TestStringHexColor(t *testing.T) {
 		errStringHexColor,
 		ErrorCodeStringHexColor,
 	)
+}
+
+func TestHexColorScannerMatchesPreviousRegexp(t *testing.T) {
+	t.Parallel()
+	previousRegexp := regexp.MustCompile(
+		`^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$`,
+	)
+	for _, payloadLength := range []int{3, 4} {
+		assertAllShortHexColorsMatch(t, previousRegexp, payloadLength)
+	}
+	for _, payloadLength := range []int{3, 4, 6, 8} {
+		assertEveryHexColorByteMatches(t, previousRegexp, payloadLength)
+	}
+	for length := range 12 {
+		assertHexColorMatch(t, previousRegexp, strings.Repeat("0", length))
+		assertHexColorMatch(t, previousRegexp, "#"+strings.Repeat("0", length))
+	}
+	for _, input := range []string{
+		"#ABC",
+		"#aBcD",
+		"#AaBbCc",
+		"#aAbBcCdD",
+		"#é00",
+		"#ａｂｃ",
+		"#１２３",
+		"#αβγ",
+		"#🙂00",
+		"#\u00a0ff",
+	} {
+		assertHexColorMatch(t, previousRegexp, input)
+	}
 }
 
 func BenchmarkStringHexColor(b *testing.B) {
@@ -491,6 +524,48 @@ func benchmarkStringFormatColorRule(
 		for _, tc := range testCases {
 			_ = tc.rule.Validate(tc.in)
 		}
+	}
+	b.ReportMetric(float64(testCaseCount), "validations/op")
+}
+
+func assertAllShortHexColorsMatch(t *testing.T, previousRegexp *regexp.Regexp, payloadLength int) {
+	t.Helper()
+	const hexDigits = "0123456789abcdefABCDEF"
+	input := make([]byte, payloadLength+1)
+	input[0] = '#'
+	var visit func(position int)
+	visit = func(position int) {
+		if position == len(input) {
+			assertHexColorMatch(t, previousRegexp, string(input))
+			return
+		}
+		for index := range len(hexDigits) {
+			input[position] = hexDigits[index]
+			visit(position + 1)
+		}
+	}
+	visit(1)
+}
+
+func assertEveryHexColorByteMatches(t *testing.T, previousRegexp *regexp.Regexp, payloadLength int) {
+	t.Helper()
+	input := []byte("#" + strings.Repeat("0", payloadLength))
+	for position := range input {
+		original := input[position]
+		for value := range 256 {
+			input[position] = byte(value)
+			assertHexColorMatch(t, previousRegexp, string(input))
+		}
+		input[position] = original
+	}
+}
+
+func assertHexColorMatch(t *testing.T, previousRegexp *regexp.Regexp, input string) {
+	t.Helper()
+	expected := previousRegexp.MatchString(input)
+	actual := validHexColor(input)
+	if actual != expected {
+		t.Fatalf("hex color scanner result for %q: got %t, want %t", input, actual, expected)
 	}
 }
 
