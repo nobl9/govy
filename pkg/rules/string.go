@@ -430,7 +430,7 @@ func StringHexadecimal() govy.Rule[string] {
 	tpl := messagetemplates.Get(messagetemplates.StringHexadecimalTemplate)
 
 	return govy.NewRule(func(s string) error {
-		if !hexadecimalRegexp().MatchString(s) {
+		if !isHexadecimal(s) {
 			return govy.NewRuleErrorTemplate(govy.TemplateVars{
 				PropertyValue: s,
 			})
@@ -445,6 +445,25 @@ func StringHexadecimal() govy.Rule[string] {
 func decodesBase64(encoding *base64.Encoding, s string) bool {
 	_, err := encoding.DecodeString(s)
 	return err == nil
+}
+
+func isHexadecimal(s string) bool {
+	if len(s) >= 2 && s[0] == '0' && (s[1] == 'x' || s[1] == 'X') {
+		s = s[2:]
+	}
+	if len(s) == 0 {
+		return false
+	}
+	for i := range len(s) {
+		c := s[i]
+		if ('0' <= c && c <= '9') ||
+			('a' <= c && c <= 'f') ||
+			('A' <= c && c <= 'F') {
+			continue
+		}
+		return false
+	}
+	return true
 }
 
 // StringContains ensures the property's value contains all the provided substrings.

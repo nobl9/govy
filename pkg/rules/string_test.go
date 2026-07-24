@@ -1370,6 +1370,26 @@ func TestStringHexadecimal(t *testing.T) {
 	)
 }
 
+func Test_isHexadecimalMatchesRegexp(t *testing.T) {
+	reference := regexp.MustCompile(`^(?:0[xX])?[0-9a-fA-F]+$`)
+	check := func(input string) {
+		expected := reference.MatchString(input)
+		if actual := isHexadecimal(input); actual != expected {
+			t.Fatalf("isHexadecimal(%q) = %t, expected %t", input, actual, expected)
+		}
+	}
+
+	for _, prefix := range []string{"", "0x", "0X"} {
+		check(prefix)
+		for first := range 256 {
+			check(prefix + string([]byte{byte(first)}))
+			for second := range 256 {
+				check(prefix + string([]byte{byte(first), byte(second)}))
+			}
+		}
+	}
+}
+
 func BenchmarkStringHexadecimal(b *testing.B) {
 	benchmarkStringEncodingRule(
 		b,
@@ -1413,14 +1433,26 @@ func benchmarkStringEncodingRule(
 	invalidInputs map[string]string,
 ) {
 	b.Helper()
+	b.Run("valid", func(b *testing.B) {
+		benchmarkStringEncodingInputs(b, rule, validInputs)
+	})
+	b.Run("invalid", func(b *testing.B) {
+		benchmarkStringEncodingInputs(b, rule, invalidInputs)
+	})
+}
+
+func benchmarkStringEncodingInputs(
+	b *testing.B,
+	rule govy.Rule[string],
+	inputs map[string]string,
+) {
+	b.Helper()
 	for b.Loop() {
-		for _, in := range validInputs {
-			_ = rule.Validate(in)
-		}
-		for _, in := range invalidInputs {
+		for _, in := range inputs {
 			_ = rule.Validate(in)
 		}
 	}
+	b.ReportMetric(float64(len(inputs)), "validations/op")
 }
 
 var stringContainsTestCases = []*struct {
