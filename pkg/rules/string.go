@@ -18,8 +18,6 @@ import (
 	"github.com/nobl9/govy/pkg/govy"
 )
 
-// cspell:ignore ITIN
-
 // StringNotEmpty ensures the property's value is not empty.
 // The string is considered empty if it contains only whitespace characters.
 func StringNotEmpty() govy.Rule[string] {
@@ -295,26 +293,6 @@ func StringEIN() govy.Rule[string] {
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
 }
 
-// StringSSN ensures the property's value is a United States Social Security Number (SSN)
-// in NNN-NN-NNNN format.
-// It rejects areas 000, 666, and 900-999, groups 00, and serials 0000.
-// Rejecting areas 900-999 excludes every Individual Taxpayer Identification Number (ITIN).
-func StringSSN() govy.Rule[string] {
-	tpl := messagetemplates.Get(messagetemplates.StringSSNTemplate)
-
-	return govy.NewRule(func(s string) error {
-		if !isValidSSN(s) {
-			return govy.NewRuleErrorTemplate(govy.TemplateVars{
-				PropertyValue: s,
-			})
-		}
-		return nil
-	}).
-		WithErrorCode(ErrorCodeStringSSN).
-		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
-}
-
 func isValidEIN(s string) bool {
 	if len(s) != 10 ||
 		s[2] != '-' ||
@@ -349,6 +327,26 @@ func isValidEINPrefix(prefix string) bool {
 	}
 }
 
+// StringSSN ensures the property's value is a United States Social Security Number (SSN)
+// in NNN-NN-NNNN format.
+// It rejects areas 000, 666, and 900-999, groups 00, and serials 0000.
+// Rejecting areas 900-999 excludes every Individual Taxpayer Identification Number (ITIN).
+func StringSSN() govy.Rule[string] {
+	tpl := messagetemplates.Get(messagetemplates.StringSSNTemplate)
+
+	return govy.NewRule(func(s string) error {
+		if !isValidSSN(s) {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringSSN).
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+}
+
 func isValidSSN(s string) bool {
 	if len(s) != 11 ||
 		s[3] != '-' ||
@@ -369,10 +367,6 @@ func isValidSSN(s string) bool {
 		s[0] != '9' &&
 		(s[4] != '0' || s[5] != '0') &&
 		(s[7] != '0' || s[8] != '0' || s[9] != '0' || s[10] != '0')
-}
-
-func isASCIIDigit(b byte) bool {
-	return b >= '0' && b <= '9'
 }
 
 // StringUUID ensures property's value is a valid UUID string as defined by [RFC 4122].
@@ -1131,4 +1125,8 @@ func handleFilePathError(err error) error {
 		return errFilePathNoPerm
 	}
 	return err
+}
+
+func isASCIIDigit(b byte) bool {
+	return b >= '0' && b <= '9'
 }
