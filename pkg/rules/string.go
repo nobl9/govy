@@ -434,6 +434,32 @@ func StringSHA512() govy.Rule[string] {
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
 }
 
+// StringJWT ensures the property's value is a JSON Web Token (JWT) represented
+// using [JWS Compact Serialization].
+// It validates the three base64url-encoded segments, JSON object header,
+// JSON object claims set, and required `alg` header.
+// JWTs represented using [JWE Compact Serialization] are not accepted.
+// It does not verify the signature, algorithm trust, or claim values.
+//
+// [JWE Compact Serialization]: https://datatracker.ietf.org/doc/html/rfc7516#section-3.1
+// [JWS Compact Serialization]: https://datatracker.ietf.org/doc/html/rfc7515#section-3.1
+func StringJWT() govy.Rule[string] {
+	tpl := messagetemplates.Get(messagetemplates.StringJWTTemplate)
+
+	return govy.NewRule(func(s string) error {
+		if err := validateJWTUsingJWS(s); err != nil {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+				Error:         err.Error(),
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringJWT).
+		WithMessageTemplate(tpl).
+		WithDescription("string must be a JSON Web Token (JWT) using JWS Compact Serialization")
+}
+
 // StringContains ensures the property's value contains all the provided substrings.
 func StringContains(substrings ...string) govy.Rule[string] {
 	tpl := messagetemplates.Get(messagetemplates.StringContainsTemplate)
