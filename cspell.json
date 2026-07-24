@@ -71,6 +71,7 @@
     "vulns",
     "Implicits",
     "mygovy",
-    "unpadded"
+    "unpadded",
+    "JWSB64"
   ]
 }
