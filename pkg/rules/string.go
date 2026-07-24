@@ -371,7 +371,7 @@ func StringMD5() govy.Rule[string] {
 	tpl := messagetemplates.Get(messagetemplates.StringMD5Template)
 
 	return govy.NewRule(func(s string) error {
-		if !md5Regexp().MatchString(s) {
+		if !isLowerHexadecimal(s, 32) {
 			return govy.NewRuleErrorTemplate(govy.TemplateVars{
 				PropertyValue: s,
 			})
@@ -388,7 +388,7 @@ func StringSHA256() govy.Rule[string] {
 	tpl := messagetemplates.Get(messagetemplates.StringSHA256Template)
 
 	return govy.NewRule(func(s string) error {
-		if !sha256Regexp().MatchString(s) {
+		if !isLowerHexadecimal(s, 64) {
 			return govy.NewRuleErrorTemplate(govy.TemplateVars{
 				PropertyValue: s,
 			})
@@ -405,7 +405,7 @@ func StringSHA384() govy.Rule[string] {
 	tpl := messagetemplates.Get(messagetemplates.StringSHA384Template)
 
 	return govy.NewRule(func(s string) error {
-		if !sha384Regexp().MatchString(s) {
+		if !isLowerHexadecimal(s, 96) {
 			return govy.NewRuleErrorTemplate(govy.TemplateVars{
 				PropertyValue: s,
 			})
@@ -422,7 +422,7 @@ func StringSHA512() govy.Rule[string] {
 	tpl := messagetemplates.Get(messagetemplates.StringSHA512Template)
 
 	return govy.NewRule(func(s string) error {
-		if !sha512Regexp().MatchString(s) {
+		if !isLowerHexadecimal(s, 128) {
 			return govy.NewRuleErrorTemplate(govy.TemplateVars{
 				PropertyValue: s,
 			})
@@ -916,6 +916,19 @@ func StringKubernetesQualifiedName() govy.RuleSet[string] {
 	).
 		Cascade(govy.CascadeModeStop).
 		WithErrorCode(ErrorCodeStringKubernetesQualifiedName)
+}
+
+func isLowerHexadecimal(s string, length int) bool {
+	if len(s) != length {
+		return false
+	}
+	for i := range len(s) {
+		c := s[i]
+		if (c < '0' || c > '9') && (c < 'a' || c > 'f') {
+			return false
+		}
+	}
+	return true
 }
 
 func stringKubernetesQualifiedNameRule() govy.Rule[string] {

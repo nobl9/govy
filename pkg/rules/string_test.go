@@ -1224,6 +1224,89 @@ func TestStringSHANISTDigestOutputs(t *testing.T) {
 	}
 }
 
+func TestStringHashDigestRulesMatchLowercaseHexadecimalLanguage(t *testing.T) {
+	tests := []struct {
+		name             string
+		digestLength     int
+		rule             govy.Rule[string]
+		validTestCases   map[string]string
+		invalidTestCases map[string]string
+	}{
+		{
+			name:             "MD5",
+			digestLength:     32,
+			rule:             StringMD5(),
+			validTestCases:   validMD5TestCases,
+			invalidTestCases: invalidMD5TestCases,
+		},
+		{
+			name:             "SHA-256",
+			digestLength:     64,
+			rule:             StringSHA256(),
+			validTestCases:   validSHA256TestCases,
+			invalidTestCases: invalidSHA256TestCases,
+		},
+		{
+			name:             "SHA-384",
+			digestLength:     96,
+			rule:             StringSHA384(),
+			validTestCases:   validSHA384TestCases,
+			invalidTestCases: invalidSHA384TestCases,
+		},
+		{
+			name:             "SHA-512",
+			digestLength:     128,
+			rule:             StringSHA512(),
+			validTestCases:   validSHA512TestCases,
+			invalidTestCases: invalidSHA512TestCases,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			oracle := regexp.MustCompile(fmt.Sprintf(`^[0-9a-f]{%d}$`, tc.digestLength))
+			assertMatchesOracle := func(name, in string) {
+				t.Helper()
+				expected := oracle.MatchString(in)
+				actual := tc.rule.Validate(in) == nil
+				if actual != expected {
+					t.Fatalf("%s: validation result is %t; want %t for %q", name, actual, expected, in)
+				}
+			}
+
+			for name, in := range tc.validTestCases {
+				assertMatchesOracle("valid/"+name, in)
+			}
+			for name, in := range tc.invalidTestCases {
+				assertMatchesOracle("invalid/"+name, in)
+			}
+
+			for _, length := range []int{
+				0,
+				1,
+				tc.digestLength - 1,
+				tc.digestLength,
+				tc.digestLength + 1,
+				2 * tc.digestLength,
+			} {
+				assertMatchesOracle(fmt.Sprintf("length/%d", length), strings.Repeat("0", length))
+			}
+
+			digest := []byte(strings.Repeat("0", tc.digestLength))
+			for position := range len(digest) {
+				for value := range 256 {
+					digest[position] = byte(value)
+					assertMatchesOracle(
+						fmt.Sprintf("position/%d/byte/%d", position, value),
+						string(digest),
+					)
+				}
+				digest[position] = '0'
+			}
+		})
+	}
+}
+
 func benchmarkStringHashDigestRule(
 	b *testing.B,
 	rule govy.Rule[string],
