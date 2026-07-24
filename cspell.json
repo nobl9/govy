@@ -28,6 +28,7 @@
     "CODEOWNERS",
     "bin/**",
     "docs/assets/**",
+    "pkg/rules/string_test.go",
     "context7.json"
   ],
   "words": [
@@ -36,13 +37,14 @@
     "Elts",
     "Fset",
     "Messagef",
-    "NDEKTSV",
-    "RRFFQ",
     "Skłodowska",
     "UUIDRFC",
+    "afbf",
     "atoi",
     "cidrv",
     "devbox",
+    "edebfe",
+    "eefb",
     "endef",
     "errorf",
     "gobin",
@@ -61,10 +63,8 @@
     "luhn",
     "mypkg",
     "nobl",
-    "ndektsv",
     "pkgs",
     "println",
-    "rrffq",
     "rtmp",
     "sloctl",
     "strconv",
@@ -74,8 +74,10 @@
     "uuidv",
     "vuln",
     "vulns",
-    "xxxa",
     "Implicits",
-    "mygovy"
+    "mygovy",
+    "unpadded",
+    "JWSB64",
+    "ITIN"
   ]
 }

@@ -461,6 +461,24 @@ func isCrockfordBase32Byte(b byte) bool {
 		lower != 'i' && lower != 'l' && lower != 'o' && lower != 'u'
 }
 
+// StringMongoDBObjectID ensures the property's value is a 24-character
+// hexadecimal MongoDB ObjectID.
+func StringMongoDBObjectID() govy.Rule[string] {
+	tpl := messagetemplates.Get(messagetemplates.StringMongoDBObjectIDTemplate)
+
+	return govy.NewRule(func(s string) error {
+		if !isMongoDBObjectID(s) {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringMongoDBObjectID).
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+}
+
 // StringASCII ensures property's value contains only ASCII characters.
 func StringASCII() govy.Rule[string] {
 	return StringMatchRegexp(asciiRegexp()).WithErrorCode(ErrorCodeStringASCII)
@@ -535,6 +553,100 @@ func StringCVE() govy.Rule[string] {
 		WithErrorCode(ErrorCodeStringCVE).
 		WithMessageTemplate(tpl).
 		WithDescription("string must be a valid CVE ID in CVE-YEAR-SEQUENCE format")
+}
+
+// StringMD5 ensures the property's value is a lowercase hexadecimal MD5 digest.
+func StringMD5() govy.Rule[string] {
+	tpl := messagetemplates.Get(messagetemplates.StringMD5Template)
+
+	return govy.NewRule(func(s string) error {
+		if !isLowerHexadecimal(s, 32) {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringMD5).
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+}
+
+// StringSHA256 ensures the property's value is a lowercase hexadecimal SHA-256 digest.
+func StringSHA256() govy.Rule[string] {
+	tpl := messagetemplates.Get(messagetemplates.StringSHA256Template)
+
+	return govy.NewRule(func(s string) error {
+		if !isLowerHexadecimal(s, 64) {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringSHA256).
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+}
+
+// StringSHA384 ensures the property's value is a lowercase hexadecimal SHA-384 digest.
+func StringSHA384() govy.Rule[string] {
+	tpl := messagetemplates.Get(messagetemplates.StringSHA384Template)
+
+	return govy.NewRule(func(s string) error {
+		if !isLowerHexadecimal(s, 96) {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringSHA384).
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+}
+
+// StringSHA512 ensures the property's value is a lowercase hexadecimal SHA-512 digest.
+func StringSHA512() govy.Rule[string] {
+	tpl := messagetemplates.Get(messagetemplates.StringSHA512Template)
+
+	return govy.NewRule(func(s string) error {
+		if !isLowerHexadecimal(s, 128) {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringSHA512).
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+}
+
+// StringJWT ensures the property's value is a JSON Web Token (JWT) represented
+// using [JWS Compact Serialization].
+// It validates the three base64url-encoded segments, JSON object header,
+// JSON object claims set, and required `alg` header.
+// JWTs represented using [JWE Compact Serialization] are not accepted.
+// It does not verify the signature, algorithm trust, or claim values.
+//
+// [JWE Compact Serialization]: https://datatracker.ietf.org/doc/html/rfc7516#section-3.1
+// [JWS Compact Serialization]: https://datatracker.ietf.org/doc/html/rfc7515#section-3.1
+func StringJWT() govy.Rule[string] {
+	tpl := messagetemplates.Get(messagetemplates.StringJWTTemplate)
+
+	return govy.NewRule(func(s string) error {
+		if err := validateJWTUsingJWS(s); err != nil {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+				Error:         err.Error(),
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringJWT).
+		WithMessageTemplate(tpl).
+		WithDescription("string must be a JSON Web Token (JWT) using JWS Compact Serialization")
 }
 
 // StringContains ensures the property's value contains all the provided substrings.
@@ -1112,6 +1224,22 @@ func isStringSeparator(r rune) bool {
 	return unicode.IsSpace(r)
 }
 
+func isMongoDBObjectID(s string) bool {
+	if len(s) != 24 {
+		return false
+	}
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if '0' <= c && c <= '9' ||
+			'a' <= c && c <= 'f' ||
+			'A' <= c && c <= 'F' {
+			continue
+		}
+		return false
+	}
+	return true
+}
+
 var gitRefDisallowedStrings = map[rune]struct{}{
 	'\\': {}, '?': {}, '*': {}, '[': {}, ' ': {}, '~': {}, '^': {}, ':': {}, '\t': {}, '\n': {},
 }
@@ -1176,4 +1304,17 @@ func handleFilePathError(err error) error {
 		return errFilePathNoPerm
 	}
 	return err
+}
+
+func isLowerHexadecimal(s string, length int) bool {
+	if len(s) != length {
+		return false
+	}
+	for i := range len(s) {
+		c := s[i]
+		if (c < '0' || c > '9') && (c < 'a' || c > 'f') {
+			return false
+		}
+	}
+	return true
 }
