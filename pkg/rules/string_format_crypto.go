@@ -1,10 +1,7 @@
 package rules
 
 import (
-	"bytes"
 	"crypto/sha256"
-	"math/big"
-	"strings"
 
 	"golang.org/x/crypto/sha3"
 
@@ -18,6 +15,11 @@ const (
 
 	btcP2PKHVersion byte = 0x00
 	btcP2SHVersion  byte = 0x05
+)
+
+var (
+	bitcoinBase58Values = newASCIIValueTable(bitcoinBase58Alphabet)
+	bech32CharsetValues = newASCIIValueTable(bech32Charset)
 )
 
 // StringBTCAddress ensures the property's value is a mainnet legacy Bitcoin
@@ -89,7 +91,7 @@ func isBTCAddress(s string) bool {
 	}
 
 	decoded, ok := decodeBitcoinBase58(s)
-	if !ok || len(decoded) != 25 {
+	if !ok {
 		return false
 	}
 	if decoded[0] != btcP2PKHVersion && decoded[0] != btcP2SHVersion {
@@ -97,41 +99,58 @@ func isBTCAddress(s string) bool {
 	}
 
 	checksum := bitcoinChecksum(decoded[:21])
-	return bytes.Equal(checksum, decoded[21:])
+	return checksum[0] == decoded[21] &&
+		checksum[1] == decoded[22] &&
+		checksum[2] == decoded[23] &&
+		checksum[3] == decoded[24]
 }
 
 func isETHAddress(s string) bool {
-	if !ethAddressRegexp().MatchString(s) {
+	if len(s) != 42 || s[0] != '0' || s[1] != 'x' {
 		return false
 	}
 
 	payload := s[len("0x"):]
-	if !hasMixedCase(payload) {
+	var lowercase [40]byte
+	var hasLower, hasUpper bool
+	for i := range len(payload) {
+		switch b := payload[i]; {
+		case b >= '0' && b <= '9':
+			lowercase[i] = b
+		case b >= 'a' && b <= 'f':
+			lowercase[i] = b
+			hasLower = true
+		case b >= 'A' && b <= 'F':
+			lowercase[i] = b + ('a' - 'A')
+			hasUpper = true
+		default:
+			return false
+		}
+	}
+	if !hasLower || !hasUpper {
 		return true
 	}
-	return hasValidETHChecksum(payload)
+	return hasValidETHChecksum(payload, lowercase)
 }
 
-func hasValidETHChecksum(payload string) bool {
-	hash := keccak256([]byte(strings.ToLower(payload)))
+func hasValidETHChecksum(payload string, lowercase [40]byte) bool {
+	h := sha3.NewLegacyKeccak256()
+	_, _ = h.Write(lowercase[:])
+	var hash [32]byte
+	digest := h.Sum(hash[:0])
+
 	for i := range len(payload) {
 		b := payload[i]
 		if b >= '0' && b <= '9' {
 			continue
 		}
 
-		uppercase := ethChecksumNibble(hash, i) >= 8
+		uppercase := ethChecksumNibble(digest, i) >= 8
 		if uppercase != (b >= 'A' && b <= 'F') {
 			return false
 		}
 	}
 	return true
-}
-
-func keccak256(data []byte) []byte {
-	h := sha3.NewLegacyKeccak256()
-	_, _ = h.Write(data)
-	return h.Sum(nil)
 }
 
 func ethChecksumNibble(hash []byte, index int) byte {
@@ -141,124 +160,129 @@ func ethChecksumNibble(hash []byte, index int) byte {
 	return hash[index/2] & 0x0f
 }
 
-func decodeBitcoinBase58(s string) ([]byte, bool) {
-	var decoded big.Int
-	base := big.NewInt(58)
+func decodeBitcoinBase58(s string) ([25]byte, bool) {
+	var decoded [25]byte
 	for i := range len(s) {
-		digit := strings.IndexByte(bitcoinBase58Alphabet, s[i])
-		if digit < 0 {
-			return nil, false
+		if s[i] >= byte(len(bitcoinBase58Values)) {
+			return decoded, false
 		}
 
-		decoded.Mul(&decoded, base)
-		decoded.Add(&decoded, big.NewInt(int64(digit)))
+		value := bitcoinBase58Values[s[i]]
+		if value == 0 {
+			return decoded, false
+		}
+
+		carry := uint32(value - 1)
+		for j := len(decoded) - 1; j >= 0; j-- {
+			carry += uint32(decoded[j]) * 58
+			decoded[j] = byte(carry & 0xff) //nolint:gosec // The mask bounds the conversion.
+			carry >>= 8
+		}
+		if carry != 0 {
+			return decoded, false
+		}
 	}
 
 	leadingZeroes := 0
 	for leadingZeroes < len(s) && s[leadingZeroes] == '1' {
 		leadingZeroes++
 	}
-	return append(make([]byte, leadingZeroes), decoded.Bytes()...), true
+	firstNonZero := 0
+	for firstNonZero < len(decoded) && decoded[firstNonZero] == 0 {
+		firstNonZero++
+	}
+	if leadingZeroes+len(decoded)-firstNonZero != len(decoded) {
+		return decoded, false
+	}
+	return decoded, true
 }
 
-func bitcoinChecksum(payload []byte) []byte {
+func bitcoinChecksum(payload []byte) [4]byte {
 	first := sha256.Sum256(payload)
 	second := sha256.Sum256(first[:])
-	return second[:4]
+	return [4]byte{second[0], second[1], second[2], second[3]}
 }
 
 func isBTCBech32Address(s string) bool {
-	if !btcBech32AddressRegexp().MatchString(s) || hasMixedCase(s) {
+	if len(s) != 42 && len(s) != 62 {
+		return false
+	}
+	if s[0]|('a'-'A') != 'b' || s[1]|('a'-'A') != 'c' || s[2] != '1' {
+		return false
+	}
+	if s[3]|('a'-'A') != 'q' {
 		return false
 	}
 
-	s = strings.ToLower(s)
-	separator := strings.LastIndexByte(s, '1')
-	if separator != len("bc") {
+	hasLower := s[0] == 'b' || s[1] == 'c'
+	hasUpper := s[0] == 'B' || s[1] == 'C'
+	if hasLower && hasUpper {
 		return false
 	}
 
-	data := make([]byte, 0, len(s)-separator-1)
-	for i := separator + 1; i < len(s); i++ {
-		value := strings.IndexByte(bech32Charset, s[i])
-		if value < 0 {
+	checksum := uint32(1)
+	checksum = bech32PolymodStep(checksum, 'b'>>5)
+	checksum = bech32PolymodStep(checksum, 'c'>>5)
+	checksum = bech32PolymodStep(checksum, 0)
+	checksum = bech32PolymodStep(checksum, 'b'&31)
+	checksum = bech32PolymodStep(checksum, 'c'&31)
+
+	for i := len("bc1"); i < len(s); i++ {
+		b := s[i]
+		switch {
+		case b >= 'a' && b <= 'z':
+			hasLower = true
+		case b >= 'A' && b <= 'Z':
+			hasUpper = true
+			b += 'a' - 'A'
+		}
+		if hasLower && hasUpper {
 			return false
 		}
-		data = append(data, byteFromInt(value))
-	}
-	if !bech32VerifyChecksum("bc", data) || len(data) <= 6 {
-		return false
-	}
+		if b >= byte(len(bech32CharsetValues)) {
+			return false
+		}
 
-	payload := data[:len(data)-6]
-	if len(payload) == 0 || payload[0] != 0 {
-		return false
+		encoded := bech32CharsetValues[b]
+		if encoded == 0 {
+			return false
+		}
+		value := encoded - 1
+		if len(s) == 62 && i == len(s)-7 && value&0x0f != 0 {
+			return false
+		}
+		checksum = bech32PolymodStep(checksum, value)
 	}
-	program, ok := convertBits(payload[1:], 5, 8, false)
-	return ok && (len(program) == 20 || len(program) == 32)
+	return checksum == 1
 }
 
-func hasMixedCase(s string) bool {
-	return strings.ToLower(s) != s && strings.ToUpper(s) != s
+func bech32PolymodStep(checksum uint32, value byte) uint32 {
+	top := checksum >> 25
+	checksum = (checksum&0x1ffffff)<<5 ^ uint32(value)
+	if top&1 != 0 {
+		checksum ^= 0x3b6a57b2
+	}
+	if top&2 != 0 {
+		checksum ^= 0x26508e6d
+	}
+	if top&4 != 0 {
+		checksum ^= 0x1ea119fa
+	}
+	if top&8 != 0 {
+		checksum ^= 0x3d4233dd
+	}
+	if top&16 != 0 {
+		checksum ^= 0x2a1462b3
+	}
+	return checksum
 }
 
-func bech32VerifyChecksum(hrp string, data []byte) bool {
-	values := make([]byte, 0, len(hrp)*2+1+len(data))
-	for i := range len(hrp) {
-		values = append(values, hrp[i]>>5)
+func newASCIIValueTable(alphabet string) [128]byte {
+	var values [128]byte
+	for i := range len(alphabet) {
+		values[alphabet[i]] = byteFromInt(i + 1)
 	}
-	values = append(values, 0)
-	for i := range len(hrp) {
-		values = append(values, hrp[i]&31)
-	}
-	values = append(values, data...)
-	return bech32Polymod(values) == 1
-}
-
-func bech32Polymod(values []byte) uint32 {
-	generators := [...]uint32{0x3b6a57b2, 0x26508e6d, 0x1ea119fa, 0x3d4233dd, 0x2a1462b3}
-	chk := uint32(1)
-	for _, value := range values {
-		top := chk >> 25
-		chk = (chk&0x1ffffff)<<5 ^ uint32(value)
-		for i, generator := range generators {
-			if (top>>i)&1 == 1 {
-				chk ^= generator
-			}
-		}
-	}
-	return chk
-}
-
-func convertBits(data []byte, fromBits, toBits uint, pad bool) ([]byte, bool) {
-	acc := 0
-	bits := uint(0)
-	maxValue := (1 << toBits) - 1
-	maxAccumulator := (1 << (fromBits + toBits - 1)) - 1
-	converted := make([]byte, 0, len(data)*int(fromBits)/int(toBits))
-
-	for _, value := range data {
-		if uint(value)>>fromBits != 0 {
-			return nil, false
-		}
-		acc = ((acc << fromBits) | int(value)) & maxAccumulator
-		bits += fromBits
-		for bits >= toBits {
-			bits -= toBits
-			converted = append(converted, byteFromInt((acc>>bits)&maxValue))
-		}
-	}
-
-	if pad {
-		if bits > 0 {
-			converted = append(converted, byteFromInt((acc<<(toBits-bits))&maxValue))
-		}
-		return converted, true
-	}
-	if bits >= fromBits || ((acc<<(toBits-bits))&maxValue) != 0 {
-		return nil, false
-	}
-	return converted, true
+	return values
 }
 
 func byteFromInt(n int) byte {
