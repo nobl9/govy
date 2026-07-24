@@ -1009,19 +1009,19 @@ var stringJWTTestCases = map[string]struct {
 		in: "eyJhbGciOiJub25lIn0.e30.",
 	},
 	"empty token": {
-		expectedErrorDetails: "expected 3 JWT segments",
+		expectedErrorDetails: "expected exactly 3 JWT segments",
 	},
 	"one segment": {
 		in:                   "not-a-jwt",
-		expectedErrorDetails: "expected 3 JWT segments",
+		expectedErrorDetails: "expected exactly 3 JWT segments",
 	},
 	"two segments": {
 		in:                   "eyJhbGciOiJIUzI1NiJ9.e30",
-		expectedErrorDetails: "expected 3 JWT segments",
+		expectedErrorDetails: "expected exactly 3 JWT segments",
 	},
 	"four segments": {
 		in:                   "eyJhbGciOiJIUzI1NiJ9.e30.c2ln.ZXh0cmE",
-		expectedErrorDetails: "expected 3 JWT segments",
+		expectedErrorDetails: "expected exactly 3 JWT segments",
 	},
 	"RFC 7519 encrypted JWE": {
 		in: "eyJhbGciOiJSU0ExXzUiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0." +
@@ -1035,7 +1035,7 @@ var stringJWTTestCases = map[string]struct {
 			"MKOle7UQrG6nSxTLX6Mqwt0orbHvAKeWnDYvpIAeZ72deHxz3roJDXQyhxx0wKaM" +
 			"HDjUEOKIwrtkHthpqEanSBNYHZgmNOV7sln1Eu9g3J8." +
 			"fiK51VwhsxJ-siBMR-YFiA",
-		expectedErrorDetails: "expected 3 JWT segments",
+		expectedErrorDetails: "expected exactly 3 JWT segments",
 	},
 	"RFC 7519 nested JWT": {
 		in: "eyJhbGciOiJSU0ExXzUiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2IiwiY3R5IjoiSldU" +
@@ -1058,7 +1058,7 @@ var stringJWTTestCases = map[string]struct {
 			"zBuo2WlgZ6hYi9-e3w29bR0C2-pp3jbqxEDw3iWaf2dc5b-LnR0FEYXvI_tYk5rd" +
 			"_J9N0mg0tQ6RbpxNEMNoA9QWk5lgdPvbh9BaO195abQ." +
 			"AVO9iT5AV4CzvDJCdhSFlQ",
-		expectedErrorDetails: "expected 3 JWT segments",
+		expectedErrorDetails: "expected exactly 3 JWT segments",
 	},
 	"empty header segment": {
 		in:                   ".e30.c2ln",

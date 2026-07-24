@@ -1,6 +1,7 @@
 package rules
 
 import (
+	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -369,15 +370,19 @@ func StringCVE() govy.Rule[string] {
 }
 
 // StringJWT ensures the property's value is a JSON Web Token (JWT) represented
-// using JWS Compact Serialization.
+// using [JWS Compact Serialization].
 // It validates the three base64url-encoded segments, JSON object header,
 // JSON object claims set, and required `alg` header.
+// JWTs represented using [JWE Compact Serialization] are not accepted.
 // It does not verify the signature, algorithm trust, or claim values.
+//
+// [JWE Compact Serialization]: https://datatracker.ietf.org/doc/html/rfc7516#section-3.1
+// [JWS Compact Serialization]: https://datatracker.ietf.org/doc/html/rfc7515#section-3.1
 func StringJWT() govy.Rule[string] {
 	tpl := messagetemplates.Get(messagetemplates.StringJWTTemplate)
 
 	return govy.NewRule(func(s string) error {
-		if err := validateJWT(s); err != nil {
+		if err := validateJWTUsingJWS(s); err != nil {
 			return govy.NewRuleErrorTemplate(govy.TemplateVars{
 				PropertyValue: s,
 				Error:         err.Error(),
@@ -390,51 +395,32 @@ func StringJWT() govy.Rule[string] {
 		WithDescription("string must be a JSON Web Token (JWT) using JWS Compact Serialization")
 }
 
-func validateJWT(s string) error {
+const (
+	jwtHeaderB64  = "b64"
+	jwtHeaderCrit = "crit"
+	jwtHeaderAlg  = "alg"
+)
+
+func validateJWTUsingJWS(s string) error {
 	parts := strings.Split(s, ".")
 	if len(parts) != 3 {
-		return fmt.Errorf("expected 3 JWT segments")
+		return fmt.Errorf("expected exactly 3 JWT segments")
 	}
 
-	header, err := decodeJWTJSONObject(parts[0], "JWT header")
+	headers, err := decodeJWTJSONObject(parts[0], "JWT header")
 	if err != nil {
 		return err
 	}
-	if _, err = decodeJWTJSONObject(parts[1], "JWT claims set"); err != nil {
-		return err
-	}
 
-	alg, err := getJWTAlgorithm(header)
+	alg, err := getJWTAlgorithm(headers)
 	if err != nil {
 		return err
 	}
-	if rawB64, ok := header["b64"]; ok {
-		var encodePayload *bool
-		if err := json.Unmarshal(rawB64, &encodePayload); err != nil || encodePayload == nil {
-			return fmt.Errorf(`JWT header "b64" must be a boolean`)
-		}
-
-		rawCritical, ok := header["crit"]
-		var critical []any
-		if !ok || json.Unmarshal(rawCritical, &critical) != nil {
-			return fmt.Errorf(`JWT header "crit" must be an array containing "b64" when "b64" is present`)
-		}
-		hasB64 := false
-		for _, parameter := range critical {
-			name, isString := parameter.(string)
-			if !isString {
-				return fmt.Errorf(`JWT header "crit" must be an array containing "b64" when "b64" is present`)
-			}
-			if name == "b64" {
-				hasB64 = true
-			}
-		}
-		if !hasB64 {
-			return fmt.Errorf(`JWT header "crit" must be an array containing "b64" when "b64" is present`)
-		}
-		if !*encodePayload {
-			return fmt.Errorf(`JWT header must not set "b64" to false`)
-		}
+	if err = validateJWSB64Header(headers); err != nil {
+		return err
+	}
+	if err = validateJWTJSONObject(parts[1], "JWT claims set"); err != nil {
+		return err
 	}
 	if alg == "none" {
 		if parts[2] == "" {
@@ -451,8 +437,50 @@ func validateJWT(s string) error {
 	return nil
 }
 
-func getJWTAlgorithm(header map[string]json.RawMessage) (string, error) {
-	rawAlgorithm, ok := header["alg"]
+// cspell:ignore JWSB
+
+// validateJWSB64Header validates the `b64` JWS Header Parameter for JWTs.
+// [RFC 7797 Section 3] defines it as an optional JSON boolean defaulting to
+// `true`, [RFC 7797 Section 6] requires a present `b64` to be listed in the
+// `crit` array defined by [RFC 7515 Section 4.1.11], and [RFC 7797 Section 7]
+// prohibits JWTs from setting `b64` to `false`.
+//
+// [RFC 7515 Section 4.1.11]: https://datatracker.ietf.org/doc/html/rfc7515#section-4.1.11
+// [RFC 7797 Section 3]: https://datatracker.ietf.org/doc/html/rfc7797#section-3
+// [RFC 7797 Section 6]: https://datatracker.ietf.org/doc/html/rfc7797#section-6
+// [RFC 7797 Section 7]: https://datatracker.ietf.org/doc/html/rfc7797#section-7
+func validateJWSB64Header(headers map[string]json.RawMessage) error {
+	b64Raw, ok := headers[jwtHeaderB64]
+	if !ok {
+		return nil
+	}
+	var b64Value *bool
+	if err := json.Unmarshal(b64Raw, &b64Value); err != nil || b64Value == nil {
+		return fmt.Errorf(`JWT header "b64" must be a boolean`)
+	}
+	if !*b64Value {
+		return fmt.Errorf(`JWT header must not set "b64" to false`)
+	}
+
+	rawCritical, ok := headers[jwtHeaderCrit]
+	var critical []string
+	if !ok || json.Unmarshal(rawCritical, &critical) != nil {
+		return fmt.Errorf(`JWT header "crit" must be an array containing "b64" when "b64" is present`)
+	}
+	hasB64 := false
+	for _, name := range critical {
+		if name == jwtHeaderB64 {
+			hasB64 = true
+		}
+	}
+	if !hasB64 {
+		return fmt.Errorf(`JWT header "crit" must be an array containing "b64" when "b64" is present`)
+	}
+	return nil
+}
+
+func getJWTAlgorithm(headers map[string]json.RawMessage) (string, error) {
+	rawAlgorithm, ok := headers[jwtHeaderAlg]
 	if !ok {
 		return "", fmt.Errorf(`JWT header must contain an "alg" string`)
 	}
@@ -466,6 +494,39 @@ func getJWTAlgorithm(header map[string]json.RawMessage) (string, error) {
 }
 
 func decodeJWTJSONObject(segment, segmentName string) (map[string]json.RawMessage, error) {
+	decoded, err := decodeJWTJSON(segment, segmentName)
+	if err != nil {
+		return nil, err
+	}
+	return unmarshalJWTJSONObject(decoded, segmentName)
+}
+
+func validateJWTJSONObject(segment, segmentName string) error {
+	decoded, err := decodeJWTJSON(segment, segmentName)
+	if err != nil {
+		return err
+	}
+	trimmed := bytes.TrimSpace(decoded)
+	if len(trimmed) > 0 && trimmed[0] == '{' && json.Valid(decoded) {
+		return nil
+	}
+
+	_, err = unmarshalJWTJSONObject(decoded, segmentName)
+	return err
+}
+
+func unmarshalJWTJSONObject(decoded []byte, segmentName string) (map[string]json.RawMessage, error) {
+	var object map[string]json.RawMessage
+	if err := json.Unmarshal(decoded, &object); err != nil {
+		return nil, fmt.Errorf("%s segment must contain a JSON object: %w", segmentName, err)
+	}
+	if object == nil {
+		return nil, fmt.Errorf("%s segment must contain a JSON object", segmentName)
+	}
+	return object, nil
+}
+
+func decodeJWTJSON(segment, segmentName string) ([]byte, error) {
 	decoded, err := decodeJWTBase64URLSegment(segment, segmentName)
 	if err != nil {
 		return nil, err
@@ -473,15 +534,7 @@ func decodeJWTJSONObject(segment, segmentName string) (map[string]json.RawMessag
 	if !utf8.Valid(decoded) {
 		return nil, fmt.Errorf("%s segment must contain valid UTF-8 JSON", segmentName)
 	}
-
-	var object map[string]json.RawMessage
-	if err = json.Unmarshal(decoded, &object); err != nil {
-		return nil, fmt.Errorf("%s segment must contain a JSON object: %w", segmentName, err)
-	}
-	if object == nil {
-		return nil, fmt.Errorf("%s segment must contain a JSON object", segmentName)
-	}
-	return object, nil
+	return decoded, nil
 }
 
 func decodeJWTBase64URLSegment(segment, segmentName string) ([]byte, error) {
