@@ -203,13 +203,14 @@ func embedExamples(root string, paths []string) {
 		logFatal(nil, "No Markdown files provided for example embedding")
 	}
 
+	resolver := newEmbeddedExampleResolver(root)
 	for _, path := range paths {
 		info, err := os.Stat(path) // #nosec G703
 		if err != nil {
 			logFatal(err, "Failed to stat path %q", path)
 		}
 		if !info.IsDir() {
-			embedExamplesInMarkdown(root, path)
+			embedExamplesInMarkdown(resolver, path)
 			continue
 		}
 		if err = filepath.WalkDir(path, func(path string, entry fs.DirEntry, err error) error { // #nosec G703
@@ -219,7 +220,7 @@ func embedExamples(root string, paths []string) {
 			if entry.IsDir() || filepath.Ext(path) != ".md" {
 				return nil
 			}
-			embedExamplesInMarkdown(root, path)
+			embedExamplesInMarkdown(resolver, path)
 			return nil
 		}); err != nil {
 			logFatal(err, "Failed to walk Markdown directory %q", path)
@@ -227,15 +228,16 @@ func embedExamples(root string, paths []string) {
 	}
 }
 
-func embedExamplesInMarkdown(root, path string) {
+func embedExamplesInMarkdown(resolver *embeddedExampleResolver, path string) {
 	contents, err := os.ReadFile(path) // #nosec G304,G703
 	if err != nil {
 		logFatal(err, "Failed to read Markdown file %q", path)
 	}
 
-	updated := replaceEmbeddedExamples(root, string(contents), path)
-	updated = replaceGeneratedDocs(root, updated, path)
-	if updated == string(contents) {
+	original := string(contents)
+	updated := replaceEmbeddedExamples(resolver, original, path)
+	updated = replaceGeneratedDocs(resolver.root, updated, path)
+	if updated == original {
 		return
 	}
 	if err = os.WriteFile(path, []byte(updated), 0o600); err != nil { // #nosec G703
@@ -249,6 +251,10 @@ func replaceGeneratedDocs(root, markdown, markdownPath string) string {
 		docsSuffix = ")"
 		docsEnd    = "[//]: # (end-docs)"
 	)
+
+	if !strings.Contains(markdown, docsPrefix) {
+		return markdown
+	}
 
 	var builder strings.Builder
 	cursor := 0
@@ -457,12 +463,20 @@ func matchesReturnFilter(fset *token.FileSet, funcDecl *ast.FuncDecl, returns []
 	return false
 }
 
-func replaceEmbeddedExamples(root, markdown, markdownPath string) string {
+func replaceEmbeddedExamples(
+	resolver *embeddedExampleResolver,
+	markdown,
+	markdownPath string,
+) string {
 	const (
 		embedPrefix = "[//]: # (embed: "
 		embedSuffix = ")"
 		goFence     = "```go\n"
 	)
+
+	if !strings.Contains(markdown, embedPrefix) {
+		return markdown
+	}
 
 	var builder strings.Builder
 	cursor := 0
@@ -483,7 +497,7 @@ func replaceEmbeddedExamples(root, markdown, markdownPath string) string {
 			logFatal(nil, "Malformed embed directive %q in %q", directive, markdownPath)
 		}
 		exampleRef := strings.TrimSuffix(strings.TrimPrefix(directive, embedPrefix), embedSuffix)
-		example := readEmbeddedExample(root, exampleRef)
+		example := resolver.read(exampleRef)
 
 		fenceStart := strings.Index(markdown[lineEnd:], goFence)
 		if fenceStart < 0 {
@@ -516,90 +530,163 @@ func findCodeFenceEnd(markdown string) int {
 	return strings.Index(markdown, "```")
 }
 
-func readEmbeddedExample(root, exampleRef string) string {
-	sourcePath, functionName, hasFunctionName := strings.Cut(exampleRef, "#")
-	if hasFunctionName {
-		return readEmbeddedFunction(root, sourcePath, functionName)
-	}
-	if strings.HasPrefix(exampleRef, "Example") {
-		return readEmbeddedFunctionByName(root, exampleRef)
-	}
-
-	contents, err := os.ReadFile(filepath.Join(root, filepath.FromSlash(sourcePath))) // #nosec G304,G703
-	if err != nil {
-		logFatal(err, "Failed to read embedded example %q", exampleRef)
-	}
-	return string(contents)
+type embeddedExampleResolver struct {
+	root                string
+	files               map[string]*embeddedExampleFile
+	functions           map[string][]*embeddedExampleFile
+	exampleFilesIndexed bool
 }
 
-func readEmbeddedFunctionByName(root, functionName string) string {
-	var matches []string
-	if err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error { // #nosec G703
-		if err != nil {
-			return err
-		}
-		if entry.IsDir() || filepath.Base(path) != "example_test.go" {
-			return nil
-		}
-		if hasEmbeddedFunction(path, functionName) {
-			matches = append(matches, path)
-		}
-		return nil
-	}); err != nil {
-		logFatal(err, "Failed to find embedded example %q", functionName)
-	}
+type embeddedExampleFile struct {
+	path      string
+	contents  string
+	functions map[string]embeddedFunctionSpan
+	parsed    bool
+	indexed   bool
+}
 
+type embeddedFunctionSpan struct {
+	start int
+	end   int
+}
+
+func newEmbeddedExampleResolver(root string) *embeddedExampleResolver {
+	return &embeddedExampleResolver{
+		root:      filepath.Clean(root),
+		files:     make(map[string]*embeddedExampleFile),
+		functions: make(map[string][]*embeddedExampleFile),
+	}
+}
+
+func readEmbeddedExample(root, exampleRef string) string {
+	return newEmbeddedExampleResolver(root).read(exampleRef)
+}
+
+func (r *embeddedExampleResolver) read(exampleRef string) string {
+	sourcePath, functionName, hasFunctionName := strings.Cut(exampleRef, "#")
+	if hasFunctionName {
+		return r.readFunction(sourcePath, functionName)
+	}
+	if strings.HasPrefix(exampleRef, "Example") {
+		return r.readFunctionByName(exampleRef)
+	}
+	return r.readFile(sourcePath, exampleRef)
+}
+
+func (r *embeddedExampleResolver) readFunctionByName(functionName string) string {
+	r.indexExampleFiles(functionName)
+	matches := r.functions[functionName]
 	switch len(matches) {
 	case 0:
 		logFatal(nil, "Function %q was not found in example_test.go files", functionName)
 	case 1:
-		relPath, err := filepath.Rel(root, matches[0])
-		if err != nil {
-			logFatal(err, "Failed to resolve embedded example source %q", matches[0])
-		}
-		return readEmbeddedFunction(root, filepath.ToSlash(relPath), functionName)
+		return matches[0].function(functionName)
 	default:
+		paths := make([]string, 0, len(matches))
+		for _, match := range matches {
+			paths = append(paths, match.path)
+		}
 		logFatal(
 			nil,
 			"Function %q is ambiguous across example_test.go files: %s",
 			functionName,
-			strings.Join(matches, ", "),
+			strings.Join(paths, ", "),
 		)
 	}
 	return ""
 }
 
-func hasEmbeddedFunction(path, functionName string) bool {
-	fset := token.NewFileSet()
-	astFile, err := parser.ParseFile(fset, path, nil, parser.SkipObjectResolution)
-	if err != nil {
-		logFatal(err, "Failed to parse embedded example source %q", path)
+func (r *embeddedExampleResolver) readFunction(sourcePath, functionName string) string {
+	path := filepath.Join(r.root, filepath.FromSlash(sourcePath))
+	file := r.loadFile(path)
+	r.parseFile(file)
+	if _, ok := file.functions[functionName]; !ok {
+		logFatal(nil, "Function %q was not found in embedded example source %q", functionName, sourcePath)
 	}
-	for _, decl := range astFile.Decls {
-		funcDecl, ok := decl.(*ast.FuncDecl)
-		if ok && funcDecl.Name.Name == functionName {
-			return true
-		}
-	}
-	return false
+	return file.function(functionName)
 }
 
-func readEmbeddedFunction(root, sourcePath, functionName string) string {
-	path := filepath.Join(root, filepath.FromSlash(sourcePath))
-	source, err := os.ReadFile(path) // #nosec G304,G703
+func (r *embeddedExampleResolver) readFile(sourcePath, exampleRef string) string {
+	path := filepath.Join(r.root, filepath.FromSlash(sourcePath))
+	if file, ok := r.files[path]; ok {
+		return file.contents
+	}
+	contents, err := os.ReadFile(path) // #nosec G304,G703
+	if err != nil {
+		logFatal(err, "Failed to read embedded example %q", exampleRef)
+	}
+	file := &embeddedExampleFile{path: path, contents: string(contents)}
+	r.files[path] = file
+	return file.contents
+}
+
+func (r *embeddedExampleResolver) indexExampleFiles(functionName string) {
+	if r.exampleFilesIndexed {
+		return
+	}
+	if err := filepath.WalkDir(r.root, func(path string, entry fs.DirEntry, err error) error { // #nosec G703
+		if err != nil {
+			return err
+		}
+		if entry.IsDir() {
+			if path != r.root && skipExampleSearchDir(r.root, path) {
+				return fs.SkipDir
+			}
+			return nil
+		}
+		if filepath.Base(path) != "example_test.go" {
+			return nil
+		}
+		file := r.loadFile(path)
+		r.parseFile(file)
+		r.indexFile(file)
+		return nil
+	}); err != nil {
+		logFatal(err, "Failed to find embedded example %q", functionName)
+	}
+	for _, matches := range r.functions {
+		slices.SortFunc(matches, func(a, b *embeddedExampleFile) int {
+			return strings.Compare(a.path, b.path)
+		})
+	}
+	r.exampleFilesIndexed = true
+}
+
+func (r *embeddedExampleResolver) loadFile(path string) *embeddedExampleFile {
+	path = filepath.Clean(path)
+	if file, ok := r.files[path]; ok {
+		return file
+	}
+	contents, err := os.ReadFile(path) // #nosec G304,G703
 	if err != nil {
 		logFatal(err, "Failed to read embedded example source %q", path)
 	}
+	file := &embeddedExampleFile{path: path, contents: string(contents)}
+	r.files[path] = file
+	return file
+}
 
-	fset := token.NewFileSet()
-	astFile, err := parser.ParseFile(fset, path, source, parser.ParseComments|parser.SkipObjectResolution)
-	if err != nil {
-		logFatal(err, "Failed to parse embedded example source %q", path)
+func (r *embeddedExampleResolver) parseFile(file *embeddedExampleFile) {
+	if file.parsed {
+		return
 	}
-
+	fset := token.NewFileSet()
+	astFile, err := parser.ParseFile(
+		fset,
+		file.path,
+		file.contents,
+		parser.ParseComments|parser.SkipObjectResolution,
+	)
+	if err != nil {
+		logFatal(err, "Failed to parse embedded example source %q", file.path)
+	}
+	file.functions = make(map[string]embeddedFunctionSpan)
 	for _, decl := range astFile.Decls {
 		funcDecl, ok := decl.(*ast.FuncDecl)
-		if !ok || funcDecl.Name.Name != functionName {
+		if !ok {
+			continue
+		}
+		if _, exists := file.functions[funcDecl.Name.Name]; exists {
 			continue
 		}
 		startPos := funcDecl.Pos()
@@ -608,10 +695,39 @@ func readEmbeddedFunction(root, sourcePath, functionName string) string {
 		}
 		start := fset.PositionFor(startPos, false)
 		end := fset.PositionFor(funcDecl.End(), false)
-		return strings.TrimSpace(string(source[start.Offset:end.Offset]))
+		file.functions[funcDecl.Name.Name] = embeddedFunctionSpan{
+			start: start.Offset,
+			end:   end.Offset,
+		}
 	}
-	logFatal(nil, "Function %q was not found in embedded example source %q", functionName, sourcePath)
-	return ""
+	file.parsed = true
+}
+
+func (r *embeddedExampleResolver) indexFile(file *embeddedExampleFile) {
+	if file.indexed {
+		return
+	}
+	for functionName := range file.functions {
+		r.functions[functionName] = append(r.functions[functionName], file)
+	}
+	file.indexed = true
+}
+
+func (f *embeddedExampleFile) function(functionName string) string {
+	span := f.functions[functionName]
+	return strings.TrimSpace(f.contents[span.start:span.end])
+}
+
+func skipExampleSearchDir(root, path string) bool {
+	switch filepath.Base(path) {
+	case ".git", ".hg", ".svn", ".worktrees",
+		"vendor", "node_modules":
+		return true
+	case "bin", "build", "dist", "out", "target":
+		return filepath.Dir(path) == root
+	default:
+		return false
+	}
 }
 
 func logFatal(err error, msg string, a ...any) {

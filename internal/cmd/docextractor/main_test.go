@@ -6,6 +6,7 @@ import (
 	"errors"
 	"go/ast"
 	"io"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -28,6 +29,13 @@ type fatalLog struct {
 	} `json:"source"`
 	Message string `json:"msg"`
 	Error   string `json:"error"`
+}
+
+type benchmarkFixtureMetrics struct {
+	markdownBytes  int
+	markdownFiles  int
+	directives     int
+	exampleGoFiles int
 }
 
 func TestParseGeneratedDocsConfig(t *testing.T) {
@@ -209,12 +217,91 @@ func TestReadEmbeddedExample(t *testing.T) {
 
 func TestReplaceEmbeddedExamples(t *testing.T) {
 	root := testdataRoot(t)
+	resolver := newEmbeddedExampleResolver(root)
 	input := readTestFile(t, filepath.Join(root, "markdown", "embedded-input.md"))
 	expected := readTestFile(t, filepath.Join(root, "golden", "embedded.md"))
 
-	actual := replaceEmbeddedExamples(root, input, "examples.md")
+	actual := replaceEmbeddedExamples(resolver, input, "examples.md")
 	assert.Equal(t, expected, actual)
-	assert.Equal(t, actual, replaceEmbeddedExamples(root, actual, "examples.md"))
+	assert.Equal(t, actual, replaceEmbeddedExamples(resolver, actual, "examples.md"))
+}
+
+func TestMarkdownTransformersWithoutDirectives(t *testing.T) {
+	root := t.TempDir()
+	resolver := newEmbeddedExampleResolver(root)
+	input := strings.Repeat("Markdown without generator directives.\n", 100)
+	tests := []struct {
+		name      string
+		transform func(string) string
+	}{
+		{
+			name: "embedded examples",
+			transform: func(markdown string) string {
+				return replaceEmbeddedExamples(resolver, markdown, "plain.md")
+			},
+		},
+		{
+			name: "generated docs",
+			transform: func(markdown string) string {
+				return replaceGeneratedDocs(root, markdown, "plain.md")
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var actual string
+			allocations := testing.AllocsPerRun(100, func() {
+				actual = test.transform(input)
+			})
+			assert.Equal(t, input, actual)
+			assert.Equal(t, float64(0), allocations)
+		})
+	}
+}
+
+func TestReadEmbeddedExamplePrunesNonSourceDirectories(t *testing.T) {
+	root := t.TempDir()
+	included := "// ExampleSearchable demonstrates nested source lookup.\n" +
+		"func ExampleSearchable() {\n" +
+		"\tprintln(\"included\")\n" +
+		"}"
+	writeTestFile(
+		t,
+		filepath.Join(root, "source", "packages", "build", "example_test.go"),
+		"package nested\n\n"+included+"\n",
+		0o644,
+	)
+
+	excludedDirs := []string{
+		".git", ".hg", ".svn", ".worktrees",
+		"vendor", "node_modules",
+		"bin", "build", "dist", "out", "target",
+	}
+	for _, dir := range excludedDirs {
+		source := "package ignored\n\nfunc ExampleSearchable() { panic(\"ignored\") }\n"
+		if dir == ".git" {
+			source = "package ignored\n\nfunc ExampleSearchable("
+		}
+		writeTestFile(t, filepath.Join(root, dir, "example_test.go"), source, 0o644)
+	}
+
+	assert.Equal(t, included, readEmbeddedExample(root, "ExampleSearchable"))
+}
+
+func TestEmbeddedExampleResolverCachesParsedFiles(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "cached", "example_test.go")
+	expected := "// ExampleCached demonstrates resolver caching.\n" +
+		"func ExampleCached() {\n" +
+		"\tprintln(\"cached\")\n" +
+		"}"
+	writeTestFile(t, path, "package cached\n\n"+expected+"\n", 0o644)
+
+	resolver := newEmbeddedExampleResolver(root)
+	assert.Equal(t, expected, resolver.read("ExampleCached"))
+	writeTestFile(t, path, "package cached\n\nfunc ExampleCached(", 0o644)
+	assert.Equal(t, expected, resolver.read("cached/example_test.go#ExampleCached"))
 }
 
 func TestEmbedExamples(t *testing.T) {
@@ -283,7 +370,7 @@ func TestDocextractorFatalErrors(t *testing.T) {
 
 	t.Run("ambiguous bare example", func(t *testing.T) {
 		root := t.TempDir()
-		for _, dir := range []string{"alpha", "zulu"} {
+		for _, dir := range []string{"zulu", "alpha"} {
 			writeTestFile(
 				t,
 				filepath.Join(root, dir, "example_test.go"),
@@ -300,6 +387,23 @@ func TestDocextractorFatalErrors(t *testing.T) {
 				filepath.Join(root, "zulu", "example_test.go"),
 			entry.Message,
 		)
+	})
+
+	t.Run("deterministic bare example parse error", func(t *testing.T) {
+		root := t.TempDir()
+		for _, dir := range []string{"zulu", "alpha"} {
+			writeTestFile(
+				t,
+				filepath.Join(root, dir, "example_test.go"),
+				"package "+dir+"\n\nfunc ExampleBroken(",
+				0o644,
+			)
+		}
+
+		entry := runFatalHelper(t, "read-example", root, "ExampleMissing")
+		alphaPath := filepath.Join(root, "alpha", "example_test.go")
+		assert.Equal(t, "Failed to parse embedded example source \""+alphaPath+"\"", entry.Message)
+		assert.True(t, strings.HasPrefix(entry.Error, alphaPath+":"))
 	})
 
 	t.Run("malformed embed directive", func(t *testing.T) {
@@ -499,6 +603,29 @@ func TestEmbedExamplesScript(t *testing.T) {
 	})
 }
 
+func BenchmarkEmbedExamples(b *testing.B) {
+	repoRoot := internal.FindModuleRoot()
+	paths, expected, metrics := copyBenchmarkMarkdownFixture(b, repoRoot)
+
+	for b.Loop() {
+		embedExamples(repoRoot, paths)
+	}
+
+	for path, contents := range expected {
+		actual, err := os.ReadFile(path)
+		if err != nil {
+			b.Fatalf("failed to read benchmark output %q: %v", path, err)
+		}
+		if string(actual) != contents {
+			b.Fatalf("benchmark changed Markdown file %q", path)
+		}
+	}
+	b.ReportMetric(float64(metrics.markdownBytes), "markdown-bytes/op")
+	b.ReportMetric(float64(metrics.markdownFiles), "markdown-files/op")
+	b.ReportMetric(float64(metrics.directives), "directives/op")
+	b.ReportMetric(float64(metrics.exampleGoFiles), "example-files/op")
+}
+
 func TestDocextractorFatalHelper(t *testing.T) {
 	if os.Getenv(fatalHelperEnv) != "1" {
 		return
@@ -514,7 +641,7 @@ func TestDocextractorFatalHelper(t *testing.T) {
 	case "read-example":
 		readEmbeddedExample(root, target)
 	case "embed-file":
-		embedExamplesInMarkdown(root, target)
+		embedExamplesInMarkdown(newEmbeddedExampleResolver(root), target)
 	case "replace-docs-file":
 		contents, err := os.ReadFile(target) // #nosec G703 -- the parent test supplies this fixture path.
 		if err != nil {
@@ -614,4 +741,82 @@ func writeTestFile(t *testing.T, path, contents string, mode os.FileMode) {
 
 func markdownWithEmbeddedBody(ref, body string) string {
 	return "[//]: # (embed: " + ref + ")\n\n```go\n" + body + "\n```\n"
+}
+
+func copyBenchmarkMarkdownFixture(
+	b *testing.B,
+	repoRoot string,
+) (paths []string, expected map[string]string, metrics benchmarkFixtureMetrics) {
+	b.Helper()
+	workspace := b.TempDir()
+	expected = make(map[string]string)
+
+	readAndCopy := func(source, destination string) {
+		contents, err := os.ReadFile(source)
+		if err != nil {
+			b.Fatalf("failed to read benchmark input %q: %v", source, err)
+		}
+		if err = os.MkdirAll(filepath.Dir(destination), 0o750); err != nil {
+			b.Fatalf("failed to create benchmark directory for %q: %v", destination, err)
+		}
+		// #nosec G703 -- destination is under b.TempDir.
+		if err = os.WriteFile(
+			destination,
+			contents,
+			0o600,
+		); err != nil {
+			b.Fatalf("failed to write benchmark input %q: %v", destination, err)
+		}
+		text := string(contents)
+		expected[destination] = text
+		metrics.markdownBytes += len(contents)
+		metrics.markdownFiles++
+		metrics.directives += strings.Count(text, "[//]: # (embed: ")
+		metrics.directives += strings.Count(text, "[//]: # (docs: ")
+	}
+
+	readAndCopy(
+		filepath.Join(repoRoot, "README.md"),
+		filepath.Join(workspace, "README.md"),
+	)
+	sourceSkillDir := filepath.Join(repoRoot, ".agents", "skills", "govy")
+	destinationSkillDir := filepath.Join(workspace, ".agents", "skills", "govy")
+	if err := filepath.WalkDir(sourceSkillDir, func(path string, entry fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if entry.IsDir() || filepath.Ext(path) != ".md" {
+			return nil
+		}
+		relativePath, err := filepath.Rel(sourceSkillDir, path)
+		if err != nil {
+			return err
+		}
+		readAndCopy(path, filepath.Join(destinationSkillDir, relativePath))
+		return nil
+	}); err != nil {
+		b.Fatalf("failed to copy benchmark skill fixture: %v", err)
+	}
+
+	if err := filepath.WalkDir(repoRoot, func(path string, entry fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if entry.IsDir() {
+			if path != repoRoot && skipExampleSearchDir(repoRoot, path) {
+				return fs.SkipDir
+			}
+			return nil
+		}
+		if filepath.Base(path) == "example_test.go" {
+			metrics.exampleGoFiles++
+		}
+		return nil
+	}); err != nil {
+		b.Fatalf("failed to count benchmark example files: %v", err)
+	}
+	return []string{
+		filepath.Join(workspace, "README.md"),
+		destinationSkillDir,
+	}, expected, metrics
 }
