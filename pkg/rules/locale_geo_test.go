@@ -39,6 +39,18 @@ func TestLazyLookupMap(t *testing.T) {
 	assert.Equal(t, 1, calls)
 }
 
+func TestBuildISO31662Codes(t *testing.T) {
+	values := strings.Fields(iso31662CodesData + iso31662Codes2024_2AdditionsData)
+	assert.Equal(t, iso31662CodeCount, len(values))
+	expected := make(map[string]struct{}, len(values))
+	for _, value := range values {
+		expected[value] = struct{}{}
+	}
+
+	actual := buildISO31662Codes()
+	assert.Equal(t, expected, actual)
+}
+
 var validStringBCP47LanguageTagCases = []stringRuleCase{
 	{name: "language", input: "en"},
 	{name: "language and region", input: "en-US"},
@@ -565,6 +577,12 @@ func BenchmarkStringISO31662(b *testing.B) {
 	)
 }
 
+func BenchmarkBuildISO31662Codes(b *testing.B) {
+	for b.Loop() {
+		_ = buildISO31662Codes()
+	}
+}
+
 // The fixture projects the country and subdivision fields from every record
 // in UNECE's ISO 3166-2-derived UN/LOCODE 2024-2 SubdivisionCodes.csv at tag
 // commit 03032eb5f0eed1db15dc5255f7dcc0942d7b6238:
@@ -786,6 +804,33 @@ func BenchmarkStringLongitude(b *testing.B) {
 		validStringLongitudeCases,
 		invalidStringLongitudeCases,
 	)
+}
+
+func Test_isCoordinate(t *testing.T) {
+	tests := map[string]struct {
+		input        string
+		maxMagnitude string
+		expected     bool
+	}{
+		"positive sign":                    {input: "+45", maxMagnitude: "90", expected: true},
+		"positive zero":                    {input: "+0", maxMagnitude: "90", expected: true},
+		"leading decimal point":            {input: ".5", maxMagnitude: "90", expected: true},
+		"signed leading decimal point":     {input: "-.5", maxMagnitude: "90", expected: true},
+		"leading zero boundary":            {input: "00090.000", maxMagnitude: "90", expected: true},
+		"sign without digits":              {input: "-", maxMagnitude: "90", expected: false},
+		"too many significant digits":      {input: "900", maxMagnitude: "90", expected: false},
+		"non-digit in fractional part":     {input: "45.5a", maxMagnitude: "90", expected: false},
+		"missing fractional digits":        {input: "45.", maxMagnitude: "90", expected: false},
+		"decimal point without digits":     {input: ".", maxMagnitude: "90", expected: false},
+		"multiple decimal points":          {input: "1.2.3", maxMagnitude: "90", expected: false},
+		"non-decimal character after sign": {input: "+x", maxMagnitude: "90", expected: false},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, test.expected, isCoordinate(test.input, test.maxMagnitude))
+		})
+	}
 }
 
 // These tables contain every distinct latitude and longitude scalar literal

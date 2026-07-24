@@ -613,8 +613,17 @@ func isISO3166Numeric(s string) bool {
 }
 
 func isISO31662(s string) bool {
-	if !iso31662Regexp().MatchString(s) {
+	if len(s) < 4 || len(s) > 6 ||
+		s[0] < 'A' || s[0] > 'Z' ||
+		s[1] < 'A' || s[1] > 'Z' ||
+		s[2] != '-' {
 		return false
+	}
+	for index := 3; index < len(s); index++ {
+		char := s[index]
+		if (char < 'A' || char > 'Z') && (char < '0' || char > '9') {
+			return false
+		}
 	}
 	_, ok := iso31662Codes()[s]
 	return ok
@@ -675,32 +684,63 @@ func isISO3166CountryRegion(region language.Region) bool {
 }
 
 func isCoordinate(s, maxMagnitude string) bool {
-	if !decimalCoordinateRegexp().MatchString(s) {
+	if s == "" {
 		return false
 	}
-	return decimalMagnitudeAtMost(s, maxMagnitude)
-}
-
-func decimalMagnitudeAtMost(value, maximum string) bool {
-	value = strings.TrimPrefix(strings.TrimPrefix(value, "-"), "+")
-	integer, fraction, _ := strings.Cut(value, ".")
-	integer = strings.TrimLeft(integer, "0")
-	if integer == "" {
-		integer = "0"
+	if s[0] == '-' || s[0] == '+' {
+		s = s[1:]
+		if s == "" {
+			return false
+		}
 	}
 
-	switch {
-	case len(integer) < len(maximum):
-		return true
-	case len(integer) > len(maximum):
-		return false
-	case integer < maximum:
-		return true
-	case integer > maximum:
-		return false
-	default:
-		return strings.Trim(fraction, "0") == ""
+	index := 0
+	significantDigits := 0
+	comparisonToMaximum := 0
+	for index < len(s) && s[index] >= '0' && s[index] <= '9' {
+		digit := s[index]
+		index++
+		if significantDigits == 0 && digit == '0' {
+			continue
+		}
+		if significantDigits == len(maxMagnitude) {
+			return false
+		}
+		if comparisonToMaximum == 0 {
+			switch {
+			case digit < maxMagnitude[significantDigits]:
+				comparisonToMaximum = -1
+			case digit > maxMagnitude[significantDigits]:
+				comparisonToMaximum = 1
+			}
+		}
+		significantDigits++
 	}
+	if index == 0 && s[index] != '.' {
+		return false
+	}
+	if significantDigits == len(maxMagnitude) && comparisonToMaximum > 0 {
+		return false
+	}
+	if index == len(s) {
+		return true
+	}
+	if s[index] != '.' || index == len(s)-1 {
+		return false
+	}
+
+	atMaximum := significantDigits == len(maxMagnitude) && comparisonToMaximum == 0
+	index++
+	for index < len(s) {
+		if s[index] < '0' || s[index] > '9' {
+			return false
+		}
+		if atMaximum && s[index] != '0' {
+			return false
+		}
+		index++
+	}
+	return true
 }
 
 func isASCIIUpper(s string) bool {

@@ -2,12 +2,13 @@ package rules
 
 import "strings"
 
+const iso31662CodeCount = 5213
+
 var iso31662Codes = lazyLookupMap(buildISO31662Codes)
 
 func buildISO31662Codes() map[string]struct{} {
-	codes := strings.Fields(iso31662CodesData + iso31662Codes2024_2AdditionsData)
-	lookup := make(map[string]struct{}, len(codes))
-	for _, code := range codes {
+	lookup := make(map[string]struct{}, iso31662CodeCount)
+	for code := range strings.FieldsSeq(iso31662CodesData + iso31662Codes2024_2AdditionsData) {
 		lookup[code] = struct{}{}
 	}
 	return lookup
