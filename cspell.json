@@ -36,6 +36,8 @@
     "Elts",
     "Fset",
     "Messagef",
+    "RRGGBB",
+    "RRGGBBAA",
     "Skłodowska",
     "atoi",
     "cidrv",
