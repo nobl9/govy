@@ -962,19 +962,6 @@ func StringKubernetesQualifiedName() govy.RuleSet[string] {
 		WithErrorCode(ErrorCodeStringKubernetesQualifiedName)
 }
 
-func isLowerHexadecimal(s string, length int) bool {
-	if len(s) != length {
-		return false
-	}
-	for i := range len(s) {
-		c := s[i]
-		if (c < '0' || c > '9') && (c < 'a' || c > 'f') {
-			return false
-		}
-	}
-	return true
-}
-
 func stringKubernetesQualifiedNameRule() govy.Rule[string] {
 	type tplVars = stringKubernetesQualifiedNameTemplateVars
 	tpl := messagetemplates.Get(messagetemplates.StringKubernetesQualifiedNameTemplate)
@@ -1146,4 +1133,17 @@ func handleFilePathError(err error) error {
 		return errFilePathNoPerm
 	}
 	return err
+}
+
+func isLowerHexadecimal(s string, length int) bool {
+	if len(s) != length {
+		return false
+	}
+	for i := range len(s) {
+		c := s[i]
+		if (c < '0' || c > '9') && (c < 'a' || c > 'f') {
+			return false
+		}
+	}
+	return true
 }
