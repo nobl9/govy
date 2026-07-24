@@ -290,6 +290,79 @@ func StringUUID() govy.Rule[string] {
 		WithErrorCode(ErrorCodeStringUUID)
 }
 
+// StringCreditCard ensures the property's value is a plausible digit-only
+// payment card number. It requires a 13- to 19-digit value that passes the
+// Luhn checksum and rejects all-same-digit values.
+func StringCreditCard() govy.Rule[string] {
+	tpl := messagetemplates.Get(messagetemplates.StringCreditCardTemplate)
+
+	return govy.NewRule(func(s string) error {
+		if !isValidCreditCard(s) {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringCreditCard).
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+}
+
+// StringLuhnChecksum ensures the property's value is a digit-only string that
+// passes the Luhn checksum.
+func StringLuhnChecksum() govy.Rule[string] {
+	tpl := messagetemplates.Get(messagetemplates.StringLuhnChecksumTemplate)
+
+	return govy.NewRule(func(s string) error {
+		if !isLuhnChecksumValid(s) {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringLuhnChecksum).
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+}
+
+// StringBIC ensures the property's value matches the current Business
+// Identifier Code (BIC) syntax.
+func StringBIC() govy.Rule[string] {
+	tpl := messagetemplates.Get(messagetemplates.StringBICTemplate)
+
+	return govy.NewRule(func(s string) error {
+		if !isValidBIC(s) {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringBIC).
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+}
+
+// StringBICISO93622014 ensures the property's value matches the ISO 9362:2014
+// Business Identifier Code (BIC) syntax.
+func StringBICISO93622014() govy.Rule[string] {
+	tpl := messagetemplates.Get(messagetemplates.StringBICISO93622014Template)
+
+	return govy.NewRule(func(s string) error {
+		if !isValidBICISO93622014(s) {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringBICISO93622014).
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+}
+
 // StringASCII ensures property's value contains only ASCII characters.
 func StringASCII() govy.Rule[string] {
 	return StringMatchRegexp(asciiRegexp()).WithErrorCode(ErrorCodeStringASCII)
@@ -915,6 +988,121 @@ func stringKubernetesQualifiedNameRule() govy.Rule[string] {
 			"and must start and end with an alphanumeric character with an optional DNS subdomain prefix and '/'").
 		WithExamples("my.domain/MyName", "MyName", "my.name", "123-abc").
 		WithDescription("string must be a Kubernetes Qualified Name")
+}
+
+func isValidCreditCard(s string) bool {
+	if len(s) < 13 || len(s) > 19 {
+		return false
+	}
+	if allSameDigit(s) {
+		return false
+	}
+	return isLuhnChecksumValid(s)
+}
+
+func isLuhnChecksumValid(s string) bool {
+	if s == "" {
+		return false
+	}
+
+	sum := 0
+	shouldDouble := false
+	for i := len(s) - 1; i >= 0; i-- {
+		digit := s[i] - '0'
+		if digit > 9 {
+			return false
+		}
+		if shouldDouble {
+			digit *= 2
+			if digit > 9 {
+				digit -= 9
+			}
+		}
+		sum += int(digit)
+		shouldDouble = !shouldDouble
+	}
+	return sum%10 == 0
+}
+
+func allSameDigit(s string) bool {
+	if s == "" {
+		return false
+	}
+	first := s[0]
+	for i := 1; i < len(s); i++ {
+		if s[i] != first {
+			return false
+		}
+	}
+	return true
+}
+
+func isValidBIC(s string) bool {
+	return isValidBICCode(s)
+}
+
+func isValidBICISO93622014(s string) bool {
+	return isValidBICCode(s)
+}
+
+func isValidBICCode(s string) bool {
+	if len(s) != 8 && len(s) != 11 {
+		return false
+	}
+	if !isValidBICCountryCode(s[4:6]) {
+		return false
+	}
+	for i := range 4 {
+		if !isUpperASCIIAlphanumeric(s[i]) {
+			return false
+		}
+	}
+	for i := 6; i < len(s); i++ {
+		if !isUpperASCIIAlphanumeric(s[i]) {
+			return false
+		}
+	}
+	return true
+}
+
+func isValidBICCountryCode(s string) bool {
+	switch s {
+	case "XK":
+		// XK is included as a common Kosovo exception.
+		return true
+	case "AD", "AE", "AF", "AG", "AI", "AL", "AM", "AO", "AQ", "AR", "AS", "AT", "AU", "AW", "AX", "AZ",
+		"BA", "BB", "BD", "BE", "BF", "BG", "BH", "BI", "BJ", "BL", "BM", "BN", "BO", "BQ", "BR", "BS", "BT", "BV", "BW", "BY", "BZ",
+		"CA", "CC", "CD", "CF", "CG", "CH", "CI", "CK", "CL", "CM", "CN", "CO", "CR", "CU", "CV", "CW", "CX", "CY", "CZ",
+		"DE", "DJ", "DK", "DM", "DO", "DZ",
+		"EC", "EE", "EG", "EH", "ER", "ES", "ET",
+		"FI", "FJ", "FK", "FM", "FO", "FR",
+		"GA", "GB", "GD", "GE", "GF", "GG", "GH", "GI", "GL", "GM", "GN", "GP", "GQ", "GR", "GS", "GT", "GU", "GW", "GY",
+		"HK", "HM", "HN", "HR", "HT", "HU",
+		"ID", "IE", "IL", "IM", "IN", "IO", "IQ", "IR", "IS", "IT",
+		"JE", "JM", "JO", "JP",
+		"KE", "KG", "KH", "KI", "KM", "KN", "KP", "KR", "KW", "KY", "KZ",
+		"LA", "LB", "LC", "LI", "LK", "LR", "LS", "LT", "LU", "LV", "LY",
+		"MA", "MC", "MD", "ME", "MF", "MG", "MH", "MK", "ML", "MM", "MN", "MO", "MP", "MQ", "MR", "MS", "MT", "MU", "MV", "MW", "MX", "MY", "MZ",
+		"NA", "NC", "NE", "NF", "NG", "NI", "NL", "NO", "NP", "NR", "NU", "NZ",
+		"OM",
+		"PA", "PE", "PF", "PG", "PH", "PK", "PL", "PM", "PN", "PR", "PS", "PT", "PW", "PY",
+		"QA",
+		"RE", "RO", "RS", "RU", "RW",
+		"SA", "SB", "SC", "SD", "SE", "SG", "SH", "SI", "SJ", "SK", "SL", "SM", "SN", "SO", "SR", "SS", "ST", "SV", "SX", "SY", "SZ",
+		"TC", "TD", "TF", "TG", "TH", "TJ", "TK", "TL", "TM", "TN", "TO", "TR", "TT", "TV", "TW", "TZ",
+		"UA", "UG", "UM", "US", "UY", "UZ",
+		"VA", "VC", "VE", "VG", "VI", "VN", "VU",
+		"WF", "WS",
+		"YE", "YT",
+		"ZA", "ZM", "ZW":
+		return true
+	default:
+		return false
+	}
+}
+
+func isUpperASCIIAlphanumeric(b byte) bool {
+	return b >= 'A' && b <= 'Z' || b >= '0' && b <= '9'
 }
 
 // isStringSeparator is directly copied from [strings] package.
