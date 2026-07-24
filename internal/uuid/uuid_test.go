@@ -33,3 +33,24 @@ func TestGenerateUUID(t *testing.T) {
 	assert.Equal(t, byte(4), decoded[6]>>4)
 	assert.Equal(t, byte(2), decoded[8]>>6)
 }
+
+func BenchmarkGenerateUUID(b *testing.B) {
+	originalReader := cryptorand.Reader
+	cryptorand.Reader = zeroReader{}
+	b.Cleanup(func() { cryptorand.Reader = originalReader })
+
+	var id string
+	for b.Loop() {
+		id = GenerateUUID()
+	}
+	benchmarkUUIDSink = id
+}
+
+var benchmarkUUIDSink string
+
+type zeroReader struct{}
+
+func (zeroReader) Read(p []byte) (int, error) {
+	clear(p)
+	return len(p), nil
+}

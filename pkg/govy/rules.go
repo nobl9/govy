@@ -68,11 +68,10 @@ func forConstructor[T, P any](getter PropertyGetter[T, P]) PropertyRules[T, P] {
 	}
 }
 
-// forConstructorWithoutPathInference creates [PropertyRules] without path inference.
-// Used for internal rules in [ForSlice] and [ForMap] where paths are managed separately.
-func forConstructorWithoutPathInference[T, P any](getter PropertyGetter[T, P]) PropertyRules[T, P] {
+// newInternalPropertyRules creates [PropertyRules] with only a getter.
+// The enclosing slice or map rule supplies path and identity behavior.
+func newInternalPropertyRules[T, P any](getter PropertyGetter[T, P]) PropertyRules[T, P] {
 	return PropertyRules[T, P]{
-		id:     newInstanceID(),
 		getter: func(parent P) (v T, err error) { return getter(parent), nil },
 	}
 }
@@ -210,19 +209,13 @@ func (r PropertyRules[T, P]) WithExamples(examples ...string) PropertyRules[T, P
 // Rules associates provided [Rule] with the property.
 func (r PropertyRules[T, P]) Rules(rules ...RulesInterface[T]) PropertyRules[T, P] {
 	r = r.withNextGeneratedID()
-	for _, rule := range rules {
-		r.rules = append(r.rules, rule)
-	}
-	return r
+	return r.appendRules(rules...)
 }
 
 // Include embeds specified [Validator] and its [PropertyRules] into the property.
 func (r PropertyRules[T, P]) Include(rules ...ValidatorInterface[T]) PropertyRules[T, P] {
 	r = r.withNextGeneratedID()
-	for _, rule := range rules {
-		r.rules = append(r.rules, rule)
-	}
-	return r
+	return r.appendValidators(rules...)
 }
 
 // When defines a [Predicate] which determines when the rules for this property should be evaluated.
@@ -283,6 +276,20 @@ func (r PropertyRules[T, P]) GetID() string {
 
 func (r PropertyRules[T, P]) withNextGeneratedID() PropertyRules[T, P] {
 	r.id = r.id.withNextGeneratedID()
+	return r
+}
+
+func (r PropertyRules[T, P]) appendRules(rules ...RulesInterface[T]) PropertyRules[T, P] {
+	for _, rule := range rules {
+		r.rules = append(r.rules, rule)
+	}
+	return r
+}
+
+func (r PropertyRules[T, P]) appendValidators(rules ...ValidatorInterface[T]) PropertyRules[T, P] {
+	for _, rule := range rules {
+		r.rules = append(r.rules, rule)
+	}
 	return r
 }
 

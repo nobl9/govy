@@ -9,7 +9,7 @@ import (
 func ForSlice[S ~[]T, T, P any](getter PropertyGetter[S, P]) PropertyRulesForSlice[S, T, P] {
 	return PropertyRulesForSlice[S, T, P]{
 		sliceRules:   forConstructor(GetSelf[S]()),
-		forEachRules: forConstructorWithoutPathInference(GetSelf[T]()),
+		forEachRules: newInternalPropertyRules(GetSelf[T]()),
 		getter:       getter,
 	}
 }
@@ -93,7 +93,7 @@ func (r PropertyRulesForSlice[S, T, P]) WithExamples(examples ...string) Propert
 // RulesForEach adds [Rule] for each element of the slice.
 func (r PropertyRulesForSlice[S, T, P]) RulesForEach(rules ...RulesInterface[T]) PropertyRulesForSlice[S, T, P] {
 	r.sliceRules = r.sliceRules.withNextGeneratedID()
-	r.forEachRules = r.forEachRules.Rules(rules...)
+	r.forEachRules = r.forEachRules.appendRules(rules...)
 	return r
 }
 
@@ -116,7 +116,7 @@ func (r PropertyRulesForSlice[S, T, P]) When(
 // IncludeForEach associates specified [Validator] and its [PropertyRules] with each element of the slice.
 func (r PropertyRulesForSlice[S, T, P]) IncludeForEach(rules ...ValidatorInterface[T]) PropertyRulesForSlice[S, T, P] {
 	r.sliceRules = r.sliceRules.withNextGeneratedID()
-	r.forEachRules = r.forEachRules.Include(rules...)
+	r.forEachRules = r.forEachRules.appendValidators(rules...)
 	return r
 }
 
@@ -130,7 +130,7 @@ func (r PropertyRulesForSlice[S, T, P]) Include(rules ...ValidatorInterface[S]) 
 func (r PropertyRulesForSlice[S, T, P]) Cascade(mode CascadeMode) PropertyRulesForSlice[S, T, P] {
 	r.cascadeMode = mode
 	r.sliceRules = r.sliceRules.Cascade(mode)
-	r.forEachRules = r.forEachRules.Cascade(mode)
+	r.forEachRules.cascadeMode = mode
 	return r
 }
 

@@ -6,6 +6,11 @@ import (
 	"github.com/nobl9/govy/pkg/jsonpath"
 )
 
+const (
+	removePropertiesByIDSetThreshold         = 16
+	removePropertiesByIDSetPropertyThreshold = 128
+)
+
 // New creates a new [Validator] aggregating the provided property rules.
 func New[T any](props ...PropertyRulesInterface[T]) Validator[T] {
 	return Validator[T]{
@@ -81,16 +86,80 @@ func (v Validator[T]) RemovePropertiesByPath(paths ...jsonpath.Path) Validator[T
 // It returns a modified [Validator] instance without these rules,
 // the original [Validator] is not changed.
 func (v Validator[T]) RemovePropertiesByID(ids ...string) Validator[T] {
-	if len(ids) == 0 {
+	if len(ids) == 0 || len(v.props) == 0 {
 		return v
 	}
-	filtered := make([]PropertyRulesInterface[T], 0, len(v.props))
-	for _, prop := range v.props {
+	if len(ids) == 1 {
+		return v.removePropertyByID(ids[0])
+	}
+	if len(ids) >= removePropertiesByIDSetThreshold &&
+		len(v.props) >= removePropertiesByIDSetPropertyThreshold {
+		idSet := make(map[string]struct{}, len(ids))
+		for _, id := range ids {
+			idSet[id] = struct{}{}
+		}
+		return v.removePropertiesByIDSet(idSet)
+	}
+	return v.removePropertiesByIDs(ids)
+}
+
+func (v Validator[T]) removePropertiesByIDs(ids []string) Validator[T] {
+	for index, prop := range v.props {
 		if !slices.Contains(ids, prop.GetID()) {
-			filtered = append(filtered, prop)
+			continue
+		}
+		filtered := make([]PropertyRulesInterface[T], 0, len(v.props)-1)
+		filtered = append(filtered, v.props[:index]...)
+		for _, remainingProp := range v.props[index+1:] {
+			if !slices.Contains(ids, remainingProp.GetID()) {
+				filtered = append(filtered, remainingProp)
+			}
+		}
+		v.props = filtered
+		return v
+	}
+	return v
+}
+
+func (v Validator[T]) removePropertiesByIDSet(idSet map[string]struct{}) Validator[T] {
+	for index, prop := range v.props {
+		if _, ok := idSet[prop.GetID()]; !ok {
+			continue
+		}
+		filtered := make([]PropertyRulesInterface[T], 0, len(v.props)-1)
+		filtered = append(filtered, v.props[:index]...)
+		for _, remainingProp := range v.props[index+1:] {
+			if _, ok := idSet[remainingProp.GetID()]; !ok {
+				filtered = append(filtered, remainingProp)
+			}
+		}
+		v.props = filtered
+		return v
+	}
+	return v
+}
+
+func (v Validator[T]) removePropertyByID(id string) Validator[T] {
+	var (
+		filtered []PropertyRulesInterface[T]
+		removed  bool
+	)
+	for index, prop := range v.props {
+		if prop.GetID() != id {
+			if removed {
+				filtered = append(filtered, prop)
+			}
+			continue
+		}
+		if !removed {
+			filtered = make([]PropertyRulesInterface[T], 0, len(v.props)-1)
+			filtered = append(filtered, v.props[:index]...)
+			removed = true
 		}
 	}
-	v.props = filtered
+	if removed {
+		v.props = filtered
+	}
 	return v
 }
 

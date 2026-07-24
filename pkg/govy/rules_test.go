@@ -725,9 +725,49 @@ func TestPropertyRulesWithID(t *testing.T) {
 }
 
 func BenchmarkFor(b *testing.B) {
+	getter := func(m mockStruct) string { return m.Field }
+	var property govy.PropertyRules[string, mockStruct]
 	for b.Loop() {
-		_ = govy.For(func(m mockStruct) string { return m.Field })
+		property = govy.For(getter)
 	}
+	benchmarkPropertyRulesSink = property
+}
+
+func BenchmarkForPointer(b *testing.B) {
+	getter := func(m mockStruct) *string { return &m.Field }
+	var property govy.PropertyRules[string, mockStruct]
+	for b.Loop() {
+		property = govy.ForPointer(getter)
+	}
+	benchmarkPropertyRulesSink = property
+}
+
+func BenchmarkTransform(b *testing.B) {
+	getter := func(m mockStruct) string { return m.Field }
+	transform := func(value string) (int, error) { return len(value), nil }
+	var property govy.PropertyRules[int, mockStruct]
+	for b.Loop() {
+		property = govy.Transform(getter, transform)
+	}
+	benchmarkTransformedPropertyRulesSink = property
+}
+
+func BenchmarkForSlice(b *testing.B) {
+	getter := func(m mockStruct) []string { return []string{m.Field} }
+	var property govy.PropertyRulesForSlice[[]string, string, mockStruct]
+	for b.Loop() {
+		property = govy.ForSlice(getter)
+	}
+	benchmarkSlicePropertyRulesSink = property
+}
+
+func BenchmarkForMap(b *testing.B) {
+	getter := func(m mockStruct) map[string]string { return map[string]string{"field": m.Field} }
+	var property govy.PropertyRulesForMap[map[string]string, string, string, mockStruct]
+	for b.Loop() {
+		property = govy.ForMap(getter)
+	}
+	benchmarkMapPropertyRulesSink = property
 }
 
 func mustPropertyErrors(t *testing.T, err error) govy.PropertyErrors {
@@ -743,3 +783,10 @@ func mustErrorType[T error](t *testing.T, err error) T {
 }
 
 func ptr[T any](v T) *T { return &v }
+
+var (
+	benchmarkPropertyRulesSink            govy.PropertyRules[string, mockStruct]
+	benchmarkTransformedPropertyRulesSink govy.PropertyRules[int, mockStruct]
+	benchmarkSlicePropertyRulesSink       govy.PropertyRulesForSlice[[]string, string, mockStruct]
+	benchmarkMapPropertyRulesSink         govy.PropertyRulesForMap[map[string]string, string, string, mockStruct]
+)

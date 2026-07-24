@@ -4,7 +4,8 @@ import "github.com/nobl9/govy/internal/uuid"
 
 // instanceID is a composite identifier used to identify [PropertyRules] variations.
 type instanceID struct {
-	// generatedID is always filled and generated upon creation of [instanceID].
+	// generatedID is the auto-generated ID used when userSuppliedID is empty.
+	// Internal slice and map rules leave it empty because their enclosing rule owns the identity.
 	generatedID string
 	// userSuppliedID overrides generatedID and is supplied by the user.
 	userSuppliedID string

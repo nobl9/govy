@@ -2,6 +2,7 @@ package govy_test
 
 import (
 	"errors"
+	"sync"
 	"testing"
 
 	"github.com/nobl9/govy/internal"
@@ -538,7 +539,7 @@ func TestValidatorInferPath(t *testing.T) {
 			// Changed name to differentiate between runtime and generate modes.
 			Path: jsonpath.New().Name("generated-students"),
 			File: "pkg/govy/validator_test.go",
-			Line: 551,
+			Line: 552,
 		})
 
 		v := govy.New(
@@ -1027,6 +1028,77 @@ func TestValidatorRemovePropertiesByIDDeterminism(t *testing.T) {
 			validatorErrorPaths(t, validator.RemovePropertiesByID("Casesensitive", "tenant/Β"), mockValidatorStruct{}),
 		)
 	})
+
+	t.Run("duplicate property IDs remove every match", func(t *testing.T) {
+		validator := govy.New(
+			newProperty("duplicate", "first"),
+			newProperty("duplicate", "second"),
+			newProperty("retained", "third"),
+		)
+
+		assert.Equal(
+			t,
+			[]string{"third"},
+			validatorErrorPaths(
+				t,
+				validator.RemovePropertiesByID("duplicate", "duplicate"),
+				mockValidatorStruct{},
+			),
+		)
+		assert.Equal(
+			t,
+			[]string{"first", "second", "third"},
+			validatorErrorPaths(t, validator, mockValidatorStruct{}),
+		)
+	})
+
+	t.Run("validator without properties remains usable", func(t *testing.T) {
+		validator := govy.New[mockValidatorStruct]()
+		filtered := validator.RemovePropertiesByID("missing")
+
+		assert.NoError(t, filtered.Validate(mockValidatorStruct{}))
+		assert.Len(t, validatorPlanPaths(t, filtered), 0)
+	})
+}
+
+func TestValidatorRemovePropertiesByIDConcurrentDerivations(t *testing.T) {
+	newProperty := func(id string) govy.PropertyRules[string, mockValidatorStruct] {
+		return govy.For(func(mockValidatorStruct) string { return id }).
+			WithName(id).
+			WithID(id).
+			Rules(govy.NewRule(func(string) error { return errors.New(id) }))
+	}
+	base := govy.New(
+		newProperty("a"),
+		newProperty("b"),
+		newProperty("c"),
+	)
+	ids := []string{"a", "b", "missing"}
+	expectedPaths := map[string][]string{
+		"a":       {"b", "c"},
+		"b":       {"a", "c"},
+		"missing": {"a", "b", "c"},
+	}
+
+	const iterations = 64
+	errs := make([]error, iterations)
+	var waitGroup sync.WaitGroup
+	for i := range iterations {
+		waitGroup.Go(func() {
+			errs[i] = base.RemovePropertiesByID(ids[i%len(ids)]).Validate(mockValidatorStruct{})
+		})
+	}
+	waitGroup.Wait()
+
+	for i, err := range errs {
+		validatorErr := mustValidatorError(t, err)
+		paths := make([]string, len(validatorErr.Errors))
+		for j, propertyErr := range validatorErr.Errors {
+			paths[j] = propertyErr.PropertyPath.String()
+		}
+		assert.Equal(t, expectedPaths[ids[i%len(ids)]], paths)
+	}
+	assert.Equal(t, []string{"a", "b", "c"}, validatorErrorPaths(t, base, mockValidatorStruct{}))
 }
 
 func TestValidatorBuildersPreservePropertyIDs(t *testing.T) {
