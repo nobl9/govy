@@ -126,15 +126,33 @@ func allSameDigit(s string) bool {
 }
 
 func isValidBIC(s string) bool {
-	if !bicRegexp().MatchString(s) {
-		return false
-	}
-	return isValidBICCountryCode(s[4:6])
+	return isValidBICCode(s)
 }
 
 func isValidBICISO93622014(s string) bool {
-	if !bicISO93622014Regexp().MatchString(s) {
+	return isValidBICCode(s)
+}
+
+func isValidBICCode(s string) bool {
+	if len(s) != 8 && len(s) != 11 {
 		return false
 	}
-	return isValidBICCountryCode(s[4:6])
+	if !isValidBICCountryCode(s[4:6]) {
+		return false
+	}
+	for i := range 4 {
+		if !isUpperASCIIAlphanumeric(s[i]) {
+			return false
+		}
+	}
+	for i := 6; i < len(s); i++ {
+		if !isUpperASCIIAlphanumeric(s[i]) {
+			return false
+		}
+	}
+	return true
+}
+
+func isUpperASCIIAlphanumeric(b byte) bool {
+	return b >= 'A' && b <= 'Z' || b >= '0' && b <= '9'
 }

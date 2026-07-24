@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -346,6 +347,62 @@ func TestStringBICCountryCodes(t *testing.T) {
 	}
 }
 
+func TestBICPredicatesMatchRegexpOracle(t *testing.T) {
+	oracle := regexp.MustCompile(`^[A-Z0-9]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$`)
+	corpora := map[string]stringPaymentBankingTestCases{
+		"StringBIC":            stringBICTestCases,
+		"StringBICISO93622014": stringBICISO93622014TestCases,
+	}
+	for corpusName, testCases := range corpora {
+		t.Run(corpusName, func(t *testing.T) {
+			for caseName, input := range testCases.validInputs {
+				t.Run("valid "+caseName, func(t *testing.T) {
+					assertBICPredicatesMatchRegexpOracle(t, oracle, input)
+				})
+			}
+			for caseName, input := range testCases.invalidInputs {
+				t.Run("invalid "+caseName, func(t *testing.T) {
+					assertBICPredicatesMatchRegexpOracle(t, oracle, input)
+				})
+			}
+		})
+	}
+
+	t.Run("lengths zero through twelve", func(t *testing.T) {
+		for length := range 13 {
+			input := strings.Repeat("A", length)
+			assertBICPredicatesMatchRegexpOracle(t, oracle, input)
+		}
+	})
+
+	for name, base := range map[string]string{
+		"eight characters":  "ABCDUS22",
+		"eleven characters": "ABCDUS22XYZ",
+	} {
+		t.Run(name+" single-byte substitutions", func(t *testing.T) {
+			input := []byte(base)
+			for position := range len(input) {
+				for value := byte(0); ; value++ {
+					input[position] = value
+					assertBICPredicatesMatchRegexpOracle(t, oracle, string(input))
+					if value == 255 {
+						break
+					}
+				}
+				input[position] = base[position]
+			}
+		})
+	}
+
+	t.Run("ISO country codes", func(t *testing.T) {
+		countryCodes := append(readISOAlpha2CountryCodes(t), "XK")
+		for _, countryCode := range countryCodes {
+			assertBICPredicatesMatchRegexpOracle(t, oracle, "ABCD"+countryCode+"22")
+			assertBICPredicatesMatchRegexpOracle(t, oracle, "ABCD"+countryCode+"22XYZ")
+		}
+	})
+}
+
 // cspell:enable
 
 func BenchmarkStringBICISO93622014(b *testing.B) {
@@ -405,6 +462,26 @@ func assertPaymentBankingRuleError(
 	ruleError := err.(*govy.RuleError)
 	assert.Equal(t, expectedError, ruleError.Description)
 	assert.Equal(t, errorCode, ruleError.Code)
+}
+
+func assertBICPredicatesMatchRegexpOracle(
+	t *testing.T,
+	oracle *regexp.Regexp,
+	input string,
+) {
+	t.Helper()
+	expected := oracle.MatchString(input)
+	if expected {
+		expected = isValidBICCountryCode(input[4:6])
+	}
+	for name, predicate := range map[string]func(string) bool{
+		"isValidBIC":            isValidBIC,
+		"isValidBICISO93622014": isValidBICISO93622014,
+	} {
+		if actual := predicate(input); actual != expected {
+			t.Errorf("%s(%q) = %t, regexp oracle = %t", name, input, actual, expected)
+		}
+	}
 }
 
 func readISOAlpha2CountryCodes(t *testing.T) []string {
