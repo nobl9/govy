@@ -3,10 +3,12 @@ package rules
 import (
 	"errors"
 	"fmt"
+	"maps"
 	"math/rand"
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 	"syscall"
 	"testing"
@@ -15,6 +17,14 @@ import (
 	"github.com/nobl9/govy/internal/assert"
 
 	"github.com/nobl9/govy/pkg/govy"
+)
+
+const (
+	uuidRFC4122Pattern = `^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89aAbB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$`
+	uuidv3Pattern      = `^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-3[0-9a-fA-F]{3}-[89aAbB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$`
+	uuidv4Pattern      = `^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89aAbB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$`
+	uuidv5Pattern      = `^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-5[0-9a-fA-F]{3}-[89aAbB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$`
+	ulidPattern        = `^[0-7][0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{25}$`
 )
 
 var stringNotEmptyTestCases = []*struct {
@@ -268,6 +278,10 @@ func BenchmarkStringUUID(b *testing.B) {
 	benchmarkStringFormatIDRule(b, StringUUID(), stringUUIDValidInputs, stringUUIDInvalidInputs)
 }
 
+func BenchmarkUUIDPredicate(b *testing.B) {
+	benchmarkStringFormatIDPredicate(b, isValidUUID, stringUUIDValidInputs, stringUUIDInvalidInputs)
+}
+
 var stringUUIDRFC4122ValidInputs = map[string]string{
 	"RFC 4122 Appendix B version 1": "7d444840-9dc0-11d1-b245-5ffdce74fad2",
 	"RFC 4122 Appendix B version 3": "e902893a-9d22-3c7e-a7b8-d6e313b71d9f",
@@ -325,6 +339,15 @@ func BenchmarkStringUUIDRFC4122(b *testing.B) {
 	)
 }
 
+func BenchmarkUUIDRFC4122Predicate(b *testing.B) {
+	benchmarkStringFormatIDPredicate(
+		b,
+		isValidUUIDRFC4122,
+		stringUUIDRFC4122ValidInputs,
+		stringUUIDRFC4122InvalidInputs,
+	)
+}
+
 var stringUUIDv3ValidInputs = map[string]string{
 	"official vector, IETF variant lower bound": "5df41881-3aed-3515-88a7-2f4a814cf09e",
 	"uppercase":                "5DF41881-3AED-3515-88A7-2F4A814CF09E",
@@ -362,6 +385,15 @@ func TestStringUUIDv3(t *testing.T) {
 
 func BenchmarkStringUUIDv3(b *testing.B) {
 	benchmarkStringFormatIDRule(b, StringUUIDv3(), stringUUIDv3ValidInputs, stringUUIDv3InvalidInputs)
+}
+
+func BenchmarkUUIDv3Predicate(b *testing.B) {
+	benchmarkStringFormatIDPredicate(
+		b,
+		func(s string) bool { return isValidUUIDVersion(s, '3') },
+		stringUUIDv3ValidInputs,
+		stringUUIDv3InvalidInputs,
+	)
 }
 
 var stringUUIDv4ValidInputs = map[string]string{
@@ -404,6 +436,15 @@ func BenchmarkStringUUIDv4(b *testing.B) {
 	benchmarkStringFormatIDRule(b, StringUUIDv4(), stringUUIDv4ValidInputs, stringUUIDv4InvalidInputs)
 }
 
+func BenchmarkUUIDv4Predicate(b *testing.B) {
+	benchmarkStringFormatIDPredicate(
+		b,
+		func(s string) bool { return isValidUUIDVersion(s, '4') },
+		stringUUIDv4ValidInputs,
+		stringUUIDv4InvalidInputs,
+	)
+}
+
 var stringUUIDv5ValidInputs = map[string]string{
 	"official vector":          "2ed6657d-e927-568b-95e1-2665a8aea6a2",
 	"uppercase":                "2ED6657D-E927-568B-95E1-2665A8AEA6A2",
@@ -442,6 +483,15 @@ func TestStringUUIDv5(t *testing.T) {
 
 func BenchmarkStringUUIDv5(b *testing.B) {
 	benchmarkStringFormatIDRule(b, StringUUIDv5(), stringUUIDv5ValidInputs, stringUUIDv5InvalidInputs)
+}
+
+func BenchmarkUUIDv5Predicate(b *testing.B) {
+	benchmarkStringFormatIDPredicate(
+		b,
+		func(s string) bool { return isValidUUIDVersion(s, '5') },
+		stringUUIDv5ValidInputs,
+		stringUUIDv5InvalidInputs,
+	)
 }
 
 // cspell:ignore ttttttttttrrrrrrrrrrrrrrrr
@@ -512,6 +562,92 @@ func TestStringULID(t *testing.T) {
 
 func BenchmarkStringULID(b *testing.B) {
 	benchmarkStringFormatIDRule(b, StringULID(), stringULIDValidInputs, stringULIDInvalidInputs)
+}
+
+func BenchmarkULIDPredicate(b *testing.B) {
+	benchmarkStringFormatIDPredicate(b, isValidULID, stringULIDValidInputs, stringULIDInvalidInputs)
+}
+
+func TestStringFormatIDPredicatesMatchRegularExpressions(t *testing.T) {
+	tests := map[string]struct {
+		pattern       string
+		seed          string
+		predicate     func(string) bool
+		validInputs   map[string]string
+		invalidInputs map[string]string
+	}{
+		"UUID": {
+			pattern:       uuidPattern,
+			seed:          "f81d4fae-7dec-11d0-a765-00a0c91e6bf6",
+			predicate:     isValidUUID,
+			validInputs:   stringUUIDValidInputs,
+			invalidInputs: stringUUIDInvalidInputs,
+		},
+		"RFC 4122 UUID": {
+			pattern:       uuidRFC4122Pattern,
+			seed:          "f81d4fae-7dec-11d0-a765-00a0c91e6bf6",
+			predicate:     isValidUUIDRFC4122,
+			validInputs:   stringUUIDRFC4122ValidInputs,
+			invalidInputs: stringUUIDRFC4122InvalidInputs,
+		},
+		"UUIDv3": {
+			pattern:       uuidv3Pattern,
+			seed:          "5df41881-3aed-3515-88a7-2f4a814cf09e",
+			predicate:     func(s string) bool { return isValidUUIDVersion(s, '3') },
+			validInputs:   stringUUIDv3ValidInputs,
+			invalidInputs: stringUUIDv3InvalidInputs,
+		},
+		"UUIDv4": {
+			pattern:       uuidv4Pattern,
+			seed:          "919108f7-52d1-4320-9bac-f847db4148a8",
+			predicate:     func(s string) bool { return isValidUUIDVersion(s, '4') },
+			validInputs:   stringUUIDv4ValidInputs,
+			invalidInputs: stringUUIDv4InvalidInputs,
+		},
+		"UUIDv5": {
+			pattern:       uuidv5Pattern,
+			seed:          "2ed6657d-e927-568b-95e1-2665a8aea6a2",
+			predicate:     func(s string) bool { return isValidUUIDVersion(s, '5') },
+			validInputs:   stringUUIDv5ValidInputs,
+			invalidInputs: stringUUIDv5InvalidInputs,
+		},
+		"ULID": {
+			pattern:       ulidPattern,
+			seed:          "01ARZ3NDEKTSV4RRFFQ69G5FAV",
+			predicate:     isValidULID,
+			validInputs:   stringULIDValidInputs,
+			invalidInputs: stringULIDInvalidInputs,
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			re := regexp.MustCompile(tc.pattern)
+			for _, input := range tc.validInputs {
+				assertStringPredicateMatchesRegexp(t, re, tc.predicate, input)
+			}
+			for _, input := range tc.invalidInputs {
+				assertStringPredicateMatchesRegexp(t, re, tc.predicate, input)
+			}
+
+			input := []byte(tc.seed)
+			for position := range input {
+				original := input[position]
+				for value := range 256 {
+					input[position] = byte(value)
+					assertStringPredicateMatchesRegexp(t, re, tc.predicate, string(input))
+				}
+				input[position] = original
+			}
+			for position := range len(tc.seed) {
+				input := tc.seed[:position] + tc.seed[position+1:]
+				assertStringPredicateMatchesRegexp(t, re, tc.predicate, input)
+			}
+			for position := range len(tc.seed) + 1 {
+				input := tc.seed[:position] + "\x00" + tc.seed[position:]
+				assertStringPredicateMatchesRegexp(t, re, tc.predicate, input)
+			}
+		})
+	}
 }
 
 var stringASCIITestCases = []*struct {
@@ -2454,12 +2590,81 @@ func benchmarkStringFormatIDRule(
 	invalidInputs map[string]string,
 ) {
 	b.Helper()
-	for b.Loop() {
-		for _, input := range validInputs {
-			_ = rule.Validate(input)
+	valid, mixed := stringFormatIDBenchmarkInputs(validInputs, invalidInputs)
+	b.Run("valid", func(b *testing.B) {
+		for b.Loop() {
+			for _, input := range valid {
+				_ = rule.Validate(input)
+			}
 		}
-		for _, input := range invalidInputs {
-			_ = rule.Validate(input)
+		b.ReportMetric(float64(len(valid)), "validations/op")
+	})
+	b.Run("mixed", func(b *testing.B) {
+		for b.Loop() {
+			for _, input := range mixed {
+				_ = rule.Validate(input)
+			}
 		}
+		b.ReportMetric(float64(len(mixed)), "validations/op")
+	})
+}
+
+func benchmarkStringFormatIDPredicate(
+	b *testing.B,
+	predicate func(string) bool,
+	validInputs map[string]string,
+	invalidInputs map[string]string,
+) {
+	b.Helper()
+	valid, mixed := stringFormatIDBenchmarkInputs(validInputs, invalidInputs)
+	b.Run("valid", func(b *testing.B) {
+		for b.Loop() {
+			for _, input := range valid {
+				_ = predicate(input)
+			}
+		}
+		b.ReportMetric(float64(len(valid)), "validations/op")
+	})
+	b.Run("mixed", func(b *testing.B) {
+		for b.Loop() {
+			for _, input := range mixed {
+				_ = predicate(input)
+			}
+		}
+		b.ReportMetric(float64(len(mixed)), "validations/op")
+	})
+}
+
+func stringFormatIDBenchmarkInputs(
+	validInputs map[string]string,
+	invalidInputs map[string]string,
+) (valid, mixed []string) {
+	valid = stringMapValues(validInputs)
+	invalid := stringMapValues(invalidInputs)
+	mixed = make([]string, 0, len(valid)+len(invalid))
+	mixed = append(mixed, valid...)
+	mixed = append(mixed, invalid...)
+	return valid, mixed
+}
+
+func stringMapValues(values map[string]string) []string {
+	keys := slices.Sorted(maps.Keys(values))
+	result := make([]string, 0, len(keys))
+	for _, key := range keys {
+		result = append(result, values[key])
+	}
+	return result
+}
+
+func assertStringPredicateMatchesRegexp(
+	t *testing.T,
+	re *regexp.Regexp,
+	predicate func(string) bool,
+	input string,
+) {
+	t.Helper()
+	expected := re.MatchString(input)
+	if actual := predicate(input); actual != expected {
+		t.Fatalf("predicate result for %q: expected %t, got %t", input, expected, actual)
 	}
 }

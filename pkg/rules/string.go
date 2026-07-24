@@ -18,6 +18,8 @@ import (
 	"github.com/nobl9/govy/pkg/govy"
 )
 
+const uuidPattern = `^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`
+
 // StringNotEmpty ensures the property's value is not empty.
 // The string is considered empty if it contains only whitespace characters.
 func StringNotEmpty() govy.Rule[string] {
@@ -280,7 +282,21 @@ func StringCIDRv6() govy.Rule[string] {
 //
 // [RFC 4122]: https://www.ietf.org/rfc/rfc4122.txt
 func StringUUID() govy.Rule[string] {
-	return StringMatchRegexp(uuidRegexp()).
+	tpl := messagetemplates.Get(messagetemplates.StringMatchRegexpTemplate)
+
+	return govy.NewRule(func(s string) error {
+		if !isValidUUID(s) {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue:   s,
+				ComparisonValue: uuidPattern,
+			})
+		}
+		return nil
+	}).
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+			ComparisonValue: uuidPattern,
+		})).
 		WithDetails("expected RFC-4122 compliant UUID string").
 		WithExamples(
 			"00000000-0000-0000-0000-000000000000",
@@ -297,7 +313,7 @@ func StringUUIDRFC4122() govy.Rule[string] {
 	tpl := messagetemplates.Get(messagetemplates.StringUUIDRFC4122Template)
 
 	return govy.NewRule(func(s string) error {
-		if !uuidRFC4122Regexp().MatchString(s) {
+		if !isValidUUIDRFC4122(s) {
 			return govy.NewRuleErrorTemplate(govy.TemplateVars{
 				PropertyValue: s,
 			})
@@ -315,7 +331,7 @@ func StringUUIDv3() govy.Rule[string] {
 	tpl := messagetemplates.Get(messagetemplates.StringUUIDv3Template)
 
 	return govy.NewRule(func(s string) error {
-		if !uuidv3Regexp().MatchString(s) {
+		if !isValidUUIDVersion(s, '3') {
 			return govy.NewRuleErrorTemplate(govy.TemplateVars{
 				PropertyValue: s,
 			})
@@ -333,7 +349,7 @@ func StringUUIDv4() govy.Rule[string] {
 	tpl := messagetemplates.Get(messagetemplates.StringUUIDv4Template)
 
 	return govy.NewRule(func(s string) error {
-		if !uuidv4Regexp().MatchString(s) {
+		if !isValidUUIDVersion(s, '4') {
 			return govy.NewRuleErrorTemplate(govy.TemplateVars{
 				PropertyValue: s,
 			})
@@ -351,7 +367,7 @@ func StringUUIDv5() govy.Rule[string] {
 	tpl := messagetemplates.Get(messagetemplates.StringUUIDv5Template)
 
 	return govy.NewRule(func(s string) error {
-		if !uuidv5Regexp().MatchString(s) {
+		if !isValidUUIDVersion(s, '5') {
 			return govy.NewRuleErrorTemplate(govy.TemplateVars{
 				PropertyValue: s,
 			})
@@ -361,6 +377,46 @@ func StringUUIDv5() govy.Rule[string] {
 		WithErrorCode(ErrorCodeStringUUIDv5).
 		WithMessageTemplate(tpl).
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+}
+
+func isValidUUID(s string) bool {
+	if len(s) != 36 || s[8] != '-' || s[13] != '-' || s[18] != '-' || s[23] != '-' {
+		return false
+	}
+	return isHexadecimalString(s[:8]) &&
+		isHexadecimalString(s[9:13]) &&
+		isHexadecimalString(s[14:18]) &&
+		isHexadecimalString(s[19:23]) &&
+		isHexadecimalString(s[24:])
+}
+
+func isValidUUIDRFC4122(s string) bool {
+	return len(s) == 36 &&
+		s[14] >= '1' && s[14] <= '5' &&
+		isUUIDRFC4122Variant(s[19]) &&
+		isValidUUID(s)
+}
+
+func isValidUUIDVersion(s string, version byte) bool {
+	return len(s) == 36 &&
+		s[14] == version &&
+		isUUIDRFC4122Variant(s[19]) &&
+		isValidUUID(s)
+}
+
+func isUUIDRFC4122Variant(b byte) bool {
+	return b == '8' || b == '9' || b|0x20 == 'a' || b|0x20 == 'b'
+}
+
+func isHexadecimalString(s string) bool {
+	for i := range len(s) {
+		b := s[i]
+		lower := b | 0x20
+		if (b < '0' || b > '9') && (lower < 'a' || lower > 'f') {
+			return false
+		}
+	}
+	return true
 }
 
 // StringULID ensures the property's value is a 26-character Crockford Base32
@@ -388,24 +444,21 @@ func isValidULID(s string) bool {
 	if s[0] < '0' || s[0] > '7' {
 		return false
 	}
-	for _, r := range s {
-		switch {
-		case r >= '0' && r <= '9':
-		case r >= 'A' && r <= 'H':
-		case r >= 'J' && r <= 'K':
-		case r >= 'M' && r <= 'N':
-		case r >= 'P' && r <= 'T':
-		case r >= 'V' && r <= 'Z':
-		case r >= 'a' && r <= 'h':
-		case r >= 'j' && r <= 'k':
-		case r >= 'm' && r <= 'n':
-		case r >= 'p' && r <= 't':
-		case r >= 'v' && r <= 'z':
-		default:
+	for i := 1; i < len(s); i++ {
+		if !isCrockfordBase32Byte(s[i]) {
 			return false
 		}
 	}
 	return true
+}
+
+func isCrockfordBase32Byte(b byte) bool {
+	if b >= '0' && b <= '9' {
+		return true
+	}
+	lower := b | 0x20
+	return lower >= 'a' && lower <= 'z' &&
+		lower != 'i' && lower != 'l' && lower != 'o' && lower != 'u'
 }
 
 // StringASCII ensures property's value contains only ASCII characters.
