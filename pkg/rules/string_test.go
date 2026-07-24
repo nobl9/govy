@@ -710,6 +710,112 @@ func BenchmarkStringBICISO93622014(b *testing.B) {
 	benchmarkStringPaymentBankingRule(b, rule, stringBICISO93622014TestCases)
 }
 
+const stringMongoDBObjectIDErrorMessage = "string must be a 24-character hexadecimal MongoDB ObjectID"
+
+// The fixed source corpora are copied verbatim from these pinned revisions:
+//   - MongoDB BSON ObjectID corpus (3/3 values):
+//     https://github.com/mongodb/specifications/blob/b00d61ca19da7d7e25836ec56930048a8d1de501/source/bson-corpus/tests/oid.json
+//   - MongoDB Go driver ObjectID tests (6/6 fixed ObjectIDFromHex inputs):
+//     https://github.com/mongodb/mongo-go-driver/blob/25724e5ddec775c78be6a4794279068f3de03b1e/bson/objectid_test.go
+//
+// The driver's TestFromHex_RoundTrip is excluded because NewObjectID generates
+// its input dynamically, so the test publishes no stable literal to copy.
+var stringMongoDBObjectIDTestCases = map[string]struct {
+	in         string
+	shouldFail bool
+}{
+	"standard lowercase":               {in: "507f1f77bcf86cd799439011"},
+	"BSON corpus all zeroes":           {in: "000000000000000000000000"},
+	"BSON corpus all ones":             {in: "ffffffffffffffffffffffff"},
+	"BSON corpus random":               {in: "56e1fc72e0c917e9c4714161"},
+	"Go driver Unix epoch timestamp":   {in: "000000001111111111111111"},
+	"Go driver signed timestamp limit": {in: "7FFFFFFF1111111111111111"},
+	"Go driver timestamp sign bit":     {in: "800000001111111111111111"},
+	"Go driver uint32 timestamp limit": {in: "FFFFFFFF1111111111111111"},
+	"mixed case":                       {in: "0123456789abcdefABCDEF01"},
+
+	"empty":                   {shouldFail: true},
+	"23 characters":           {in: "507f1f77bcf86cd79943901", shouldFail: true},
+	"25 characters":           {in: "507f1f77bcf86cd7994390110", shouldFail: true},
+	"Go driver invalid hex":   {in: "this is not a valid hex string!", shouldFail: true},
+	"Go driver wrong length":  {in: "deadbeef", shouldFail: true},
+	"lowercase non-hex digit": {in: "507f1f77bcf86cd79943901g", shouldFail: true},
+	"uppercase non-hex digit": {in: "507F1F77BCF86CD79943901G", shouldFail: true},
+	"trailing hyphen":         {in: "507f1f77bcf86cd79943901-", shouldFail: true},
+	"trailing colon":          {in: "507f1f77bcf86cd79943901:", shouldFail: true},
+	"0x prefix":               {in: "0x507f1f77bcf86cd799439011", shouldFail: true},
+	"leading space":           {in: " 507f1f77bcf86cd799439011", shouldFail: true},
+	"trailing space":          {in: "507f1f77bcf86cd799439011 ", shouldFail: true},
+	"trailing newline":        {in: "507f1f77bcf86cd799439011\n", shouldFail: true},
+	"embedded newline":        {in: "507f1f77bcf\n6cd799439011", shouldFail: true},
+	"full-width zero":         {in: "０123456789abcdefABCDEF01", shouldFail: true},
+	"Cyrillic a":              {in: "а123456789abcdefABCDEF01", shouldFail: true},
+	"ObjectId wrapper":        {in: `ObjectId("507f1f77bcf86cd799439011")`, shouldFail: true},
+	"Extended JSON wrapper":   {in: `{"$oid":"507f1f77bcf86cd799439011"}`, shouldFail: true},
+}
+
+func TestStringMongoDBObjectID(t *testing.T) {
+	rule := StringMongoDBObjectID()
+	for name, tt := range stringMongoDBObjectIDTestCases {
+		t.Run(name, func(t *testing.T) {
+			err := rule.Validate(tt.in)
+			if tt.shouldFail {
+				assert.Require(t, assert.Error(t, err))
+				assert.EqualError(t, err, stringMongoDBObjectIDErrorMessage)
+				assert.True(t, govy.HasErrorCode(err, ErrorCodeStringMongoDBObjectID))
+				return
+			}
+			assert.NoError(t, err)
+		})
+	}
+}
+
+func Test_isMongoDBObjectID(t *testing.T) {
+	oracle := regexp.MustCompile(`^[0-9a-fA-F]{24}$`)
+	assertMatchesOracle := func(t *testing.T, input string) {
+		t.Helper()
+		expected := oracle.MatchString(input)
+		actual := isMongoDBObjectID(input)
+		if expected != actual {
+			t.Fatalf("input %q: expected %t, got %t", input, expected, actual)
+		}
+	}
+
+	t.Run("shared corpus", func(t *testing.T) {
+		for name, tt := range stringMongoDBObjectIDTestCases {
+			t.Run(name, func(t *testing.T) {
+				assertMatchesOracle(t, tt.in)
+			})
+		}
+	})
+	t.Run("lengths from zero through 48", func(t *testing.T) {
+		for length := range 49 {
+			assertMatchesOracle(t, strings.Repeat("a", length))
+		}
+	})
+	t.Run("every single-byte substitution", func(t *testing.T) {
+		candidate := []byte("000000000000000000000000")
+		for position := range candidate {
+			for value := range 256 {
+				candidate[position] = byte(value)
+				assertMatchesOracle(t, string(candidate))
+			}
+			candidate[position] = '0'
+		}
+	})
+}
+
+func BenchmarkStringMongoDBObjectID(b *testing.B) {
+	rule := StringMongoDBObjectID()
+	for name, tt := range stringMongoDBObjectIDTestCases {
+		b.Run(name, func(b *testing.B) {
+			for b.Loop() {
+				_ = rule.Validate(tt.in)
+			}
+		})
+	}
+}
+
 var stringEmailTestCases = []*struct {
 	in         string
 	shouldFail bool
@@ -1072,6 +1178,413 @@ func BenchmarkStringCIDRv6(b *testing.B) {
 	}
 }
 
+const (
+	stringEINErrorMessage = "string must be a valid Employer Identification Number (EIN)"
+	stringSSNErrorMessage = "string must be a valid Social Security Number (SSN)"
+)
+
+type stringTaxIDTestCase struct {
+	name       string
+	in         string
+	shouldPass bool
+}
+
+// stringEINRecognizedPrefixes is the complete set of distinct prefixes
+// published by the IRS "Valid EINs" page, updated 2026-04-09.
+// https://www.irs.gov/businesses/small-businesses-self-employed/valid-eins
+var stringEINRecognizedPrefixes = map[string]struct{}{
+	"01": {}, "02": {}, "03": {}, "04": {}, "05": {}, "06": {},
+	"10": {}, "11": {}, "12": {}, "13": {}, "14": {}, "15": {}, "16": {},
+	"20": {}, "21": {}, "22": {}, "23": {}, "24": {}, "25": {}, "26": {}, "27": {},
+	"30": {}, "31": {}, "32": {}, "33": {}, "34": {}, "35": {}, "36": {}, "37": {}, "38": {}, "39": {},
+	"40": {}, "41": {}, "42": {}, "43": {}, "44": {}, "45": {}, "46": {}, "47": {}, "48": {},
+	"50": {}, "51": {}, "52": {}, "53": {}, "54": {}, "55": {}, "56": {}, "57": {}, "58": {}, "59": {},
+	"60": {}, "61": {}, "62": {}, "63": {}, "64": {}, "65": {}, "66": {}, "67": {}, "68": {},
+	"71": {}, "72": {}, "73": {}, "74": {}, "75": {}, "76": {}, "77": {},
+	"80": {}, "81": {}, "82": {}, "83": {}, "84": {}, "85": {}, "86": {}, "87": {}, "88": {},
+	"90": {}, "91": {}, "92": {}, "93": {}, "94": {}, "95": {}, "98": {}, "99": {},
+}
+
+var (
+	stringEINPrefixTestCases            = generateStringEINPrefixTestCases()
+	stringEINAcceptedStructureTestCases = []stringTaxIDTestCase{
+		{name: "lowest recognized prefix", in: "01-0000001", shouldPass: true},
+		{name: "highest recognized prefix", in: "99-9999999", shouldPass: true},
+	}
+	stringEINRejectedStructureTestCases = []stringTaxIDTestCase{
+		{name: "empty input", in: ""},
+		{name: "missing separator", in: "123456789"},
+		{name: "one-digit prefix", in: "1-3456789"},
+		{name: "three-digit prefix", in: "012-3456789"},
+		{name: "short serial", in: "12-345678"},
+		{name: "long serial", in: "12-34567890"},
+		{name: "letter prefix", in: "AB-3456789"},
+		{name: "letter serial", in: "12-345678A"},
+		{name: "space separator", in: "12 3456789"},
+		{name: "underscore separator", in: "12_3456789"},
+		{name: "en dash separator", in: "12–3456789"},
+		{name: "double separator", in: "12--3456789"},
+		{name: "leading whitespace", in: " 12-3456789"},
+		{name: "trailing whitespace", in: "12-3456789 "},
+		{name: "full-width digits", in: "１２-３４５６７８９"},
+		{name: "trailing newline", in: "12-3456789\n"},
+	}
+)
+
+// IRS IRM 3.13.5.21 (2022-01-01) lists the never-issued examples below.
+// https://www.irs.gov/irm/part3/irm_03-013-005
+var (
+	stringSSNAcceptedStructureTestCases = []stringTaxIDTestCase{
+		{name: "lowest structural fields", in: "001-01-0001", shouldPass: true},
+		{name: "area below 666", in: "665-99-9999", shouldPass: true},
+		{name: "area above 666", in: "667-01-0001", shouldPass: true},
+		{name: "area 772", in: "772-01-0001", shouldPass: true},
+		{name: "area 800", in: "800-01-0001", shouldPass: true},
+		{name: "highest structural fields", in: "899-99-9999", shouldPass: true},
+		{name: "IRS never-issued example 111 is structurally valid", in: "111-11-1111", shouldPass: true},
+		{name: "IRS never-issued example 222 is structurally valid", in: "222-22-2222", shouldPass: true},
+		{name: "IRS never-issued example 777 is structurally valid", in: "777-77-7777", shouldPass: true},
+		{name: "IRS never-issued example 123 is structurally valid", in: "123-45-6789", shouldPass: true},
+	}
+	stringSSNRejectedStructureTestCases = []stringTaxIDTestCase{
+		{name: "empty input", in: ""},
+		{name: "zero area", in: "000-01-0001"},
+		{name: "IRS never-issued area 666", in: "666-66-6666"},
+		{name: "area 900", in: "900-01-0001"},
+		{name: "area 901", in: "901-01-0001"},
+		{name: "area 998", in: "998-01-0001"},
+		{name: "area 999", in: "999-01-0001"},
+		{name: "zero group", in: "001-00-0001"},
+		{name: "zero serial", in: "001-01-0000"},
+		{name: "short area", in: "01-01-0001"},
+		{name: "long area", in: "0001-01-0001"},
+		{name: "short group", in: "001-1-0001"},
+		{name: "long group", in: "001-001-0001"},
+		{name: "short serial", in: "001-01-001"},
+		{name: "long serial", in: "001-01-00001"},
+		{name: "letter area", in: "00A-01-0001"},
+		{name: "letter group", in: "001-0A-0001"},
+		{name: "letter serial", in: "001-01-000A"},
+		{name: "missing separators", in: "001010001"},
+		{name: "slash separators", in: "001/01/0001"},
+		{name: "en dash separators", in: "001–01–0001"},
+		{name: "space separators", in: "001 01 0001"},
+		{name: "leading whitespace", in: " 001-01-0001"},
+		{name: "trailing whitespace", in: "001-01-0001 "},
+		{name: "full-width digits", in: "００１-０１-０００１"},
+		{name: "trailing newline", in: "001-01-0001\n"},
+		{name: "EIN-shaped input", in: "12-3456789"},
+	}
+	stringSSNAreaTestCases   = generateStringSSNAreaTestCases()
+	stringSSNGroupTestCases  = generateStringSSNGroupTestCases()
+	stringSSNSerialTestCases = generateStringSSNSerialTestCases()
+)
+
+func TestStringEIN(t *testing.T) {
+	t.Parallel()
+
+	rule := StringEIN()
+	assert.Require(t, assert.Len(t, stringEINRecognizedPrefixes, 83))
+
+	t.Run("IRS prefix corpus", func(t *testing.T) {
+		t.Parallel()
+
+		recognizedCount := 0
+		unrecognizedCount := 0
+		for _, tc := range stringEINPrefixTestCases {
+			if tc.shouldPass {
+				recognizedCount++
+			} else {
+				unrecognizedCount++
+			}
+			t.Run(tc.name, func(t *testing.T) {
+				assertTaxIDRuleValidity(
+					t,
+					rule,
+					tc.in,
+					tc.shouldPass,
+					stringEINErrorMessage,
+					ErrorCodeStringEIN,
+				)
+			})
+		}
+		assert.Equal(t, 83, recognizedCount)
+		assert.Equal(t, 17, unrecognizedCount)
+	})
+
+	t.Run("accepted structures", func(t *testing.T) {
+		t.Parallel()
+
+		for _, tc := range stringEINAcceptedStructureTestCases {
+			t.Run(tc.name, func(t *testing.T) {
+				t.Parallel()
+
+				assertTaxIDRuleValidity(
+					t,
+					rule,
+					tc.in,
+					tc.shouldPass,
+					stringEINErrorMessage,
+					ErrorCodeStringEIN,
+				)
+			})
+		}
+	})
+	t.Run("rejected structures", func(t *testing.T) {
+		t.Parallel()
+
+		for _, tc := range stringEINRejectedStructureTestCases {
+			t.Run(tc.name, func(t *testing.T) {
+				t.Parallel()
+
+				assertTaxIDRuleValidity(
+					t,
+					rule,
+					tc.in,
+					tc.shouldPass,
+					stringEINErrorMessage,
+					ErrorCodeStringEIN,
+				)
+			})
+		}
+	})
+}
+
+func TestStringSSN(t *testing.T) {
+	t.Parallel()
+
+	rule := StringSSN()
+	t.Run("accepted structures", func(t *testing.T) {
+		t.Parallel()
+
+		for _, tc := range stringSSNAcceptedStructureTestCases {
+			t.Run(tc.name, func(t *testing.T) {
+				t.Parallel()
+
+				assertTaxIDRuleValidity(
+					t,
+					rule,
+					tc.in,
+					tc.shouldPass,
+					stringSSNErrorMessage,
+					ErrorCodeStringSSN,
+				)
+			})
+		}
+	})
+	t.Run("rejected structures", func(t *testing.T) {
+		t.Parallel()
+
+		for _, tc := range stringSSNRejectedStructureTestCases {
+			t.Run(tc.name, func(t *testing.T) {
+				t.Parallel()
+
+				assertTaxIDRuleValidity(
+					t,
+					rule,
+					tc.in,
+					tc.shouldPass,
+					stringSSNErrorMessage,
+					ErrorCodeStringSSN,
+				)
+			})
+		}
+	})
+}
+
+func TestStringSSN_StructuralFields(t *testing.T) {
+	t.Parallel()
+
+	rule := StringSSN()
+	// SSA POMS RM 10201.035 (2011-06-23) defines these structural exclusions.
+	// https://secure.ssa.gov/poms.nsf/lnx/0110201035
+	t.Run("areas 000 through 999", func(t *testing.T) {
+		t.Parallel()
+
+		validCount := 0
+		invalidCount := 0
+		for _, tc := range stringSSNAreaTestCases {
+			if tc.shouldPass {
+				validCount++
+			} else {
+				invalidCount++
+			}
+			t.Run(tc.name, func(t *testing.T) {
+				assertTaxIDRuleValidity(
+					t,
+					rule,
+					tc.in,
+					tc.shouldPass,
+					stringSSNErrorMessage,
+					ErrorCodeStringSSN,
+				)
+			})
+		}
+		assert.Equal(t, 898, validCount)
+		assert.Equal(t, 102, invalidCount)
+	})
+	t.Run("groups 00 through 99", func(t *testing.T) {
+		t.Parallel()
+
+		validCount := 0
+		invalidCount := 0
+		for _, tc := range stringSSNGroupTestCases {
+			if tc.shouldPass {
+				validCount++
+			} else {
+				invalidCount++
+			}
+			t.Run(tc.name, func(t *testing.T) {
+				assertTaxIDRuleValidity(
+					t,
+					rule,
+					tc.in,
+					tc.shouldPass,
+					stringSSNErrorMessage,
+					ErrorCodeStringSSN,
+				)
+			})
+		}
+		assert.Equal(t, 99, validCount)
+		assert.Equal(t, 1, invalidCount)
+	})
+	t.Run("serials 0000 through 9999", func(t *testing.T) {
+		t.Parallel()
+
+		validCount := 0
+		invalidCount := 0
+		for _, tc := range stringSSNSerialTestCases {
+			if tc.shouldPass {
+				validCount++
+			} else {
+				invalidCount++
+			}
+			t.Run(tc.name, func(t *testing.T) {
+				assertTaxIDRuleValidity(
+					t,
+					rule,
+					tc.in,
+					tc.shouldPass,
+					stringSSNErrorMessage,
+					ErrorCodeStringSSN,
+				)
+			})
+		}
+		assert.Equal(t, 9_999, validCount)
+		assert.Equal(t, 1, invalidCount)
+	})
+}
+
+func BenchmarkStringEIN(b *testing.B) {
+	rule := StringEIN()
+	benchmarkStringTaxIDRule(
+		b,
+		rule,
+		stringEINPrefixTestCases,
+		stringEINAcceptedStructureTestCases,
+		stringEINRejectedStructureTestCases,
+	)
+}
+
+func BenchmarkStringSSN(b *testing.B) {
+	rule := StringSSN()
+	benchmarkStringTaxIDRule(
+		b,
+		rule,
+		stringSSNAcceptedStructureTestCases,
+		stringSSNRejectedStructureTestCases,
+		stringSSNAreaTestCases,
+		stringSSNGroupTestCases,
+		stringSSNSerialTestCases,
+	)
+}
+
+func benchmarkStringTaxIDRule(
+	b *testing.B,
+	rule govy.Rule[string],
+	testCaseGroups ...[]stringTaxIDTestCase,
+) {
+	b.Helper()
+	for b.Loop() {
+		for _, testCases := range testCaseGroups {
+			for _, tc := range testCases {
+				_ = rule.Validate(tc.in)
+			}
+		}
+	}
+}
+
+func assertTaxIDRuleValidity(
+	t *testing.T,
+	rule govy.Rule[string],
+	in string,
+	shouldPass bool,
+	expectedError string,
+	errorCode govy.ErrorCode,
+) {
+	t.Helper()
+	err := rule.Validate(in)
+	if shouldPass {
+		assert.NoError(t, err)
+		return
+	}
+	assert.EqualError(t, err, expectedError)
+	assert.True(t, govy.HasErrorCode(err, errorCode))
+}
+
+func generateStringEINPrefixTestCases() []stringTaxIDTestCase {
+	testCases := make([]stringTaxIDTestCase, 0, 100)
+	for prefixNumber := range 100 {
+		prefix := fmt.Sprintf("%02d", prefixNumber)
+		_, shouldPass := stringEINRecognizedPrefixes[prefix]
+		testCases = append(testCases, stringTaxIDTestCase{
+			name:       prefix,
+			in:         prefix + "-3456789",
+			shouldPass: shouldPass,
+		})
+	}
+	return testCases
+}
+
+func generateStringSSNAreaTestCases() []stringTaxIDTestCase {
+	testCases := make([]stringTaxIDTestCase, 0, 1_000)
+	for area := range 1_000 {
+		ssn := fmt.Sprintf("%03d-01-0001", area)
+		testCases = append(testCases, stringTaxIDTestCase{
+			name:       ssn,
+			in:         ssn,
+			shouldPass: area != 0 && area != 666 && area < 900,
+		})
+	}
+	return testCases
+}
+
+func generateStringSSNGroupTestCases() []stringTaxIDTestCase {
+	testCases := make([]stringTaxIDTestCase, 0, 100)
+	for group := range 100 {
+		ssn := fmt.Sprintf("001-%02d-0001", group)
+		testCases = append(testCases, stringTaxIDTestCase{
+			name:       ssn,
+			in:         ssn,
+			shouldPass: group != 0,
+		})
+	}
+	return testCases
+}
+
+func generateStringSSNSerialTestCases() []stringTaxIDTestCase {
+	testCases := make([]stringTaxIDTestCase, 0, 10_000)
+	for serial := range 10_000 {
+		ssn := fmt.Sprintf("001-01-%04d", serial)
+		testCases = append(testCases, stringTaxIDTestCase{
+			name:       ssn,
+			in:         ssn,
+			shouldPass: serial != 0,
+		})
+	}
+	return testCases
+}
+
 var stringJSONTestCases = []*struct {
 	in         string
 	shouldFail bool
@@ -1375,6 +1888,364 @@ func BenchmarkStringCVE(b *testing.B) {
 	for b.Loop() {
 		_ = rule.Validate("CVE-2021-44228")
 	}
+}
+
+// RFC 7519 sections 3.1, 6.1, A.1, and A.2 provide the four complete JWT
+// examples: https://www.rfc-editor.org/rfc/rfc7519.html.
+// The b64=false case comes from the immutable RFC 7797 section 7 prohibition:
+// https://www.rfc-editor.org/rfc/rfc7797.html#section-7.
+var stringJWTTestCases = map[string]struct {
+	in                   string
+	expectedErrorDetails string
+}{
+	// cspell:disable
+	"signed token": {
+		in: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9." +
+			"eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ." +
+			"SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+	},
+	"RFC 7519 signed token": {
+		in: "eyJ0eXAiOiJKV1QiLA0KICJhbGciOiJIUzI1NiJ9." +
+			"eyJpc3MiOiJqb2UiLA0KICJleHAiOjEzMDA4MTkzODAsDQogImh0dHA6Ly9leGFtcGxlLmNvbS9pc19yb290Ijp0cnVlfQ." +
+			"dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk",
+	},
+	"RFC 7519 unsecured token": {
+		in: "eyJhbGciOiJub25lIn0." +
+			"eyJpc3MiOiJqb2UiLA0KICJleHAiOjEzMDA4MTkzODAsDQogImh0dHA6Ly9leGFtcGxlLmNvbS9pc19yb290Ijp0cnVlfQ.",
+	},
+	"whitespace and Unicode JSON": {
+		in: "ew0KICJhbGciIDogIm5vbmUiLA0KICJraWQiIDogIs66zrvOtc65zrTOryINCn0." +
+			"ewogIm5hbWUiOiAiSsO2aG4g6ZuqIiwKICJhZG1pbiI6IHRydWUKfQ.",
+	},
+	"minimal unsecured token": {
+		in: "eyJhbGciOiJub25lIn0.e30.",
+	},
+	"empty token": {
+		expectedErrorDetails: "expected exactly 3 JWT segments",
+	},
+	"one segment": {
+		in:                   "not-a-jwt",
+		expectedErrorDetails: "expected exactly 3 JWT segments",
+	},
+	"two segments": {
+		in:                   "eyJhbGciOiJIUzI1NiJ9.e30",
+		expectedErrorDetails: "expected exactly 3 JWT segments",
+	},
+	"four segments": {
+		in:                   "eyJhbGciOiJIUzI1NiJ9.e30.c2ln.ZXh0cmE",
+		expectedErrorDetails: "expected exactly 3 JWT segments",
+	},
+	"RFC 7519 encrypted JWE": {
+		in: "eyJhbGciOiJSU0ExXzUiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0." +
+			"QR1Owv2ug2WyPBnbQrRARTeEk9kDO2w8qDcjiHnSJflSdv1iNqhWXaKH4MqAkQtM" +
+			"oNfABIPJaZm0HaA415sv3aeuBWnD8J-Ui7Ah6cWafs3ZwwFKDFUUsWHSK-IPKxLG" +
+			"TkND09XyjORj_CHAgOPJ-Sd8ONQRnJvWn_hXV1BNMHzUjPyYwEsRhDhzjAD26ima" +
+			"sOTsgruobpYGoQcXUwFDn7moXPRfDE8-NoQX7N7ZYMmpUDkR-Cx9obNGwJQ3nM52" +
+			"YCitxoQVPzjbl7WBuB7AohdBoZOdZ24WlN1lVIeh8v1K4krB8xgKvRU8kgFrEn_a" +
+			"1rZgN5TiysnmzTROF869lQ." +
+			"AxY8DCtDaGlsbGljb3RoZQ." +
+			"MKOle7UQrG6nSxTLX6Mqwt0orbHvAKeWnDYvpIAeZ72deHxz3roJDXQyhxx0wKaM" +
+			"HDjUEOKIwrtkHthpqEanSBNYHZgmNOV7sln1Eu9g3J8." +
+			"fiK51VwhsxJ-siBMR-YFiA",
+		expectedErrorDetails: "expected exactly 3 JWT segments",
+	},
+	"RFC 7519 nested JWT": {
+		in: "eyJhbGciOiJSU0ExXzUiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2IiwiY3R5IjoiSldU" +
+			"In0." +
+			"g_hEwksO1Ax8Qn7HoN-BVeBoa8FXe0kpyk_XdcSmxvcM5_P296JXXtoHISr_DD_M" +
+			"qewaQSH4dZOQHoUgKLeFly-9RI11TG-_Ge1bZFazBPwKC5lJ6OLANLMd0QSL4fYE" +
+			"b9ERe-epKYE3xb2jfY1AltHqBO-PM6j23Guj2yDKnFv6WO72tteVzm_2n17SBFvh" +
+			"DuR9a2nHTE67pe0XGBUS_TK7ecA-iVq5COeVdJR4U4VZGGlxRGPLRHvolVLEHx6D" +
+			"YyLpw30Ay9R6d68YCLi9FYTq3hIXPK_-dmPlOUlKvPr1GgJzRoeC9G5qCvdcHWsq" +
+			"JGTO_z3Wfo5zsqwkxruxwA." +
+			"UmVkbW9uZCBXQSA5ODA1Mg." +
+			"VwHERHPvCNcHHpTjkoigx3_ExK0Qc71RMEParpatm0X_qpg-w8kozSjfNIPPXiTB" +
+			"BLXR65CIPkFqz4l1Ae9w_uowKiwyi9acgVztAi-pSL8GQSXnaamh9kX1mdh3M_TT" +
+			"-FZGQFQsFhu0Z72gJKGdfGE-OE7hS1zuBD5oEUfk0Dmb0VzWEzpxxiSSBbBAzP10" +
+			"l56pPfAtrjEYw-7ygeMkwBl6Z_mLS6w6xUgKlvW6ULmkV-uLC4FUiyKECK4e3WZY" +
+			"Kw1bpgIqGYsw2v_grHjszJZ-_I5uM-9RA8ycX9KqPRp9gc6pXmoU_-27ATs9XCvr" +
+			"ZXUtK2902AUzqpeEUJYjWWxSNsS-r1TJ1I-FMJ4XyAiGrfmo9hQPcNBYxPz3GQb2" +
+			"8Y5CLSQfNgKSGt0A4isp1hBUXBHAndgtcslt7ZoQJaKe_nNJgNliWtWpJ_ebuOpE" +
+			"l8jdhehdccnRMIwAmU1n7SPkmhIl1HlSOpvcvDfhUN5wuqU955vOBvfkBOh5A11U" +
+			"zBuo2WlgZ6hYi9-e3w29bR0C2-pp3jbqxEDw3iWaf2dc5b-LnR0FEYXvI_tYk5rd" +
+			"_J9N0mg0tQ6RbpxNEMNoA9QWk5lgdPvbh9BaO195abQ." +
+			"AVO9iT5AV4CzvDJCdhSFlQ",
+		expectedErrorDetails: "expected exactly 3 JWT segments",
+	},
+	"empty header segment": {
+		in:                   ".e30.c2ln",
+		expectedErrorDetails: "JWT header segment must not be empty",
+	},
+	"empty claims set segment": {
+		in:                   "eyJhbGciOiJIUzI1NiJ9..c2ln",
+		expectedErrorDetails: "JWT claims set segment must not be empty",
+	},
+	"padded header segment": {
+		in:                   "eyJhbGciOiJIUzI1NiJ9=.e30.c2ln",
+		expectedErrorDetails: "JWT header segment must be base64url encoded without padding",
+	},
+	"padded claims set segment": {
+		in:                   "eyJhbGciOiJIUzI1NiJ9.e30=.c2ln",
+		expectedErrorDetails: "JWT claims set segment must be base64url encoded without padding",
+	},
+	"padded signature segment": {
+		in:                   "eyJhbGciOiJIUzI1NiJ9.e30.c2ln=",
+		expectedErrorDetails: "JWT signature segment must be base64url encoded without padding",
+	},
+	"illegal alphabet in header segment": {
+		in:                   "*.e30.c2ln",
+		expectedErrorDetails: "JWT header segment must be base64url encoded without padding",
+	},
+	"illegal alphabet in claims set segment": {
+		in:                   "eyJhbGciOiJIUzI1NiJ9.*.c2ln",
+		expectedErrorDetails: "JWT claims set segment must be base64url encoded without padding",
+	},
+	"illegal alphabet in signature segment": {
+		in:                   "eyJhbGciOiJIUzI1NiJ9.e30.*",
+		expectedErrorDetails: "JWT signature segment must be base64url encoded without padding",
+	},
+	"impossible base64url length in header segment": {
+		in: "A.e30.c2ln",
+		expectedErrorDetails: "JWT header segment must be base64url encoded without padding: " +
+			"illegal base64 data at input byte 0",
+	},
+	"impossible base64url length in claims set segment": {
+		in: "eyJhbGciOiJIUzI1NiJ9.A.c2ln",
+		expectedErrorDetails: "JWT claims set segment must be base64url encoded without padding: " +
+			"illegal base64 data at input byte 0",
+	},
+	"impossible base64url length in signature segment": {
+		in: "eyJhbGciOiJIUzI1NiJ9.e30.A",
+		expectedErrorDetails: "JWT signature segment must be base64url encoded without padding: " +
+			"illegal base64 data at input byte 0",
+	},
+	"malformed header JSON": {
+		in: "eyJhbGciOiJIUzI1NiI.e30.c2ln",
+		expectedErrorDetails: "JWT header segment must contain a JSON object: " +
+			"unexpected end of JSON input",
+	},
+	"malformed claims set JSON": {
+		in: "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOg.c2ln",
+		expectedErrorDetails: "JWT claims set segment must contain a JSON object: " +
+			"unexpected end of JSON input",
+	},
+	"header segment is JSON array": {
+		in: "W10.e30.c2ln",
+		expectedErrorDetails: "JWT header segment must contain a JSON object: " +
+			"json: cannot unmarshal array into Go value of type map[string]json.RawMessage",
+	},
+	"claims set segment is JSON array": {
+		in: "eyJhbGciOiJIUzI1NiJ9.W10.c2ln",
+		expectedErrorDetails: "JWT claims set segment must contain a JSON object: " +
+			"json: cannot unmarshal array into Go value of type map[string]json.RawMessage",
+	},
+	"header segment is JSON null": {
+		in:                   "bnVsbA.e30.c2ln",
+		expectedErrorDetails: "JWT header segment must contain a JSON object",
+	},
+	"claims set segment is JSON null": {
+		in: "eyJhbGciOiJIUzI1NiJ9." +
+			"bnVsbA." +
+			"c2ln",
+		expectedErrorDetails: "JWT claims set segment must contain a JSON object",
+	},
+	"missing algorithm": {
+		in:                   "e30.e30.c2ln",
+		expectedErrorDetails: `JWT header must contain an "alg" string`,
+	},
+	"empty algorithm": {
+		in:                   "eyJhbGciOiIifQ.e30.c2ln",
+		expectedErrorDetails: `JWT header must contain an "alg" string`,
+	},
+	"null algorithm": {
+		in:                   "eyJhbGciOm51bGx9.e30.c2ln",
+		expectedErrorDetails: `JWT header must contain an "alg" string`,
+	},
+	"numeric algorithm": {
+		in:                   "eyJhbGciOjEyM30.e30.c2ln",
+		expectedErrorDetails: `JWT header must contain an "alg" string`,
+	},
+	"non-ASCII algorithm": {
+		in:                   "eyJhbGciOiLimIMifQ.e30.c2ln",
+		expectedErrorDetails: `JWT header must contain an "alg" string`,
+	},
+	"missing signature for signed token": {
+		in:                   "eyJhbGciOiJIUzI1NiJ9.e30.",
+		expectedErrorDetails: `JWT signature segment must not be empty unless alg is "none"`,
+	},
+	"signature present for none algorithm": {
+		in:                   "eyJhbGciOiJub25lIn0.e30.c2ln",
+		expectedErrorDetails: `JWT signature segment must be empty when alg is "none"`,
+	},
+	"leading token whitespace": {
+		in:                   " eyJhbGciOiJIUzI1NiJ9.e30.c2ln",
+		expectedErrorDetails: "JWT header segment must be base64url encoded without padding",
+	},
+	"raw Unicode signature": {
+		in:                   "eyJhbGciOiJIUzI1NiJ9.e30.雪",
+		expectedErrorDetails: "JWT signature segment must be base64url encoded without padding",
+	},
+	"invalid UTF-8 in header JSON": {
+		in:                   "eyJhbGciOiJIUzI1NiIsIngiOiL_In0.e30.c2ln",
+		expectedErrorDetails: "JWT header segment must contain valid UTF-8 JSON",
+	},
+	"invalid UTF-8 in claims set JSON": {
+		in:                   "eyJhbGciOiJIUzI1NiJ9.eyJ4Ijoi_yJ9.c2ln",
+		expectedErrorDetails: "JWT claims set segment must contain valid UTF-8 JSON",
+	},
+	"derived encoded payload option": {
+		in: "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6WyJiNjQiXX0." +
+			"e30.c2ln",
+	},
+	"RFC 7797 unencoded payload option": {
+		in: "eyJhbGciOiJIUzI1NiIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19." +
+			"e30.c2ln",
+		expectedErrorDetails: `JWT header must not set "b64" to false`,
+	},
+	"null b64 option": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6bnVsbH0.e30.c2ln",
+		expectedErrorDetails: `JWT header "b64" must be a boolean`,
+	},
+	"string b64 option": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6ImZhbHNlIn0.e30.c2ln",
+		expectedErrorDetails: `JWT header "b64" must be a boolean`,
+	},
+	"number b64 option": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6MH0.e30.c2ln",
+		expectedErrorDetails: `JWT header "b64" must be a boolean`,
+	},
+	"object b64 option": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6e319.e30.c2ln",
+		expectedErrorDetails: `JWT header "b64" must be a boolean`,
+	},
+	"array b64 option": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6W119.e30.c2ln",
+		expectedErrorDetails: `JWT header "b64" must be a boolean`,
+	},
+	"b64 option without crit": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZX0.e30.c2ln",
+		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
+	},
+	"b64 option with null crit": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6bnVsbH0.e30.c2ln",
+		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
+	},
+	"b64 option with string crit": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6ImI2NCJ9.e30.c2ln",
+		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
+	},
+	"b64 option with number crit": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6MH0.e30.c2ln",
+		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
+	},
+	"b64 option with object crit": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6e319.e30.c2ln",
+		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
+	},
+	"b64 option with empty crit": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6W119.e30.c2ln",
+		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
+	},
+	"b64 option with unrelated crit": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6WyJleHAiXX0.e30.c2ln",
+		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
+	},
+	"b64 option with non-string crit member": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6WzBdfQ.e30.c2ln",
+		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
+	},
+	"b64 option with null crit member": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6W251bGxdfQ.e30.c2ln",
+		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
+	},
+	"b64 option with boolean crit member": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6W3RydWVdfQ.e30.c2ln",
+		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
+	},
+	"b64 option with object crit member": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6W3t9XX0.e30.c2ln",
+		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
+	},
+	"b64 option with array crit member": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6W1tdXX0.e30.c2ln",
+		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
+	},
+	"b64 option with mixed crit members": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6WyJiNjQiLDBdfQ.e30.c2ln",
+		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
+	},
+	// cspell:enable
+}
+
+func TestStringJWT(t *testing.T) {
+	const expectedErrorPrefix = "string must be a valid JSON Web Token (JWT): "
+
+	for name, tt := range stringJWTTestCases {
+		t.Run(name, func(t *testing.T) {
+			err := StringJWT().Validate(tt.in)
+			if tt.expectedErrorDetails != "" {
+				assert.Require(t, assert.Error(t, err))
+				assert.EqualError(t, err, expectedErrorPrefix+tt.expectedErrorDetails)
+				assert.True(t, govy.HasErrorCode(err, ErrorCodeStringJWT))
+				return
+			}
+			assert.NoError(t, err)
+		})
+	}
+}
+
+func TestStringJWTErrorPrecedence(t *testing.T) {
+	const expectedErrorPrefix = "string must be a valid JSON Web Token (JWT): "
+
+	tests := map[string]struct {
+		in                   string
+		expectedErrorDetails string
+	}{
+		"algorithm before claims": {
+			in:                   "e30.eyJzdWIiOg.*",
+			expectedErrorDetails: `JWT header must contain an "alg" string`,
+		},
+		"b64 before claims": {
+			in: "eyJhbGciOiJIUzI1NiIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19." +
+				"eyJzdWIiOg.*",
+			expectedErrorDetails: `JWT header must not set "b64" to false`,
+		},
+		"crit before claims": {
+			in: "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZX0." +
+				"eyJzdWIiOg.*",
+			expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
+		},
+		"claims before signature": {
+			in: "eyJhbGciOiJIUzI1NiJ9." +
+				"eyJzdWIiOg.*",
+			expectedErrorDetails: "JWT claims set segment must contain a JSON object: " +
+				"unexpected end of JSON input",
+		},
+		"algorithm before signature": {
+			in:                   "e30.e30.*",
+			expectedErrorDetails: `JWT header must contain an "alg" string`,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			err := StringJWT().Validate(tt.in)
+			assert.Require(t, assert.Error(t, err))
+			assert.EqualError(t, err, expectedErrorPrefix+tt.expectedErrorDetails)
+			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringJWT))
+		})
+	}
+}
+
+func BenchmarkStringJWT(b *testing.B) {
+	rule := StringJWT()
+
+	for b.Loop() {
+		for _, tt := range stringJWTTestCases {
+			_ = rule.Validate(tt.in)
+		}
+	}
+	b.ReportMetric(float64(len(stringJWTTestCases)), "validations/op")
 }
 
 var stringContainsTestCases = []*struct {
@@ -2124,7 +2995,8 @@ func getStringCronTestCases() []*stringCrontabTestCase {
 		getRandom := func() int {
 			return field.lower + rand.Intn(field.upper-field.lower)
 		}
-		testCases = append(testCases,
+		testCases = append(
+			testCases,
 			&stringCrontabTestCase{createCron(field.n, "%d", getRandom()), false},
 			&stringCrontabTestCase{createCron(field.n, "%d", field.lower), false},
 			&stringCrontabTestCase{createCron(field.n, "%d", field.upper), false},

@@ -47,7 +47,9 @@
     "Luhn",
     "Messagef",
     "NEDSZAJJXXX",
+    "Qssw",
     "Skłodowska",
+    "XVCJ",
     "adyen",
     "atoi",
     "cidrv",
@@ -82,6 +84,9 @@
     "vuln",
     "vulns",
     "Implicits",
-    "mygovy"
+    "mygovy",
+    "unpadded",
+    "JWSB64",
+    "ITIN"
   ]
 }

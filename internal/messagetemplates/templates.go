@@ -55,9 +55,12 @@ const (
 	StringLuhnChecksumTemplate
 	StringBICTemplate
 	StringBICISO93622014Template
+	StringEINTemplate
+	StringSSNTemplate
 	StringJSONTemplate
 	StringSemverTemplate
 	StringCVETemplate
+	StringJWTTemplate
 	StringContainsTemplate
 	StringExcludesTemplate
 	StringStartsWithTemplate
@@ -73,6 +76,7 @@ const (
 	StringDateTimeTemplate
 	StringTimeZoneTemplate
 	StringKubernetesQualifiedNameTemplate
+	StringMongoDBObjectIDTemplate
 	URLTemplate
 	SliceUniqueTemplate
 	UniquePropertiesTemplate
@@ -133,9 +137,12 @@ var rawMessageTemplates = map[templateKey]string{
 	StringLuhnChecksumTemplate:   "string must pass the Luhn checksum",
 	StringBICTemplate:            "string must be a valid Business Identifier Code (BIC)",
 	StringBICISO93622014Template: "string must be a valid ISO 9362:2014 Business Identifier Code (BIC)",
+	StringEINTemplate:            "string must be a valid Employer Identification Number (EIN)",
+	StringSSNTemplate:            "string must be a valid Social Security Number (SSN)",
 	StringJSONTemplate:           "string must be a valid JSON",
 	StringSemverTemplate:         "string must be a valid semantic version",
 	StringCVETemplate:            "string must be a valid CVE ID",
+	StringJWTTemplate:            "string must be a valid JSON Web Token (JWT){{- if .Error }}: {{ .Error }}{{- end }}",
 	StringContainsTemplate:       `string must contain the following substrings: {{ joinSlice .ComparisonValue "'" }}`,
 	StringExcludesTemplate:       `string must not contain any of the following substrings: {{ joinSlice .ComparisonValue "'" }}`,
 	StringStartsWithTemplate: `
@@ -197,6 +204,7 @@ var rawMessageTemplates = map[templateKey]string{
 	string must be a valid Kubernetes Qualified Name
 {{- end }}
 `,
+	StringMongoDBObjectIDTemplate: "string must be a 24-character hexadecimal MongoDB ObjectID",
 	SliceUniqueTemplate: `elements are not unique, {{ .Custom.FirstOrdinal }} and {{ .Custom.SecondOrdinal }} elements collide
 {{- if gt (len .Custom.Constraints) 0 }} based on constraints: {{ joinSlice .Custom.Constraints "" }}{{- end }}`,
 	UniquePropertiesTemplate: `all of [{{ joinSlice .ComparisonValue "" }}] properties must be unique, but '{{ .Custom.FirstProperty }}' collides with '{{ .Custom.SecondProperty }}'
