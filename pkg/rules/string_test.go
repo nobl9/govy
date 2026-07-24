@@ -371,12 +371,49 @@ func TestStringMongoDBObjectID(t *testing.T) {
 	}
 }
 
+func Test_isMongoDBObjectID(t *testing.T) {
+	oracle := regexp.MustCompile(`^[0-9a-fA-F]{24}$`)
+	assertMatchesOracle := func(t *testing.T, input string) {
+		t.Helper()
+		expected := oracle.MatchString(input)
+		actual := isMongoDBObjectID(input)
+		if expected != actual {
+			t.Fatalf("input %q: expected %t, got %t", input, expected, actual)
+		}
+	}
+
+	t.Run("shared corpus", func(t *testing.T) {
+		for name, tt := range stringMongoDBObjectIDTestCases {
+			t.Run(name, func(t *testing.T) {
+				assertMatchesOracle(t, tt.in)
+			})
+		}
+	})
+	t.Run("lengths from zero through 48", func(t *testing.T) {
+		for length := range 49 {
+			assertMatchesOracle(t, strings.Repeat("a", length))
+		}
+	})
+	t.Run("every single-byte substitution", func(t *testing.T) {
+		candidate := []byte("000000000000000000000000")
+		for position := range candidate {
+			for value := range 256 {
+				candidate[position] = byte(value)
+				assertMatchesOracle(t, string(candidate))
+			}
+			candidate[position] = '0'
+		}
+	})
+}
+
 func BenchmarkStringMongoDBObjectID(b *testing.B) {
 	rule := StringMongoDBObjectID()
-	for b.Loop() {
-		for _, tt := range stringMongoDBObjectIDTestCases {
-			_ = rule.Validate(tt.in)
-		}
+	for name, tt := range stringMongoDBObjectIDTestCases {
+		b.Run(name, func(b *testing.B) {
+			for b.Loop() {
+				_ = rule.Validate(tt.in)
+			}
+		})
 	}
 }
 
