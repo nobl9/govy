@@ -70,6 +70,7 @@
     "vuln",
     "vulns",
     "Implicits",
-    "mygovy"
+    "mygovy",
+    "unpadded"
   ]
 }
