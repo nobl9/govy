@@ -59,6 +59,11 @@ const (
 	StringLuhnChecksumTemplate
 	StringBICTemplate
 	StringBICISO93622014Template
+	StringUUIDRFC4122Template
+	StringUUIDv3Template
+	StringUUIDv4Template
+	StringUUIDv5Template
+	StringULIDTemplate
 	StringEINTemplate
 	StringSSNTemplate
 	StringJSONTemplate
@@ -145,6 +150,11 @@ var rawMessageTemplates = map[templateKey]string{
 	StringLuhnChecksumTemplate:   "string must pass the Luhn checksum",
 	StringBICTemplate:            "string must be a valid Business Identifier Code (BIC)",
 	StringBICISO93622014Template: "string must be a valid ISO 9362:2014 Business Identifier Code (BIC)",
+	StringUUIDRFC4122Template:    "string must be a valid Universally Unique Identifier (UUID) as defined by RFC 4122",
+	StringUUIDv3Template:         "string must be a valid version 3 Universally Unique Identifier (UUID) as defined by RFC 4122",
+	StringUUIDv4Template:         "string must be a valid version 4 Universally Unique Identifier (UUID) as defined by RFC 4122",
+	StringUUIDv5Template:         "string must be a valid version 5 Universally Unique Identifier (UUID) as defined by RFC 4122",
+	StringULIDTemplate:           "string must be a valid Universally Unique Lexicographically Sortable Identifier (ULID)",
 	StringEINTemplate:            "string must be a valid Employer Identification Number (EIN)",
 	StringSSNTemplate:            "string must be a valid Social Security Number (SSN)",
 	StringJSONTemplate:           "string must be a valid JSON",

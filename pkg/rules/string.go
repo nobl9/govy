@@ -18,6 +18,8 @@ import (
 	"github.com/nobl9/govy/pkg/govy"
 )
 
+const uuidPattern = `^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`
+
 // StringNotEmpty ensures the property's value is not empty.
 // The string is considered empty if it contains only whitespace characters.
 func StringNotEmpty() govy.Rule[string] {
@@ -374,7 +376,21 @@ func isValidSSN(s string) bool {
 //
 // [RFC 4122]: https://www.ietf.org/rfc/rfc4122.txt
 func StringUUID() govy.Rule[string] {
-	return StringMatchRegexp(uuidRegexp()).
+	tpl := messagetemplates.Get(messagetemplates.StringMatchRegexpTemplate)
+
+	return govy.NewRule(func(s string) error {
+		if !isValidUUID(s) {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue:   s,
+				ComparisonValue: uuidPattern,
+			})
+		}
+		return nil
+	}).
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+			ComparisonValue: uuidPattern,
+		})).
 		WithDetails("expected RFC-4122 compliant UUID string").
 		WithExamples(
 			"00000000-0000-0000-0000-000000000000",
@@ -382,6 +398,161 @@ func StringUUID() govy.Rule[string] {
 			"79258D24-01A7-47E5-ACBB-7E762DE52298",
 		).
 		WithErrorCode(ErrorCodeStringUUID)
+}
+
+// StringUUIDRFC4122 ensures the property's value is a Universally Unique Identifier (UUID)
+// string as defined by RFC 4122.
+// It requires the canonical 36-character form, a version from 1 through 5, and RFC 4122 variant bits.
+func StringUUIDRFC4122() govy.Rule[string] {
+	tpl := messagetemplates.Get(messagetemplates.StringUUIDRFC4122Template)
+
+	return govy.NewRule(func(s string) error {
+		if !isValidUUIDRFC4122(s) {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringUUIDRFC4122).
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+}
+
+// StringUUIDv3 ensures the property's value is a version 3 Universally Unique Identifier (UUID)
+// string as defined by RFC 4122.
+func StringUUIDv3() govy.Rule[string] {
+	tpl := messagetemplates.Get(messagetemplates.StringUUIDv3Template)
+
+	return govy.NewRule(func(s string) error {
+		if !isValidUUIDVersion(s, '3') {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringUUIDv3).
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+}
+
+// StringUUIDv4 ensures the property's value is a version 4 Universally Unique Identifier (UUID)
+// string as defined by RFC 4122.
+func StringUUIDv4() govy.Rule[string] {
+	tpl := messagetemplates.Get(messagetemplates.StringUUIDv4Template)
+
+	return govy.NewRule(func(s string) error {
+		if !isValidUUIDVersion(s, '4') {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringUUIDv4).
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+}
+
+// StringUUIDv5 ensures the property's value is a version 5 Universally Unique Identifier (UUID)
+// string as defined by RFC 4122.
+func StringUUIDv5() govy.Rule[string] {
+	tpl := messagetemplates.Get(messagetemplates.StringUUIDv5Template)
+
+	return govy.NewRule(func(s string) error {
+		if !isValidUUIDVersion(s, '5') {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringUUIDv5).
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+}
+
+func isValidUUID(s string) bool {
+	if len(s) != 36 || s[8] != '-' || s[13] != '-' || s[18] != '-' || s[23] != '-' {
+		return false
+	}
+	return isHexadecimalString(s[:8]) &&
+		isHexadecimalString(s[9:13]) &&
+		isHexadecimalString(s[14:18]) &&
+		isHexadecimalString(s[19:23]) &&
+		isHexadecimalString(s[24:])
+}
+
+func isValidUUIDRFC4122(s string) bool {
+	return len(s) == 36 &&
+		s[14] >= '1' && s[14] <= '5' &&
+		isUUIDRFC4122Variant(s[19]) &&
+		isValidUUID(s)
+}
+
+func isValidUUIDVersion(s string, version byte) bool {
+	return len(s) == 36 &&
+		s[14] == version &&
+		isUUIDRFC4122Variant(s[19]) &&
+		isValidUUID(s)
+}
+
+func isUUIDRFC4122Variant(b byte) bool {
+	return b == '8' || b == '9' || b|0x20 == 'a' || b|0x20 == 'b'
+}
+
+func isHexadecimalString(s string) bool {
+	for i := range len(s) {
+		b := s[i]
+		lower := b | 0x20
+		if (b < '0' || b > '9') && (lower < 'a' || lower > 'f') {
+			return false
+		}
+	}
+	return true
+}
+
+// StringULID ensures the property's value is a 26-character Crockford Base32
+// Universally Unique Lexicographically Sortable Identifier (ULID) string.
+func StringULID() govy.Rule[string] {
+	tpl := messagetemplates.Get(messagetemplates.StringULIDTemplate)
+
+	return govy.NewRule(func(s string) error {
+		if !isValidULID(s) {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringULID).
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+}
+
+func isValidULID(s string) bool {
+	if len(s) != 26 {
+		return false
+	}
+	if s[0] < '0' || s[0] > '7' {
+		return false
+	}
+	for i := 1; i < len(s); i++ {
+		if !isCrockfordBase32Byte(s[i]) {
+			return false
+		}
+	}
+	return true
+}
+
+func isCrockfordBase32Byte(b byte) bool {
+	if b >= '0' && b <= '9' {
+		return true
+	}
+	lower := b | 0x20
+	return lower >= 'a' && lower <= 'z' &&
+		lower != 'i' && lower != 'l' && lower != 'o' && lower != 'u'
 }
 
 // StringMongoDBObjectID ensures the property's value is a 24-character

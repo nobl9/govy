@@ -28,6 +28,7 @@
     "CODEOWNERS",
     "bin/**",
     "docs/assets/**",
+    "pkg/rules/string_test.go",
     "context7.json"
   ],
   "words": [
@@ -47,9 +48,8 @@
     "Luhn",
     "Messagef",
     "NEDSZAJJXXX",
-    "Qssw",
     "Skłodowska",
-    "XVCJ",
+    "UUIDRFC",
     "adyen",
     "afbf",
     "atoi",
@@ -84,6 +84,7 @@
     "structs",
     "tmpl",
     "tpng",
+    "uuidv",
     "vuln",
     "vulns",
     "Implicits",
