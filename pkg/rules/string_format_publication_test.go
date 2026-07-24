@@ -1,6 +1,8 @@
 package rules
 
 import (
+	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/nobl9/govy/internal/assert"
@@ -75,6 +77,38 @@ func TestStringISBN(t *testing.T) {
 	})
 }
 
+func TestStringISBN_VeryLargeInvalid(t *testing.T) {
+	input := strings.Repeat("0", 1<<20)
+	tests := map[string]struct {
+		rule    govy.Rule[string]
+		message string
+		code    govy.ErrorCode
+	}{
+		"isbn": {
+			rule:    StringISBN(),
+			message: "string must be a valid International Standard Book Number (ISBN) in ISBN-10 or ISBN-13 format",
+			code:    ErrorCodeStringISBN,
+		},
+		"isbn-10": {
+			rule:    StringISBN10(),
+			message: "string must be a valid International Standard Book Number (ISBN) in ISBN-10 format",
+			code:    ErrorCodeStringISBN10,
+		},
+		"isbn-13": {
+			rule:    StringISBN13(),
+			message: "string must be a valid International Standard Book Number (ISBN) in ISBN-13 format",
+			code:    ErrorCodeStringISBN13,
+		},
+	}
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			err := test.rule.Validate(input)
+			assert.EqualError(t, err, test.message)
+			assert.True(t, govy.HasErrorCode(err, test.code))
+		})
+	}
+}
+
 func BenchmarkStringISBN(b *testing.B) {
 	benchmarkStringPublicationRule(
 		b,
@@ -82,6 +116,16 @@ func BenchmarkStringISBN(b *testing.B) {
 		validISBNTestCases,
 		invalidISBNTestCases,
 	)
+}
+
+func BenchmarkStringISBNVeryLargeInvalid(b *testing.B) {
+	rule := StringISBN()
+	input := strings.Repeat("0", 1<<20)
+
+	for b.Loop() {
+		_ = rule.Validate(input)
+	}
+	b.ReportMetric(1, "validations/op")
 }
 
 var validISBN10TestCases = map[string]string{
@@ -196,6 +240,44 @@ func TestStringISBN13(t *testing.T) {
 	})
 }
 
+func TestISBNPredicatesMatchReference(t *testing.T) {
+	tests := map[string]struct {
+		predicate func(string) bool
+		reference func(string) bool
+		inputs    []map[string]string
+	}{
+		"isbn": {
+			predicate: isISBN,
+			reference: referenceISBN,
+			inputs: []map[string]string{
+				validISBNTestCases,
+				invalidISBNTestCases,
+			},
+		},
+		"isbn-10": {
+			predicate: isISBN10,
+			reference: referenceISBN10,
+			inputs: []map[string]string{
+				validISBN10TestCases,
+				invalidISBN10TestCases,
+			},
+		},
+		"isbn-13": {
+			predicate: isISBN13,
+			reference: referenceISBN13,
+			inputs: []map[string]string{
+				validISBN13TestCases,
+				invalidISBN13TestCases,
+			},
+		},
+	}
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			testStringPredicateMatchesReference(t, test.predicate, test.reference, test.inputs...)
+		})
+	}
+}
+
 func BenchmarkStringISBN13(b *testing.B) {
 	benchmarkStringPublicationRule(
 		b,
@@ -262,6 +344,19 @@ func TestStringISSN(t *testing.T) {
 	})
 }
 
+func TestISSNPredicateMatchesReference(t *testing.T) {
+	format := regexp.MustCompile(`^\d{4}-\d{3}[0-9Xx]$`)
+	testStringPredicateMatchesReference(
+		t,
+		isISSN,
+		func(s string) bool {
+			return referenceISSN(format, s)
+		},
+		validISSNTestCases,
+		invalidISSNTestCases,
+	)
+}
+
 func BenchmarkStringISSN(b *testing.B) {
 	benchmarkStringPublicationRule(
 		b,
@@ -269,6 +364,22 @@ func BenchmarkStringISSN(b *testing.B) {
 		validISSNTestCases,
 		invalidISSNTestCases,
 	)
+}
+
+func Benchmark_isISSN(b *testing.B) {
+	for b.Loop() {
+		for name, input := range validISSNTestCases {
+			if !isISSN(input) {
+				b.Fatalf("%s: expected valid ISSN", name)
+			}
+		}
+		for name, input := range invalidISSNTestCases {
+			if isISSN(input) {
+				b.Fatalf("%s: expected invalid ISSN", name)
+			}
+		}
+	}
+	b.ReportMetric(float64(len(validISSNTestCases)+len(invalidISSNTestCases)), "validations/op")
 }
 
 func benchmarkStringPublicationRule(
@@ -286,4 +397,184 @@ func benchmarkStringPublicationRule(
 			_ = rule.Validate(in)
 		}
 	}
+	b.ReportMetric(float64(len(validInputs)+len(invalidInputs)), "validations/op")
+}
+
+type stringPredicate func(string) bool
+
+func testStringPredicateMatchesReference(
+	t *testing.T,
+	predicate stringPredicate,
+	reference stringPredicate,
+	inputs ...map[string]string,
+) {
+	t.Helper()
+	for _, inputSet := range inputs {
+		for name, input := range inputSet {
+			assertStringPredicateMatchesReference(t, predicate, reference, name, input)
+			testStringPredicateByteEdits(t, predicate, reference, input)
+		}
+	}
+}
+
+func testStringPredicateByteEdits(
+	t *testing.T,
+	predicate stringPredicate,
+	reference stringPredicate,
+	input string,
+) {
+	t.Helper()
+	for position := range len(input) {
+		candidate := input[:position] + input[position+1:]
+		assertStringPredicateMatchesReference(t, predicate, reference, "byte deletion", candidate)
+	}
+
+	replacement := []byte(input)
+	for position := range len(replacement) {
+		original := replacement[position]
+		for value := range 256 {
+			replacement[position] = byte(value)
+			assertStringPredicateMatchesReference(
+				t,
+				predicate,
+				reference,
+				"byte replacement",
+				string(replacement),
+			)
+		}
+		replacement[position] = original
+	}
+
+	for position := range len(input) + 1 {
+		insertion := make([]byte, len(input)+1)
+		copy(insertion, input[:position])
+		copy(insertion[position+1:], input[position:])
+		for value := range 256 {
+			insertion[position] = byte(value)
+			assertStringPredicateMatchesReference(
+				t,
+				predicate,
+				reference,
+				"byte insertion",
+				string(insertion),
+			)
+		}
+	}
+}
+
+func assertStringPredicateMatchesReference(
+	t *testing.T,
+	predicate stringPredicate,
+	reference stringPredicate,
+	name string,
+	input string,
+) {
+	t.Helper()
+	got := predicate(input)
+	expected := reference(input)
+	if got != expected {
+		t.Fatalf("%s for %q: got %t, expected %t", name, input, got, expected)
+	}
+}
+
+func referenceISBN(s string) bool {
+	return referenceISBN10(s) || referenceISBN13(s)
+}
+
+func referenceISBN10(s string) bool {
+	isbn, ok := referenceNormalizeISBN(s)
+	if !ok || len(isbn) != isbn10Length {
+		return false
+	}
+
+	sum := 0
+	for i := range isbn10Length - 1 {
+		if !isASCIIDigit(isbn[i]) {
+			return false
+		}
+		sum += int(isbn[i]-'0') * (isbn10Length - i)
+	}
+
+	switch checkDigit := isbn[isbn10Length-1]; {
+	case isASCIIDigit(checkDigit):
+		sum += int(checkDigit - '0')
+	case checkDigit == 'X' || checkDigit == 'x':
+		sum += 10
+	default:
+		return false
+	}
+	return sum%11 == 0
+}
+
+func referenceISBN13(s string) bool {
+	isbn, ok := referenceNormalizeISBN(s)
+	if !ok || len(isbn) != isbn13Length ||
+		(!strings.HasPrefix(isbn, "978") && !strings.HasPrefix(isbn, "979")) {
+		return false
+	}
+
+	sum := 0
+	for i := range isbn13Length - 1 {
+		if !isASCIIDigit(isbn[i]) {
+			return false
+		}
+		weight := 1
+		if i%2 != 0 {
+			weight = 3
+		}
+		sum += int(isbn[i]-'0') * weight
+	}
+	if !isASCIIDigit(isbn[isbn13Length-1]) {
+		return false
+	}
+	return (10-sum%10)%10 == int(isbn[isbn13Length-1]-'0')
+}
+
+func referenceNormalizeISBN(s string) (string, bool) {
+	if s == "" {
+		return "", false
+	}
+
+	var builder strings.Builder
+	previousWasSeparator := false
+	for i := range len(s) {
+		switch c := s[i]; {
+		case isASCIIDigit(c) || c == 'X' || c == 'x':
+			builder.WriteByte(c)
+			previousWasSeparator = false
+		case c == '-' || c == ' ':
+			if i == 0 || i == len(s)-1 || previousWasSeparator {
+				return "", false
+			}
+			previousWasSeparator = true
+		default:
+			return "", false
+		}
+	}
+	return builder.String(), true
+}
+
+func referenceISSN(format *regexp.Regexp, s string) bool {
+	if !format.MatchString(s) {
+		return false
+	}
+
+	issn := strings.ReplaceAll(s, "-", "")
+	sum := 0
+	for i := range 7 {
+		if !isASCIIDigit(issn[i]) {
+			return false
+		}
+		sum += int(issn[i]-'0') * (8 - i)
+	}
+
+	switch checkDigit := issn[7]; {
+	case isASCIIDigit(checkDigit):
+		sum += int(checkDigit - '0')
+	case checkDigit == 'X' || checkDigit == 'x':
+		sum += 10
+	default:
+		return false
+	}
+	return sum%11 == 0
 }
