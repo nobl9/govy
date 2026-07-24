@@ -1178,6 +1178,311 @@ func BenchmarkStringCIDRv6(b *testing.B) {
 	}
 }
 
+var stringJSONTestCases = []*struct {
+	in         string
+	shouldFail bool
+}{
+	{`{"foo": "bar"}`, false},
+	{`{}`, false},
+	{`[]`, false},
+	{"{]}", true},
+	{"", true},
+	{"yaml: ok", true},
+}
+
+func TestStringJSON(t *testing.T) {
+	for _, tc := range stringJSONTestCases {
+		err := StringJSON().Validate(tc.in)
+		if tc.shouldFail {
+			assert.Error(t, err)
+			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringJSON))
+		} else {
+			assert.NoError(t, err)
+		}
+	}
+}
+
+func BenchmarkStringJSON(b *testing.B) {
+	for _, tc := range stringJSONTestCases {
+		rule := StringJSON()
+		for range b.N {
+			_ = rule.Validate(tc.in)
+		}
+	}
+}
+
+var validSemverTestCases = []string{
+	"0.0.4",
+	"1.2.3",
+	"10.20.30",
+	"1.1.2-prerelease+meta",
+	"1.1.2+meta",
+	"1.1.2+meta-valid",
+	"1.0.0-alpha",
+	"1.0.0-beta",
+	"1.0.0-alpha.beta",
+	"1.0.0-alpha.beta.1",
+	"1.0.0-alpha.1",
+	"1.0.0-alpha0.valid",
+	"1.0.0-alpha.0valid",
+	"1.0.0-alpha-a.b-c-somethinglong+build.1-aef.1-its-okay",
+	"1.0.0-rc.1+build.1",
+	"2.0.0-rc.1+build.123",
+	"1.2.3-beta",
+	"10.2.3-DEV-SNAPSHOT",
+	"1.2.3-SNAPSHOT-123",
+	"1.0.0",
+	"2.0.0",
+	"1.1.7",
+	"2.0.0+build.1848",
+	"2.0.1-alpha.1227",
+	"1.0.0-alpha+beta",
+	"1.2.3----RC-SNAPSHOT.12.9.1--.12+788",
+	"1.2.3----R-S.12.9.1--.12+meta",
+	"1.2.3----RC-SNAPSHOT.12.9.1--.12",
+	"1.0.0+0.build.1-rc.10000aaa-kk-0.1",
+	"99999999999999999999999.999999999999999999.99999999999999999",
+	"1.0.0-0A.is.legal",
+	"0.1.0",
+	"1.0.0+20130313144700",
+	"1.0.0-beta+exp.sha.5114f85",
+	"2.7.3-rc.1+build.11.e0f985a",
+}
+
+var invalidSemverTestCases = []string{
+	"1",
+	"1.2",
+	"1.2.3-0123",
+	"1.2.3-0123.0123",
+	"1.1.2+.123",
+	"+invalid",
+	"-invalid",
+	"-invalid+invalid",
+	"-invalid.01",
+	"alpha",
+	"alpha.beta",
+	"alpha.beta.1",
+	"alpha.1",
+	"alpha+beta",
+	"alpha_beta",
+	"alpha.",
+	"alpha..",
+	"beta",
+	"1.0.0-alpha_beta",
+	"-alpha.",
+	"1.0.0-alpha..",
+	"1.0.0-alpha..1",
+	"1.0.0-alpha...1",
+	"1.0.0-alpha....1",
+	"1.0.0-alpha.....1",
+	"1.0.0-alpha......1",
+	"1.0.0-alpha.......1",
+	"01.1.1",
+	"1.01.1",
+	"1.1.01",
+	"1.2",
+	"1.2.3.DEV",
+	"1.2-SNAPSHOT",
+	"1.2.31.2.3----RC-SNAPSHOT.12.09.1--..12+788",
+	"1.2-RC-SNAPSHOT",
+	"-1.0.3-gamma+b7718",
+	"+justmeta",
+	"9.8.7+meta+meta",
+	"9.8.7-whatever+meta+meta",
+	"99999999999999999999999.999999999999999999.99999999999999999----RC-SNAPSHOT.12.09.1--------------------------------..12",
+	"",
+	"1.2.3.4",
+	"01.2.3",
+	"1.02.3",
+	"1.2.03",
+	"1.2.3-",
+	"1.2.3-01",
+	"v1.2.3",
+	"1.2.3+build..1",
+}
+
+func TestStringSemver(t *testing.T) {
+	rule := StringSemver()
+	t.Run("valid versions", func(t *testing.T) {
+		for _, version := range validSemverTestCases {
+			t.Run(fmt.Sprintf("%q", version), func(t *testing.T) {
+				assert.NoError(t, rule.Validate(version))
+			})
+		}
+	})
+	t.Run("invalid versions", func(t *testing.T) {
+		for _, version := range invalidSemverTestCases {
+			t.Run(fmt.Sprintf("%q", version), func(t *testing.T) {
+				err := rule.Validate(version)
+				assert.EqualError(t, err, "string must be a valid semantic version")
+				assert.True(t, govy.HasErrorCode(err, ErrorCodeStringSemver))
+			})
+		}
+	})
+}
+
+func BenchmarkStringSemver(b *testing.B) {
+	rule := StringSemver()
+	for b.Loop() {
+		_ = rule.Validate("2.7.3-rc.1+build.11.e0f985a")
+	}
+}
+
+var stringCVETestCases = map[string]struct {
+	in            string
+	expectedError string
+}{
+	"four digit sequence": {
+		in: "CVE-1999-0001",
+	},
+	"four digit year before 1999": {
+		in: "CVE-1998-0001",
+	},
+	"zero sequence": {
+		in: "CVE-2021-0000",
+	},
+	"sequence with leading zero": {
+		in: "CVE-2014-0160",
+	},
+	"five digit sequence with leading zero": {
+		in: "CVE-2021-00001",
+	},
+	"sequence with two leading zeroes": {
+		in: "CVE-2021-0990",
+	},
+	"five digit sequence": {
+		in: "CVE-2021-44228",
+	},
+	"long sequence": {
+		in: "CVE-2024-12345",
+	},
+	"nineteen digit sequence": {
+		in: "CVE-2024-1234567890123456789",
+	},
+	"empty": {
+		in:            "",
+		expectedError: "string must be a valid CVE ID",
+	},
+	"lowercase prefix": {
+		in:            "cve-2021-44228",
+		expectedError: "string must be a valid CVE ID",
+	},
+	"short sequence": {
+		in:            "CVE-2021-123",
+		expectedError: "string must be a valid CVE ID",
+	},
+	"letters in sequence": {
+		in:            "CVE-2021-ABCD",
+		expectedError: "string must be a valid CVE ID",
+	},
+	"five digit year": {
+		in:            "CVE-10000-0001",
+		expectedError: "string must be a valid CVE ID",
+	},
+	"twenty digit sequence": {
+		in:            "CVE-2024-12345678901234567890",
+		expectedError: "string must be a valid CVE ID",
+	},
+}
+
+func TestStringCVE(t *testing.T) {
+	for name, tt := range stringCVETestCases {
+		t.Run(name, func(t *testing.T) {
+			err := StringCVE().Validate(tt.in)
+			if tt.expectedError != "" {
+				assert.EqualError(t, err, tt.expectedError)
+				assert.True(t, govy.HasErrorCode(err, ErrorCodeStringCVE))
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+var stringE164TestCases = map[string]struct {
+	in            string
+	expectedError string
+}{
+	"minimum length": {
+		in: "+12",
+	},
+	"maximum length": {
+		in: "+123456789012345",
+	},
+	"common US number": {
+		in: "+14155552671",
+	},
+	"missing plus sign": {
+		in:            "14155552671",
+		expectedError: "string must be a valid E.164 phone number",
+	},
+	"starts with zero": {
+		in:            "+0123456789",
+		expectedError: "string must be a valid E.164 phone number",
+	},
+	"too short": {
+		in:            "+1",
+		expectedError: "string must be a valid E.164 phone number",
+	},
+	"too long": {
+		in:            "+1234567890123456",
+		expectedError: "string must be a valid E.164 phone number",
+	},
+	"contains spaces": {
+		in:            "+1 4155552671",
+		expectedError: "string must be a valid E.164 phone number",
+	},
+	"contains punctuation": {
+		in:            "+1-415-555-2671",
+		expectedError: "string must be a valid E.164 phone number",
+	},
+	"empty": {
+		expectedError: "string must be a valid E.164 phone number",
+	},
+}
+
+func TestStringE164(t *testing.T) {
+	t.Parallel()
+
+	for name, tt := range stringE164TestCases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			err := StringE164().Validate(tt.in)
+			if tt.expectedError != "" {
+				assert.Require(t, assert.Error(t, err))
+				assert.EqualError(t, err, tt.expectedError)
+				assert.True(t, govy.HasErrorCode(err, ErrorCodeStringE164))
+				return
+			}
+			assert.NoError(t, err)
+		})
+	}
+}
+
+func BenchmarkStringE164(b *testing.B) {
+	tests := map[string]string{
+		"valid":   "+14155552671",
+		"invalid": "+1-415-555-2671",
+	}
+
+	for name, in := range tests {
+		b.Run(name, func(b *testing.B) {
+			rule := StringE164()
+			for b.Loop() {
+				_ = rule.Validate(in)
+			}
+		})
+	}
+}
+
+func BenchmarkStringCVE(b *testing.B) {
+	rule := StringCVE()
+	for b.Loop() {
+		_ = rule.Validate("CVE-2021-44228")
+	}
+}
+
 const (
 	stringEINErrorMessage = "string must be a valid Employer Identification Number (EIN)"
 	stringSSNErrorMessage = "string must be a valid Social Security Number (SSN)"
@@ -1585,308 +1890,349 @@ func generateStringSSNSerialTestCases() []stringTaxIDTestCase {
 	return testCases
 }
 
-var stringJSONTestCases = []*struct {
-	in         string
-	shouldFail bool
-}{
-	{`{"foo": "bar"}`, false},
-	{`{}`, false},
-	{`[]`, false},
-	{"{]}", true},
-	{"", true},
-	{"yaml: ok", true},
+// The first seven values are the complete RFC 1321 Appendix A.5 output suite:
+// https://www.rfc-editor.org/rfc/rfc1321.html#appendix-A.5
+var validMD5TestCases = map[string]string{
+	"RFC 1321 empty message":         "d41d8cd98f00b204e9800998ecf8427e",
+	"RFC 1321 single letter":         "0cc175b9c0f1b6a831c399e269772661",
+	"RFC 1321 abc":                   "900150983cd24fb0d6963f7d28e17f72",
+	"RFC 1321 message digest":        "f96b697d7cb7938d525a2f31aaf161d0",
+	"RFC 1321 lowercase alphabet":    "c3fcd3d76192e4007dfb496cca67e13b",
+	"RFC 1321 alphanumeric":          "d174ab98d277d9f5a5611c2c9f419d9f",
+	"RFC 1321 numeric sequence":      "57edf4a22be3c955ac49da2e2107b67a",
+	"zero-leading repeated sequence": "0123456789abcdef0123456789abcdef",
 }
 
-func TestStringJSON(t *testing.T) {
-	for _, tc := range stringJSONTestCases {
-		err := StringJSON().Validate(tc.in)
-		if tc.shouldFail {
-			assert.Error(t, err)
-			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringJSON))
-		} else {
-			assert.NoError(t, err)
-		}
-	}
+var invalidMD5TestCases = map[string]string{
+	"empty":                              "",
+	"all uppercase":                      "D41D8CD98F00B204E9800998ECF8427E",
+	"mixed case":                         "d41d8cd98f00b204e9800998ecf8427E",
+	"one character short":                "d41d8cd98f00b204e9800998ecf8427",
+	"one character long":                 "d41d8cd98f00b204e9800998ecf8427e0",
+	"terminal non-hexadecimal character": "d41d8cd98f00b204e9800998ecf8427g",
+	"0x prefix":                          "0x0123456789abcdef0123456789abcdef",
+	"leading space":                      " 0123456789abcdef0123456789abcdef",
+	"trailing space":                     "0123456789abcdef0123456789abcdef ",
+	"trailing newline":                   "0123456789abcdef0123456789abcdef\n",
+	"embedded hyphen":                    "01234567-9abcdef0123456789abcdef",
+	"embedded Unicode letter":            "01234567é9abcdef0123456789abcdef",
 }
 
-func BenchmarkStringJSON(b *testing.B) {
-	for _, tc := range stringJSONTestCases {
-		rule := StringJSON()
-		for range b.N {
-			_ = rule.Validate(tc.in)
-		}
-	}
-}
-
-var validSemverTestCases = []string{
-	"0.0.4",
-	"1.2.3",
-	"10.20.30",
-	"1.1.2-prerelease+meta",
-	"1.1.2+meta",
-	"1.1.2+meta-valid",
-	"1.0.0-alpha",
-	"1.0.0-beta",
-	"1.0.0-alpha.beta",
-	"1.0.0-alpha.beta.1",
-	"1.0.0-alpha.1",
-	"1.0.0-alpha0.valid",
-	"1.0.0-alpha.0valid",
-	"1.0.0-alpha-a.b-c-somethinglong+build.1-aef.1-its-okay",
-	"1.0.0-rc.1+build.1",
-	"2.0.0-rc.1+build.123",
-	"1.2.3-beta",
-	"10.2.3-DEV-SNAPSHOT",
-	"1.2.3-SNAPSHOT-123",
-	"1.0.0",
-	"2.0.0",
-	"1.1.7",
-	"2.0.0+build.1848",
-	"2.0.1-alpha.1227",
-	"1.0.0-alpha+beta",
-	"1.2.3----RC-SNAPSHOT.12.9.1--.12+788",
-	"1.2.3----R-S.12.9.1--.12+meta",
-	"1.2.3----RC-SNAPSHOT.12.9.1--.12",
-	"1.0.0+0.build.1-rc.10000aaa-kk-0.1",
-	"99999999999999999999999.999999999999999999.99999999999999999",
-	"1.0.0-0A.is.legal",
-	"0.1.0",
-	"1.0.0+20130313144700",
-	"1.0.0-beta+exp.sha.5114f85",
-	"2.7.3-rc.1+build.11.e0f985a",
-}
-
-var invalidSemverTestCases = []string{
-	"1",
-	"1.2",
-	"1.2.3-0123",
-	"1.2.3-0123.0123",
-	"1.1.2+.123",
-	"+invalid",
-	"-invalid",
-	"-invalid+invalid",
-	"-invalid.01",
-	"alpha",
-	"alpha.beta",
-	"alpha.beta.1",
-	"alpha.1",
-	"alpha+beta",
-	"alpha_beta",
-	"alpha.",
-	"alpha..",
-	"beta",
-	"1.0.0-alpha_beta",
-	"-alpha.",
-	"1.0.0-alpha..",
-	"1.0.0-alpha..1",
-	"1.0.0-alpha...1",
-	"1.0.0-alpha....1",
-	"1.0.0-alpha.....1",
-	"1.0.0-alpha......1",
-	"1.0.0-alpha.......1",
-	"01.1.1",
-	"1.01.1",
-	"1.1.01",
-	"1.2",
-	"1.2.3.DEV",
-	"1.2-SNAPSHOT",
-	"1.2.31.2.3----RC-SNAPSHOT.12.09.1--..12+788",
-	"1.2-RC-SNAPSHOT",
-	"-1.0.3-gamma+b7718",
-	"+justmeta",
-	"9.8.7+meta+meta",
-	"9.8.7-whatever+meta+meta",
-	"99999999999999999999999.999999999999999999.99999999999999999----RC-SNAPSHOT.12.09.1--------------------------------..12",
-	"",
-	"1.2.3.4",
-	"01.2.3",
-	"1.02.3",
-	"1.2.03",
-	"1.2.3-",
-	"1.2.3-01",
-	"v1.2.3",
-	"1.2.3+build..1",
-}
-
-func TestStringSemver(t *testing.T) {
-	rule := StringSemver()
-	t.Run("valid versions", func(t *testing.T) {
-		for _, version := range validSemverTestCases {
-			t.Run(fmt.Sprintf("%q", version), func(t *testing.T) {
-				assert.NoError(t, rule.Validate(version))
+func TestStringMD5(t *testing.T) {
+	rule := StringMD5()
+	t.Run("valid digests", func(t *testing.T) {
+		for name, digest := range validMD5TestCases {
+			t.Run(name, func(t *testing.T) {
+				assert.NoError(t, rule.Validate(digest))
 			})
 		}
 	})
-	t.Run("invalid versions", func(t *testing.T) {
-		for _, version := range invalidSemverTestCases {
-			t.Run(fmt.Sprintf("%q", version), func(t *testing.T) {
-				err := rule.Validate(version)
-				assert.EqualError(t, err, "string must be a valid semantic version")
-				assert.True(t, govy.HasErrorCode(err, ErrorCodeStringSemver))
+	t.Run("invalid digests", func(t *testing.T) {
+		for name, digest := range invalidMD5TestCases {
+			t.Run(name, func(t *testing.T) {
+				err := rule.Validate(digest)
+				assert.EqualError(t, err, "string must be a valid lowercase MD5 hexadecimal digest")
+				assert.True(t, govy.HasErrorCode(err, ErrorCodeStringMD5))
 			})
 		}
 	})
 }
 
-func BenchmarkStringSemver(b *testing.B) {
-	rule := StringSemver()
+func BenchmarkStringMD5(b *testing.B) {
+	rule := StringMD5()
+	benchmarkStringHashDigestRule(b, rule, validMD5TestCases, invalidMD5TestCases)
+}
+
+var validSHA256TestCases = map[string]string{
+	"letter-leading":                 "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+	"nonzero-digit-leading":          "28969cdfa74a12c82f3bad960b0b000aca2ac329deea5c2328ebc6f2ba9802c1",
+	"zero-leading repeated sequence": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+}
+
+var invalidSHA256TestCases = map[string]string{
+	"empty":                              "",
+	"all uppercase":                      "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+	"mixed case":                         "E3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+	"one character short":                "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b85",
+	"one character long":                 "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b8550",
+	"terminal non-hexadecimal character": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b85g",
+	"0x prefix":                          "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+	"leading space":                      " 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+	"trailing space":                     "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef ",
+	"trailing newline":                   "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\n",
+	"embedded hyphen":                    "01234567-9abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+	"embedded Unicode letter":            "01234567é9abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+}
+
+func TestStringSHA256(t *testing.T) {
+	rule := StringSHA256()
+	t.Run("valid digests", func(t *testing.T) {
+		for name, digest := range validSHA256TestCases {
+			t.Run(name, func(t *testing.T) {
+				assert.NoError(t, rule.Validate(digest))
+			})
+		}
+	})
+	t.Run("invalid digests", func(t *testing.T) {
+		for name, digest := range invalidSHA256TestCases {
+			t.Run(name, func(t *testing.T) {
+				err := rule.Validate(digest)
+				assert.EqualError(t, err, "string must be a valid lowercase SHA-256 hexadecimal digest")
+				assert.True(t, govy.HasErrorCode(err, ErrorCodeStringSHA256))
+			})
+		}
+	})
+}
+
+func BenchmarkStringSHA256(b *testing.B) {
+	rule := StringSHA256()
+	benchmarkStringHashDigestRule(b, rule, validSHA256TestCases, invalidSHA256TestCases)
+}
+
+var validSHA384TestCases = map[string]string{
+	"digit-leading":                  "38b060a751ac96384cd9327eb1b1e36a21fdb71114be07434c0cc7bf63f6e1da274edebfe76f65fbd51ad2f14898b95b",
+	"letter-leading":                 "b52b72da75d0666379e20f9b4a79c33a329a01f06a2fb7865c9062a28c1de860ba432edfd86b4cb1cb8a75b46076e3b1",
+	"zero-leading repeated sequence": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+}
+
+var invalidSHA384TestCases = map[string]string{
+	"empty":                              "",
+	"all uppercase":                      "38B060A751AC96384CD9327EB1B1E36A21FDB71114BE07434C0CC7BF63F6E1DA274EDEBFE76F65FBD51AD2F14898B95B",
+	"mixed case":                         "38B060a751ac96384cd9327eb1b1e36a21fdb71114be07434c0cc7bf63f6e1da274edebfe76f65fbd51ad2f14898b95b",
+	"one character short":                "38b060a751ac96384cd9327eb1b1e36a21fdb71114be07434c0cc7bf63f6e1da274edebfe76f65fbd51ad2f14898b95",
+	"one character long":                 "38b060a751ac96384cd9327eb1b1e36a21fdb71114be07434c0cc7bf63f6e1da274edebfe76f65fbd51ad2f14898b95b0",
+	"terminal non-hexadecimal character": "38b060a751ac96384cd9327eb1b1e36a21fdb71114be07434c0cc7bf63f6e1da274edebfe76f65fbd51ad2f14898b95g",
+	"0x prefix":                          "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+	"leading space":                      " 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+	"trailing space":                     "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef ",
+	"trailing newline":                   "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\n",
+	"embedded hyphen":                    "01234567-9abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+	"embedded Unicode letter":            "01234567é9abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+}
+
+func TestStringSHA384(t *testing.T) {
+	rule := StringSHA384()
+	t.Run("valid digests", func(t *testing.T) {
+		for name, digest := range validSHA384TestCases {
+			t.Run(name, func(t *testing.T) {
+				assert.NoError(t, rule.Validate(digest))
+			})
+		}
+	})
+	t.Run("invalid digests", func(t *testing.T) {
+		for name, digest := range invalidSHA384TestCases {
+			t.Run(name, func(t *testing.T) {
+				err := rule.Validate(digest)
+				assert.EqualError(t, err, "string must be a valid lowercase SHA-384 hexadecimal digest")
+				assert.True(t, govy.HasErrorCode(err, ErrorCodeStringSHA384))
+			})
+		}
+	})
+}
+
+func BenchmarkStringSHA384(b *testing.B) {
+	rule := StringSHA384()
+	benchmarkStringHashDigestRule(b, rule, validSHA384TestCases, invalidSHA384TestCases)
+}
+
+var validSHA512TestCases = map[string]string{
+	"letter-leading":                 "cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927da3e",
+	"digit-leading":                  "3831a6a6155e509dee59a7f451eb35324d8f8f2df6e3708894740f98fdee23889f4de5adb0c5010dfb555cda77c8ab5dc902094c52de3278f35a75ebc25f093a",
+	"zero-leading repeated sequence": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+}
+
+var invalidSHA512TestCases = map[string]string{
+	"empty":                              "",
+	"all uppercase":                      "CF83E1357EEFB8BDF1542850D66D8007D620E4050B5715DC83F4A921D36CE9CE47D0D13C5D85F2B0FF8318D2877EEC2F63B931BD47417A81A538327AF927DA3E",
+	"mixed case":                         "Cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927da3e",
+	"one character short":                "cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927da3",
+	"one character long":                 "cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927da3e0",
+	"terminal non-hexadecimal character": "cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927da3g",
+	"0x prefix":                          "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+	"leading space":                      " 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+	"trailing space":                     "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef ",
+	"trailing newline":                   "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\n",
+	"embedded hyphen":                    "01234567-9abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+	"embedded Unicode letter":            "01234567é9abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+}
+
+func TestStringSHA512(t *testing.T) {
+	rule := StringSHA512()
+	t.Run("valid digests", func(t *testing.T) {
+		for name, digest := range validSHA512TestCases {
+			t.Run(name, func(t *testing.T) {
+				assert.NoError(t, rule.Validate(digest))
+			})
+		}
+	})
+	t.Run("invalid digests", func(t *testing.T) {
+		for name, digest := range invalidSHA512TestCases {
+			t.Run(name, func(t *testing.T) {
+				err := rule.Validate(digest)
+				assert.EqualError(t, err, "string must be a valid lowercase SHA-512 hexadecimal digest")
+				assert.True(t, govy.HasErrorCode(err, ErrorCodeStringSHA512))
+			})
+		}
+	})
+}
+
+func BenchmarkStringSHA512(b *testing.B) {
+	rule := StringSHA512()
+	benchmarkStringHashDigestRule(b, rule, validSHA512TestCases, invalidSHA512TestCases)
+}
+
+// The fixtures contain every distinct digest output from the NIST
+// byte-oriented SHA test vector archive:
+// https://csrc.nist.gov/CSRC/media/Projects/Cryptographic-Algorithm-Validation-Program/documents/shs/shabytetestvectors.zip
+// The archive is pinned by SHA-256
+// 929ef80b7b3418aca026643f6f248815913b60e01741a44bba9e118067f4c9b8.
+// Short- and long-message vectors use validation-system revision 11.0
+// (2011-03-15); Monte Carlo response and trace vectors use revision 11.1
+// (2011-05-11). The fixtures include every distinct MD and MDi output value
+// exactly once: 729 SHA-256, 857 SHA-384, and 857 SHA-512 values. M, Msg, and
+// Seed fields are input material, not digest outputs. SHA-1, SHA-224,
+// SHA-512/224, and SHA-512/256 are excluded because this package does not
+// expose corresponding string rules.
+func TestStringSHANISTDigestOutputs(t *testing.T) {
+	tests := []struct {
+		name          string
+		fixture       string
+		expectedCount int
+		digestLength  int
+		rule          govy.Rule[string]
+	}{
+		{
+			name:          "SHA-256",
+			fixture:       "nist_sha256_digest_outputs.txt",
+			expectedCount: 729,
+			digestLength:  64,
+			rule:          StringSHA256(),
+		},
+		{
+			name:          "SHA-384",
+			fixture:       "nist_sha384_digest_outputs.txt",
+			expectedCount: 857,
+			digestLength:  96,
+			rule:          StringSHA384(),
+		},
+		{
+			name:          "SHA-512",
+			fixture:       "nist_sha512_digest_outputs.txt",
+			expectedCount: 857,
+			digestLength:  128,
+			rule:          StringSHA512(),
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			digests := loadNISTDigestOutputs(t, tc.fixture, tc.expectedCount, tc.digestLength)
+			for line, digest := range digests {
+				if err := tc.rule.Validate(digest); err != nil {
+					t.Fatalf("testdata/%s:%d: digest rejected: %v", tc.fixture, line+1, err)
+				}
+			}
+		})
+	}
+}
+
+func TestStringHashDigestRulesMatchLowercaseHexadecimalLanguage(t *testing.T) {
+	tests := []struct {
+		name             string
+		digestLength     int
+		rule             govy.Rule[string]
+		validTestCases   map[string]string
+		invalidTestCases map[string]string
+	}{
+		{
+			name:             "MD5",
+			digestLength:     32,
+			rule:             StringMD5(),
+			validTestCases:   validMD5TestCases,
+			invalidTestCases: invalidMD5TestCases,
+		},
+		{
+			name:             "SHA-256",
+			digestLength:     64,
+			rule:             StringSHA256(),
+			validTestCases:   validSHA256TestCases,
+			invalidTestCases: invalidSHA256TestCases,
+		},
+		{
+			name:             "SHA-384",
+			digestLength:     96,
+			rule:             StringSHA384(),
+			validTestCases:   validSHA384TestCases,
+			invalidTestCases: invalidSHA384TestCases,
+		},
+		{
+			name:             "SHA-512",
+			digestLength:     128,
+			rule:             StringSHA512(),
+			validTestCases:   validSHA512TestCases,
+			invalidTestCases: invalidSHA512TestCases,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			oracle := regexp.MustCompile(fmt.Sprintf(`^[0-9a-f]{%d}$`, tc.digestLength))
+			assertMatchesOracle := func(name, in string) {
+				t.Helper()
+				expected := oracle.MatchString(in)
+				actual := tc.rule.Validate(in) == nil
+				if actual != expected {
+					t.Fatalf("%s: validation result is %t; want %t for %q", name, actual, expected, in)
+				}
+			}
+
+			for name, in := range tc.validTestCases {
+				assertMatchesOracle("valid/"+name, in)
+			}
+			for name, in := range tc.invalidTestCases {
+				assertMatchesOracle("invalid/"+name, in)
+			}
+
+			for _, length := range []int{
+				0,
+				1,
+				tc.digestLength - 1,
+				tc.digestLength,
+				tc.digestLength + 1,
+				2 * tc.digestLength,
+			} {
+				assertMatchesOracle(fmt.Sprintf("length/%d", length), strings.Repeat("0", length))
+			}
+
+			digest := []byte(strings.Repeat("0", tc.digestLength))
+			for position := range len(digest) {
+				for value := range 256 {
+					digest[position] = byte(value)
+					assertMatchesOracle(
+						fmt.Sprintf("position/%d/byte/%d", position, value),
+						string(digest),
+					)
+				}
+				digest[position] = '0'
+			}
+		})
+	}
+}
+
+func benchmarkStringHashDigestRule(
+	b *testing.B,
+	rule govy.Rule[string],
+	validTestCases map[string]string,
+	invalidTestCases map[string]string,
+) {
+	b.Helper()
 	for b.Loop() {
-		_ = rule.Validate("2.7.3-rc.1+build.11.e0f985a")
-	}
-}
-
-var stringCVETestCases = map[string]struct {
-	in            string
-	expectedError string
-}{
-	"four digit sequence": {
-		in: "CVE-1999-0001",
-	},
-	"four digit year before 1999": {
-		in: "CVE-1998-0001",
-	},
-	"zero sequence": {
-		in: "CVE-2021-0000",
-	},
-	"sequence with leading zero": {
-		in: "CVE-2014-0160",
-	},
-	"five digit sequence with leading zero": {
-		in: "CVE-2021-00001",
-	},
-	"sequence with two leading zeroes": {
-		in: "CVE-2021-0990",
-	},
-	"five digit sequence": {
-		in: "CVE-2021-44228",
-	},
-	"long sequence": {
-		in: "CVE-2024-12345",
-	},
-	"nineteen digit sequence": {
-		in: "CVE-2024-1234567890123456789",
-	},
-	"empty": {
-		in:            "",
-		expectedError: "string must be a valid CVE ID",
-	},
-	"lowercase prefix": {
-		in:            "cve-2021-44228",
-		expectedError: "string must be a valid CVE ID",
-	},
-	"short sequence": {
-		in:            "CVE-2021-123",
-		expectedError: "string must be a valid CVE ID",
-	},
-	"letters in sequence": {
-		in:            "CVE-2021-ABCD",
-		expectedError: "string must be a valid CVE ID",
-	},
-	"five digit year": {
-		in:            "CVE-10000-0001",
-		expectedError: "string must be a valid CVE ID",
-	},
-	"twenty digit sequence": {
-		in:            "CVE-2024-12345678901234567890",
-		expectedError: "string must be a valid CVE ID",
-	},
-}
-
-func TestStringCVE(t *testing.T) {
-	for name, tt := range stringCVETestCases {
-		t.Run(name, func(t *testing.T) {
-			err := StringCVE().Validate(tt.in)
-			if tt.expectedError != "" {
-				assert.EqualError(t, err, tt.expectedError)
-				assert.True(t, govy.HasErrorCode(err, ErrorCodeStringCVE))
-			} else {
-				assert.NoError(t, err)
-			}
-		})
-	}
-}
-
-var stringE164TestCases = map[string]struct {
-	in            string
-	expectedError string
-}{
-	"minimum length": {
-		in: "+12",
-	},
-	"maximum length": {
-		in: "+123456789012345",
-	},
-	"common US number": {
-		in: "+14155552671",
-	},
-	"missing plus sign": {
-		in:            "14155552671",
-		expectedError: "string must be a valid E.164 phone number",
-	},
-	"starts with zero": {
-		in:            "+0123456789",
-		expectedError: "string must be a valid E.164 phone number",
-	},
-	"too short": {
-		in:            "+1",
-		expectedError: "string must be a valid E.164 phone number",
-	},
-	"too long": {
-		in:            "+1234567890123456",
-		expectedError: "string must be a valid E.164 phone number",
-	},
-	"contains spaces": {
-		in:            "+1 4155552671",
-		expectedError: "string must be a valid E.164 phone number",
-	},
-	"contains punctuation": {
-		in:            "+1-415-555-2671",
-		expectedError: "string must be a valid E.164 phone number",
-	},
-	"empty": {
-		expectedError: "string must be a valid E.164 phone number",
-	},
-}
-
-func TestStringE164(t *testing.T) {
-	t.Parallel()
-
-	for name, tt := range stringE164TestCases {
-		t.Run(name, func(t *testing.T) {
-			t.Parallel()
-
-			err := StringE164().Validate(tt.in)
-			if tt.expectedError != "" {
-				assert.Require(t, assert.Error(t, err))
-				assert.EqualError(t, err, tt.expectedError)
-				assert.True(t, govy.HasErrorCode(err, ErrorCodeStringE164))
-				return
-			}
-			assert.NoError(t, err)
-		})
-	}
-}
-
-func BenchmarkStringE164(b *testing.B) {
-	tests := map[string]string{
-		"valid":   "+14155552671",
-		"invalid": "+1-415-555-2671",
-	}
-
-	for name, in := range tests {
-		b.Run(name, func(b *testing.B) {
-			rule := StringE164()
-			for b.Loop() {
-				_ = rule.Validate(in)
-			}
-		})
-	}
-}
-
-func BenchmarkStringCVE(b *testing.B) {
-	rule := StringCVE()
-	for b.Loop() {
-		_ = rule.Validate("CVE-2021-44228")
+		for _, in := range validTestCases {
+			_ = rule.Validate(in)
+		}
+		for _, in := range invalidTestCases {
+			_ = rule.Validate(in)
+		}
 	}
 }
 
@@ -2995,8 +3341,7 @@ func getStringCronTestCases() []*stringCrontabTestCase {
 		getRandom := func() int {
 			return field.lower + rand.Intn(field.upper-field.lower)
 		}
-		testCases = append(
-			testCases,
+		testCases = append(testCases,
 			&stringCrontabTestCase{createCron(field.n, "%d", getRandom()), false},
 			&stringCrontabTestCase{createCron(field.n, "%d", field.lower), false},
 			&stringCrontabTestCase{createCron(field.n, "%d", field.upper), false},
@@ -3542,4 +3887,34 @@ func readTestDataFields(t *testing.T, path string) (raw string, fields []string)
 		fields = append(fields, strings.Fields(line)...)
 	}
 	return raw, fields
+}
+
+func loadNISTDigestOutputs(t *testing.T, fixture string, expectedCount, digestLength int) []string {
+	t.Helper()
+
+	path := filepath.Join("testdata", fixture)
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read %s: %v", path, err)
+	}
+	if len(data) == 0 || data[len(data)-1] != '\n' {
+		t.Fatalf("%s must be non-empty and end with a newline", path)
+	}
+
+	digests := strings.Split(strings.TrimSuffix(string(data), "\n"), "\n")
+	if len(digests) != expectedCount {
+		t.Fatalf("%s contains %d digests; want %d", path, len(digests), expectedCount)
+	}
+
+	seen := make(map[string]int, len(digests))
+	for line, digest := range digests {
+		if len(digest) != digestLength {
+			t.Fatalf("%s:%d: digest length is %d; want %d", path, line+1, len(digest), digestLength)
+		}
+		if firstLine, ok := seen[digest]; ok {
+			t.Fatalf("%s:%d: duplicate digest first seen on line %d", path, line+1, firstLine)
+		}
+		seen[digest] = line + 1
+	}
+	return digests
 }

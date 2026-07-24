@@ -551,6 +551,74 @@ func StringCVE() govy.Rule[string] {
 		WithDescription("string must be a valid CVE ID in CVE-YEAR-SEQUENCE format")
 }
 
+// StringMD5 ensures the property's value is a lowercase hexadecimal MD5 digest.
+func StringMD5() govy.Rule[string] {
+	tpl := messagetemplates.Get(messagetemplates.StringMD5Template)
+
+	return govy.NewRule(func(s string) error {
+		if !isLowerHexadecimal(s, 32) {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringMD5).
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+}
+
+// StringSHA256 ensures the property's value is a lowercase hexadecimal SHA-256 digest.
+func StringSHA256() govy.Rule[string] {
+	tpl := messagetemplates.Get(messagetemplates.StringSHA256Template)
+
+	return govy.NewRule(func(s string) error {
+		if !isLowerHexadecimal(s, 64) {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringSHA256).
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+}
+
+// StringSHA384 ensures the property's value is a lowercase hexadecimal SHA-384 digest.
+func StringSHA384() govy.Rule[string] {
+	tpl := messagetemplates.Get(messagetemplates.StringSHA384Template)
+
+	return govy.NewRule(func(s string) error {
+		if !isLowerHexadecimal(s, 96) {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringSHA384).
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+}
+
+// StringSHA512 ensures the property's value is a lowercase hexadecimal SHA-512 digest.
+func StringSHA512() govy.Rule[string] {
+	tpl := messagetemplates.Get(messagetemplates.StringSHA512Template)
+
+	return govy.NewRule(func(s string) error {
+		if !isLowerHexadecimal(s, 128) {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringSHA512).
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+}
+
 // StringJWT ensures the property's value is a JSON Web Token (JWT) represented
 // using [JWS Compact Serialization].
 // It validates the three base64url-encoded segments, JSON object header,
@@ -1351,4 +1419,17 @@ func handleFilePathError(err error) error {
 
 func isASCIIDigit(b byte) bool {
 	return b >= '0' && b <= '9'
+}
+
+func isLowerHexadecimal(s string, length int) bool {
+	if len(s) != length {
+		return false
+	}
+	for i := range len(s) {
+		c := s[i]
+		if (c < '0' || c > '9') && (c < 'a' || c > 'f') {
+			return false
+		}
+	}
+	return true
 }
