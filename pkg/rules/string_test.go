@@ -19,6 +19,8 @@ import (
 	"github.com/nobl9/govy/pkg/govy"
 )
 
+// cspell:ignore HJKMNP hjkmnp
+
 const (
 	uuidRFC4122Pattern = `^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89aAbB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$`
 	uuidv3Pattern      = `^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-3[0-9a-fA-F]{3}-[89aAbB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$`
