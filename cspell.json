@@ -72,6 +72,7 @@
     "Implicits",
     "mygovy",
     "unpadded",
-    "JWSB64"
+    "JWSB64",
+    "ITIN"
   ]
 }
