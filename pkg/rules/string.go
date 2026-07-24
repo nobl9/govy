@@ -402,12 +402,16 @@ const (
 )
 
 func validateJWTUsingJWS(s string) error {
-	parts := strings.Split(s, ".")
-	if len(parts) != 3 {
+	headerSegment, remaining, ok := strings.Cut(s, ".")
+	if !ok {
+		return fmt.Errorf("expected exactly 3 JWT segments")
+	}
+	claimsSegment, signatureSegment, ok := strings.Cut(remaining, ".")
+	if !ok || strings.Contains(signatureSegment, ".") {
 		return fmt.Errorf("expected exactly 3 JWT segments")
 	}
 
-	headers, err := decodeJWTJSONObject(parts[0], "JWT header")
+	headers, err := decodeJWTJSONObject(headerSegment, "JWT header")
 	if err != nil {
 		return err
 	}
@@ -419,19 +423,19 @@ func validateJWTUsingJWS(s string) error {
 	if err = validateJWSB64Header(headers); err != nil {
 		return err
 	}
-	if err = validateJWTJSONObject(parts[1], "JWT claims set"); err != nil {
+	if err = validateJWTJSONObject(claimsSegment, "JWT claims set"); err != nil {
 		return err
 	}
 	if alg == "none" {
-		if parts[2] == "" {
+		if signatureSegment == "" {
 			return nil
 		}
 		return fmt.Errorf(`JWT signature segment must be empty when alg is "none"`)
 	}
-	if parts[2] == "" {
+	if signatureSegment == "" {
 		return fmt.Errorf(`JWT signature segment must not be empty unless alg is "none"`)
 	}
-	if _, err = decodeJWTBase64URLSegment(parts[2], "JWT signature"); err != nil {
+	if err = validateJWTBase64URLSegment(signatureSegment, "JWT signature"); err != nil {
 		return err
 	}
 	return nil
@@ -454,12 +458,13 @@ func validateJWSB64Header(headers map[string]json.RawMessage) error {
 	if !ok {
 		return nil
 	}
-	var b64Value *bool
-	if err := json.Unmarshal(b64Raw, &b64Value); err != nil || b64Value == nil {
-		return fmt.Errorf(`JWT header "b64" must be a boolean`)
-	}
-	if !*b64Value {
+
+	b64Raw = bytes.TrimSpace(b64Raw)
+	if bytes.Equal(b64Raw, []byte("false")) {
 		return fmt.Errorf(`JWT header must not set "b64" to false`)
+	}
+	if !bytes.Equal(b64Raw, []byte("true")) {
+		return fmt.Errorf(`JWT header "b64" must be a boolean`)
 	}
 
 	rawCritical, ok := headers[jwtHeaderCrit]
@@ -467,16 +472,12 @@ func validateJWSB64Header(headers map[string]json.RawMessage) error {
 	if !ok || json.Unmarshal(rawCritical, &critical) != nil {
 		return fmt.Errorf(`JWT header "crit" must be an array containing "b64" when "b64" is present`)
 	}
-	hasB64 := false
 	for _, name := range critical {
 		if name == jwtHeaderB64 {
-			hasB64 = true
+			return nil
 		}
 	}
-	if !hasB64 {
-		return fmt.Errorf(`JWT header "crit" must be an array containing "b64" when "b64" is present`)
-	}
-	return nil
+	return fmt.Errorf(`JWT header "crit" must be an array containing "b64" when "b64" is present`)
 }
 
 func getJWTAlgorithm(headers map[string]json.RawMessage) (string, error) {
@@ -486,9 +487,13 @@ func getJWTAlgorithm(headers map[string]json.RawMessage) (string, error) {
 	}
 
 	var algorithm string
-	if err := json.Unmarshal(rawAlgorithm, &algorithm); err != nil ||
-		algorithm == "" || !asciiRegexp().MatchString(algorithm) {
+	if err := json.Unmarshal(rawAlgorithm, &algorithm); err != nil || algorithm == "" {
 		return "", fmt.Errorf(`JWT header must contain an "alg" string`)
+	}
+	for i := range len(algorithm) {
+		if algorithm[i] > unicode.MaxASCII {
+			return "", fmt.Errorf(`JWT header must contain an "alg" string`)
+		}
 	}
 	return algorithm, nil
 }
@@ -538,19 +543,8 @@ func decodeJWTJSON(segment, segmentName string) ([]byte, error) {
 }
 
 func decodeJWTBase64URLSegment(segment, segmentName string) ([]byte, error) {
-	if segment == "" {
-		return nil, fmt.Errorf("%s segment must not be empty", segmentName)
-	}
-	if strings.Contains(segment, "=") {
-		return nil, fmt.Errorf("%s segment must be base64url encoded without padding", segmentName)
-	}
-	for i := range len(segment) {
-		c := segment[i]
-		if (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') ||
-			c == '-' || c == '_' {
-			continue
-		}
-		return nil, fmt.Errorf("%s segment must be base64url encoded without padding", segmentName)
+	if err := validateJWTBase64URLAlphabet(segment, segmentName); err != nil {
+		return nil, err
 	}
 
 	decoded, err := base64.RawURLEncoding.DecodeString(segment)
@@ -558,6 +552,34 @@ func decodeJWTBase64URLSegment(segment, segmentName string) ([]byte, error) {
 		return nil, fmt.Errorf("%s segment must be base64url encoded without padding: %w", segmentName, err)
 	}
 	return decoded, nil
+}
+
+func validateJWTBase64URLSegment(segment, segmentName string) error {
+	if err := validateJWTBase64URLAlphabet(segment, segmentName); err != nil {
+		return err
+	}
+	// An unpadded Base64URL string using the allowed alphabet is decodable
+	// unless its length is 1 modulo 4.
+	if len(segment)%4 == 1 {
+		err := base64.CorruptInputError(len(segment) - 1)
+		return fmt.Errorf("%s segment must be base64url encoded without padding: %w", segmentName, err)
+	}
+	return nil
+}
+
+func validateJWTBase64URLAlphabet(segment, segmentName string) error {
+	if segment == "" {
+		return fmt.Errorf("%s segment must not be empty", segmentName)
+	}
+	for i := range len(segment) {
+		c := segment[i]
+		if (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') ||
+			c == '-' || c == '_' {
+			continue
+		}
+		return fmt.Errorf("%s segment must be base64url encoded without padding", segmentName)
+	}
+	return nil
 }
 
 // StringContains ensures the property's value contains all the provided substrings.

@@ -1282,6 +1282,49 @@ func TestStringJWT(t *testing.T) {
 	}
 }
 
+func TestStringJWTErrorPrecedence(t *testing.T) {
+	const expectedErrorPrefix = "string must be a valid JSON Web Token (JWT): "
+
+	tests := map[string]struct {
+		in                   string
+		expectedErrorDetails string
+	}{
+		"algorithm before claims": {
+			in:                   "e30.eyJzdWIiOg.*",
+			expectedErrorDetails: `JWT header must contain an "alg" string`,
+		},
+		"b64 before claims": {
+			in: "eyJhbGciOiJIUzI1NiIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19." +
+				"eyJzdWIiOg.*",
+			expectedErrorDetails: `JWT header must not set "b64" to false`,
+		},
+		"crit before claims": {
+			in: "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZX0." +
+				"eyJzdWIiOg.*",
+			expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
+		},
+		"claims before signature": {
+			in: "eyJhbGciOiJIUzI1NiJ9." +
+				"eyJzdWIiOg.*",
+			expectedErrorDetails: "JWT claims set segment must contain a JSON object: " +
+				"unexpected end of JSON input",
+		},
+		"algorithm before signature": {
+			in:                   "e30.e30.*",
+			expectedErrorDetails: `JWT header must contain an "alg" string`,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			err := StringJWT().Validate(tt.in)
+			assert.Require(t, assert.Error(t, err))
+			assert.EqualError(t, err, expectedErrorPrefix+tt.expectedErrorDetails)
+			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringJWT))
+		})
+	}
+}
+
 func BenchmarkStringJWT(b *testing.B) {
 	rule := StringJWT()
 
@@ -1290,6 +1333,7 @@ func BenchmarkStringJWT(b *testing.B) {
 			_ = rule.Validate(tt.in)
 		}
 	}
+	b.ReportMetric(float64(len(stringJWTTestCases)), "validations/op")
 }
 
 var stringContainsTestCases = []*struct {
