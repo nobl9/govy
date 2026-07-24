@@ -71,14 +71,15 @@ func _() {
 	_ = x[StringDateTimeTemplate-61]
 	_ = x[StringTimeZoneTemplate-62]
 	_ = x[StringKubernetesQualifiedNameTemplate-63]
-	_ = x[URLTemplate-64]
-	_ = x[SliceUniqueTemplate-65]
-	_ = x[UniquePropertiesTemplate-66]
+	_ = x[StringMongoDBObjectIDTemplate-64]
+	_ = x[URLTemplate-65]
+	_ = x[SliceUniqueTemplate-66]
+	_ = x[UniquePropertiesTemplate-67]
 }
 
-const _templateKey_name = "LengthTemplateMinLengthTemplateMaxLengthTemplateEQTemplateNEQTemplateGTTemplateGTETemplateLTTemplateLTETemplateEqualPropertiesTemplateGTPropertiesTemplateGTEPropertiesTemplateLTPropertiesTemplateLTEPropertiesTemplateGTComparablePropertiesTemplateGTEComparablePropertiesTemplateLTComparablePropertiesTemplateLTEComparablePropertiesTemplateDurationPrecisionTemplateForbiddenTemplateOneOfTemplateNotOneOfTemplateOneOfPropertiesTemplateMutuallyExclusiveTemplateMutuallyDependentTemplateRequiredTemplateStringNonEmptyTemplateStringMatchRegexpTemplateStringDenyRegexpTemplateStringMD5TemplateStringSHA256TemplateStringSHA384TemplateStringSHA512TemplateStringEmailTemplateStringE164TemplateStringMACTemplateStringIPTemplateStringIPv4TemplateStringIPv6TemplateStringCIDRTemplateStringCIDRv4TemplateStringCIDRv6TemplateStringEINTemplateStringSSNTemplateStringJSONTemplateStringSemverTemplateStringCVETemplateStringJWTTemplateStringContainsTemplateStringExcludesTemplateStringStartsWithTemplateStringEndsWithTemplateStringTitleTemplateStringGitRefTemplateStringFileSystemPathTemplateStringFilePathTemplateStringDirPathTemplateStringMatchFileSystemPathTemplateStringRegexpTemplateStringCrontabTemplateStringDateTimeTemplateStringTimeZoneTemplateStringKubernetesQualifiedNameTemplateURLTemplateSliceUniqueTemplateUniquePropertiesTemplate"
+const _templateKey_name = "LengthTemplateMinLengthTemplateMaxLengthTemplateEQTemplateNEQTemplateGTTemplateGTETemplateLTTemplateLTETemplateEqualPropertiesTemplateGTPropertiesTemplateGTEPropertiesTemplateLTPropertiesTemplateLTEPropertiesTemplateGTComparablePropertiesTemplateGTEComparablePropertiesTemplateLTComparablePropertiesTemplateLTEComparablePropertiesTemplateDurationPrecisionTemplateForbiddenTemplateOneOfTemplateNotOneOfTemplateOneOfPropertiesTemplateMutuallyExclusiveTemplateMutuallyDependentTemplateRequiredTemplateStringNonEmptyTemplateStringMatchRegexpTemplateStringDenyRegexpTemplateStringMD5TemplateStringSHA256TemplateStringSHA384TemplateStringSHA512TemplateStringEmailTemplateStringE164TemplateStringMACTemplateStringIPTemplateStringIPv4TemplateStringIPv6TemplateStringCIDRTemplateStringCIDRv4TemplateStringCIDRv6TemplateStringEINTemplateStringSSNTemplateStringJSONTemplateStringSemverTemplateStringCVETemplateStringJWTTemplateStringContainsTemplateStringExcludesTemplateStringStartsWithTemplateStringEndsWithTemplateStringTitleTemplateStringGitRefTemplateStringFileSystemPathTemplateStringFilePathTemplateStringDirPathTemplateStringMatchFileSystemPathTemplateStringRegexpTemplateStringCrontabTemplateStringDateTimeTemplateStringTimeZoneTemplateStringKubernetesQualifiedNameTemplateStringMongoDBObjectIDTemplateURLTemplateSliceUniqueTemplateUniquePropertiesTemplate"
 
-var _templateKey_index = [...]uint16{0, 14, 31, 48, 58, 69, 79, 90, 100, 111, 134, 154, 175, 195, 216, 246, 277, 307, 338, 363, 380, 393, 409, 432, 457, 482, 498, 520, 545, 569, 586, 606, 626, 646, 665, 683, 700, 716, 734, 752, 770, 790, 810, 827, 844, 862, 882, 899, 916, 938, 960, 984, 1006, 1025, 1045, 1073, 1095, 1116, 1149, 1169, 1190, 1212, 1234, 1271, 1282, 1301, 1325}
+var _templateKey_index = [...]uint16{0, 14, 31, 48, 58, 69, 79, 90, 100, 111, 134, 154, 175, 195, 216, 246, 277, 307, 338, 363, 380, 393, 409, 432, 457, 482, 498, 520, 545, 569, 586, 606, 626, 646, 665, 683, 700, 716, 734, 752, 770, 790, 810, 827, 844, 862, 882, 899, 916, 938, 960, 984, 1006, 1025, 1045, 1073, 1095, 1116, 1149, 1169, 1190, 1212, 1234, 1271, 1300, 1311, 1330, 1354}
 
 func (i templateKey) String() string {
 	idx := int(i) - 1
