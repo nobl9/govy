@@ -36,7 +36,9 @@
     "Elts",
     "Fset",
     "Messagef",
+    "Qssw",
     "Skłodowska",
+    "XVCJ",
     "atoi",
     "cidrv",
     "devbox",
@@ -68,6 +70,9 @@
     "vuln",
     "vulns",
     "Implicits",
-    "mygovy"
+    "mygovy",
+    "unpadded",
+    "JWSB64",
+    "ITIN"
   ]
 }

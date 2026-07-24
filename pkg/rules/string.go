@@ -275,6 +275,100 @@ func StringCIDRv6() govy.Rule[string] {
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
 }
 
+// StringEIN ensures the property's value is a United States Employer Identification Number (EIN)
+// in NN-NNNNNNN format with a recognized prefix.
+func StringEIN() govy.Rule[string] {
+	tpl := messagetemplates.Get(messagetemplates.StringEINTemplate)
+
+	return govy.NewRule(func(s string) error {
+		if !isValidEIN(s) {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringEIN).
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+}
+
+func isValidEIN(s string) bool {
+	if len(s) != 10 ||
+		s[2] != '-' ||
+		!isASCIIDigit(s[0]) ||
+		!isASCIIDigit(s[1]) ||
+		!isASCIIDigit(s[3]) ||
+		!isASCIIDigit(s[4]) ||
+		!isASCIIDigit(s[5]) ||
+		!isASCIIDigit(s[6]) ||
+		!isASCIIDigit(s[7]) ||
+		!isASCIIDigit(s[8]) ||
+		!isASCIIDigit(s[9]) {
+		return false
+	}
+	return isValidEINPrefix(s[:2])
+}
+
+func isValidEINPrefix(prefix string) bool {
+	switch prefix {
+	case "01", "02", "03", "04", "05", "06", "10", "11", "12", "13", "14", "15", "16",
+		"20", "21", "22", "23", "24", "25", "26", "27",
+		"30", "31", "32", "33", "34", "35", "36", "37", "38", "39",
+		"40", "41", "42", "43", "44", "45", "46", "47", "48",
+		"50", "51", "52", "53", "54", "55", "56", "57", "58", "59",
+		"60", "61", "62", "63", "64", "65", "66", "67", "68",
+		"71", "72", "73", "74", "75", "76", "77",
+		"80", "81", "82", "83", "84", "85", "86", "87", "88",
+		"90", "91", "92", "93", "94", "95", "98", "99":
+		return true
+	default:
+		return false
+	}
+}
+
+// StringSSN ensures the property's value is a United States Social Security Number (SSN)
+// in NNN-NN-NNNN format.
+// It rejects areas 000, 666, and 900-999, groups 00, and serials 0000.
+// Rejecting areas 900-999 excludes every Individual Taxpayer Identification Number (ITIN).
+func StringSSN() govy.Rule[string] {
+	tpl := messagetemplates.Get(messagetemplates.StringSSNTemplate)
+
+	return govy.NewRule(func(s string) error {
+		if !isValidSSN(s) {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringSSN).
+		WithMessageTemplate(tpl).
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+}
+
+func isValidSSN(s string) bool {
+	if len(s) != 11 ||
+		s[3] != '-' ||
+		s[6] != '-' ||
+		!isASCIIDigit(s[0]) ||
+		!isASCIIDigit(s[1]) ||
+		!isASCIIDigit(s[2]) ||
+		!isASCIIDigit(s[4]) ||
+		!isASCIIDigit(s[5]) ||
+		!isASCIIDigit(s[7]) ||
+		!isASCIIDigit(s[8]) ||
+		!isASCIIDigit(s[9]) ||
+		!isASCIIDigit(s[10]) {
+		return false
+	}
+	return (s[0] != '0' || s[1] != '0' || s[2] != '0') &&
+		(s[0] != '6' || s[1] != '6' || s[2] != '6') &&
+		s[0] != '9' &&
+		(s[4] != '0' || s[5] != '0') &&
+		(s[7] != '0' || s[8] != '0' || s[9] != '0' || s[10] != '0')
+}
+
 // StringUUID ensures property's value is a valid UUID string as defined by [RFC 4122].
 // It does not enforce a specific UUID version.
 //
@@ -382,6 +476,32 @@ func StringCVE() govy.Rule[string] {
 		WithErrorCode(ErrorCodeStringCVE).
 		WithMessageTemplate(tpl).
 		WithDescription("string must be a valid CVE ID in CVE-YEAR-SEQUENCE format")
+}
+
+// StringJWT ensures the property's value is a JSON Web Token (JWT) represented
+// using [JWS Compact Serialization].
+// It validates the three base64url-encoded segments, JSON object header,
+// JSON object claims set, and required `alg` header.
+// JWTs represented using [JWE Compact Serialization] are not accepted.
+// It does not verify the signature, algorithm trust, or claim values.
+//
+// [JWE Compact Serialization]: https://datatracker.ietf.org/doc/html/rfc7516#section-3.1
+// [JWS Compact Serialization]: https://datatracker.ietf.org/doc/html/rfc7515#section-3.1
+func StringJWT() govy.Rule[string] {
+	tpl := messagetemplates.Get(messagetemplates.StringJWTTemplate)
+
+	return govy.NewRule(func(s string) error {
+		if err := validateJWTUsingJWS(s); err != nil {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+				Error:         err.Error(),
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringJWT).
+		WithMessageTemplate(tpl).
+		WithDescription("string must be a JSON Web Token (JWT) using JWS Compact Serialization")
 }
 
 // StringContains ensures the property's value contains all the provided substrings.
@@ -1039,4 +1159,8 @@ func handleFilePathError(err error) error {
 		return errFilePathNoPerm
 	}
 	return err
+}
+
+func isASCIIDigit(b byte) bool {
+	return b >= '0' && b <= '9'
 }
