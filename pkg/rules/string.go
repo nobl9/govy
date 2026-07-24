@@ -316,7 +316,17 @@ func StringSSN() govy.Rule[string] {
 }
 
 func isValidEIN(s string) bool {
-	if !einRegexp().MatchString(s) {
+	if len(s) != 10 ||
+		s[2] != '-' ||
+		!isASCIIDigit(s[0]) ||
+		!isASCIIDigit(s[1]) ||
+		!isASCIIDigit(s[3]) ||
+		!isASCIIDigit(s[4]) ||
+		!isASCIIDigit(s[5]) ||
+		!isASCIIDigit(s[6]) ||
+		!isASCIIDigit(s[7]) ||
+		!isASCIIDigit(s[8]) ||
+		!isASCIIDigit(s[9]) {
 		return false
 	}
 	return isValidEINPrefix(s[:2])
@@ -340,17 +350,29 @@ func isValidEINPrefix(prefix string) bool {
 }
 
 func isValidSSN(s string) bool {
-	if !ssnRegexp().MatchString(s) {
+	if len(s) != 11 ||
+		s[3] != '-' ||
+		s[6] != '-' ||
+		!isASCIIDigit(s[0]) ||
+		!isASCIIDigit(s[1]) ||
+		!isASCIIDigit(s[2]) ||
+		!isASCIIDigit(s[4]) ||
+		!isASCIIDigit(s[5]) ||
+		!isASCIIDigit(s[7]) ||
+		!isASCIIDigit(s[8]) ||
+		!isASCIIDigit(s[9]) ||
+		!isASCIIDigit(s[10]) {
 		return false
 	}
-	area := s[:3]
-	group := s[4:6]
-	serial := s[7:]
-	return area != "000" &&
-		area != "666" &&
-		area[0] != '9' &&
-		group != "00" &&
-		serial != "0000"
+	return (s[0] != '0' || s[1] != '0' || s[2] != '0') &&
+		(s[0] != '6' || s[1] != '6' || s[2] != '6') &&
+		s[0] != '9' &&
+		(s[4] != '0' || s[5] != '0') &&
+		(s[7] != '0' || s[8] != '0' || s[9] != '0' || s[10] != '0')
+}
+
+func isASCIIDigit(b byte) bool {
+	return b >= '0' && b <= '9'
 }
 
 // StringUUID ensures property's value is a valid UUID string as defined by [RFC 4122].
