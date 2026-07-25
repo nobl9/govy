@@ -42,6 +42,10 @@ const (
 	StringNonEmptyTemplate
 	StringMatchRegexpTemplate
 	StringDenyRegexpTemplate
+	StringBase64Template
+	StringBase64URLTemplate
+	StringBase64RawURLTemplate
+	StringHexadecimalTemplate
 	StringMD5Template
 	StringSHA256Template
 	StringSHA384Template
@@ -133,6 +137,10 @@ var rawMessageTemplates = map[templateKey]string{
 	StringNonEmptyTemplate:       "string must not be empty",
 	StringMatchRegexpTemplate:    "string must match regular expression: '{{ .ComparisonValue }}'",
 	StringDenyRegexpTemplate:     "string must not match regular expression: '{{ .ComparisonValue }}'",
+	StringBase64Template:         "string must be a valid padded Base64 value using the standard alphabet",
+	StringBase64URLTemplate:      "string must be a valid padded URL-safe Base64 value",
+	StringBase64RawURLTemplate:   "string must be a valid URL-safe Base64 value without padding",
+	StringHexadecimalTemplate:    "string must be a valid hexadecimal value",
 	StringMD5Template:            "string must be a valid lowercase MD5 hexadecimal digest",
 	StringSHA256Template:         "string must be a valid lowercase SHA-256 hexadecimal digest",
 	StringSHA384Template:         "string must be a valid lowercase SHA-384 hexadecimal digest",

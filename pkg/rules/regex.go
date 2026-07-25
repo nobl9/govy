@@ -14,6 +14,10 @@ var (
 		`^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$`,
 	)
 	cveRegexp = lazyRegexCompile(`^CVE-[0-9]{4}-[0-9]{4,19}$`)
+	// Ref: https://www.rfc-editor.org/rfc/rfc4648.html
+	standardBase64Regexp = lazyRegexCompile(`^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$`)
+	base64URLRegexp      = lazyRegexCompile(`^(?:[A-Za-z0-9_-]{4})*(?:[A-Za-z0-9_-]{2}==|[A-Za-z0-9_-]{3}=)?$`)
+	base64RawURLRegexp   = lazyRegexCompile(`^[A-Za-z0-9_-]*$`)
 	// Ref: https://www.ietf.org/rfc/rfc1123.txt
 	rfc1123DnsLabelRegexp      = lazyRegexCompile(`^[a-z0-9]([-a-z0-9]*[a-z0-9])?$`)
 	rfc1123DnsSubdomainRegexp  = lazyRegexCompile(`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`)
