@@ -1,6 +1,7 @@
 package rules
 
 import (
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"maps"
@@ -678,6 +679,395 @@ func BenchmarkStringASCII(b *testing.B) {
 			_ = rule.Validate(tc.in)
 		}
 	}
+}
+
+type stringPaymentBankingTestCases struct {
+	validInputs   map[string]string
+	invalidInputs map[string]string
+}
+
+var stringCreditCardTestCases = stringPaymentBankingTestCases{
+	validInputs: map[string]string{
+		"visa":                      "4111111111111111",
+		"visa alternate":            "4242424242424242",
+		"mastercard":                "5555555555554444",
+		"american express":          "378282246310005",
+		"discover":                  "6011111111111117",
+		"six-series sixteen digits": "6123451234567893",
+		"diners club":               "36227206271667",
+		"mastercard 2-series":       "2223003122003222",
+		"JCB":                       "3566002020360505",
+		"UnionPay nineteen digits":  "6205500000000000004",
+		"visa decline test number":  "4000111111111115",
+		"minimum thirteen digits":   "1000000000009",
+		"maximum nineteen digits":   "1000000000000000009",
+	},
+	invalidInputs: map[string]string{
+		"empty":                          "",
+		"minimum length minus one":       "100000000008",
+		"maximum length plus one":        "10000000000000000008",
+		"failed thirteen digit checksum": "1000000000008",
+		"failed nineteen digit checksum": "1000000000000000008",
+		"all same digits":                "6666666666666",
+		"leading space":                  " 1000000000009",
+		"trailing space":                 "1000000000009 ",
+		"trailing newline":               "1000000000009\n",
+		"embedded spaces":                "4111 1111 1111 1111",
+		"hyphens":                        "4111-1111-1111-1111",
+		"full-width digit":               "10000000000０9",
+		"alphabetic character":           "10000000000A9",
+	},
+}
+
+func TestStringCreditCard(t *testing.T) {
+	assertPaymentBankingRule(
+		t,
+		StringCreditCard(),
+		stringCreditCardTestCases,
+		"string must be a valid payment card number",
+		ErrorCodeStringCreditCard,
+	)
+}
+
+func BenchmarkStringCreditCard(b *testing.B) {
+	rule := StringCreditCard()
+	benchmarkStringPaymentBankingRule(b, rule, stringCreditCardTestCases)
+}
+
+var stringLuhnChecksumTestCases = stringPaymentBankingTestCases{
+	validInputs: map[string]string{
+		"single zero":                "0",
+		"four zeroes":                "0000",
+		"twenty zeroes":              "00000000000000000000",
+		"two digits ending in eight": "18",
+		"two digits ending in nine":  "59",
+		"sample number":              "79927398713",
+		"six-series example":         "6123451234567893",
+		"fifteen digit example":      "808401234567893",
+		"nineteen digit example":     "6205500000000000004",
+	},
+	invalidInputs: map[string]string{
+		"empty":                       "",
+		"failed thirteen digit check": "6123451234567894",
+		"failed fifteen digit check":  "808401234567894",
+		"slash before zero":           "/0",
+		"colon before zero":           ":0",
+		"plus before zero":            "+0",
+		"trailing space":              "0 ",
+		"alphabetic character":        "79927A398713",
+		"full-width digits":           "１２",
+	},
+}
+
+func TestStringLuhnChecksum(t *testing.T) {
+	assertPaymentBankingRule(
+		t,
+		StringLuhnChecksum(),
+		stringLuhnChecksumTestCases,
+		"string must pass the Luhn checksum",
+		ErrorCodeStringLuhnChecksum,
+	)
+}
+
+func BenchmarkStringLuhnChecksum(b *testing.B) {
+	rule := StringLuhnChecksum()
+	benchmarkStringPaymentBankingRule(b, rule, stringLuhnChecksumTestCases)
+}
+
+func TestStringPaymentCardProcessorFixtures(t *testing.T) {
+	fixtures := []struct {
+		name                   string
+		path                   string
+		source                 string
+		sourceSnapshotSHA256   string
+		normalizedValuesSHA256 string
+		expectedCount          int
+	}{
+		{
+			name:                   "Stripe",
+			path:                   "testdata/stripe_test_card_numbers_2026-07-21.txt",
+			source:                 "https://docs.stripe.com/testing",
+			sourceSnapshotSHA256:   "bcc37c3f58146fcadf2290b67058d66841b9adfbf207a56ae0bef557c675fc4e",
+			normalizedValuesSHA256: "00176aa47882a48d54cc1db7cb654536cd8889406d59ce67c88ae00897e54da9",
+			expectedCount:          148,
+		},
+		{
+			name:                   "Braintree",
+			path:                   "testdata/braintree_test_card_numbers_2026-07-21.txt",
+			source:                 "https://developer.paypal.com/braintree/docs/reference/general/testing/php",
+			sourceSnapshotSHA256:   "85231b65e2b6fa674d7ada4cd71512d0fe1756398e83564244af1bbf3cb27211",
+			normalizedValuesSHA256: "3ff5fb628215867a24156654d3a026a86bc5d2a089846b8de129ff444c0c1db7",
+			expectedCount:          44,
+		},
+		{
+			name:                   "Adyen",
+			path:                   "testdata/adyen_test_card_numbers_2026-07-21.txt",
+			source:                 "https://docs.adyen.com/development-resources/test-cards-and-credentials/test-card-numbers",
+			sourceSnapshotSHA256:   "be12e0c40e9d3cabbfe1025d956c13dbd4250dbc6574c23a7a3178ce06eff82e",
+			normalizedValuesSHA256: "636787e0d1b9af8aa73287d6e7e058b9f6f499f47756537dbdf9f322c44f23da",
+			expectedCount:          86,
+		},
+	}
+	rules := []struct {
+		name          string
+		rule          govy.Rule[string]
+		expectedError string
+		errorCode     govy.ErrorCode
+	}{
+		{
+			name:          "StringCreditCard",
+			rule:          StringCreditCard(),
+			expectedError: "string must be a valid payment card number",
+			errorCode:     ErrorCodeStringCreditCard,
+		},
+		{
+			name:          "StringLuhnChecksum",
+			rule:          StringLuhnChecksum(),
+			expectedError: "string must pass the Luhn checksum",
+			errorCode:     ErrorCodeStringLuhnChecksum,
+		},
+	}
+
+	const (
+		invalidProcessorCardNumber         = "4242424242424241"
+		expectedUniqueProcessorCardNumbers = 264
+	)
+	union := make(map[string]struct{}, expectedUniqueProcessorCardNumbers)
+	invalidOccurrences := 0
+	for _, fixture := range fixtures {
+		t.Run(fixture.name, func(t *testing.T) {
+			rawFixture, inputs := readTestDataFields(t, fixture.path)
+			assert.Require(t, assert.Len(t, inputs, fixture.expectedCount))
+			assert.True(t, strings.Contains(rawFixture, "# Source: "+fixture.source+"\n"))
+			assert.True(t, strings.Contains(
+				rawFixture,
+				"# Source snapshot SHA-256: "+fixture.sourceSnapshotSHA256+"\n",
+			))
+			normalizedValues := strings.Join(inputs, "\n") + "\n"
+			actualValuesSHA256 := fmt.Sprintf("%x", sha256.Sum256([]byte(normalizedValues)))
+			assert.Equal(t, fixture.normalizedValuesSHA256, actualValuesSHA256)
+
+			uniqueInputs := make(map[string]struct{}, len(inputs))
+			for _, input := range inputs {
+				uniqueInputs[input] = struct{}{}
+				union[input] = struct{}{}
+				if input == invalidProcessorCardNumber {
+					invalidOccurrences++
+				}
+				t.Run(input, func(t *testing.T) {
+					for _, testRule := range rules {
+						t.Run(testRule.name, func(t *testing.T) {
+							err := testRule.rule.Validate(input)
+							if input == invalidProcessorCardNumber {
+								assertPaymentBankingRuleError(
+									t,
+									err,
+									testRule.expectedError,
+									testRule.errorCode,
+								)
+								return
+							}
+							assert.NoError(t, err)
+						})
+					}
+				})
+			}
+			assert.Len(t, uniqueInputs, len(inputs))
+		})
+	}
+	assert.Len(t, union, expectedUniqueProcessorCardNumbers)
+	assert.Equal(t, 1, invalidOccurrences)
+}
+
+var stringBICTestCases = stringPaymentBankingTestCases{
+	validInputs: map[string]string{
+		"eight characters":                  "DEUTDEFF",
+		"eleven characters":                 "DEUTDEFF500",
+		"branch placeholder":                "NEDSZAJJXXX",
+		"ISO 9362 eight character example":  "ABCDFRPP",
+		"ISO 9362 eleven character example": "WG11US335AB",
+		"TC68 eight character example":      "ABCDBE22",
+		"TC68 eleven character example":     "ABCDBE22XYZ",
+		"alphanumeric party prefix":         "A1B2US33XXX",
+		"zero in party suffix":              "ABCDUS0A",
+		"one in party suffix":               "ABCDUS1A",
+		"letter O in party suffix":          "ABCDUSAO",
+		"Kosovo bank example":               "EKOMXKPR",
+		"Kosovo bank identifier":            "BPBXXKPR",
+	},
+	invalidInputs: map[string]string{
+		"empty":                       "",
+		"lowercase":                   "abcdfrpp",
+		"digit in country code":       "ABCD3R22",
+		"user-assigned country AA":    "ABCDAA22",
+		"user-assigned country QM":    "ABCDQM22",
+		"user-assigned country QZ":    "ABCDQZ22",
+		"user-assigned country XA":    "ABCDXA22",
+		"user-assigned country XZ":    "ABCDXZ22",
+		"user-assigned country ZZ":    "ABCDZZ22",
+		"deleted country AN":          "ABCDAN22",
+		"deleted country CS":          "ABCDCS22",
+		"seven characters":            "ABCDFR2",
+		"nine characters":             "ABCDFR22X",
+		"ten characters":              "ABCDFR22XX",
+		"twelve characters":           "ABCDFR22XXXX",
+		"punctuation in party prefix": "ABC-FR22",
+		"punctuation in party suffix": "ABCDFR2-",
+		"punctuation in branch":       "ABCDFR22XY-",
+		"trailing space":              "ABCDFR22 ",
+	},
+}
+
+func TestStringBIC(t *testing.T) {
+	assertPaymentBankingRule(
+		t,
+		StringBIC(),
+		stringBICTestCases,
+		"string must be a valid Business Identifier Code (BIC)",
+		ErrorCodeStringBIC,
+	)
+}
+
+func BenchmarkStringBIC(b *testing.B) {
+	rule := StringBIC()
+	benchmarkStringPaymentBankingRule(b, rule, stringBICTestCases)
+}
+
+var stringBICISO93622014TestCases = stringPaymentBankingTestCases{
+	validInputs: map[string]string{
+		"eight characters":                  "DEUTDEFF",
+		"eleven characters":                 "DEUTDEFF500",
+		"branch placeholder":                "NEDSZAJJXXX",
+		"ISO 9362 eight character example":  "ABCDFRPP",
+		"ISO 9362 eleven character example": "WG11US335AB",
+		"TC68 eight character example":      "ABCDBE22",
+		"TC68 eleven character example":     "ABCDBE22XYZ",
+		"alphanumeric party prefix":         "A1B2US33XXX",
+		"zero in party suffix":              "ABCDUS0A",
+		"one in party suffix":               "ABCDUS1A",
+		"letter O in party suffix":          "ABCDUSAO",
+		"Kosovo bank example":               "EKOMXKPR",
+		"Kosovo bank identifier":            "BPBXXKPR",
+	},
+	invalidInputs: map[string]string{
+		"empty":                       "",
+		"lowercase":                   "abcdfrpp",
+		"digit in country code":       "ABCD3R22",
+		"user-assigned country AA":    "ABCDAA22",
+		"user-assigned country QM":    "ABCDQM22",
+		"user-assigned country QZ":    "ABCDQZ22",
+		"user-assigned country XA":    "ABCDXA22",
+		"user-assigned country XZ":    "ABCDXZ22",
+		"user-assigned country ZZ":    "ABCDZZ22",
+		"deleted country AN":          "ABCDAN22",
+		"deleted country CS":          "ABCDCS22",
+		"seven characters":            "ABCDFR2",
+		"nine characters":             "ABCDFR22X",
+		"ten characters":              "ABCDFR22XX",
+		"twelve characters":           "ABCDFR22XXXX",
+		"punctuation in party prefix": "ABC-FR22",
+		"punctuation in party suffix": "ABCDFR2-",
+		"punctuation in branch":       "ABCDFR22XY-",
+		"trailing space":              "ABCDFR22 ",
+	},
+}
+
+func TestStringBICISO93622014(t *testing.T) {
+	assertPaymentBankingRule(
+		t,
+		StringBICISO93622014(),
+		stringBICISO93622014TestCases,
+		"string must be a valid ISO 9362:2014 Business Identifier Code (BIC)",
+		ErrorCodeStringBICISO93622014,
+	)
+}
+
+func TestStringBICCountryCodes(t *testing.T) {
+	countryCodes := readISOAlpha2CountryCodes(t)
+	assert.Require(t, assert.Len(t, countryCodes, 249))
+	uniqueCountryCodes := make(map[string]struct{}, len(countryCodes))
+	for _, countryCode := range countryCodes {
+		uniqueCountryCodes[countryCode] = struct{}{}
+	}
+	assert.Require(t, assert.Len(t, uniqueCountryCodes, len(countryCodes)))
+
+	rules := map[string]govy.Rule[string]{
+		"StringBIC":            StringBIC(),
+		"StringBICISO93622014": StringBICISO93622014(),
+	}
+	for ruleName, rule := range rules {
+		t.Run(ruleName, func(t *testing.T) {
+			for _, countryCode := range countryCodes {
+				t.Run(countryCode, func(t *testing.T) {
+					assert.NoError(t, rule.Validate("ABCD"+countryCode+"22"))
+				})
+			}
+			t.Run("Kosovo exception XK", func(t *testing.T) {
+				assert.NoError(t, rule.Validate("ABCDXK22"))
+			})
+		})
+	}
+}
+
+func TestBICPredicatesMatchRegexpOracle(t *testing.T) {
+	oracle := regexp.MustCompile(`^[A-Z0-9]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$`)
+	corpora := map[string]stringPaymentBankingTestCases{
+		"StringBIC":            stringBICTestCases,
+		"StringBICISO93622014": stringBICISO93622014TestCases,
+	}
+	for corpusName, testCases := range corpora {
+		t.Run(corpusName, func(t *testing.T) {
+			for caseName, input := range testCases.validInputs {
+				t.Run("valid "+caseName, func(t *testing.T) {
+					assertBICPredicatesMatchRegexpOracle(t, oracle, input)
+				})
+			}
+			for caseName, input := range testCases.invalidInputs {
+				t.Run("invalid "+caseName, func(t *testing.T) {
+					assertBICPredicatesMatchRegexpOracle(t, oracle, input)
+				})
+			}
+		})
+	}
+
+	t.Run("lengths zero through twelve", func(t *testing.T) {
+		for length := range 13 {
+			input := strings.Repeat("A", length)
+			assertBICPredicatesMatchRegexpOracle(t, oracle, input)
+		}
+	})
+
+	for name, base := range map[string]string{
+		"eight characters":  "ABCDUS22",
+		"eleven characters": "ABCDUS22XYZ",
+	} {
+		t.Run(name+" single-byte substitutions", func(t *testing.T) {
+			input := []byte(base)
+			for position := range len(input) {
+				for value := byte(0); ; value++ {
+					input[position] = value
+					assertBICPredicatesMatchRegexpOracle(t, oracle, string(input))
+					if value == 255 {
+						break
+					}
+				}
+				input[position] = base[position]
+			}
+		})
+	}
+
+	t.Run("ISO country codes", func(t *testing.T) {
+		countryCodes := append(readISOAlpha2CountryCodes(t), "XK")
+		for _, countryCode := range countryCodes {
+			assertBICPredicatesMatchRegexpOracle(t, oracle, "ABCD"+countryCode+"22")
+			assertBICPredicatesMatchRegexpOracle(t, oracle, "ABCD"+countryCode+"22XYZ")
+		}
+	})
+}
+
+func BenchmarkStringBICISO93622014(b *testing.B) {
+	rule := StringBICISO93622014()
+	benchmarkStringPaymentBankingRule(b, rule, stringBICISO93622014TestCases)
 }
 
 const stringMongoDBObjectIDErrorMessage = "string must be a 24-character hexadecimal MongoDB ObjectID"
@@ -1435,6 +1825,413 @@ func BenchmarkStringCVE(b *testing.B) {
 	for b.Loop() {
 		_ = rule.Validate("CVE-2021-44228")
 	}
+}
+
+const (
+	stringEINErrorMessage = "string must be a valid Employer Identification Number (EIN)"
+	stringSSNErrorMessage = "string must be a valid Social Security Number (SSN)"
+)
+
+type stringTaxIDTestCase struct {
+	name       string
+	in         string
+	shouldPass bool
+}
+
+// stringEINRecognizedPrefixes is the complete set of distinct prefixes
+// published by the IRS "Valid EINs" page, updated 2026-04-09.
+// https://www.irs.gov/businesses/small-businesses-self-employed/valid-eins
+var stringEINRecognizedPrefixes = map[string]struct{}{
+	"01": {}, "02": {}, "03": {}, "04": {}, "05": {}, "06": {},
+	"10": {}, "11": {}, "12": {}, "13": {}, "14": {}, "15": {}, "16": {},
+	"20": {}, "21": {}, "22": {}, "23": {}, "24": {}, "25": {}, "26": {}, "27": {},
+	"30": {}, "31": {}, "32": {}, "33": {}, "34": {}, "35": {}, "36": {}, "37": {}, "38": {}, "39": {},
+	"40": {}, "41": {}, "42": {}, "43": {}, "44": {}, "45": {}, "46": {}, "47": {}, "48": {},
+	"50": {}, "51": {}, "52": {}, "53": {}, "54": {}, "55": {}, "56": {}, "57": {}, "58": {}, "59": {},
+	"60": {}, "61": {}, "62": {}, "63": {}, "64": {}, "65": {}, "66": {}, "67": {}, "68": {},
+	"71": {}, "72": {}, "73": {}, "74": {}, "75": {}, "76": {}, "77": {},
+	"80": {}, "81": {}, "82": {}, "83": {}, "84": {}, "85": {}, "86": {}, "87": {}, "88": {},
+	"90": {}, "91": {}, "92": {}, "93": {}, "94": {}, "95": {}, "98": {}, "99": {},
+}
+
+var (
+	stringEINPrefixTestCases            = generateStringEINPrefixTestCases()
+	stringEINAcceptedStructureTestCases = []stringTaxIDTestCase{
+		{name: "lowest recognized prefix", in: "01-0000001", shouldPass: true},
+		{name: "highest recognized prefix", in: "99-9999999", shouldPass: true},
+	}
+	stringEINRejectedStructureTestCases = []stringTaxIDTestCase{
+		{name: "empty input", in: ""},
+		{name: "missing separator", in: "123456789"},
+		{name: "one-digit prefix", in: "1-3456789"},
+		{name: "three-digit prefix", in: "012-3456789"},
+		{name: "short serial", in: "12-345678"},
+		{name: "long serial", in: "12-34567890"},
+		{name: "letter prefix", in: "AB-3456789"},
+		{name: "letter serial", in: "12-345678A"},
+		{name: "space separator", in: "12 3456789"},
+		{name: "underscore separator", in: "12_3456789"},
+		{name: "en dash separator", in: "12–3456789"},
+		{name: "double separator", in: "12--3456789"},
+		{name: "leading whitespace", in: " 12-3456789"},
+		{name: "trailing whitespace", in: "12-3456789 "},
+		{name: "full-width digits", in: "１２-３４５６７８９"},
+		{name: "trailing newline", in: "12-3456789\n"},
+	}
+)
+
+// IRS IRM 3.13.5.21 (2022-01-01) lists the never-issued examples below.
+// https://www.irs.gov/irm/part3/irm_03-013-005
+var (
+	stringSSNAcceptedStructureTestCases = []stringTaxIDTestCase{
+		{name: "lowest structural fields", in: "001-01-0001", shouldPass: true},
+		{name: "area below 666", in: "665-99-9999", shouldPass: true},
+		{name: "area above 666", in: "667-01-0001", shouldPass: true},
+		{name: "area 772", in: "772-01-0001", shouldPass: true},
+		{name: "area 800", in: "800-01-0001", shouldPass: true},
+		{name: "highest structural fields", in: "899-99-9999", shouldPass: true},
+		{name: "IRS never-issued example 111 is structurally valid", in: "111-11-1111", shouldPass: true},
+		{name: "IRS never-issued example 222 is structurally valid", in: "222-22-2222", shouldPass: true},
+		{name: "IRS never-issued example 777 is structurally valid", in: "777-77-7777", shouldPass: true},
+		{name: "IRS never-issued example 123 is structurally valid", in: "123-45-6789", shouldPass: true},
+	}
+	stringSSNRejectedStructureTestCases = []stringTaxIDTestCase{
+		{name: "empty input", in: ""},
+		{name: "zero area", in: "000-01-0001"},
+		{name: "IRS never-issued area 666", in: "666-66-6666"},
+		{name: "area 900", in: "900-01-0001"},
+		{name: "area 901", in: "901-01-0001"},
+		{name: "area 998", in: "998-01-0001"},
+		{name: "area 999", in: "999-01-0001"},
+		{name: "zero group", in: "001-00-0001"},
+		{name: "zero serial", in: "001-01-0000"},
+		{name: "short area", in: "01-01-0001"},
+		{name: "long area", in: "0001-01-0001"},
+		{name: "short group", in: "001-1-0001"},
+		{name: "long group", in: "001-001-0001"},
+		{name: "short serial", in: "001-01-001"},
+		{name: "long serial", in: "001-01-00001"},
+		{name: "letter area", in: "00A-01-0001"},
+		{name: "letter group", in: "001-0A-0001"},
+		{name: "letter serial", in: "001-01-000A"},
+		{name: "missing separators", in: "001010001"},
+		{name: "slash separators", in: "001/01/0001"},
+		{name: "en dash separators", in: "001–01–0001"},
+		{name: "space separators", in: "001 01 0001"},
+		{name: "leading whitespace", in: " 001-01-0001"},
+		{name: "trailing whitespace", in: "001-01-0001 "},
+		{name: "full-width digits", in: "００１-０１-０００１"},
+		{name: "trailing newline", in: "001-01-0001\n"},
+		{name: "EIN-shaped input", in: "12-3456789"},
+	}
+	stringSSNAreaTestCases   = generateStringSSNAreaTestCases()
+	stringSSNGroupTestCases  = generateStringSSNGroupTestCases()
+	stringSSNSerialTestCases = generateStringSSNSerialTestCases()
+)
+
+func TestStringEIN(t *testing.T) {
+	t.Parallel()
+
+	rule := StringEIN()
+	assert.Require(t, assert.Len(t, stringEINRecognizedPrefixes, 83))
+
+	t.Run("IRS prefix corpus", func(t *testing.T) {
+		t.Parallel()
+
+		recognizedCount := 0
+		unrecognizedCount := 0
+		for _, tc := range stringEINPrefixTestCases {
+			if tc.shouldPass {
+				recognizedCount++
+			} else {
+				unrecognizedCount++
+			}
+			t.Run(tc.name, func(t *testing.T) {
+				assertTaxIDRuleValidity(
+					t,
+					rule,
+					tc.in,
+					tc.shouldPass,
+					stringEINErrorMessage,
+					ErrorCodeStringEIN,
+				)
+			})
+		}
+		assert.Equal(t, 83, recognizedCount)
+		assert.Equal(t, 17, unrecognizedCount)
+	})
+
+	t.Run("accepted structures", func(t *testing.T) {
+		t.Parallel()
+
+		for _, tc := range stringEINAcceptedStructureTestCases {
+			t.Run(tc.name, func(t *testing.T) {
+				t.Parallel()
+
+				assertTaxIDRuleValidity(
+					t,
+					rule,
+					tc.in,
+					tc.shouldPass,
+					stringEINErrorMessage,
+					ErrorCodeStringEIN,
+				)
+			})
+		}
+	})
+	t.Run("rejected structures", func(t *testing.T) {
+		t.Parallel()
+
+		for _, tc := range stringEINRejectedStructureTestCases {
+			t.Run(tc.name, func(t *testing.T) {
+				t.Parallel()
+
+				assertTaxIDRuleValidity(
+					t,
+					rule,
+					tc.in,
+					tc.shouldPass,
+					stringEINErrorMessage,
+					ErrorCodeStringEIN,
+				)
+			})
+		}
+	})
+}
+
+func TestStringSSN(t *testing.T) {
+	t.Parallel()
+
+	rule := StringSSN()
+	t.Run("accepted structures", func(t *testing.T) {
+		t.Parallel()
+
+		for _, tc := range stringSSNAcceptedStructureTestCases {
+			t.Run(tc.name, func(t *testing.T) {
+				t.Parallel()
+
+				assertTaxIDRuleValidity(
+					t,
+					rule,
+					tc.in,
+					tc.shouldPass,
+					stringSSNErrorMessage,
+					ErrorCodeStringSSN,
+				)
+			})
+		}
+	})
+	t.Run("rejected structures", func(t *testing.T) {
+		t.Parallel()
+
+		for _, tc := range stringSSNRejectedStructureTestCases {
+			t.Run(tc.name, func(t *testing.T) {
+				t.Parallel()
+
+				assertTaxIDRuleValidity(
+					t,
+					rule,
+					tc.in,
+					tc.shouldPass,
+					stringSSNErrorMessage,
+					ErrorCodeStringSSN,
+				)
+			})
+		}
+	})
+}
+
+func TestStringSSN_StructuralFields(t *testing.T) {
+	t.Parallel()
+
+	rule := StringSSN()
+	// SSA POMS RM 10201.035 (2011-06-23) defines these structural exclusions.
+	// https://secure.ssa.gov/poms.nsf/lnx/0110201035
+	t.Run("areas 000 through 999", func(t *testing.T) {
+		t.Parallel()
+
+		validCount := 0
+		invalidCount := 0
+		for _, tc := range stringSSNAreaTestCases {
+			if tc.shouldPass {
+				validCount++
+			} else {
+				invalidCount++
+			}
+			t.Run(tc.name, func(t *testing.T) {
+				assertTaxIDRuleValidity(
+					t,
+					rule,
+					tc.in,
+					tc.shouldPass,
+					stringSSNErrorMessage,
+					ErrorCodeStringSSN,
+				)
+			})
+		}
+		assert.Equal(t, 898, validCount)
+		assert.Equal(t, 102, invalidCount)
+	})
+	t.Run("groups 00 through 99", func(t *testing.T) {
+		t.Parallel()
+
+		validCount := 0
+		invalidCount := 0
+		for _, tc := range stringSSNGroupTestCases {
+			if tc.shouldPass {
+				validCount++
+			} else {
+				invalidCount++
+			}
+			t.Run(tc.name, func(t *testing.T) {
+				assertTaxIDRuleValidity(
+					t,
+					rule,
+					tc.in,
+					tc.shouldPass,
+					stringSSNErrorMessage,
+					ErrorCodeStringSSN,
+				)
+			})
+		}
+		assert.Equal(t, 99, validCount)
+		assert.Equal(t, 1, invalidCount)
+	})
+	t.Run("serials 0000 through 9999", func(t *testing.T) {
+		t.Parallel()
+
+		validCount := 0
+		invalidCount := 0
+		for _, tc := range stringSSNSerialTestCases {
+			if tc.shouldPass {
+				validCount++
+			} else {
+				invalidCount++
+			}
+			t.Run(tc.name, func(t *testing.T) {
+				assertTaxIDRuleValidity(
+					t,
+					rule,
+					tc.in,
+					tc.shouldPass,
+					stringSSNErrorMessage,
+					ErrorCodeStringSSN,
+				)
+			})
+		}
+		assert.Equal(t, 9_999, validCount)
+		assert.Equal(t, 1, invalidCount)
+	})
+}
+
+func BenchmarkStringEIN(b *testing.B) {
+	rule := StringEIN()
+	benchmarkStringTaxIDRule(
+		b,
+		rule,
+		stringEINPrefixTestCases,
+		stringEINAcceptedStructureTestCases,
+		stringEINRejectedStructureTestCases,
+	)
+}
+
+func BenchmarkStringSSN(b *testing.B) {
+	rule := StringSSN()
+	benchmarkStringTaxIDRule(
+		b,
+		rule,
+		stringSSNAcceptedStructureTestCases,
+		stringSSNRejectedStructureTestCases,
+		stringSSNAreaTestCases,
+		stringSSNGroupTestCases,
+		stringSSNSerialTestCases,
+	)
+}
+
+func benchmarkStringTaxIDRule(
+	b *testing.B,
+	rule govy.Rule[string],
+	testCaseGroups ...[]stringTaxIDTestCase,
+) {
+	b.Helper()
+	for b.Loop() {
+		for _, testCases := range testCaseGroups {
+			for _, tc := range testCases {
+				_ = rule.Validate(tc.in)
+			}
+		}
+	}
+}
+
+func assertTaxIDRuleValidity(
+	t *testing.T,
+	rule govy.Rule[string],
+	in string,
+	shouldPass bool,
+	expectedError string,
+	errorCode govy.ErrorCode,
+) {
+	t.Helper()
+	err := rule.Validate(in)
+	if shouldPass {
+		assert.NoError(t, err)
+		return
+	}
+	assert.EqualError(t, err, expectedError)
+	assert.True(t, govy.HasErrorCode(err, errorCode))
+}
+
+func generateStringEINPrefixTestCases() []stringTaxIDTestCase {
+	testCases := make([]stringTaxIDTestCase, 0, 100)
+	for prefixNumber := range 100 {
+		prefix := fmt.Sprintf("%02d", prefixNumber)
+		_, shouldPass := stringEINRecognizedPrefixes[prefix]
+		testCases = append(testCases, stringTaxIDTestCase{
+			name:       prefix,
+			in:         prefix + "-3456789",
+			shouldPass: shouldPass,
+		})
+	}
+	return testCases
+}
+
+func generateStringSSNAreaTestCases() []stringTaxIDTestCase {
+	testCases := make([]stringTaxIDTestCase, 0, 1_000)
+	for area := range 1_000 {
+		ssn := fmt.Sprintf("%03d-01-0001", area)
+		testCases = append(testCases, stringTaxIDTestCase{
+			name:       ssn,
+			in:         ssn,
+			shouldPass: area != 0 && area != 666 && area < 900,
+		})
+	}
+	return testCases
+}
+
+func generateStringSSNGroupTestCases() []stringTaxIDTestCase {
+	testCases := make([]stringTaxIDTestCase, 0, 100)
+	for group := range 100 {
+		ssn := fmt.Sprintf("001-%02d-0001", group)
+		testCases = append(testCases, stringTaxIDTestCase{
+			name:       ssn,
+			in:         ssn,
+			shouldPass: group != 0,
+		})
+	}
+	return testCases
+}
+
+func generateStringSSNSerialTestCases() []stringTaxIDTestCase {
+	testCases := make([]stringTaxIDTestCase, 0, 10_000)
+	for serial := range 10_000 {
+		ssn := fmt.Sprintf("001-01-%04d", serial)
+		testCases = append(testCases, stringTaxIDTestCase{
+			name:       ssn,
+			in:         ssn,
+			shouldPass: serial != 0,
+		})
+	}
+	return testCases
 }
 
 // The first seven values are the complete RFC 1321 Appendix A.5 output suite:
@@ -3318,6 +4115,102 @@ func BenchmarkStringKubernetesQualifiedName(b *testing.B) {
 			_ = rule.Validate(tc.in)
 		}
 	}
+}
+
+func benchmarkStringPaymentBankingRule(
+	b *testing.B,
+	rule govy.Rule[string],
+	testCases stringPaymentBankingTestCases,
+) {
+	b.Helper()
+	for b.Loop() {
+		for _, in := range testCases.validInputs {
+			_ = rule.Validate(in)
+		}
+		for _, in := range testCases.invalidInputs {
+			_ = rule.Validate(in)
+		}
+	}
+}
+
+func assertPaymentBankingRule(
+	t *testing.T,
+	rule govy.Rule[string],
+	testCases stringPaymentBankingTestCases,
+	expectedError string,
+	errorCode govy.ErrorCode,
+) {
+	t.Helper()
+	t.Run("valid inputs", func(t *testing.T) {
+		for name, in := range testCases.validInputs {
+			t.Run(name, func(t *testing.T) {
+				assert.NoError(t, rule.Validate(in))
+			})
+		}
+	})
+	t.Run("invalid inputs", func(t *testing.T) {
+		for name, in := range testCases.invalidInputs {
+			t.Run(name, func(t *testing.T) {
+				assertPaymentBankingRuleError(t, rule.Validate(in), expectedError, errorCode)
+			})
+		}
+	})
+}
+
+func assertPaymentBankingRuleError(
+	t *testing.T,
+	err error,
+	expectedError string,
+	errorCode govy.ErrorCode,
+) {
+	t.Helper()
+	assert.Require(t, assert.EqualError(t, err, expectedError))
+	assert.Require(t, assert.IsType[*govy.RuleError](t, err))
+	ruleError := err.(*govy.RuleError)
+	assert.Equal(t, expectedError, ruleError.Description)
+	assert.Equal(t, errorCode, ruleError.Code)
+}
+
+func assertBICPredicatesMatchRegexpOracle(
+	t *testing.T,
+	oracle *regexp.Regexp,
+	input string,
+) {
+	t.Helper()
+	expected := oracle.MatchString(input)
+	if expected {
+		expected = isValidBICCountryCode(input[4:6])
+	}
+	for name, predicate := range map[string]func(string) bool{
+		"isValidBIC":            isValidBIC,
+		"isValidBICISO93622014": isValidBICISO93622014,
+	} {
+		if actual := predicate(input); actual != expected {
+			t.Errorf("%s(%q) = %t, regexp oracle = %t", name, input, actual, expected)
+		}
+	}
+}
+
+func readISOAlpha2CountryCodes(t *testing.T) []string {
+	t.Helper()
+	_, codes := readTestDataFields(t, "testdata/iso_3166_1_alpha2_2026-07-21.txt")
+	return codes
+}
+
+func readTestDataFields(t *testing.T, path string) (raw string, fields []string) {
+	t.Helper()
+	data, err := os.ReadFile(path)
+	assert.Require(t, assert.NoError(t, err))
+
+	raw = string(data)
+	for line := range strings.Lines(raw) {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		fields = append(fields, strings.Fields(line)...)
+	}
+	return raw, fields
 }
 
 func testStringFormatIDRule(
