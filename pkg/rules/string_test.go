@@ -879,7 +879,6 @@ func TestStringPaymentCardProcessorFixtures(t *testing.T) {
 	assert.Equal(t, 1, invalidOccurrences)
 }
 
-// cspell:disable
 var stringBICTestCases = stringPaymentBankingTestCases{
 	validInputs: map[string]string{
 		"eight characters":                  "DEUTDEFF",
@@ -919,8 +918,6 @@ var stringBICTestCases = stringPaymentBankingTestCases{
 	},
 }
 
-// cspell:enable
-
 func TestStringBIC(t *testing.T) {
 	assertPaymentBankingRule(
 		t,
@@ -936,7 +933,6 @@ func BenchmarkStringBIC(b *testing.B) {
 	benchmarkStringPaymentBankingRule(b, rule, stringBICTestCases)
 }
 
-// cspell:disable
 var stringBICISO93622014TestCases = stringPaymentBankingTestCases{
 	validInputs: map[string]string{
 		"eight characters":                  "DEUTDEFF",
@@ -976,8 +972,6 @@ var stringBICISO93622014TestCases = stringPaymentBankingTestCases{
 	},
 }
 
-// cspell:enable
-
 func TestStringBICISO93622014(t *testing.T) {
 	assertPaymentBankingRule(
 		t,
@@ -988,7 +982,6 @@ func TestStringBICISO93622014(t *testing.T) {
 	)
 }
 
-// cspell:disable
 func TestStringBICCountryCodes(t *testing.T) {
 	countryCodes := readISOAlpha2CountryCodes(t)
 	assert.Require(t, assert.Len(t, countryCodes, 249))
@@ -1071,8 +1064,6 @@ func TestBICPredicatesMatchRegexpOracle(t *testing.T) {
 		}
 	})
 }
-
-// cspell:enable
 
 func BenchmarkStringBICISO93622014(b *testing.B) {
 	rule := StringBICISO93622014()
