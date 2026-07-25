@@ -2169,9 +2169,7 @@ var stringHexadecimalValidInputs = map[string]string{
 	"go uppercase byte range":               "F8F9FAFBFCFDFEFF",
 	"go odd single digit":                   "0",
 	"go odd numeric sequence":               "30313",
-	// cspell:disable
-	"go odd alphabetic sequence": "ffeed",
-	// cspell:enable
+	"go odd alphabetic sequence":            "ffeed",
 }
 
 var stringHexadecimalInvalidInputs = map[string]string{
