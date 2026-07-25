@@ -42,6 +42,10 @@ const (
 	StringNonEmptyTemplate
 	StringMatchRegexpTemplate
 	StringDenyRegexpTemplate
+	StringMD5Template
+	StringSHA256Template
+	StringSHA384Template
+	StringSHA512Template
 	StringEmailTemplate
 	StringE164Template
 	StringMACTemplate
@@ -51,9 +55,17 @@ const (
 	StringCIDRTemplate
 	StringCIDRv4Template
 	StringCIDRv6Template
+	StringUUIDRFC4122Template
+	StringUUIDv3Template
+	StringUUIDv4Template
+	StringUUIDv5Template
+	StringULIDTemplate
+	StringEINTemplate
+	StringSSNTemplate
 	StringJSONTemplate
 	StringSemverTemplate
 	StringCVETemplate
+	StringJWTTemplate
 	StringContainsTemplate
 	StringExcludesTemplate
 	StringStartsWithTemplate
@@ -69,6 +81,7 @@ const (
 	StringDateTimeTemplate
 	StringTimeZoneTemplate
 	StringKubernetesQualifiedNameTemplate
+	StringMongoDBObjectIDTemplate
 	URLTemplate
 	SliceUniqueTemplate
 	UniquePropertiesTemplate
@@ -116,6 +129,10 @@ var rawMessageTemplates = map[templateKey]string{
 	StringNonEmptyTemplate:    "string must not be empty",
 	StringMatchRegexpTemplate: "string must match regular expression: '{{ .ComparisonValue }}'",
 	StringDenyRegexpTemplate:  "string must not match regular expression: '{{ .ComparisonValue }}'",
+	StringMD5Template:         "string must be a valid lowercase MD5 hexadecimal digest",
+	StringSHA256Template:      "string must be a valid lowercase SHA-256 hexadecimal digest",
+	StringSHA384Template:      "string must be a valid lowercase SHA-384 hexadecimal digest",
+	StringSHA512Template:      "string must be a valid lowercase SHA-512 hexadecimal digest",
 	StringEmailTemplate:       "string must be a valid email address: {{ .Error }}",
 	StringE164Template:        "string must be a valid E.164 phone number",
 	StringMACTemplate:         "string must be a valid MAC address",
@@ -125,9 +142,17 @@ var rawMessageTemplates = map[templateKey]string{
 	StringCIDRTemplate:        "string must be a valid CIDR notation IP address",
 	StringCIDRv4Template:      "string must be a valid CIDR notation IPv4 address",
 	StringCIDRv6Template:      "string must be a valid CIDR notation IPv6 address",
+	StringUUIDRFC4122Template: "string must be a valid Universally Unique Identifier (UUID) as defined by RFC 4122",
+	StringUUIDv3Template:      "string must be a valid version 3 Universally Unique Identifier (UUID) as defined by RFC 4122",
+	StringUUIDv4Template:      "string must be a valid version 4 Universally Unique Identifier (UUID) as defined by RFC 4122",
+	StringUUIDv5Template:      "string must be a valid version 5 Universally Unique Identifier (UUID) as defined by RFC 4122",
+	StringULIDTemplate:        "string must be a valid Universally Unique Lexicographically Sortable Identifier (ULID)",
+	StringEINTemplate:         "string must be a valid Employer Identification Number (EIN)",
+	StringSSNTemplate:         "string must be a valid Social Security Number (SSN)",
 	StringJSONTemplate:        "string must be a valid JSON",
 	StringSemverTemplate:      "string must be a valid semantic version",
 	StringCVETemplate:         "string must be a valid CVE ID",
+	StringJWTTemplate:         "string must be a valid JSON Web Token (JWT){{- if .Error }}: {{ .Error }}{{- end }}",
 	StringContainsTemplate:    `string must contain the following substrings: {{ joinSlice .ComparisonValue "'" }}`,
 	StringExcludesTemplate:    `string must not contain any of the following substrings: {{ joinSlice .ComparisonValue "'" }}`,
 	StringStartsWithTemplate: `
@@ -189,6 +214,7 @@ var rawMessageTemplates = map[templateKey]string{
 	string must be a valid Kubernetes Qualified Name
 {{- end }}
 `,
+	StringMongoDBObjectIDTemplate: "string must be a 24-character hexadecimal MongoDB ObjectID",
 	SliceUniqueTemplate: `elements are not unique, {{ .Custom.FirstOrdinal }} and {{ .Custom.SecondOrdinal }} elements collide
 {{- if gt (len .Custom.Constraints) 0 }} based on constraints: {{ joinSlice .Custom.Constraints "" }}{{- end }}`,
 	UniquePropertiesTemplate: `all of [{{ joinSlice .ComparisonValue "" }}] properties must be unique, but '{{ .Custom.FirstProperty }}' collides with '{{ .Custom.SecondProperty }}'
