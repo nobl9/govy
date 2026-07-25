@@ -1,12 +1,15 @@
 package rules
 
 import (
+	"crypto/sha256"
 	"errors"
 	"fmt"
+	"maps"
 	"math/rand"
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 	"syscall"
 	"testing"
@@ -15,6 +18,14 @@ import (
 	"github.com/nobl9/govy/internal/assert"
 
 	"github.com/nobl9/govy/pkg/govy"
+)
+
+const (
+	uuidRFC4122Pattern = `^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89aAbB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$`
+	uuidv3Pattern      = `^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-3[0-9a-fA-F]{3}-[89aAbB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$`
+	uuidv4Pattern      = `^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89aAbB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$`
+	uuidv5Pattern      = `^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-5[0-9a-fA-F]{3}-[89aAbB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$`
+	ulidPattern        = `^[0-7][0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{25}$`
 )
 
 var stringNotEmptyTestCases = []*struct {
@@ -124,7 +135,6 @@ var stringDNSLabelTestCases = []*struct {
 	in         string
 	shouldFail bool
 }{
-	// cspell:disable
 	{"test", false},
 	{"s", false},
 	{"test-this", false},
@@ -139,7 +149,6 @@ var stringDNSLabelTestCases = []*struct {
 	{"test this", true},
 	{"1_2", true},
 	{"LOL", true},
-	// cspell:enable
 }
 
 func TestStringDNSLabel(t *testing.T) {
@@ -167,7 +176,6 @@ var stringDNSSubdomainTestCases = []*struct {
 	in         string
 	shouldFail bool
 }{
-	// cspell:disable
 	{"s", false},
 	{"sa", false},
 	{"a-1", false},
@@ -203,7 +211,6 @@ var stringDNSSubdomainTestCases = []*struct {
 	{".2.3.4", true},
 	{"1a.2B.3c.4d", true},
 	{"a--b--c.", true},
-	// cspell:enable
 }
 
 func TestStringDNSSubdomain(t *testing.T) {
@@ -227,11 +234,419 @@ func BenchmarkStringDNSSubdomain(b *testing.B) {
 	}
 }
 
+var stringUUIDValidInputs = map[string]string{
+	"RFC format example": "f81d4fae-7dec-11d0-a765-00a0c91e6bf6",
+	"nil UUID":           "00000000-0000-0000-0000-000000000000",
+	"max UUID uppercase": "FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF",
+	"version 1":          "C232AB00-9414-11EC-B3C8-9F6BDECED846",
+	"version 3":          "5df41881-3aed-3515-88a7-2f4a814cf09e",
+	"version 4":          "919108f7-52d1-4320-9bac-f847db4148a8",
+	"version 5":          "2ed6657d-e927-568b-95e1-2665a8aea6a2",
+	"version 6":          "1EC9414C-232A-6B00-B3C8-9F6BDECED846",
+	"version 7":          "017F22E2-79B0-7CC3-98C4-DC0C0C07398F",
+	"version 8":          "2489E9AD-2EE2-8E00-8EC9-32D5F69181C0",
+}
+
+var stringUUIDInvalidInputs = map[string]string{
+	"empty":                  "",
+	"URN representation":     "urn:uuid:f81d4fae-7dec-11d0-a765-00a0c91e6bf6",
+	"brace representation":   "{f81d4fae-7dec-11d0-a765-00a0c91e6bf6}",
+	"compact representation": "f81d4fae7dec11d0a76500a0c91e6bf6",
+	"leading space":          " f81d4fae-7dec-11d0-a765-00a0c91e6bf6",
+	"trailing newline":       "f81d4fae-7dec-11d0-a765-00a0c91e6bf6\n",
+	"too short":              "f81d4fae-7dec-11d0-a765-00a0c91e6bf",
+	"too long":               "f81d4fae-7dec-11d0-a765-00a0c91e6bf60",
+	"underscore separators":  "f81d4fae_7dec_11d0_a765_00a0c91e6bf6",
+	"non-hex character":      "g81d4fae-7dec-11d0-a765-00a0c91e6bf6",
+}
+
+func TestStringUUID(t *testing.T) {
+	testStringFormatIDRule(
+		t,
+		StringUUID(),
+		ErrorCodeStringUUID,
+		"string must match regular expression: '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$' (e.g. '00000000-0000-0000-0000-000000000000', 'e190c630-8873-11ee-b9d1-0242ac120002', '79258D24-01A7-47E5-ACBB-7E762DE52298'); expected RFC-4122 compliant UUID string",
+		stringUUIDValidInputs,
+		stringUUIDInvalidInputs,
+	)
+}
+
+func BenchmarkStringUUID(b *testing.B) {
+	benchmarkStringFormatIDRule(b, StringUUID(), stringUUIDValidInputs, stringUUIDInvalidInputs)
+}
+
+func BenchmarkUUIDPredicate(b *testing.B) {
+	benchmarkStringFormatIDPredicate(b, isValidUUID, stringUUIDValidInputs, stringUUIDInvalidInputs)
+}
+
+var stringUUIDRFC4122ValidInputs = map[string]string{
+	"RFC 4122 Appendix B version 1": "7d444840-9dc0-11d1-b245-5ffdce74fad2",
+	"RFC 4122 Appendix B version 3": "e902893a-9d22-3c7e-a7b8-d6e313b71d9f",
+	"version 1":                     "C232AB00-9414-11EC-B3C8-9F6BDECED846",
+	"version 2":                     "f81d4fae-7dec-21d0-a765-00a0c91e6bf6",
+	"version 3":                     "5df41881-3aed-3515-88a7-2f4a814cf09e",
+	"version 4":                     "919108f7-52d1-4320-9bac-f847db4148a8",
+	"version 5":                     "2ed6657d-e927-568b-95e1-2665a8aea6a2",
+	"IETF variant lower bound":      "f81d4fae-7dec-11d0-8765-00a0c91e6bf6",
+	"IETF variant upper bound":      "f81d4fae-7dec-11d0-b765-00a0c91e6bf6",
+}
+
+var stringUUIDRFC4122InvalidInputs = map[string]string{
+	"empty":                  "",
+	"nil UUID":               "00000000-0000-0000-0000-000000000000",
+	"max UUID":               "FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF",
+	"version 0":              "f81d4fae-7dec-01d0-a765-00a0c91e6bf6",
+	"version 6":              "1EC9414C-232A-6B00-B3C8-9F6BDECED846",
+	"version 7":              "017F22E2-79B0-7CC3-98C4-DC0C0C07398F",
+	"version 8":              "2489E9AD-2EE2-8E00-8EC9-32D5F69181C0",
+	"version 9":              "f81d4fae-7dec-91d0-a765-00a0c91e6bf6",
+	"version F":              "f81d4fae-7dec-f1d0-a765-00a0c91e6bf6",
+	"non-IETF variant lower": "f81d4fae-7dec-11d0-7765-00a0c91e6bf6",
+	"non-IETF variant upper": "f81d4fae-7dec-11d0-c765-00a0c91e6bf6",
+	"future variant lower":   "00000000-0000-4000-E000-000000000000",
+	"future variant upper":   "00000000-0000-4000-F000-000000000000",
+	"URN representation":     "urn:uuid:f81d4fae-7dec-11d0-a765-00a0c91e6bf6",
+	"brace representation":   "{f81d4fae-7dec-11d0-a765-00a0c91e6bf6}",
+	"compact representation": "f81d4fae7dec11d0a76500a0c91e6bf6",
+	"leading space":          " f81d4fae-7dec-11d0-a765-00a0c91e6bf6",
+	"trailing newline":       "f81d4fae-7dec-11d0-a765-00a0c91e6bf6\n",
+	"too short":              "f81d4fae-7dec-11d0-a765-00a0c91e6bf",
+	"too long":               "f81d4fae-7dec-11d0-a765-00a0c91e6bf60",
+	"underscore separators":  "f81d4fae_7dec_11d0_a765_00a0c91e6bf6",
+	"non-hex character":      "g81d4fae-7dec-11d0-a765-00a0c91e6bf6",
+}
+
+func TestStringUUIDRFC4122(t *testing.T) {
+	testStringFormatIDRule(
+		t,
+		StringUUIDRFC4122(),
+		ErrorCodeStringUUIDRFC4122,
+		"string must be a valid Universally Unique Identifier (UUID) as defined by RFC 4122",
+		stringUUIDRFC4122ValidInputs,
+		stringUUIDRFC4122InvalidInputs,
+	)
+}
+
+func BenchmarkStringUUIDRFC4122(b *testing.B) {
+	benchmarkStringFormatIDRule(
+		b,
+		StringUUIDRFC4122(),
+		stringUUIDRFC4122ValidInputs,
+		stringUUIDRFC4122InvalidInputs,
+	)
+}
+
+func BenchmarkUUIDRFC4122Predicate(b *testing.B) {
+	benchmarkStringFormatIDPredicate(
+		b,
+		isValidUUIDRFC4122,
+		stringUUIDRFC4122ValidInputs,
+		stringUUIDRFC4122InvalidInputs,
+	)
+}
+
+var stringUUIDv3ValidInputs = map[string]string{
+	"official vector, IETF variant lower bound": "5df41881-3aed-3515-88a7-2f4a814cf09e",
+	"uppercase":                "5DF41881-3AED-3515-88A7-2F4A814CF09E",
+	"mixed case":               "5dF41881-3aED-3515-88A7-2f4A814cF09E",
+	"IETF variant upper bound": "5df41881-3aed-3515-b8a7-2f4a814cf09e",
+}
+
+var stringUUIDv3InvalidInputs = map[string]string{
+	"empty":                  "",
+	"adjacent version 2":     "5df41881-3aed-2515-88a7-2f4a814cf09e",
+	"adjacent version 4":     "5df41881-3aed-4515-88a7-2f4a814cf09e",
+	"non-IETF variant lower": "5df41881-3aed-3515-78a7-2f4a814cf09e",
+	"non-IETF variant upper": "5df41881-3aed-3515-c8a7-2f4a814cf09e",
+	"URN representation":     "urn:uuid:5df41881-3aed-3515-88a7-2f4a814cf09e",
+	"brace representation":   "{5df41881-3aed-3515-88a7-2f4a814cf09e}",
+	"compact representation": "5df418813aed351588a72f4a814cf09e",
+	"leading space":          " 5df41881-3aed-3515-88a7-2f4a814cf09e",
+	"trailing newline":       "5df41881-3aed-3515-88a7-2f4a814cf09e\n",
+	"too short":              "5df41881-3aed-3515-88a7-2f4a814cf09",
+	"too long":               "5df41881-3aed-3515-88a7-2f4a814cf09e0",
+	"underscore separators":  "5df41881_3aed_3515_88a7_2f4a814cf09e",
+	"non-hex character":      "gdf41881-3aed-3515-88a7-2f4a814cf09e",
+}
+
+func TestStringUUIDv3(t *testing.T) {
+	testStringFormatIDRule(
+		t,
+		StringUUIDv3(),
+		ErrorCodeStringUUIDv3,
+		"string must be a valid version 3 Universally Unique Identifier (UUID) as defined by RFC 4122",
+		stringUUIDv3ValidInputs,
+		stringUUIDv3InvalidInputs,
+	)
+}
+
+func BenchmarkStringUUIDv3(b *testing.B) {
+	benchmarkStringFormatIDRule(b, StringUUIDv3(), stringUUIDv3ValidInputs, stringUUIDv3InvalidInputs)
+}
+
+func BenchmarkUUIDv3Predicate(b *testing.B) {
+	benchmarkStringFormatIDPredicate(
+		b,
+		func(s string) bool { return isValidUUIDVersion(s, '3') },
+		stringUUIDv3ValidInputs,
+		stringUUIDv3InvalidInputs,
+	)
+}
+
+var stringUUIDv4ValidInputs = map[string]string{
+	"official vector":          "919108f7-52d1-4320-9bac-f847db4148a8",
+	"uppercase":                "919108F7-52D1-4320-9BAC-F847DB4148A8",
+	"mixed case":               "919108F7-52d1-4320-9bAc-F847dB4148a8",
+	"IETF variant lower bound": "919108f7-52d1-4320-8bac-f847db4148a8",
+	"IETF variant upper bound": "919108f7-52d1-4320-bbac-f847db4148a8",
+}
+
+var stringUUIDv4InvalidInputs = map[string]string{
+	"empty":                  "",
+	"adjacent version 3":     "919108f7-52d1-3320-9bac-f847db4148a8",
+	"adjacent version 5":     "919108f7-52d1-5320-9bac-f847db4148a8",
+	"non-IETF variant lower": "919108f7-52d1-4320-7bac-f847db4148a8",
+	"non-IETF variant upper": "919108f7-52d1-4320-cbac-f847db4148a8",
+	"URN representation":     "urn:uuid:919108f7-52d1-4320-9bac-f847db4148a8",
+	"brace representation":   "{919108f7-52d1-4320-9bac-f847db4148a8}",
+	"compact representation": "919108f752d143209bacf847db4148a8",
+	"leading space":          " 919108f7-52d1-4320-9bac-f847db4148a8",
+	"trailing newline":       "919108f7-52d1-4320-9bac-f847db4148a8\n",
+	"too short":              "919108f7-52d1-4320-9bac-f847db4148a",
+	"too long":               "919108f7-52d1-4320-9bac-f847db4148a80",
+	"underscore separators":  "919108f7_52d1_4320_9bac_f847db4148a8",
+	"non-hex character":      "g19108f7-52d1-4320-9bac-f847db4148a8",
+}
+
+func TestStringUUIDv4(t *testing.T) {
+	testStringFormatIDRule(
+		t,
+		StringUUIDv4(),
+		ErrorCodeStringUUIDv4,
+		"string must be a valid version 4 Universally Unique Identifier (UUID) as defined by RFC 4122",
+		stringUUIDv4ValidInputs,
+		stringUUIDv4InvalidInputs,
+	)
+}
+
+func BenchmarkStringUUIDv4(b *testing.B) {
+	benchmarkStringFormatIDRule(b, StringUUIDv4(), stringUUIDv4ValidInputs, stringUUIDv4InvalidInputs)
+}
+
+func BenchmarkUUIDv4Predicate(b *testing.B) {
+	benchmarkStringFormatIDPredicate(
+		b,
+		func(s string) bool { return isValidUUIDVersion(s, '4') },
+		stringUUIDv4ValidInputs,
+		stringUUIDv4InvalidInputs,
+	)
+}
+
+var stringUUIDv5ValidInputs = map[string]string{
+	"official vector":          "2ed6657d-e927-568b-95e1-2665a8aea6a2",
+	"uppercase":                "2ED6657D-E927-568B-95E1-2665A8AEA6A2",
+	"mixed case":               "2Ed6657D-e927-568b-95E1-2665a8AeA6a2",
+	"IETF variant lower bound": "2ed6657d-e927-568b-85e1-2665a8aea6a2",
+	"IETF variant upper bound": "2ed6657d-e927-568b-b5e1-2665a8aea6a2",
+}
+
+var stringUUIDv5InvalidInputs = map[string]string{
+	"empty":                  "",
+	"adjacent version 4":     "2ed6657d-e927-468b-95e1-2665a8aea6a2",
+	"adjacent version 6":     "2ed6657d-e927-668b-95e1-2665a8aea6a2",
+	"non-IETF variant lower": "2ed6657d-e927-568b-75e1-2665a8aea6a2",
+	"non-IETF variant upper": "2ed6657d-e927-568b-c5e1-2665a8aea6a2",
+	"URN representation":     "urn:uuid:2ed6657d-e927-568b-95e1-2665a8aea6a2",
+	"brace representation":   "{2ed6657d-e927-568b-95e1-2665a8aea6a2}",
+	"compact representation": "2ed6657de927568b95e12665a8aea6a2",
+	"leading space":          " 2ed6657d-e927-568b-95e1-2665a8aea6a2",
+	"trailing newline":       "2ed6657d-e927-568b-95e1-2665a8aea6a2\n",
+	"too short":              "2ed6657d-e927-568b-95e1-2665a8aea6a",
+	"too long":               "2ed6657d-e927-568b-95e1-2665a8aea6a20",
+	"underscore separators":  "2ed6657d_e927_568b_95e1_2665a8aea6a2",
+	"non-hex character":      "ged6657d-e927-568b-95e1-2665a8aea6a2",
+}
+
+func TestStringUUIDv5(t *testing.T) {
+	testStringFormatIDRule(
+		t,
+		StringUUIDv5(),
+		ErrorCodeStringUUIDv5,
+		"string must be a valid version 5 Universally Unique Identifier (UUID) as defined by RFC 4122",
+		stringUUIDv5ValidInputs,
+		stringUUIDv5InvalidInputs,
+	)
+}
+
+func BenchmarkStringUUIDv5(b *testing.B) {
+	benchmarkStringFormatIDRule(b, StringUUIDv5(), stringUUIDv5ValidInputs, stringUUIDv5InvalidInputs)
+}
+
+func BenchmarkUUIDv5Predicate(b *testing.B) {
+	benchmarkStringFormatIDPredicate(
+		b,
+		func(s string) bool { return isValidUUIDVersion(s, '5') },
+		stringUUIDv5ValidInputs,
+		stringUUIDv5InvalidInputs,
+	)
+}
+
+// stringULIDValidInputs includes every concrete valid ULID from ulid/spec at
+// revision d0c7170df4517939e70129b4d6462cc162f2d5bf and every concrete ULID
+// from ulid/javascript's tests at revision 11c2067821ee19e4dc787ca4e0125a025485edc6.
+//
+// The specification's `ttttttttttrrrrrrrrrrrrrrrr` representation describes
+// the field layout; it is not a concrete ULID and is intentionally excluded.
+var stringULIDValidInputs = map[string]string{
+	"spec introductory example":      "01ARZ3NDEKTSV4RRFFQ69G5FAV",
+	"spec layout example":            "01AN4Z07BY79KA1307SR9X4MV3",
+	"spec monotonic first":           "01BX5ZZKBKACTAV9WEVGEMMVRY",
+	"spec monotonic second":          "01BX5ZZKBKACTAV9WEVGEMMVRZ",
+	"spec monotonic third":           "01BX5ZZKBKACTAV9WEVGEMMVS0",
+	"spec monotonic fourth":          "01BX5ZZKBKACTAV9WEVGEMMVS1",
+	"spec near-overflow X":           "01BX5ZZKBKZZZZZZZZZZZZZZZX",
+	"spec near-overflow Y":           "01BX5ZZKBKZZZZZZZZZZZZZZZY",
+	"spec near-overflow Z":           "01BX5ZZKBKZZZZZZZZZZZZZZZZ",
+	"spec maximum value":             "7ZZZZZZZZZZZZZZZZZZZZZZZZZ",
+	"JavaScript decode-time example": "01ARYZ6S41TSV4RRFFQ69G5FAV",
+	"JavaScript monotonic first":     "01ARYZ6S41YYYYYYYYYYYYYYYY",
+	"JavaScript monotonic second":    "01ARYZ6S41YYYYYYYYYYYYYYYZ",
+	"JavaScript monotonic third":     "01ARYZ6S41YYYYYYYYYYYYYYZ0",
+	"JavaScript monotonic fourth":    "01ARYZ6S41YYYYYYYYYYYYYYZ1",
+	"JavaScript next millisecond":    "01ARYZ6S42YYYYYYYYYYYYYYYY",
+	"derived minimum value":          "00000000000000000000000000",
+	"derived lowercase example":      "01arz3ndektsv4rrffq69g5fav",
+	"derived lowercase maximum":      "7zzzzzzzzzzzzzzzzzzzzzzzzz",
+}
+
+var stringULIDInvalidInputs = map[string]string{
+	"empty":                        "",
+	"too short":                    "01ARZ3NDEKTSV4RRFFQ69G5FA",
+	"too long":                     "01ARZ3NDEKTSV4RRFFQ69G5FAV0",
+	"minimum overflow":             "80000000000000000000000000",
+	"overflow with maximum suffix": "8ZZZZZZZZZZZZZZZZZZZZZZZZZ",
+	"all Z":                        "ZZZZZZZZZZZZZZZZZZZZZZZZZZ",
+	"forbidden uppercase I":        "01ARZ3NDEKTSV4RRFFQ69G5FIV",
+	"forbidden uppercase L":        "01ARZ3NDEKTSV4RRFFQ69G5FLV",
+	"forbidden uppercase O":        "01ARZ3NDEKTSV4RRFFQ69G5FOV",
+	"forbidden uppercase U":        "01ARZ3NDEKTSV4RRFFQ69G5FUV",
+	"forbidden lowercase I":        "01arz3ndektsv4rrffq69g5fiv",
+	"forbidden lowercase L":        "01arz3ndektsv4rrffq69g5flv",
+	"forbidden lowercase O":        "01arz3ndektsv4rrffq69g5fov",
+	"forbidden lowercase U":        "01arz3ndektsv4rrffq69g5fuv",
+	"leading space":                " 1ARZ3NDEKTSV4RRFFQ69G5FAV",
+	"trailing space":               "01ARZ3NDEKTSV4RRFFQ69G5FA ",
+	"leading newline":              "\n1ARZ3NDEKTSV4RRFFQ69G5FAV",
+	"trailing newline":             "01ARZ3NDEKTSV4RRFFQ69G5FA\n",
+	"hyphen":                       "01ARZ3NDEKTSV4RRFFQ69G5F-V",
+	"full-width characters":        "０１ＡＮ４Ｚ０７ＢＹ７９ＫＡ１３０７ＳＲ９Ｘ４ＭＶ３",
+}
+
+func TestStringULID(t *testing.T) {
+	testStringFormatIDRule(
+		t,
+		StringULID(),
+		ErrorCodeStringULID,
+		"string must be a valid Universally Unique Lexicographically Sortable Identifier (ULID)",
+		stringULIDValidInputs,
+		stringULIDInvalidInputs,
+	)
+}
+
+func BenchmarkStringULID(b *testing.B) {
+	benchmarkStringFormatIDRule(b, StringULID(), stringULIDValidInputs, stringULIDInvalidInputs)
+}
+
+func BenchmarkULIDPredicate(b *testing.B) {
+	benchmarkStringFormatIDPredicate(b, isValidULID, stringULIDValidInputs, stringULIDInvalidInputs)
+}
+
+func TestStringFormatIDPredicatesMatchRegularExpressions(t *testing.T) {
+	tests := map[string]struct {
+		pattern       string
+		seed          string
+		predicate     func(string) bool
+		validInputs   map[string]string
+		invalidInputs map[string]string
+	}{
+		"UUID": {
+			pattern:       uuidPattern,
+			seed:          "f81d4fae-7dec-11d0-a765-00a0c91e6bf6",
+			predicate:     isValidUUID,
+			validInputs:   stringUUIDValidInputs,
+			invalidInputs: stringUUIDInvalidInputs,
+		},
+		"RFC 4122 UUID": {
+			pattern:       uuidRFC4122Pattern,
+			seed:          "f81d4fae-7dec-11d0-a765-00a0c91e6bf6",
+			predicate:     isValidUUIDRFC4122,
+			validInputs:   stringUUIDRFC4122ValidInputs,
+			invalidInputs: stringUUIDRFC4122InvalidInputs,
+		},
+		"UUIDv3": {
+			pattern:       uuidv3Pattern,
+			seed:          "5df41881-3aed-3515-88a7-2f4a814cf09e",
+			predicate:     func(s string) bool { return isValidUUIDVersion(s, '3') },
+			validInputs:   stringUUIDv3ValidInputs,
+			invalidInputs: stringUUIDv3InvalidInputs,
+		},
+		"UUIDv4": {
+			pattern:       uuidv4Pattern,
+			seed:          "919108f7-52d1-4320-9bac-f847db4148a8",
+			predicate:     func(s string) bool { return isValidUUIDVersion(s, '4') },
+			validInputs:   stringUUIDv4ValidInputs,
+			invalidInputs: stringUUIDv4InvalidInputs,
+		},
+		"UUIDv5": {
+			pattern:       uuidv5Pattern,
+			seed:          "2ed6657d-e927-568b-95e1-2665a8aea6a2",
+			predicate:     func(s string) bool { return isValidUUIDVersion(s, '5') },
+			validInputs:   stringUUIDv5ValidInputs,
+			invalidInputs: stringUUIDv5InvalidInputs,
+		},
+		"ULID": {
+			pattern:       ulidPattern,
+			seed:          "01ARZ3NDEKTSV4RRFFQ69G5FAV",
+			predicate:     isValidULID,
+			validInputs:   stringULIDValidInputs,
+			invalidInputs: stringULIDInvalidInputs,
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			re := regexp.MustCompile(tc.pattern)
+			for _, input := range tc.validInputs {
+				assertStringPredicateMatchesRegexp(t, re, tc.predicate, input)
+			}
+			for _, input := range tc.invalidInputs {
+				assertStringPredicateMatchesRegexp(t, re, tc.predicate, input)
+			}
+
+			input := []byte(tc.seed)
+			for position := range input {
+				original := input[position]
+				for value := range 256 {
+					input[position] = byte(value)
+					assertStringPredicateMatchesRegexp(t, re, tc.predicate, string(input))
+				}
+				input[position] = original
+			}
+			for position := range len(tc.seed) {
+				input := tc.seed[:position] + tc.seed[position+1:]
+				assertStringPredicateMatchesRegexp(t, re, tc.predicate, input)
+			}
+			for position := range len(tc.seed) + 1 {
+				input := tc.seed[:position] + "\x00" + tc.seed[position:]
+				assertStringPredicateMatchesRegexp(t, re, tc.predicate, input)
+			}
+		})
+	}
+}
+
 var stringASCIITestCases = []*struct {
 	in         string
 	shouldFail bool
 }{
-	// cspell:disable
 	{"", false},
 	{"foobar", false},
 	{"0987654321", false},
@@ -243,7 +658,6 @@ var stringASCIITestCases = []*struct {
 	{"ｘｙｚ０９８", true},
 	{"１２３456", true},
 	{"ｶﾀｶﾅ", true},
-	// cspell:enable
 }
 
 func TestStringASCII(t *testing.T) {
@@ -267,47 +681,498 @@ func BenchmarkStringASCII(b *testing.B) {
 	}
 }
 
-var stringUUIDTestCases = []*struct {
-	in         string
-	shouldFail bool
-}{
-	// cspell:disable
-	{"00000000-0000-0000-0000-000000000000", false},
-	{"e190c630-8873-11ee-b9d1-0242ac120002", false},
-	{"79258D24-01A7-47E5-ACBB-7E762DE52298", false},
-	{"a987Fbc9-4bed-3078-cf07-9141ba07c9f3", false},
-	{"foobar", true},
-	{"0987654321", true},
-	{"AXAXAXAX-AAAA-AAAA-AAAA-AAAAAAAAAAAA", true},
-	{"00000000-0000-0000-0000-0000000000", true},
-	{"", true},
-	{"xxxa987Fbc9-4bed-3078-cf07-9141ba07c9f3", true},
-	{"a987Fbc9-4bed-3078-cf07-9141ba07c9f3xxx", true},
-	{"a987Fbc94bed3078cf079141ba07c9f3", true},
-	{"934859", true},
-	{"987fbc9-4bed-3078-cf07a-9141ba07c9F3", true},
-	{"aaaaaaaa-1111-1111-aaaG-111111111111", true},
-	// cspell:enable
+type stringPaymentBankingTestCases struct {
+	validInputs   map[string]string
+	invalidInputs map[string]string
 }
 
-func TestStringUUID(t *testing.T) {
-	for _, tc := range stringUUIDTestCases {
-		err := StringUUID().Validate(tc.in)
-		if tc.shouldFail {
-			assert.Error(t, err)
-			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringUUID))
-		} else {
-			assert.NoError(t, err)
-		}
+var stringCreditCardTestCases = stringPaymentBankingTestCases{
+	validInputs: map[string]string{
+		"visa":                      "4111111111111111",
+		"visa alternate":            "4242424242424242",
+		"mastercard":                "5555555555554444",
+		"american express":          "378282246310005",
+		"discover":                  "6011111111111117",
+		"six-series sixteen digits": "6123451234567893",
+		"diners club":               "36227206271667",
+		"mastercard 2-series":       "2223003122003222",
+		"JCB":                       "3566002020360505",
+		"UnionPay nineteen digits":  "6205500000000000004",
+		"visa decline test number":  "4000111111111115",
+		"minimum thirteen digits":   "1000000000009",
+		"maximum nineteen digits":   "1000000000000000009",
+	},
+	invalidInputs: map[string]string{
+		"empty":                          "",
+		"minimum length minus one":       "100000000008",
+		"maximum length plus one":        "10000000000000000008",
+		"failed thirteen digit checksum": "1000000000008",
+		"failed nineteen digit checksum": "1000000000000000008",
+		"all same digits":                "6666666666666",
+		"leading space":                  " 1000000000009",
+		"trailing space":                 "1000000000009 ",
+		"trailing newline":               "1000000000009\n",
+		"embedded spaces":                "4111 1111 1111 1111",
+		"hyphens":                        "4111-1111-1111-1111",
+		"full-width digit":               "10000000000０9",
+		"alphabetic character":           "10000000000A9",
+	},
+}
+
+func TestStringCreditCard(t *testing.T) {
+	assertPaymentBankingRule(
+		t,
+		StringCreditCard(),
+		stringCreditCardTestCases,
+		"string must be a valid payment card number",
+		ErrorCodeStringCreditCard,
+	)
+}
+
+func BenchmarkStringCreditCard(b *testing.B) {
+	rule := StringCreditCard()
+	benchmarkStringPaymentBankingRule(b, rule, stringCreditCardTestCases)
+}
+
+var stringLuhnChecksumTestCases = stringPaymentBankingTestCases{
+	validInputs: map[string]string{
+		"single zero":                "0",
+		"four zeroes":                "0000",
+		"twenty zeroes":              "00000000000000000000",
+		"two digits ending in eight": "18",
+		"two digits ending in nine":  "59",
+		"sample number":              "79927398713",
+		"six-series example":         "6123451234567893",
+		"fifteen digit example":      "808401234567893",
+		"nineteen digit example":     "6205500000000000004",
+	},
+	invalidInputs: map[string]string{
+		"empty":                       "",
+		"failed thirteen digit check": "6123451234567894",
+		"failed fifteen digit check":  "808401234567894",
+		"slash before zero":           "/0",
+		"colon before zero":           ":0",
+		"plus before zero":            "+0",
+		"trailing space":              "0 ",
+		"alphabetic character":        "79927A398713",
+		"full-width digits":           "１２",
+	},
+}
+
+func TestStringLuhnChecksum(t *testing.T) {
+	assertPaymentBankingRule(
+		t,
+		StringLuhnChecksum(),
+		stringLuhnChecksumTestCases,
+		"string must pass the Luhn checksum",
+		ErrorCodeStringLuhnChecksum,
+	)
+}
+
+func BenchmarkStringLuhnChecksum(b *testing.B) {
+	rule := StringLuhnChecksum()
+	benchmarkStringPaymentBankingRule(b, rule, stringLuhnChecksumTestCases)
+}
+
+func TestStringPaymentCardProcessorFixtures(t *testing.T) {
+	fixtures := []struct {
+		name                   string
+		path                   string
+		source                 string
+		sourceSnapshotSHA256   string
+		normalizedValuesSHA256 string
+		expectedCount          int
+	}{
+		{
+			name:                   "Stripe",
+			path:                   "testdata/stripe_test_card_numbers_2026-07-21.txt",
+			source:                 "https://docs.stripe.com/testing",
+			sourceSnapshotSHA256:   "bcc37c3f58146fcadf2290b67058d66841b9adfbf207a56ae0bef557c675fc4e",
+			normalizedValuesSHA256: "00176aa47882a48d54cc1db7cb654536cd8889406d59ce67c88ae00897e54da9",
+			expectedCount:          148,
+		},
+		{
+			name:                   "Braintree",
+			path:                   "testdata/braintree_test_card_numbers_2026-07-21.txt",
+			source:                 "https://developer.paypal.com/braintree/docs/reference/general/testing/php",
+			sourceSnapshotSHA256:   "85231b65e2b6fa674d7ada4cd71512d0fe1756398e83564244af1bbf3cb27211",
+			normalizedValuesSHA256: "3ff5fb628215867a24156654d3a026a86bc5d2a089846b8de129ff444c0c1db7",
+			expectedCount:          44,
+		},
+		{
+			name:                   "Adyen",
+			path:                   "testdata/adyen_test_card_numbers_2026-07-21.txt",
+			source:                 "https://docs.adyen.com/development-resources/test-cards-and-credentials/test-card-numbers",
+			sourceSnapshotSHA256:   "be12e0c40e9d3cabbfe1025d956c13dbd4250dbc6574c23a7a3178ce06eff82e",
+			normalizedValuesSHA256: "636787e0d1b9af8aa73287d6e7e058b9f6f499f47756537dbdf9f322c44f23da",
+			expectedCount:          86,
+		},
+	}
+	rules := []struct {
+		name          string
+		rule          govy.Rule[string]
+		expectedError string
+		errorCode     govy.ErrorCode
+	}{
+		{
+			name:          "StringCreditCard",
+			rule:          StringCreditCard(),
+			expectedError: "string must be a valid payment card number",
+			errorCode:     ErrorCodeStringCreditCard,
+		},
+		{
+			name:          "StringLuhnChecksum",
+			rule:          StringLuhnChecksum(),
+			expectedError: "string must pass the Luhn checksum",
+			errorCode:     ErrorCodeStringLuhnChecksum,
+		},
+	}
+
+	const (
+		invalidProcessorCardNumber         = "4242424242424241"
+		expectedUniqueProcessorCardNumbers = 264
+	)
+	union := make(map[string]struct{}, expectedUniqueProcessorCardNumbers)
+	invalidOccurrences := 0
+	for _, fixture := range fixtures {
+		t.Run(fixture.name, func(t *testing.T) {
+			rawFixture, inputs := readTestDataFields(t, fixture.path)
+			assert.Require(t, assert.Len(t, inputs, fixture.expectedCount))
+			assert.True(t, strings.Contains(rawFixture, "# Source: "+fixture.source+"\n"))
+			assert.True(t, strings.Contains(
+				rawFixture,
+				"# Source snapshot SHA-256: "+fixture.sourceSnapshotSHA256+"\n",
+			))
+			normalizedValues := strings.Join(inputs, "\n") + "\n"
+			actualValuesSHA256 := fmt.Sprintf("%x", sha256.Sum256([]byte(normalizedValues)))
+			assert.Equal(t, fixture.normalizedValuesSHA256, actualValuesSHA256)
+
+			uniqueInputs := make(map[string]struct{}, len(inputs))
+			for _, input := range inputs {
+				uniqueInputs[input] = struct{}{}
+				union[input] = struct{}{}
+				if input == invalidProcessorCardNumber {
+					invalidOccurrences++
+				}
+				t.Run(input, func(t *testing.T) {
+					for _, testRule := range rules {
+						t.Run(testRule.name, func(t *testing.T) {
+							err := testRule.rule.Validate(input)
+							if input == invalidProcessorCardNumber {
+								assertPaymentBankingRuleError(
+									t,
+									err,
+									testRule.expectedError,
+									testRule.errorCode,
+								)
+								return
+							}
+							assert.NoError(t, err)
+						})
+					}
+				})
+			}
+			assert.Len(t, uniqueInputs, len(inputs))
+		})
+	}
+	assert.Len(t, union, expectedUniqueProcessorCardNumbers)
+	assert.Equal(t, 1, invalidOccurrences)
+}
+
+var stringBICTestCases = stringPaymentBankingTestCases{
+	validInputs: map[string]string{
+		"eight characters":                  "DEUTDEFF",
+		"eleven characters":                 "DEUTDEFF500",
+		"branch placeholder":                "NEDSZAJJXXX",
+		"ISO 9362 eight character example":  "ABCDFRPP",
+		"ISO 9362 eleven character example": "WG11US335AB",
+		"TC68 eight character example":      "ABCDBE22",
+		"TC68 eleven character example":     "ABCDBE22XYZ",
+		"alphanumeric party prefix":         "A1B2US33XXX",
+		"zero in party suffix":              "ABCDUS0A",
+		"one in party suffix":               "ABCDUS1A",
+		"letter O in party suffix":          "ABCDUSAO",
+		"Kosovo bank example":               "EKOMXKPR",
+		"Kosovo bank identifier":            "BPBXXKPR",
+	},
+	invalidInputs: map[string]string{
+		"empty":                       "",
+		"lowercase":                   "abcdfrpp",
+		"digit in country code":       "ABCD3R22",
+		"user-assigned country AA":    "ABCDAA22",
+		"user-assigned country QM":    "ABCDQM22",
+		"user-assigned country QZ":    "ABCDQZ22",
+		"user-assigned country XA":    "ABCDXA22",
+		"user-assigned country XZ":    "ABCDXZ22",
+		"user-assigned country ZZ":    "ABCDZZ22",
+		"deleted country AN":          "ABCDAN22",
+		"deleted country CS":          "ABCDCS22",
+		"seven characters":            "ABCDFR2",
+		"nine characters":             "ABCDFR22X",
+		"ten characters":              "ABCDFR22XX",
+		"twelve characters":           "ABCDFR22XXXX",
+		"punctuation in party prefix": "ABC-FR22",
+		"punctuation in party suffix": "ABCDFR2-",
+		"punctuation in branch":       "ABCDFR22XY-",
+		"trailing space":              "ABCDFR22 ",
+	},
+}
+
+func TestStringBIC(t *testing.T) {
+	assertPaymentBankingRule(
+		t,
+		StringBIC(),
+		stringBICTestCases,
+		"string must be a valid Business Identifier Code (BIC)",
+		ErrorCodeStringBIC,
+	)
+}
+
+func BenchmarkStringBIC(b *testing.B) {
+	rule := StringBIC()
+	benchmarkStringPaymentBankingRule(b, rule, stringBICTestCases)
+}
+
+var stringBICISO93622014TestCases = stringPaymentBankingTestCases{
+	validInputs: map[string]string{
+		"eight characters":                  "DEUTDEFF",
+		"eleven characters":                 "DEUTDEFF500",
+		"branch placeholder":                "NEDSZAJJXXX",
+		"ISO 9362 eight character example":  "ABCDFRPP",
+		"ISO 9362 eleven character example": "WG11US335AB",
+		"TC68 eight character example":      "ABCDBE22",
+		"TC68 eleven character example":     "ABCDBE22XYZ",
+		"alphanumeric party prefix":         "A1B2US33XXX",
+		"zero in party suffix":              "ABCDUS0A",
+		"one in party suffix":               "ABCDUS1A",
+		"letter O in party suffix":          "ABCDUSAO",
+		"Kosovo bank example":               "EKOMXKPR",
+		"Kosovo bank identifier":            "BPBXXKPR",
+	},
+	invalidInputs: map[string]string{
+		"empty":                       "",
+		"lowercase":                   "abcdfrpp",
+		"digit in country code":       "ABCD3R22",
+		"user-assigned country AA":    "ABCDAA22",
+		"user-assigned country QM":    "ABCDQM22",
+		"user-assigned country QZ":    "ABCDQZ22",
+		"user-assigned country XA":    "ABCDXA22",
+		"user-assigned country XZ":    "ABCDXZ22",
+		"user-assigned country ZZ":    "ABCDZZ22",
+		"deleted country AN":          "ABCDAN22",
+		"deleted country CS":          "ABCDCS22",
+		"seven characters":            "ABCDFR2",
+		"nine characters":             "ABCDFR22X",
+		"ten characters":              "ABCDFR22XX",
+		"twelve characters":           "ABCDFR22XXXX",
+		"punctuation in party prefix": "ABC-FR22",
+		"punctuation in party suffix": "ABCDFR2-",
+		"punctuation in branch":       "ABCDFR22XY-",
+		"trailing space":              "ABCDFR22 ",
+	},
+}
+
+func TestStringBICISO93622014(t *testing.T) {
+	assertPaymentBankingRule(
+		t,
+		StringBICISO93622014(),
+		stringBICISO93622014TestCases,
+		"string must be a valid ISO 9362:2014 Business Identifier Code (BIC)",
+		ErrorCodeStringBICISO93622014,
+	)
+}
+
+func TestStringBICCountryCodes(t *testing.T) {
+	countryCodes := readISOAlpha2CountryCodes(t)
+	assert.Require(t, assert.Len(t, countryCodes, 249))
+	uniqueCountryCodes := make(map[string]struct{}, len(countryCodes))
+	for _, countryCode := range countryCodes {
+		uniqueCountryCodes[countryCode] = struct{}{}
+	}
+	assert.Require(t, assert.Len(t, uniqueCountryCodes, len(countryCodes)))
+
+	rules := map[string]govy.Rule[string]{
+		"StringBIC":            StringBIC(),
+		"StringBICISO93622014": StringBICISO93622014(),
+	}
+	for ruleName, rule := range rules {
+		t.Run(ruleName, func(t *testing.T) {
+			for _, countryCode := range countryCodes {
+				t.Run(countryCode, func(t *testing.T) {
+					assert.NoError(t, rule.Validate("ABCD"+countryCode+"22"))
+				})
+			}
+			t.Run("Kosovo exception XK", func(t *testing.T) {
+				assert.NoError(t, rule.Validate("ABCDXK22"))
+			})
+		})
 	}
 }
 
-func BenchmarkStringUUID(b *testing.B) {
-	for _, tc := range stringUUIDTestCases {
-		rule := StringUUID()
-		for range b.N {
-			_ = rule.Validate(tc.in)
+func TestBICPredicatesMatchRegexpOracle(t *testing.T) {
+	oracle := regexp.MustCompile(`^[A-Z0-9]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$`)
+	corpora := map[string]stringPaymentBankingTestCases{
+		"StringBIC":            stringBICTestCases,
+		"StringBICISO93622014": stringBICISO93622014TestCases,
+	}
+	for corpusName, testCases := range corpora {
+		t.Run(corpusName, func(t *testing.T) {
+			for caseName, input := range testCases.validInputs {
+				t.Run("valid "+caseName, func(t *testing.T) {
+					assertBICPredicatesMatchRegexpOracle(t, oracle, input)
+				})
+			}
+			for caseName, input := range testCases.invalidInputs {
+				t.Run("invalid "+caseName, func(t *testing.T) {
+					assertBICPredicatesMatchRegexpOracle(t, oracle, input)
+				})
+			}
+		})
+	}
+
+	t.Run("lengths zero through twelve", func(t *testing.T) {
+		for length := range 13 {
+			input := strings.Repeat("A", length)
+			assertBICPredicatesMatchRegexpOracle(t, oracle, input)
 		}
+	})
+
+	for name, base := range map[string]string{
+		"eight characters":  "ABCDUS22",
+		"eleven characters": "ABCDUS22XYZ",
+	} {
+		t.Run(name+" single-byte substitutions", func(t *testing.T) {
+			input := []byte(base)
+			for position := range len(input) {
+				for value := byte(0); ; value++ {
+					input[position] = value
+					assertBICPredicatesMatchRegexpOracle(t, oracle, string(input))
+					if value == 255 {
+						break
+					}
+				}
+				input[position] = base[position]
+			}
+		})
+	}
+
+	t.Run("ISO country codes", func(t *testing.T) {
+		countryCodes := append(readISOAlpha2CountryCodes(t), "XK")
+		for _, countryCode := range countryCodes {
+			assertBICPredicatesMatchRegexpOracle(t, oracle, "ABCD"+countryCode+"22")
+			assertBICPredicatesMatchRegexpOracle(t, oracle, "ABCD"+countryCode+"22XYZ")
+		}
+	})
+}
+
+func BenchmarkStringBICISO93622014(b *testing.B) {
+	rule := StringBICISO93622014()
+	benchmarkStringPaymentBankingRule(b, rule, stringBICISO93622014TestCases)
+}
+
+const stringMongoDBObjectIDErrorMessage = "string must be a 24-character hexadecimal MongoDB ObjectID"
+
+// The fixed source corpora are copied verbatim from these pinned revisions:
+//   - MongoDB BSON ObjectID corpus (3/3 values):
+//     https://github.com/mongodb/specifications/blob/b00d61ca19da7d7e25836ec56930048a8d1de501/source/bson-corpus/tests/oid.json
+//   - MongoDB Go driver ObjectID tests (6/6 fixed ObjectIDFromHex inputs):
+//     https://github.com/mongodb/mongo-go-driver/blob/25724e5ddec775c78be6a4794279068f3de03b1e/bson/objectid_test.go
+//
+// The driver's TestFromHex_RoundTrip is excluded because NewObjectID generates
+// its input dynamically, so the test publishes no stable literal to copy.
+var stringMongoDBObjectIDTestCases = map[string]struct {
+	in         string
+	shouldFail bool
+}{
+	"standard lowercase":               {in: "507f1f77bcf86cd799439011"},
+	"BSON corpus all zeroes":           {in: "000000000000000000000000"},
+	"BSON corpus all ones":             {in: "ffffffffffffffffffffffff"},
+	"BSON corpus random":               {in: "56e1fc72e0c917e9c4714161"},
+	"Go driver Unix epoch timestamp":   {in: "000000001111111111111111"},
+	"Go driver signed timestamp limit": {in: "7FFFFFFF1111111111111111"},
+	"Go driver timestamp sign bit":     {in: "800000001111111111111111"},
+	"Go driver uint32 timestamp limit": {in: "FFFFFFFF1111111111111111"},
+	"mixed case":                       {in: "0123456789abcdefABCDEF01"},
+
+	"empty":                   {shouldFail: true},
+	"23 characters":           {in: "507f1f77bcf86cd79943901", shouldFail: true},
+	"25 characters":           {in: "507f1f77bcf86cd7994390110", shouldFail: true},
+	"Go driver invalid hex":   {in: "this is not a valid hex string!", shouldFail: true},
+	"Go driver wrong length":  {in: "deadbeef", shouldFail: true},
+	"lowercase non-hex digit": {in: "507f1f77bcf86cd79943901g", shouldFail: true},
+	"uppercase non-hex digit": {in: "507F1F77BCF86CD79943901G", shouldFail: true},
+	"trailing hyphen":         {in: "507f1f77bcf86cd79943901-", shouldFail: true},
+	"trailing colon":          {in: "507f1f77bcf86cd79943901:", shouldFail: true},
+	"0x prefix":               {in: "0x507f1f77bcf86cd799439011", shouldFail: true},
+	"leading space":           {in: " 507f1f77bcf86cd799439011", shouldFail: true},
+	"trailing space":          {in: "507f1f77bcf86cd799439011 ", shouldFail: true},
+	"trailing newline":        {in: "507f1f77bcf86cd799439011\n", shouldFail: true},
+	"embedded newline":        {in: "507f1f77bcf\n6cd799439011", shouldFail: true},
+	"full-width zero":         {in: "０123456789abcdefABCDEF01", shouldFail: true},
+	"Cyrillic a":              {in: "а123456789abcdefABCDEF01", shouldFail: true},
+	"ObjectId wrapper":        {in: `ObjectId("507f1f77bcf86cd799439011")`, shouldFail: true},
+	"Extended JSON wrapper":   {in: `{"$oid":"507f1f77bcf86cd799439011"}`, shouldFail: true},
+}
+
+func TestStringMongoDBObjectID(t *testing.T) {
+	rule := StringMongoDBObjectID()
+	for name, tt := range stringMongoDBObjectIDTestCases {
+		t.Run(name, func(t *testing.T) {
+			err := rule.Validate(tt.in)
+			if tt.shouldFail {
+				assert.Require(t, assert.Error(t, err))
+				assert.EqualError(t, err, stringMongoDBObjectIDErrorMessage)
+				assert.True(t, govy.HasErrorCode(err, ErrorCodeStringMongoDBObjectID))
+				return
+			}
+			assert.NoError(t, err)
+		})
+	}
+}
+
+func Test_isMongoDBObjectID(t *testing.T) {
+	oracle := regexp.MustCompile(`^[0-9a-fA-F]{24}$`)
+	assertMatchesOracle := func(t *testing.T, input string) {
+		t.Helper()
+		expected := oracle.MatchString(input)
+		actual := isMongoDBObjectID(input)
+		if expected != actual {
+			t.Fatalf("input %q: expected %t, got %t", input, expected, actual)
+		}
+	}
+
+	t.Run("shared corpus", func(t *testing.T) {
+		for name, tt := range stringMongoDBObjectIDTestCases {
+			t.Run(name, func(t *testing.T) {
+				assertMatchesOracle(t, tt.in)
+			})
+		}
+	})
+	t.Run("lengths from zero through 48", func(t *testing.T) {
+		for length := range 49 {
+			assertMatchesOracle(t, strings.Repeat("a", length))
+		}
+	})
+	t.Run("every single-byte substitution", func(t *testing.T) {
+		candidate := []byte("000000000000000000000000")
+		for position := range candidate {
+			for value := range 256 {
+				candidate[position] = byte(value)
+				assertMatchesOracle(t, string(candidate))
+			}
+			candidate[position] = '0'
+		}
+	})
+}
+
+func BenchmarkStringMongoDBObjectID(b *testing.B) {
+	rule := StringMongoDBObjectID()
+	for name, tt := range stringMongoDBObjectIDTestCases {
+		b.Run(name, func(b *testing.B) {
+			for b.Loop() {
+				_ = rule.Validate(tt.in)
+			}
+		})
 	}
 }
 
@@ -315,7 +1180,6 @@ var stringEmailTestCases = []*struct {
 	in         string
 	shouldFail bool
 }{
-	// cspell:disable
 	{"test@mail.com", false},
 	{"Dörte@Sörensen.example.com", false},
 	{"θσερ@εχαμπλε.ψομ", false},
@@ -332,7 +1196,6 @@ var stringEmailTestCases = []*struct {
 	{"test@email.", true},
 	{"@email.com", true},
 	{`"@email.com`, true},
-	// cspell:enable
 }
 
 func TestStringEmail(t *testing.T) {
@@ -390,7 +1253,6 @@ var stringMACTestCases = []*struct {
 	in         string
 	shouldFail bool
 }{
-	// cspell:disable
 	{"3D:F2:C9:A6:B3:4F", false},
 	{"00:25:96:FF:FE:12:34:56", false},
 	{"3D-F2-C9-A6-B3:4F", true},
@@ -398,7 +1260,6 @@ var stringMACTestCases = []*struct {
 	{"", true},
 	{"abacaba", true},
 	{"0025:96FF:FE12:3456", true},
-	// cspell:enable
 }
 
 func TestStringMAC(t *testing.T) {
@@ -426,7 +1287,6 @@ var stringIPTestCases = []*struct {
 	in         string
 	shouldFail bool
 }{
-	// cspell:disable
 	{"10.0.0.1", false},
 	{"172.16.0.1", false},
 	{"192.168.0.1", false},
@@ -438,7 +1298,6 @@ var stringIPTestCases = []*struct {
 	{"", true},
 	{"172.16.256.255", true},
 	{"192.168.255.256", true},
-	// cspell:enable
 }
 
 func TestStringIP(t *testing.T) {
@@ -466,7 +1325,6 @@ var stringIPv4TestCases = []*struct {
 	in         string
 	shouldFail bool
 }{
-	// cspell:disable
 	{"10.0.0.1", false},
 	{"172.16.0.1", false},
 	{"192.168.0.1", false},
@@ -477,7 +1335,6 @@ var stringIPv4TestCases = []*struct {
 	{"2001:cdba:0000:0000:0000:0000:3257:9652", true},
 	{"2001:cdba:0:0:0:0:3257:9652", true},
 	{"2001:cdba::3257:9652", true},
-	// cspell:enable
 }
 
 func TestStringIPv4(t *testing.T) {
@@ -505,7 +1362,6 @@ var stringIPv6TestCases = []*struct {
 	in         string
 	shouldFail bool
 }{
-	// cspell:disable
 	{"2001:cdba:0000:0000:0000:0000:3257:9652", false},
 	{"2001:cdba:0:0:0:0:3257:9652", false},
 	{"2001:cdba::3257:9652", false},
@@ -516,7 +1372,6 @@ var stringIPv6TestCases = []*struct {
 	{"192.168.255.256", true},
 	{"172.16.255.254", true},
 	{"172.16.256.255", true},
-	// cspell:enable
 }
 
 func TestStringIPv6(t *testing.T) {
@@ -544,7 +1399,6 @@ var stringCIDRTestCases = []*struct {
 	in         string
 	shouldFail bool
 }{
-	// cspell:disable
 	{"10.0.0.0/0", false},
 	{"10.0.0.1/8", false},
 	{"172.16.0.1/16", false},
@@ -558,7 +1412,6 @@ var stringCIDRTestCases = []*struct {
 	{"192.168.255.256/24", true},
 	{"172.16.256.255/16", true},
 	{"2001:cdba:0000:0000:0000:0000:3257:9652/256", true},
-	// cspell:enable
 }
 
 func TestStringCIDR(t *testing.T) {
@@ -586,7 +1439,6 @@ var stringCIDRv4TestCases = []*struct {
 	in         string
 	shouldFail bool
 }{
-	// cspell:disable
 	{"0.0.0.0/0", false},
 	{"10.0.0.0/8", false},
 	{"172.16.0.0/16", false},
@@ -607,7 +1459,6 @@ var stringCIDRv4TestCases = []*struct {
 	{"2001:cdba:0:0:0:0:3257:9652/32", true},
 	{"2001:cdba::3257:9652/16", true},
 	{"172.56.1.0/16", true},
-	// cspell:enable
 }
 
 func TestStringCIDRv4(t *testing.T) {
@@ -635,7 +1486,6 @@ var stringCIDRv6TestCases = []*struct {
 	in         string
 	shouldFail bool
 }{
-	// cspell:disable
 	{"2001:cdba:0000:0000:0000:0000:3257:9652/64", false},
 	{"2001:cdba:0:0:0:0:3257:9652/32", false},
 	{"2001:cdba::3257:9652/16", false},
@@ -649,7 +1499,6 @@ var stringCIDRv6TestCases = []*struct {
 	{"172.16.255.254/16", true},
 	{"172.16.256.255/16", true},
 	{"2001:cdba:0000:0000:0000:0000:3257:9652/256", true},
-	// cspell:enable
 }
 
 func TestStringCIDRv6(t *testing.T) {
@@ -1455,6 +2304,1115 @@ func benchmarkStringEncodingInputs(
 	b.ReportMetric(float64(len(inputs)), "validations/op")
 }
 
+const (
+	stringEINErrorMessage = "string must be a valid Employer Identification Number (EIN)"
+	stringSSNErrorMessage = "string must be a valid Social Security Number (SSN)"
+)
+
+type stringTaxIDTestCase struct {
+	name       string
+	in         string
+	shouldPass bool
+}
+
+// stringEINRecognizedPrefixes is the complete set of distinct prefixes
+// published by the IRS "Valid EINs" page, updated 2026-04-09.
+// https://www.irs.gov/businesses/small-businesses-self-employed/valid-eins
+var stringEINRecognizedPrefixes = map[string]struct{}{
+	"01": {}, "02": {}, "03": {}, "04": {}, "05": {}, "06": {},
+	"10": {}, "11": {}, "12": {}, "13": {}, "14": {}, "15": {}, "16": {},
+	"20": {}, "21": {}, "22": {}, "23": {}, "24": {}, "25": {}, "26": {}, "27": {},
+	"30": {}, "31": {}, "32": {}, "33": {}, "34": {}, "35": {}, "36": {}, "37": {}, "38": {}, "39": {},
+	"40": {}, "41": {}, "42": {}, "43": {}, "44": {}, "45": {}, "46": {}, "47": {}, "48": {},
+	"50": {}, "51": {}, "52": {}, "53": {}, "54": {}, "55": {}, "56": {}, "57": {}, "58": {}, "59": {},
+	"60": {}, "61": {}, "62": {}, "63": {}, "64": {}, "65": {}, "66": {}, "67": {}, "68": {},
+	"71": {}, "72": {}, "73": {}, "74": {}, "75": {}, "76": {}, "77": {},
+	"80": {}, "81": {}, "82": {}, "83": {}, "84": {}, "85": {}, "86": {}, "87": {}, "88": {},
+	"90": {}, "91": {}, "92": {}, "93": {}, "94": {}, "95": {}, "98": {}, "99": {},
+}
+
+var (
+	stringEINPrefixTestCases            = generateStringEINPrefixTestCases()
+	stringEINAcceptedStructureTestCases = []stringTaxIDTestCase{
+		{name: "lowest recognized prefix", in: "01-0000001", shouldPass: true},
+		{name: "highest recognized prefix", in: "99-9999999", shouldPass: true},
+	}
+	stringEINRejectedStructureTestCases = []stringTaxIDTestCase{
+		{name: "empty input", in: ""},
+		{name: "missing separator", in: "123456789"},
+		{name: "one-digit prefix", in: "1-3456789"},
+		{name: "three-digit prefix", in: "012-3456789"},
+		{name: "short serial", in: "12-345678"},
+		{name: "long serial", in: "12-34567890"},
+		{name: "letter prefix", in: "AB-3456789"},
+		{name: "letter serial", in: "12-345678A"},
+		{name: "space separator", in: "12 3456789"},
+		{name: "underscore separator", in: "12_3456789"},
+		{name: "en dash separator", in: "12–3456789"},
+		{name: "double separator", in: "12--3456789"},
+		{name: "leading whitespace", in: " 12-3456789"},
+		{name: "trailing whitespace", in: "12-3456789 "},
+		{name: "full-width digits", in: "１２-３４５６７８９"},
+		{name: "trailing newline", in: "12-3456789\n"},
+	}
+)
+
+// IRS IRM 3.13.5.21 (2022-01-01) lists the never-issued examples below.
+// https://www.irs.gov/irm/part3/irm_03-013-005
+var (
+	stringSSNAcceptedStructureTestCases = []stringTaxIDTestCase{
+		{name: "lowest structural fields", in: "001-01-0001", shouldPass: true},
+		{name: "area below 666", in: "665-99-9999", shouldPass: true},
+		{name: "area above 666", in: "667-01-0001", shouldPass: true},
+		{name: "area 772", in: "772-01-0001", shouldPass: true},
+		{name: "area 800", in: "800-01-0001", shouldPass: true},
+		{name: "highest structural fields", in: "899-99-9999", shouldPass: true},
+		{name: "IRS never-issued example 111 is structurally valid", in: "111-11-1111", shouldPass: true},
+		{name: "IRS never-issued example 222 is structurally valid", in: "222-22-2222", shouldPass: true},
+		{name: "IRS never-issued example 777 is structurally valid", in: "777-77-7777", shouldPass: true},
+		{name: "IRS never-issued example 123 is structurally valid", in: "123-45-6789", shouldPass: true},
+	}
+	stringSSNRejectedStructureTestCases = []stringTaxIDTestCase{
+		{name: "empty input", in: ""},
+		{name: "zero area", in: "000-01-0001"},
+		{name: "IRS never-issued area 666", in: "666-66-6666"},
+		{name: "area 900", in: "900-01-0001"},
+		{name: "area 901", in: "901-01-0001"},
+		{name: "area 998", in: "998-01-0001"},
+		{name: "area 999", in: "999-01-0001"},
+		{name: "zero group", in: "001-00-0001"},
+		{name: "zero serial", in: "001-01-0000"},
+		{name: "short area", in: "01-01-0001"},
+		{name: "long area", in: "0001-01-0001"},
+		{name: "short group", in: "001-1-0001"},
+		{name: "long group", in: "001-001-0001"},
+		{name: "short serial", in: "001-01-001"},
+		{name: "long serial", in: "001-01-00001"},
+		{name: "letter area", in: "00A-01-0001"},
+		{name: "letter group", in: "001-0A-0001"},
+		{name: "letter serial", in: "001-01-000A"},
+		{name: "missing separators", in: "001010001"},
+		{name: "slash separators", in: "001/01/0001"},
+		{name: "en dash separators", in: "001–01–0001"},
+		{name: "space separators", in: "001 01 0001"},
+		{name: "leading whitespace", in: " 001-01-0001"},
+		{name: "trailing whitespace", in: "001-01-0001 "},
+		{name: "full-width digits", in: "００１-０１-０００１"},
+		{name: "trailing newline", in: "001-01-0001\n"},
+		{name: "EIN-shaped input", in: "12-3456789"},
+	}
+	stringSSNAreaTestCases   = generateStringSSNAreaTestCases()
+	stringSSNGroupTestCases  = generateStringSSNGroupTestCases()
+	stringSSNSerialTestCases = generateStringSSNSerialTestCases()
+)
+
+func TestStringEIN(t *testing.T) {
+	t.Parallel()
+
+	rule := StringEIN()
+	assert.Require(t, assert.Len(t, stringEINRecognizedPrefixes, 83))
+
+	t.Run("IRS prefix corpus", func(t *testing.T) {
+		t.Parallel()
+
+		recognizedCount := 0
+		unrecognizedCount := 0
+		for _, tc := range stringEINPrefixTestCases {
+			if tc.shouldPass {
+				recognizedCount++
+			} else {
+				unrecognizedCount++
+			}
+			t.Run(tc.name, func(t *testing.T) {
+				assertTaxIDRuleValidity(
+					t,
+					rule,
+					tc.in,
+					tc.shouldPass,
+					stringEINErrorMessage,
+					ErrorCodeStringEIN,
+				)
+			})
+		}
+		assert.Equal(t, 83, recognizedCount)
+		assert.Equal(t, 17, unrecognizedCount)
+	})
+
+	t.Run("accepted structures", func(t *testing.T) {
+		t.Parallel()
+
+		for _, tc := range stringEINAcceptedStructureTestCases {
+			t.Run(tc.name, func(t *testing.T) {
+				t.Parallel()
+
+				assertTaxIDRuleValidity(
+					t,
+					rule,
+					tc.in,
+					tc.shouldPass,
+					stringEINErrorMessage,
+					ErrorCodeStringEIN,
+				)
+			})
+		}
+	})
+	t.Run("rejected structures", func(t *testing.T) {
+		t.Parallel()
+
+		for _, tc := range stringEINRejectedStructureTestCases {
+			t.Run(tc.name, func(t *testing.T) {
+				t.Parallel()
+
+				assertTaxIDRuleValidity(
+					t,
+					rule,
+					tc.in,
+					tc.shouldPass,
+					stringEINErrorMessage,
+					ErrorCodeStringEIN,
+				)
+			})
+		}
+	})
+}
+
+func TestStringSSN(t *testing.T) {
+	t.Parallel()
+
+	rule := StringSSN()
+	t.Run("accepted structures", func(t *testing.T) {
+		t.Parallel()
+
+		for _, tc := range stringSSNAcceptedStructureTestCases {
+			t.Run(tc.name, func(t *testing.T) {
+				t.Parallel()
+
+				assertTaxIDRuleValidity(
+					t,
+					rule,
+					tc.in,
+					tc.shouldPass,
+					stringSSNErrorMessage,
+					ErrorCodeStringSSN,
+				)
+			})
+		}
+	})
+	t.Run("rejected structures", func(t *testing.T) {
+		t.Parallel()
+
+		for _, tc := range stringSSNRejectedStructureTestCases {
+			t.Run(tc.name, func(t *testing.T) {
+				t.Parallel()
+
+				assertTaxIDRuleValidity(
+					t,
+					rule,
+					tc.in,
+					tc.shouldPass,
+					stringSSNErrorMessage,
+					ErrorCodeStringSSN,
+				)
+			})
+		}
+	})
+}
+
+func TestStringSSN_StructuralFields(t *testing.T) {
+	t.Parallel()
+
+	rule := StringSSN()
+	// SSA POMS RM 10201.035 (2011-06-23) defines these structural exclusions.
+	// https://secure.ssa.gov/poms.nsf/lnx/0110201035
+	t.Run("areas 000 through 999", func(t *testing.T) {
+		t.Parallel()
+
+		validCount := 0
+		invalidCount := 0
+		for _, tc := range stringSSNAreaTestCases {
+			if tc.shouldPass {
+				validCount++
+			} else {
+				invalidCount++
+			}
+			t.Run(tc.name, func(t *testing.T) {
+				assertTaxIDRuleValidity(
+					t,
+					rule,
+					tc.in,
+					tc.shouldPass,
+					stringSSNErrorMessage,
+					ErrorCodeStringSSN,
+				)
+			})
+		}
+		assert.Equal(t, 898, validCount)
+		assert.Equal(t, 102, invalidCount)
+	})
+	t.Run("groups 00 through 99", func(t *testing.T) {
+		t.Parallel()
+
+		validCount := 0
+		invalidCount := 0
+		for _, tc := range stringSSNGroupTestCases {
+			if tc.shouldPass {
+				validCount++
+			} else {
+				invalidCount++
+			}
+			t.Run(tc.name, func(t *testing.T) {
+				assertTaxIDRuleValidity(
+					t,
+					rule,
+					tc.in,
+					tc.shouldPass,
+					stringSSNErrorMessage,
+					ErrorCodeStringSSN,
+				)
+			})
+		}
+		assert.Equal(t, 99, validCount)
+		assert.Equal(t, 1, invalidCount)
+	})
+	t.Run("serials 0000 through 9999", func(t *testing.T) {
+		t.Parallel()
+
+		validCount := 0
+		invalidCount := 0
+		for _, tc := range stringSSNSerialTestCases {
+			if tc.shouldPass {
+				validCount++
+			} else {
+				invalidCount++
+			}
+			t.Run(tc.name, func(t *testing.T) {
+				assertTaxIDRuleValidity(
+					t,
+					rule,
+					tc.in,
+					tc.shouldPass,
+					stringSSNErrorMessage,
+					ErrorCodeStringSSN,
+				)
+			})
+		}
+		assert.Equal(t, 9_999, validCount)
+		assert.Equal(t, 1, invalidCount)
+	})
+}
+
+func BenchmarkStringEIN(b *testing.B) {
+	rule := StringEIN()
+	benchmarkStringTaxIDRule(
+		b,
+		rule,
+		stringEINPrefixTestCases,
+		stringEINAcceptedStructureTestCases,
+		stringEINRejectedStructureTestCases,
+	)
+}
+
+func BenchmarkStringSSN(b *testing.B) {
+	rule := StringSSN()
+	benchmarkStringTaxIDRule(
+		b,
+		rule,
+		stringSSNAcceptedStructureTestCases,
+		stringSSNRejectedStructureTestCases,
+		stringSSNAreaTestCases,
+		stringSSNGroupTestCases,
+		stringSSNSerialTestCases,
+	)
+}
+
+func benchmarkStringTaxIDRule(
+	b *testing.B,
+	rule govy.Rule[string],
+	testCaseGroups ...[]stringTaxIDTestCase,
+) {
+	b.Helper()
+	for b.Loop() {
+		for _, testCases := range testCaseGroups {
+			for _, tc := range testCases {
+				_ = rule.Validate(tc.in)
+			}
+		}
+	}
+}
+
+func assertTaxIDRuleValidity(
+	t *testing.T,
+	rule govy.Rule[string],
+	in string,
+	shouldPass bool,
+	expectedError string,
+	errorCode govy.ErrorCode,
+) {
+	t.Helper()
+	err := rule.Validate(in)
+	if shouldPass {
+		assert.NoError(t, err)
+		return
+	}
+	assert.EqualError(t, err, expectedError)
+	assert.True(t, govy.HasErrorCode(err, errorCode))
+}
+
+func generateStringEINPrefixTestCases() []stringTaxIDTestCase {
+	testCases := make([]stringTaxIDTestCase, 0, 100)
+	for prefixNumber := range 100 {
+		prefix := fmt.Sprintf("%02d", prefixNumber)
+		_, shouldPass := stringEINRecognizedPrefixes[prefix]
+		testCases = append(testCases, stringTaxIDTestCase{
+			name:       prefix,
+			in:         prefix + "-3456789",
+			shouldPass: shouldPass,
+		})
+	}
+	return testCases
+}
+
+func generateStringSSNAreaTestCases() []stringTaxIDTestCase {
+	testCases := make([]stringTaxIDTestCase, 0, 1_000)
+	for area := range 1_000 {
+		ssn := fmt.Sprintf("%03d-01-0001", area)
+		testCases = append(testCases, stringTaxIDTestCase{
+			name:       ssn,
+			in:         ssn,
+			shouldPass: area != 0 && area != 666 && area < 900,
+		})
+	}
+	return testCases
+}
+
+func generateStringSSNGroupTestCases() []stringTaxIDTestCase {
+	testCases := make([]stringTaxIDTestCase, 0, 100)
+	for group := range 100 {
+		ssn := fmt.Sprintf("001-%02d-0001", group)
+		testCases = append(testCases, stringTaxIDTestCase{
+			name:       ssn,
+			in:         ssn,
+			shouldPass: group != 0,
+		})
+	}
+	return testCases
+}
+
+func generateStringSSNSerialTestCases() []stringTaxIDTestCase {
+	testCases := make([]stringTaxIDTestCase, 0, 10_000)
+	for serial := range 10_000 {
+		ssn := fmt.Sprintf("001-01-%04d", serial)
+		testCases = append(testCases, stringTaxIDTestCase{
+			name:       ssn,
+			in:         ssn,
+			shouldPass: serial != 0,
+		})
+	}
+	return testCases
+}
+
+// The first seven values are the complete RFC 1321 Appendix A.5 output suite:
+// https://www.rfc-editor.org/rfc/rfc1321.html#appendix-A.5
+var validMD5TestCases = map[string]string{
+	"RFC 1321 empty message":         "d41d8cd98f00b204e9800998ecf8427e",
+	"RFC 1321 single letter":         "0cc175b9c0f1b6a831c399e269772661",
+	"RFC 1321 abc":                   "900150983cd24fb0d6963f7d28e17f72",
+	"RFC 1321 message digest":        "f96b697d7cb7938d525a2f31aaf161d0",
+	"RFC 1321 lowercase alphabet":    "c3fcd3d76192e4007dfb496cca67e13b",
+	"RFC 1321 alphanumeric":          "d174ab98d277d9f5a5611c2c9f419d9f",
+	"RFC 1321 numeric sequence":      "57edf4a22be3c955ac49da2e2107b67a",
+	"zero-leading repeated sequence": "0123456789abcdef0123456789abcdef",
+}
+
+var invalidMD5TestCases = map[string]string{
+	"empty":                              "",
+	"all uppercase":                      "D41D8CD98F00B204E9800998ECF8427E",
+	"mixed case":                         "d41d8cd98f00b204e9800998ecf8427E",
+	"one character short":                "d41d8cd98f00b204e9800998ecf8427",
+	"one character long":                 "d41d8cd98f00b204e9800998ecf8427e0",
+	"terminal non-hexadecimal character": "d41d8cd98f00b204e9800998ecf8427g",
+	"0x prefix":                          "0x0123456789abcdef0123456789abcdef",
+	"leading space":                      " 0123456789abcdef0123456789abcdef",
+	"trailing space":                     "0123456789abcdef0123456789abcdef ",
+	"trailing newline":                   "0123456789abcdef0123456789abcdef\n",
+	"embedded hyphen":                    "01234567-9abcdef0123456789abcdef",
+	"embedded Unicode letter":            "01234567é9abcdef0123456789abcdef",
+}
+
+func TestStringMD5(t *testing.T) {
+	rule := StringMD5()
+	t.Run("valid digests", func(t *testing.T) {
+		for name, digest := range validMD5TestCases {
+			t.Run(name, func(t *testing.T) {
+				assert.NoError(t, rule.Validate(digest))
+			})
+		}
+	})
+	t.Run("invalid digests", func(t *testing.T) {
+		for name, digest := range invalidMD5TestCases {
+			t.Run(name, func(t *testing.T) {
+				err := rule.Validate(digest)
+				assert.EqualError(t, err, "string must be a valid lowercase MD5 hexadecimal digest")
+				assert.True(t, govy.HasErrorCode(err, ErrorCodeStringMD5))
+			})
+		}
+	})
+}
+
+func BenchmarkStringMD5(b *testing.B) {
+	rule := StringMD5()
+	benchmarkStringHashDigestRule(b, rule, validMD5TestCases, invalidMD5TestCases)
+}
+
+var validSHA256TestCases = map[string]string{
+	"letter-leading":                 "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+	"nonzero-digit-leading":          "28969cdfa74a12c82f3bad960b0b000aca2ac329deea5c2328ebc6f2ba9802c1",
+	"zero-leading repeated sequence": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+}
+
+var invalidSHA256TestCases = map[string]string{
+	"empty":                              "",
+	"all uppercase":                      "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+	"mixed case":                         "E3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+	"one character short":                "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b85",
+	"one character long":                 "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b8550",
+	"terminal non-hexadecimal character": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b85g",
+	"0x prefix":                          "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+	"leading space":                      " 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+	"trailing space":                     "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef ",
+	"trailing newline":                   "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\n",
+	"embedded hyphen":                    "01234567-9abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+	"embedded Unicode letter":            "01234567é9abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+}
+
+func TestStringSHA256(t *testing.T) {
+	rule := StringSHA256()
+	t.Run("valid digests", func(t *testing.T) {
+		for name, digest := range validSHA256TestCases {
+			t.Run(name, func(t *testing.T) {
+				assert.NoError(t, rule.Validate(digest))
+			})
+		}
+	})
+	t.Run("invalid digests", func(t *testing.T) {
+		for name, digest := range invalidSHA256TestCases {
+			t.Run(name, func(t *testing.T) {
+				err := rule.Validate(digest)
+				assert.EqualError(t, err, "string must be a valid lowercase SHA-256 hexadecimal digest")
+				assert.True(t, govy.HasErrorCode(err, ErrorCodeStringSHA256))
+			})
+		}
+	})
+}
+
+func BenchmarkStringSHA256(b *testing.B) {
+	rule := StringSHA256()
+	benchmarkStringHashDigestRule(b, rule, validSHA256TestCases, invalidSHA256TestCases)
+}
+
+var validSHA384TestCases = map[string]string{
+	"digit-leading":                  "38b060a751ac96384cd9327eb1b1e36a21fdb71114be07434c0cc7bf63f6e1da274edebfe76f65fbd51ad2f14898b95b",
+	"letter-leading":                 "b52b72da75d0666379e20f9b4a79c33a329a01f06a2fb7865c9062a28c1de860ba432edfd86b4cb1cb8a75b46076e3b1",
+	"zero-leading repeated sequence": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+}
+
+var invalidSHA384TestCases = map[string]string{
+	"empty":                              "",
+	"all uppercase":                      "38B060A751AC96384CD9327EB1B1E36A21FDB71114BE07434C0CC7BF63F6E1DA274EDEBFE76F65FBD51AD2F14898B95B",
+	"mixed case":                         "38B060a751ac96384cd9327eb1b1e36a21fdb71114be07434c0cc7bf63f6e1da274edebfe76f65fbd51ad2f14898b95b",
+	"one character short":                "38b060a751ac96384cd9327eb1b1e36a21fdb71114be07434c0cc7bf63f6e1da274edebfe76f65fbd51ad2f14898b95",
+	"one character long":                 "38b060a751ac96384cd9327eb1b1e36a21fdb71114be07434c0cc7bf63f6e1da274edebfe76f65fbd51ad2f14898b95b0",
+	"terminal non-hexadecimal character": "38b060a751ac96384cd9327eb1b1e36a21fdb71114be07434c0cc7bf63f6e1da274edebfe76f65fbd51ad2f14898b95g",
+	"0x prefix":                          "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+	"leading space":                      " 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+	"trailing space":                     "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef ",
+	"trailing newline":                   "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\n",
+	"embedded hyphen":                    "01234567-9abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+	"embedded Unicode letter":            "01234567é9abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+}
+
+func TestStringSHA384(t *testing.T) {
+	rule := StringSHA384()
+	t.Run("valid digests", func(t *testing.T) {
+		for name, digest := range validSHA384TestCases {
+			t.Run(name, func(t *testing.T) {
+				assert.NoError(t, rule.Validate(digest))
+			})
+		}
+	})
+	t.Run("invalid digests", func(t *testing.T) {
+		for name, digest := range invalidSHA384TestCases {
+			t.Run(name, func(t *testing.T) {
+				err := rule.Validate(digest)
+				assert.EqualError(t, err, "string must be a valid lowercase SHA-384 hexadecimal digest")
+				assert.True(t, govy.HasErrorCode(err, ErrorCodeStringSHA384))
+			})
+		}
+	})
+}
+
+func BenchmarkStringSHA384(b *testing.B) {
+	rule := StringSHA384()
+	benchmarkStringHashDigestRule(b, rule, validSHA384TestCases, invalidSHA384TestCases)
+}
+
+var validSHA512TestCases = map[string]string{
+	"letter-leading":                 "cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927da3e",
+	"digit-leading":                  "3831a6a6155e509dee59a7f451eb35324d8f8f2df6e3708894740f98fdee23889f4de5adb0c5010dfb555cda77c8ab5dc902094c52de3278f35a75ebc25f093a",
+	"zero-leading repeated sequence": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+}
+
+var invalidSHA512TestCases = map[string]string{
+	"empty":                              "",
+	"all uppercase":                      "CF83E1357EEFB8BDF1542850D66D8007D620E4050B5715DC83F4A921D36CE9CE47D0D13C5D85F2B0FF8318D2877EEC2F63B931BD47417A81A538327AF927DA3E",
+	"mixed case":                         "Cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927da3e",
+	"one character short":                "cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927da3",
+	"one character long":                 "cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927da3e0",
+	"terminal non-hexadecimal character": "cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927da3g",
+	"0x prefix":                          "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+	"leading space":                      " 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+	"trailing space":                     "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef ",
+	"trailing newline":                   "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\n",
+	"embedded hyphen":                    "01234567-9abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+	"embedded Unicode letter":            "01234567é9abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+}
+
+func TestStringSHA512(t *testing.T) {
+	rule := StringSHA512()
+	t.Run("valid digests", func(t *testing.T) {
+		for name, digest := range validSHA512TestCases {
+			t.Run(name, func(t *testing.T) {
+				assert.NoError(t, rule.Validate(digest))
+			})
+		}
+	})
+	t.Run("invalid digests", func(t *testing.T) {
+		for name, digest := range invalidSHA512TestCases {
+			t.Run(name, func(t *testing.T) {
+				err := rule.Validate(digest)
+				assert.EqualError(t, err, "string must be a valid lowercase SHA-512 hexadecimal digest")
+				assert.True(t, govy.HasErrorCode(err, ErrorCodeStringSHA512))
+			})
+		}
+	})
+}
+
+func BenchmarkStringSHA512(b *testing.B) {
+	rule := StringSHA512()
+	benchmarkStringHashDigestRule(b, rule, validSHA512TestCases, invalidSHA512TestCases)
+}
+
+// The fixtures contain every distinct digest output from the NIST
+// byte-oriented SHA test vector archive:
+// https://csrc.nist.gov/CSRC/media/Projects/Cryptographic-Algorithm-Validation-Program/documents/shs/shabytetestvectors.zip
+// The archive is pinned by SHA-256
+// 929ef80b7b3418aca026643f6f248815913b60e01741a44bba9e118067f4c9b8.
+// Short- and long-message vectors use validation-system revision 11.0
+// (2011-03-15); Monte Carlo response and trace vectors use revision 11.1
+// (2011-05-11). The fixtures include every distinct MD and MDi output value
+// exactly once: 729 SHA-256, 857 SHA-384, and 857 SHA-512 values. M, Msg, and
+// Seed fields are input material, not digest outputs. SHA-1, SHA-224,
+// SHA-512/224, and SHA-512/256 are excluded because this package does not
+// expose corresponding string rules.
+func TestStringSHANISTDigestOutputs(t *testing.T) {
+	tests := []struct {
+		name          string
+		fixture       string
+		expectedCount int
+		digestLength  int
+		rule          govy.Rule[string]
+	}{
+		{
+			name:          "SHA-256",
+			fixture:       "nist_sha256_digest_outputs.txt",
+			expectedCount: 729,
+			digestLength:  64,
+			rule:          StringSHA256(),
+		},
+		{
+			name:          "SHA-384",
+			fixture:       "nist_sha384_digest_outputs.txt",
+			expectedCount: 857,
+			digestLength:  96,
+			rule:          StringSHA384(),
+		},
+		{
+			name:          "SHA-512",
+			fixture:       "nist_sha512_digest_outputs.txt",
+			expectedCount: 857,
+			digestLength:  128,
+			rule:          StringSHA512(),
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			digests := loadNISTDigestOutputs(t, tc.fixture, tc.expectedCount, tc.digestLength)
+			for line, digest := range digests {
+				if err := tc.rule.Validate(digest); err != nil {
+					t.Fatalf("testdata/%s:%d: digest rejected: %v", tc.fixture, line+1, err)
+				}
+			}
+		})
+	}
+}
+
+func TestStringHashDigestRulesMatchLowercaseHexadecimalLanguage(t *testing.T) {
+	tests := []struct {
+		name             string
+		digestLength     int
+		rule             govy.Rule[string]
+		validTestCases   map[string]string
+		invalidTestCases map[string]string
+	}{
+		{
+			name:             "MD5",
+			digestLength:     32,
+			rule:             StringMD5(),
+			validTestCases:   validMD5TestCases,
+			invalidTestCases: invalidMD5TestCases,
+		},
+		{
+			name:             "SHA-256",
+			digestLength:     64,
+			rule:             StringSHA256(),
+			validTestCases:   validSHA256TestCases,
+			invalidTestCases: invalidSHA256TestCases,
+		},
+		{
+			name:             "SHA-384",
+			digestLength:     96,
+			rule:             StringSHA384(),
+			validTestCases:   validSHA384TestCases,
+			invalidTestCases: invalidSHA384TestCases,
+		},
+		{
+			name:             "SHA-512",
+			digestLength:     128,
+			rule:             StringSHA512(),
+			validTestCases:   validSHA512TestCases,
+			invalidTestCases: invalidSHA512TestCases,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			oracle := regexp.MustCompile(fmt.Sprintf(`^[0-9a-f]{%d}$`, tc.digestLength))
+			assertMatchesOracle := func(name, in string) {
+				t.Helper()
+				expected := oracle.MatchString(in)
+				actual := tc.rule.Validate(in) == nil
+				if actual != expected {
+					t.Fatalf("%s: validation result is %t; want %t for %q", name, actual, expected, in)
+				}
+			}
+
+			for name, in := range tc.validTestCases {
+				assertMatchesOracle("valid/"+name, in)
+			}
+			for name, in := range tc.invalidTestCases {
+				assertMatchesOracle("invalid/"+name, in)
+			}
+
+			for _, length := range []int{
+				0,
+				1,
+				tc.digestLength - 1,
+				tc.digestLength,
+				tc.digestLength + 1,
+				2 * tc.digestLength,
+			} {
+				assertMatchesOracle(fmt.Sprintf("length/%d", length), strings.Repeat("0", length))
+			}
+
+			digest := []byte(strings.Repeat("0", tc.digestLength))
+			for position := range len(digest) {
+				for value := range 256 {
+					digest[position] = byte(value)
+					assertMatchesOracle(
+						fmt.Sprintf("position/%d/byte/%d", position, value),
+						string(digest),
+					)
+				}
+				digest[position] = '0'
+			}
+		})
+	}
+}
+
+func benchmarkStringHashDigestRule(
+	b *testing.B,
+	rule govy.Rule[string],
+	validTestCases map[string]string,
+	invalidTestCases map[string]string,
+) {
+	b.Helper()
+	for b.Loop() {
+		for _, in := range validTestCases {
+			_ = rule.Validate(in)
+		}
+		for _, in := range invalidTestCases {
+			_ = rule.Validate(in)
+		}
+	}
+}
+
+// RFC 7519 sections 3.1, 6.1, A.1, and A.2 provide the four complete JWT
+// examples: https://www.rfc-editor.org/rfc/rfc7519.html.
+// The b64=false case comes from the immutable RFC 7797 section 7 prohibition:
+// https://www.rfc-editor.org/rfc/rfc7797.html#section-7.
+var stringJWTTestCases = map[string]struct {
+	in                   string
+	expectedErrorDetails string
+}{
+	"signed token": {
+		in: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9." +
+			"eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ." +
+			"SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+	},
+	"RFC 7519 signed token": {
+		in: "eyJ0eXAiOiJKV1QiLA0KICJhbGciOiJIUzI1NiJ9." +
+			"eyJpc3MiOiJqb2UiLA0KICJleHAiOjEzMDA4MTkzODAsDQogImh0dHA6Ly9leGFtcGxlLmNvbS9pc19yb290Ijp0cnVlfQ." +
+			"dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk",
+	},
+	"RFC 7519 unsecured token": {
+		in: "eyJhbGciOiJub25lIn0." +
+			"eyJpc3MiOiJqb2UiLA0KICJleHAiOjEzMDA4MTkzODAsDQogImh0dHA6Ly9leGFtcGxlLmNvbS9pc19yb290Ijp0cnVlfQ.",
+	},
+	"whitespace and Unicode JSON": {
+		in: "ew0KICJhbGciIDogIm5vbmUiLA0KICJraWQiIDogIs66zrvOtc65zrTOryINCn0." +
+			"ewogIm5hbWUiOiAiSsO2aG4g6ZuqIiwKICJhZG1pbiI6IHRydWUKfQ.",
+	},
+	"minimal unsecured token": {
+		in: "eyJhbGciOiJub25lIn0.e30.",
+	},
+	"empty token": {
+		expectedErrorDetails: "expected exactly 3 JWT segments",
+	},
+	"one segment": {
+		in:                   "not-a-jwt",
+		expectedErrorDetails: "expected exactly 3 JWT segments",
+	},
+	"two segments": {
+		in:                   "eyJhbGciOiJIUzI1NiJ9.e30",
+		expectedErrorDetails: "expected exactly 3 JWT segments",
+	},
+	"four segments": {
+		in:                   "eyJhbGciOiJIUzI1NiJ9.e30.c2ln.ZXh0cmE",
+		expectedErrorDetails: "expected exactly 3 JWT segments",
+	},
+	"RFC 7519 encrypted JWE": {
+		in: "eyJhbGciOiJSU0ExXzUiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0." +
+			"QR1Owv2ug2WyPBnbQrRARTeEk9kDO2w8qDcjiHnSJflSdv1iNqhWXaKH4MqAkQtM" +
+			"oNfABIPJaZm0HaA415sv3aeuBWnD8J-Ui7Ah6cWafs3ZwwFKDFUUsWHSK-IPKxLG" +
+			"TkND09XyjORj_CHAgOPJ-Sd8ONQRnJvWn_hXV1BNMHzUjPyYwEsRhDhzjAD26ima" +
+			"sOTsgruobpYGoQcXUwFDn7moXPRfDE8-NoQX7N7ZYMmpUDkR-Cx9obNGwJQ3nM52" +
+			"YCitxoQVPzjbl7WBuB7AohdBoZOdZ24WlN1lVIeh8v1K4krB8xgKvRU8kgFrEn_a" +
+			"1rZgN5TiysnmzTROF869lQ." +
+			"AxY8DCtDaGlsbGljb3RoZQ." +
+			"MKOle7UQrG6nSxTLX6Mqwt0orbHvAKeWnDYvpIAeZ72deHxz3roJDXQyhxx0wKaM" +
+			"HDjUEOKIwrtkHthpqEanSBNYHZgmNOV7sln1Eu9g3J8." +
+			"fiK51VwhsxJ-siBMR-YFiA",
+		expectedErrorDetails: "expected exactly 3 JWT segments",
+	},
+	"RFC 7519 nested JWT": {
+		in: "eyJhbGciOiJSU0ExXzUiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2IiwiY3R5IjoiSldU" +
+			"In0." +
+			"g_hEwksO1Ax8Qn7HoN-BVeBoa8FXe0kpyk_XdcSmxvcM5_P296JXXtoHISr_DD_M" +
+			"qewaQSH4dZOQHoUgKLeFly-9RI11TG-_Ge1bZFazBPwKC5lJ6OLANLMd0QSL4fYE" +
+			"b9ERe-epKYE3xb2jfY1AltHqBO-PM6j23Guj2yDKnFv6WO72tteVzm_2n17SBFvh" +
+			"DuR9a2nHTE67pe0XGBUS_TK7ecA-iVq5COeVdJR4U4VZGGlxRGPLRHvolVLEHx6D" +
+			"YyLpw30Ay9R6d68YCLi9FYTq3hIXPK_-dmPlOUlKvPr1GgJzRoeC9G5qCvdcHWsq" +
+			"JGTO_z3Wfo5zsqwkxruxwA." +
+			"UmVkbW9uZCBXQSA5ODA1Mg." +
+			"VwHERHPvCNcHHpTjkoigx3_ExK0Qc71RMEParpatm0X_qpg-w8kozSjfNIPPXiTB" +
+			"BLXR65CIPkFqz4l1Ae9w_uowKiwyi9acgVztAi-pSL8GQSXnaamh9kX1mdh3M_TT" +
+			"-FZGQFQsFhu0Z72gJKGdfGE-OE7hS1zuBD5oEUfk0Dmb0VzWEzpxxiSSBbBAzP10" +
+			"l56pPfAtrjEYw-7ygeMkwBl6Z_mLS6w6xUgKlvW6ULmkV-uLC4FUiyKECK4e3WZY" +
+			"Kw1bpgIqGYsw2v_grHjszJZ-_I5uM-9RA8ycX9KqPRp9gc6pXmoU_-27ATs9XCvr" +
+			"ZXUtK2902AUzqpeEUJYjWWxSNsS-r1TJ1I-FMJ4XyAiGrfmo9hQPcNBYxPz3GQb2" +
+			"8Y5CLSQfNgKSGt0A4isp1hBUXBHAndgtcslt7ZoQJaKe_nNJgNliWtWpJ_ebuOpE" +
+			"l8jdhehdccnRMIwAmU1n7SPkmhIl1HlSOpvcvDfhUN5wuqU955vOBvfkBOh5A11U" +
+			"zBuo2WlgZ6hYi9-e3w29bR0C2-pp3jbqxEDw3iWaf2dc5b-LnR0FEYXvI_tYk5rd" +
+			"_J9N0mg0tQ6RbpxNEMNoA9QWk5lgdPvbh9BaO195abQ." +
+			"AVO9iT5AV4CzvDJCdhSFlQ",
+		expectedErrorDetails: "expected exactly 3 JWT segments",
+	},
+	"empty header segment": {
+		in:                   ".e30.c2ln",
+		expectedErrorDetails: "JWT header segment must not be empty",
+	},
+	"empty claims set segment": {
+		in:                   "eyJhbGciOiJIUzI1NiJ9..c2ln",
+		expectedErrorDetails: "JWT claims set segment must not be empty",
+	},
+	"padded header segment": {
+		in:                   "eyJhbGciOiJIUzI1NiJ9=.e30.c2ln",
+		expectedErrorDetails: "JWT header segment must be base64url encoded without padding",
+	},
+	"padded claims set segment": {
+		in:                   "eyJhbGciOiJIUzI1NiJ9.e30=.c2ln",
+		expectedErrorDetails: "JWT claims set segment must be base64url encoded without padding",
+	},
+	"padded signature segment": {
+		in:                   "eyJhbGciOiJIUzI1NiJ9.e30.c2ln=",
+		expectedErrorDetails: "JWT signature segment must be base64url encoded without padding",
+	},
+	"illegal alphabet in header segment": {
+		in:                   "*.e30.c2ln",
+		expectedErrorDetails: "JWT header segment must be base64url encoded without padding",
+	},
+	"illegal alphabet in claims set segment": {
+		in:                   "eyJhbGciOiJIUzI1NiJ9.*.c2ln",
+		expectedErrorDetails: "JWT claims set segment must be base64url encoded without padding",
+	},
+	"illegal alphabet in signature segment": {
+		in:                   "eyJhbGciOiJIUzI1NiJ9.e30.*",
+		expectedErrorDetails: "JWT signature segment must be base64url encoded without padding",
+	},
+	"impossible base64url length in header segment": {
+		in: "A.e30.c2ln",
+		expectedErrorDetails: "JWT header segment must be base64url encoded without padding: " +
+			"illegal base64 data at input byte 0",
+	},
+	"impossible base64url length in claims set segment": {
+		in: "eyJhbGciOiJIUzI1NiJ9.A.c2ln",
+		expectedErrorDetails: "JWT claims set segment must be base64url encoded without padding: " +
+			"illegal base64 data at input byte 0",
+	},
+	"impossible base64url length in signature segment": {
+		in: "eyJhbGciOiJIUzI1NiJ9.e30.A",
+		expectedErrorDetails: "JWT signature segment must be base64url encoded without padding: " +
+			"illegal base64 data at input byte 0",
+	},
+	"malformed header JSON": {
+		in: "eyJhbGciOiJIUzI1NiI.e30.c2ln",
+		expectedErrorDetails: "JWT header segment must contain a JSON object: " +
+			"unexpected end of JSON input",
+	},
+	"malformed claims set JSON": {
+		in: "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOg.c2ln",
+		expectedErrorDetails: "JWT claims set segment must contain a JSON object: " +
+			"unexpected end of JSON input",
+	},
+	"header segment is JSON array": {
+		in: "W10.e30.c2ln",
+		expectedErrorDetails: "JWT header segment must contain a JSON object: " +
+			"json: cannot unmarshal array into Go value of type map[string]json.RawMessage",
+	},
+	"claims set segment is JSON array": {
+		in: "eyJhbGciOiJIUzI1NiJ9.W10.c2ln",
+		expectedErrorDetails: "JWT claims set segment must contain a JSON object: " +
+			"json: cannot unmarshal array into Go value of type map[string]json.RawMessage",
+	},
+	"header segment is JSON null": {
+		in:                   "bnVsbA.e30.c2ln",
+		expectedErrorDetails: "JWT header segment must contain a JSON object",
+	},
+	"claims set segment is JSON null": {
+		in: "eyJhbGciOiJIUzI1NiJ9." +
+			"bnVsbA." +
+			"c2ln",
+		expectedErrorDetails: "JWT claims set segment must contain a JSON object",
+	},
+	"missing algorithm": {
+		in:                   "e30.e30.c2ln",
+		expectedErrorDetails: `JWT header must contain an "alg" string`,
+	},
+	"empty algorithm": {
+		in:                   "eyJhbGciOiIifQ.e30.c2ln",
+		expectedErrorDetails: `JWT header must contain an "alg" string`,
+	},
+	"null algorithm": {
+		in:                   "eyJhbGciOm51bGx9.e30.c2ln",
+		expectedErrorDetails: `JWT header must contain an "alg" string`,
+	},
+	"numeric algorithm": {
+		in:                   "eyJhbGciOjEyM30.e30.c2ln",
+		expectedErrorDetails: `JWT header must contain an "alg" string`,
+	},
+	"non-ASCII algorithm": {
+		in:                   "eyJhbGciOiLimIMifQ.e30.c2ln",
+		expectedErrorDetails: `JWT header must contain an "alg" string`,
+	},
+	"missing signature for signed token": {
+		in:                   "eyJhbGciOiJIUzI1NiJ9.e30.",
+		expectedErrorDetails: `JWT signature segment must not be empty unless alg is "none"`,
+	},
+	"signature present for none algorithm": {
+		in:                   "eyJhbGciOiJub25lIn0.e30.c2ln",
+		expectedErrorDetails: `JWT signature segment must be empty when alg is "none"`,
+	},
+	"leading token whitespace": {
+		in:                   " eyJhbGciOiJIUzI1NiJ9.e30.c2ln",
+		expectedErrorDetails: "JWT header segment must be base64url encoded without padding",
+	},
+	"raw Unicode signature": {
+		in:                   "eyJhbGciOiJIUzI1NiJ9.e30.雪",
+		expectedErrorDetails: "JWT signature segment must be base64url encoded without padding",
+	},
+	"invalid UTF-8 in header JSON": {
+		in:                   "eyJhbGciOiJIUzI1NiIsIngiOiL_In0.e30.c2ln",
+		expectedErrorDetails: "JWT header segment must contain valid UTF-8 JSON",
+	},
+	"invalid UTF-8 in claims set JSON": {
+		in:                   "eyJhbGciOiJIUzI1NiJ9.eyJ4Ijoi_yJ9.c2ln",
+		expectedErrorDetails: "JWT claims set segment must contain valid UTF-8 JSON",
+	},
+	"derived encoded payload option": {
+		in: "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6WyJiNjQiXX0." +
+			"e30.c2ln",
+	},
+	"RFC 7797 unencoded payload option": {
+		in: "eyJhbGciOiJIUzI1NiIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19." +
+			"e30.c2ln",
+		expectedErrorDetails: `JWT header must not set "b64" to false`,
+	},
+	"null b64 option": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6bnVsbH0.e30.c2ln",
+		expectedErrorDetails: `JWT header "b64" must be a boolean`,
+	},
+	"string b64 option": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6ImZhbHNlIn0.e30.c2ln",
+		expectedErrorDetails: `JWT header "b64" must be a boolean`,
+	},
+	"number b64 option": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6MH0.e30.c2ln",
+		expectedErrorDetails: `JWT header "b64" must be a boolean`,
+	},
+	"object b64 option": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6e319.e30.c2ln",
+		expectedErrorDetails: `JWT header "b64" must be a boolean`,
+	},
+	"array b64 option": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6W119.e30.c2ln",
+		expectedErrorDetails: `JWT header "b64" must be a boolean`,
+	},
+	"b64 option without crit": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZX0.e30.c2ln",
+		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
+	},
+	"b64 option with null crit": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6bnVsbH0.e30.c2ln",
+		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
+	},
+	"b64 option with string crit": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6ImI2NCJ9.e30.c2ln",
+		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
+	},
+	"b64 option with number crit": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6MH0.e30.c2ln",
+		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
+	},
+	"b64 option with object crit": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6e319.e30.c2ln",
+		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
+	},
+	"b64 option with empty crit": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6W119.e30.c2ln",
+		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
+	},
+	"b64 option with unrelated crit": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6WyJleHAiXX0.e30.c2ln",
+		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
+	},
+	"b64 option with non-string crit member": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6WzBdfQ.e30.c2ln",
+		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
+	},
+	"b64 option with null crit member": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6W251bGxdfQ.e30.c2ln",
+		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
+	},
+	"b64 option with boolean crit member": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6W3RydWVdfQ.e30.c2ln",
+		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
+	},
+	"b64 option with object crit member": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6W3t9XX0.e30.c2ln",
+		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
+	},
+	"b64 option with array crit member": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6W1tdXX0.e30.c2ln",
+		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
+	},
+	"b64 option with mixed crit members": {
+		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6WyJiNjQiLDBdfQ.e30.c2ln",
+		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
+	},
+}
+
+func TestStringJWT(t *testing.T) {
+	const expectedErrorPrefix = "string must be a valid JSON Web Token (JWT): "
+
+	for name, tt := range stringJWTTestCases {
+		t.Run(name, func(t *testing.T) {
+			err := StringJWT().Validate(tt.in)
+			if tt.expectedErrorDetails != "" {
+				assert.Require(t, assert.Error(t, err))
+				assert.EqualError(t, err, expectedErrorPrefix+tt.expectedErrorDetails)
+				assert.True(t, govy.HasErrorCode(err, ErrorCodeStringJWT))
+				return
+			}
+			assert.NoError(t, err)
+		})
+	}
+}
+
+func TestStringJWTErrorPrecedence(t *testing.T) {
+	const expectedErrorPrefix = "string must be a valid JSON Web Token (JWT): "
+
+	tests := map[string]struct {
+		in                   string
+		expectedErrorDetails string
+	}{
+		"algorithm before claims": {
+			in:                   "e30.eyJzdWIiOg.*",
+			expectedErrorDetails: `JWT header must contain an "alg" string`,
+		},
+		"b64 before claims": {
+			in: "eyJhbGciOiJIUzI1NiIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19." +
+				"eyJzdWIiOg.*",
+			expectedErrorDetails: `JWT header must not set "b64" to false`,
+		},
+		"crit before claims": {
+			in: "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZX0." +
+				"eyJzdWIiOg.*",
+			expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
+		},
+		"claims before signature": {
+			in: "eyJhbGciOiJIUzI1NiJ9." +
+				"eyJzdWIiOg.*",
+			expectedErrorDetails: "JWT claims set segment must contain a JSON object: " +
+				"unexpected end of JSON input",
+		},
+		"algorithm before signature": {
+			in:                   "e30.e30.*",
+			expectedErrorDetails: `JWT header must contain an "alg" string`,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			err := StringJWT().Validate(tt.in)
+			assert.Require(t, assert.Error(t, err))
+			assert.EqualError(t, err, expectedErrorPrefix+tt.expectedErrorDetails)
+			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringJWT))
+		})
+	}
+}
+
+func BenchmarkStringJWT(b *testing.B) {
+	rule := StringJWT()
+
+	for b.Loop() {
+		for _, tt := range stringJWTTestCases {
+			_ = rule.Validate(tt.in)
+		}
+	}
+	b.ReportMetric(float64(len(stringJWTTestCases)), "validations/op")
+}
+
 var stringContainsTestCases = []*struct {
 	in            string
 	substrings    []string
@@ -1670,7 +3628,6 @@ var stringTitleTestCases = []*struct {
 	in         string
 	shouldFail bool
 }{
-	// cspell:disable
 	{"", true},
 	{"a", true},
 	{"A", false},
@@ -1685,7 +3642,6 @@ var stringTitleTestCases = []*struct {
 	{"With_underscore", false},
 	{"unicode \xe2\x80\xa8 line separator", true},
 	{"Unicode \xe2\x80\xa8 Line Separator", false},
-	// cspell:enable
 }
 
 func TestStringTitle(t *testing.T) {
@@ -1985,7 +3941,6 @@ var stringMatchFileSystemPathTestCases = []*struct {
 	pattern, in string
 	shouldFail  bool
 }{
-	// cspell:disable
 	{"abc", "abc", false},
 	{"*", "abc", false},
 	{"*c", "abc", false},
@@ -2042,7 +3997,6 @@ var stringMatchFileSystemPathTestCases = []*struct {
 	{"a[", "ab", true},
 	{"a[", "x", true},
 	{"a/b[", "x", true},
-	// cspell:enable
 }
 
 func TestStringMatchFileSystemPath(t *testing.T) {
@@ -2074,7 +4028,6 @@ var stringRegexpTestCases = []*struct {
 	in         string
 	shouldFail bool
 }{
-	// cspell:disable
 	{``, false},
 	{`.`, false},
 	{`^.$`, false},
@@ -2104,7 +4057,6 @@ var stringRegexpTestCases = []*struct {
 	{`a*+`, true},
 	{`\x`, true},
 	{strings.Repeat(`\pL`, 27000), true},
-	// cspell:enable
 }
 
 func TestStringRegexp(t *testing.T) {
@@ -2359,7 +4311,6 @@ var stringAlphaTestCases = []*struct {
 	in         string
 	shouldFail bool
 }{
-	// cspell:disable
 	{"test", false},
 	{"tEsT", false},
 	{"s", false},
@@ -2370,7 +4321,6 @@ var stringAlphaTestCases = []*struct {
 	{" ", true},
 	{"test1", true},
 	{"tęst", true},
-	// cspell:enable
 }
 
 func TestStringAlpha(t *testing.T) {
@@ -2398,7 +4348,6 @@ var stringAlphanumericTestCases = []*struct {
 	in         string
 	shouldFail bool
 }{
-	// cspell:disable
 	{"test", false},
 	{"tEsT", false},
 	{"s", false},
@@ -2413,7 +4362,6 @@ var stringAlphanumericTestCases = []*struct {
 	{" ", true},
 	{"tęst", true},
 	{"tęst1", true},
-	// cspell:enable
 }
 
 func TestStringAlphanumeric(t *testing.T) {
@@ -2441,7 +4389,6 @@ var stringAlphaUnicodeTestCases = []*struct {
 	in         string
 	shouldFail bool
 }{
-	// cspell:disable
 	{"test", false},
 	{"tEsT", false},
 	{"s", false},
@@ -2456,7 +4403,6 @@ var stringAlphaUnicodeTestCases = []*struct {
 	{"test1", true},
 	{"汉语!", true},
 	{"1汉语", true},
-	// cspell:enable
 }
 
 func TestStringAlphaUnicode(t *testing.T) {
@@ -2484,7 +4430,6 @@ var stringAlphanumericUnicodeTestCases = []*struct {
 	in         string
 	shouldFail bool
 }{
-	// cspell:disable
 	{"test", false},
 	{"tEsT", false},
 	{"s", false},
@@ -2504,7 +4449,6 @@ var stringAlphanumericUnicodeTestCases = []*struct {
 	{"汉语!", true},
 	{"-921", true},
 	{" 1", true},
-	// cspell:enable
 }
 
 func TestStringAlphanumericUnicode(t *testing.T) {
@@ -2532,7 +4476,6 @@ var stringFQDNTestCases = []*struct {
 	in         string
 	shouldFail bool
 }{
-	// cspell:disable
 	{"test.example.com", false},
 	{"example.com", false},
 	{"example24.com", false},
@@ -2553,7 +4496,6 @@ var stringFQDNTestCases = []*struct {
 	{"2001:cdba:0:0:0:0:3257:9652", true},
 	{"2001:cdba::3257:9652", true},
 	{"", true},
-	// cspell:enable
 }
 
 func TestStringFQDN(t *testing.T) {
@@ -2595,7 +4537,6 @@ var stringK8sQualifiedNameTestCases = []*struct {
 	in          string
 	expectedErr error
 }{
-	// cspell:disable
 	{"simple", nil},
 	{"now-with-dashes", nil},
 	{"1-starts-with-num", nil},
@@ -2628,7 +4569,6 @@ var stringK8sQualifiedNameTestCases = []*struct {
 	{strings.Repeat("a", 64), errK8sQualifiedNameNamePartLength},
 	{strings.Repeat("a", 254) + "/abc", errK8sQualifiedNamePrefixLength},
 	{strings.Repeat("a", 253) + "/" + strings.Repeat("b", 64), errors.New("length must be between 1 and 317")},
-	// cspell:enable
 }
 
 func TestStringKubernetesQualifiedName(t *testing.T) {
@@ -2652,4 +4592,243 @@ func BenchmarkStringKubernetesQualifiedName(b *testing.B) {
 			_ = rule.Validate(tc.in)
 		}
 	}
+}
+
+func benchmarkStringPaymentBankingRule(
+	b *testing.B,
+	rule govy.Rule[string],
+	testCases stringPaymentBankingTestCases,
+) {
+	b.Helper()
+	for b.Loop() {
+		for _, in := range testCases.validInputs {
+			_ = rule.Validate(in)
+		}
+		for _, in := range testCases.invalidInputs {
+			_ = rule.Validate(in)
+		}
+	}
+}
+
+func assertPaymentBankingRule(
+	t *testing.T,
+	rule govy.Rule[string],
+	testCases stringPaymentBankingTestCases,
+	expectedError string,
+	errorCode govy.ErrorCode,
+) {
+	t.Helper()
+	t.Run("valid inputs", func(t *testing.T) {
+		for name, in := range testCases.validInputs {
+			t.Run(name, func(t *testing.T) {
+				assert.NoError(t, rule.Validate(in))
+			})
+		}
+	})
+	t.Run("invalid inputs", func(t *testing.T) {
+		for name, in := range testCases.invalidInputs {
+			t.Run(name, func(t *testing.T) {
+				assertPaymentBankingRuleError(t, rule.Validate(in), expectedError, errorCode)
+			})
+		}
+	})
+}
+
+func assertPaymentBankingRuleError(
+	t *testing.T,
+	err error,
+	expectedError string,
+	errorCode govy.ErrorCode,
+) {
+	t.Helper()
+	assert.Require(t, assert.EqualError(t, err, expectedError))
+	assert.Require(t, assert.IsType[*govy.RuleError](t, err))
+	ruleError := err.(*govy.RuleError)
+	assert.Equal(t, expectedError, ruleError.Description)
+	assert.Equal(t, errorCode, ruleError.Code)
+}
+
+func assertBICPredicatesMatchRegexpOracle(
+	t *testing.T,
+	oracle *regexp.Regexp,
+	input string,
+) {
+	t.Helper()
+	expected := oracle.MatchString(input)
+	if expected {
+		expected = isValidBICCountryCode(input[4:6])
+	}
+	for name, predicate := range map[string]func(string) bool{
+		"isValidBIC":            isValidBIC,
+		"isValidBICISO93622014": isValidBICISO93622014,
+	} {
+		if actual := predicate(input); actual != expected {
+			t.Errorf("%s(%q) = %t, regexp oracle = %t", name, input, actual, expected)
+		}
+	}
+}
+
+func readISOAlpha2CountryCodes(t *testing.T) []string {
+	t.Helper()
+	_, codes := readTestDataFields(t, "testdata/iso_3166_1_alpha2_2026-07-21.txt")
+	return codes
+}
+
+func readTestDataFields(t *testing.T, path string) (raw string, fields []string) {
+	t.Helper()
+	data, err := os.ReadFile(path)
+	assert.Require(t, assert.NoError(t, err))
+
+	raw = string(data)
+	for line := range strings.Lines(raw) {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		fields = append(fields, strings.Fields(line)...)
+	}
+	return raw, fields
+}
+
+func testStringFormatIDRule(
+	t *testing.T,
+	rule govy.Rule[string],
+	errorCode govy.ErrorCode,
+	expectedError string,
+	validInputs map[string]string,
+	invalidInputs map[string]string,
+) {
+	t.Helper()
+	t.Run("valid", func(t *testing.T) {
+		for name, input := range validInputs {
+			t.Run(name, func(t *testing.T) {
+				assert.NoError(t, rule.Validate(input))
+			})
+		}
+	})
+	t.Run("invalid", func(t *testing.T) {
+		for name, input := range invalidInputs {
+			t.Run(name, func(t *testing.T) {
+				err := rule.Validate(input)
+				assert.EqualError(t, err, expectedError)
+				assert.True(t, govy.HasErrorCode(err, errorCode))
+			})
+		}
+	})
+}
+
+func benchmarkStringFormatIDRule(
+	b *testing.B,
+	rule govy.Rule[string],
+	validInputs map[string]string,
+	invalidInputs map[string]string,
+) {
+	b.Helper()
+	valid, mixed := stringFormatIDBenchmarkInputs(validInputs, invalidInputs)
+	b.Run("valid", func(b *testing.B) {
+		for b.Loop() {
+			for _, input := range valid {
+				_ = rule.Validate(input)
+			}
+		}
+		b.ReportMetric(float64(len(valid)), "validations/op")
+	})
+	b.Run("mixed", func(b *testing.B) {
+		for b.Loop() {
+			for _, input := range mixed {
+				_ = rule.Validate(input)
+			}
+		}
+		b.ReportMetric(float64(len(mixed)), "validations/op")
+	})
+}
+
+func benchmarkStringFormatIDPredicate(
+	b *testing.B,
+	predicate func(string) bool,
+	validInputs map[string]string,
+	invalidInputs map[string]string,
+) {
+	b.Helper()
+	valid, mixed := stringFormatIDBenchmarkInputs(validInputs, invalidInputs)
+	b.Run("valid", func(b *testing.B) {
+		for b.Loop() {
+			for _, input := range valid {
+				_ = predicate(input)
+			}
+		}
+		b.ReportMetric(float64(len(valid)), "validations/op")
+	})
+	b.Run("mixed", func(b *testing.B) {
+		for b.Loop() {
+			for _, input := range mixed {
+				_ = predicate(input)
+			}
+		}
+		b.ReportMetric(float64(len(mixed)), "validations/op")
+	})
+}
+
+func stringFormatIDBenchmarkInputs(
+	validInputs map[string]string,
+	invalidInputs map[string]string,
+) (valid, mixed []string) {
+	valid = stringMapValues(validInputs)
+	invalid := stringMapValues(invalidInputs)
+	mixed = make([]string, 0, len(valid)+len(invalid))
+	mixed = append(mixed, valid...)
+	mixed = append(mixed, invalid...)
+	return valid, mixed
+}
+
+func stringMapValues(values map[string]string) []string {
+	keys := slices.Sorted(maps.Keys(values))
+	result := make([]string, 0, len(keys))
+	for _, key := range keys {
+		result = append(result, values[key])
+	}
+	return result
+}
+
+func assertStringPredicateMatchesRegexp(
+	t *testing.T,
+	re *regexp.Regexp,
+	predicate func(string) bool,
+	input string,
+) {
+	t.Helper()
+	expected := re.MatchString(input)
+	if actual := predicate(input); actual != expected {
+		t.Fatalf("predicate result for %q: expected %t, got %t", input, expected, actual)
+	}
+}
+
+func loadNISTDigestOutputs(t *testing.T, fixture string, expectedCount, digestLength int) []string {
+	t.Helper()
+
+	path := filepath.Join("testdata", fixture)
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read %s: %v", path, err)
+	}
+	if len(data) == 0 || data[len(data)-1] != '\n' {
+		t.Fatalf("%s must be non-empty and end with a newline", path)
+	}
+
+	digests := strings.Split(strings.TrimSuffix(string(data), "\n"), "\n")
+	if len(digests) != expectedCount {
+		t.Fatalf("%s contains %d digests; want %d", path, len(digests), expectedCount)
+	}
+
+	seen := make(map[string]int, len(digests))
+	for line, digest := range digests {
+		if len(digest) != digestLength {
+			t.Fatalf("%s:%d: digest length is %d; want %d", path, line+1, len(digest), digestLength)
+		}
+		if firstLine, ok := seen[digest]; ok {
+			t.Fatalf("%s:%d: duplicate digest first seen on line %d", path, line+1, firstLine)
+		}
+		seen[digest] = line + 1
+	}
+	return digests
 }
