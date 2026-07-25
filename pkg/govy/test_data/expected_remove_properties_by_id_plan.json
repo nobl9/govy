@@ -1,0 +1,16 @@
+{
+  "properties": [
+    {
+      "path": "$.b",
+      "typeInfo": {
+        "name": "string",
+        "kind": "string"
+      },
+      "rules": [
+        {
+          "description": "b rule"
+        }
+      ]
+    }
+  ]
+}

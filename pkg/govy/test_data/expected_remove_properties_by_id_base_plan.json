@@ -1,0 +1,28 @@
+{
+  "properties": [
+    {
+      "path": "$.a",
+      "typeInfo": {
+        "name": "string",
+        "kind": "string"
+      },
+      "rules": [
+        {
+          "description": "a rule"
+        }
+      ]
+    },
+    {
+      "path": "$.b",
+      "typeInfo": {
+        "name": "string",
+        "kind": "string"
+      },
+      "rules": [
+        {
+          "description": "b rule"
+        }
+      ]
+    }
+  ]
+}

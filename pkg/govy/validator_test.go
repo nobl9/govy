@@ -1223,7 +1223,7 @@ func TestValidatorBuildersPreservePropertyIDs(t *testing.T) {
 	}
 }
 
-func TestValidatorRemovePropertiesByIDPlanAndInferredPath(t *testing.T) {
+func TestValidatorRemovePropertiesByID_PlanAndInferredPath(t *testing.T) {
 	govyconfig.SetInferPathIncludeTestFiles(true)
 	defer govyconfig.SetInferPathIncludeTestFiles(false)
 
@@ -1244,24 +1244,25 @@ func TestValidatorRemovePropertiesByIDPlanAndInferredPath(t *testing.T) {
 	base := govy.New(a, b)
 
 	assert.Equal(t, []string{"a", "b"}, validatorErrorPaths(t, base, fixture{}))
-	assert.Equal(t, []string{"$.a", "$.b"}, validatorPlanPaths(t, base))
 	assert.Equal(t, aID, a.GetID())
 	assert.Equal(t, bID, b.GetID())
 	basePlan, err := govy.Plan(base)
 	assert.Require(t, assert.NoError(t, err))
-	assert.Require(t, assert.Len(t, basePlan.Properties, 2))
+	expectedBasePlan := readExpectedPlan(t, "expected_remove_properties_by_id_base_plan.json")
+	assert.Equal(t, expectedBasePlan, requireJSON(t, basePlan))
 
 	filtered := base.RemovePropertiesByID(aID)
 	assert.Equal(t, []string{"b"}, validatorErrorPaths(t, filtered, fixture{}))
-	assert.Equal(t, []string{"$.b"}, validatorPlanPaths(t, filtered))
-	assert.Equal(t, []string{"$.a", "$.b"}, validatorPlanPaths(t, base))
 	filteredPlan, err := govy.Plan(filtered)
 	assert.Require(t, assert.NoError(t, err))
-	assert.Require(t, assert.Len(t, filteredPlan.Properties, 1))
-	assert.Equal(t, basePlan.Properties[1], filteredPlan.Properties[0])
+	assert.Equal(
+		t,
+		readExpectedPlan(t, "expected_remove_properties_by_id_plan.json"),
+		requireJSON(t, filteredPlan),
+	)
 	regeneratedBasePlan, err := govy.Plan(base)
 	assert.Require(t, assert.NoError(t, err))
-	assert.Equal(t, basePlan, regeneratedBasePlan)
+	assert.Equal(t, expectedBasePlan, requireJSON(t, regeneratedBasePlan))
 
 	onlyA := govy.New(a)
 	assert.Equal(t, []string{"a"}, validatorErrorPaths(t, onlyA, fixture{}))
@@ -1271,7 +1272,7 @@ func TestValidatorRemovePropertiesByIDPlanAndInferredPath(t *testing.T) {
 	assert.Len(t, validatorPlanPaths(t, removed), 0)
 }
 
-func TestValidatorRemovePropertiesByIDIncludedValidatorBoundary(t *testing.T) {
+func TestValidatorRemovePropertiesByID_IncludedValidatorBoundary(t *testing.T) {
 	const (
 		childID = "child-property"
 		outerID = "outer-property"
