@@ -16,6 +16,9 @@ func newInstanceID() instanceID {
 }
 
 func (i instanceID) WithUserSuppliedID(id string) instanceID {
+	if id == "" {
+		return newInstanceID()
+	}
 	i.userSuppliedID = id
 	return i
 }

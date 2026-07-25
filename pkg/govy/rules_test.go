@@ -674,6 +674,83 @@ func TestPropertyRulesWithID(t *testing.T) {
 		}
 	})
 
+	t.Run("clearing custom ID assigns an independent generated ID", func(t *testing.T) {
+		type propertyPair struct {
+			base    govy.PropertyRulesInterface[mockStruct]
+			derived govy.PropertyRulesInterface[mockStruct]
+		}
+		testCases := []struct {
+			name string
+			new  func() propertyPair
+		}{
+			{
+				name: "scalar",
+				new: func() propertyPair {
+					base := govy.For(func(m mockStruct) string { return m.Field }).
+						WithName("scalarBase").
+						Rules(govy.NewRule(func(string) error { return errors.New("scalar") }))
+					derived := base.WithID("custom").
+						WithName("scalarDerived").
+						WithID("")
+					return propertyPair{base: base, derived: derived}
+				},
+			},
+			{
+				name: "slice",
+				new: func() propertyPair {
+					base := govy.ForSlice(func(m mockStruct) []string { return []string{m.Field} }).
+						WithName("sliceBase").
+						Rules(govy.NewRule(func([]string) error { return errors.New("slice") }))
+					derived := base.WithID("custom").
+						WithName("sliceDerived").
+						WithID("")
+					return propertyPair{base: base, derived: derived}
+				},
+			},
+			{
+				name: "map",
+				new: func() propertyPair {
+					base := govy.ForMap(func(m mockStruct) map[string]string {
+						return map[string]string{"key": m.Field}
+					}).
+						WithName("mapBase").
+						Rules(govy.NewRule(func(map[string]string) error { return errors.New("map") }))
+					derived := base.WithID("custom").
+						WithName("mapDerived").
+						WithID("")
+					return propertyPair{base: base, derived: derived}
+				},
+			},
+		}
+
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+				properties := tc.new()
+				assert.True(t, properties.base.GetID() != properties.derived.GetID())
+
+				validator := govy.New(properties.base, properties.derived)
+				assert.Equal(
+					t,
+					[]string{tc.name + "Derived"},
+					validatorErrorPaths(
+						t,
+						validator.RemovePropertiesByID(properties.base.GetID()),
+						mockStruct{},
+					),
+				)
+				assert.Equal(
+					t,
+					[]string{tc.name + "Base"},
+					validatorErrorPaths(
+						t,
+						validator.RemovePropertiesByID(properties.derived.GetID()),
+						mockStruct{},
+					),
+				)
+			})
+		}
+	})
+
 	t.Run("generated ID belongs to the final derived instance", func(t *testing.T) {
 		entropy := make([]byte, 16*32)
 		for block := range 32 {

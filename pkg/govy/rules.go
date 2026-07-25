@@ -192,8 +192,11 @@ func (r PropertyRules[T, P]) WithPath(path jsonpath.Path) PropertyRules[T, P] {
 	return r
 }
 
-// WithID sets a unique identifier for these property rules.
-// The identifier can be used with [Validator.RemovePropertiesByID].
+// WithID sets a caller-supplied identifier for these property rules.
+// The identifier is preserved by subsequent builder methods
+// and can be used with [Validator.RemovePropertiesByID].
+// Identifiers do not need to be unique; removal deletes every direct property with a matching identifier.
+// An empty identifier clears the caller-supplied value and assigns a new generated identifier.
 func (r PropertyRules[T, P]) WithID(id string) PropertyRules[T, P] {
 	r.id = r.id.WithUserSuppliedID(id)
 	return r
@@ -270,6 +273,10 @@ func (r PropertyRules[T, P]) InferPath(mode InferPathMode) PropertyRules[T, P] {
 }
 
 // GetID returns the identifier for these property rules.
+// Property rules have a generated identifier by default.
+// Generated identifiers can change when a builder method derives a new value,
+// so retrieve the identifier from the final property definition.
+// An identifier set with [PropertyRules.WithID] persists across builder methods until cleared.
 func (r PropertyRules[T, P]) GetID() string {
 	return r.id.GetID()
 }

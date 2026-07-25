@@ -82,7 +82,10 @@ func (v Validator[T]) RemovePropertiesByPath(paths ...jsonpath.Path) Validator[T
 	return v
 }
 
-// RemovePropertiesByID removes any [PropertyRules] matching the provided identifiers.
+// RemovePropertiesByID removes every direct property whose identifier matches
+// one of the provided identifiers.
+// It does not traverse validators included by a property;
+// derive the included validator separately to remove one of its properties.
 // It returns a modified [Validator] instance without these rules,
 // the original [Validator] is not changed.
 func (v Validator[T]) RemovePropertiesByID(ids ...string) Validator[T] {

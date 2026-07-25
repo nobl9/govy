@@ -2,6 +2,7 @@ package govy_test
 
 import (
 	"errors"
+	"strconv"
 	"sync"
 	"testing"
 
@@ -539,7 +540,7 @@ func TestValidatorInferPath(t *testing.T) {
 			// Changed name to differentiate between runtime and generate modes.
 			Path: jsonpath.New().Name("generated-students"),
 			File: "pkg/govy/validator_test.go",
-			Line: 552,
+			Line: 553,
 		})
 
 		v := govy.New(
@@ -1050,6 +1051,32 @@ func TestValidatorRemovePropertiesByIDDeterminism(t *testing.T) {
 			[]string{"first", "second", "third"},
 			validatorErrorPaths(t, validator, mockValidatorStruct{}),
 		)
+	})
+
+	t.Run("set dispatch preserves retained property order", func(t *testing.T) {
+		const propertyCount = 128
+		properties := make([]govy.PropertyRulesInterface[mockValidatorStruct], propertyCount)
+		ids := make([]string, 0, 16)
+		expectedPaths := make([]string, 0, propertyCount-16)
+		for i := range propertyCount {
+			id := "id" + strconv.Itoa(i)
+			path := "path" + strconv.Itoa(i)
+			properties[i] = newProperty(id, path)
+			if i%8 == 0 {
+				ids = append(ids, id)
+				continue
+			}
+			expectedPaths = append(expectedPaths, path)
+		}
+
+		assert.Len(t, ids, 16)
+		validator := govy.New(properties...)
+		assert.Equal(
+			t,
+			expectedPaths,
+			validatorErrorPaths(t, validator.RemovePropertiesByID(ids...), mockValidatorStruct{}),
+		)
+		assert.Len(t, validatorErrorPaths(t, validator, mockValidatorStruct{}), propertyCount)
 	})
 
 	t.Run("validator without properties remains usable", func(t *testing.T) {
