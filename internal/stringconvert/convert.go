@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log/slog"
 	"reflect"
-	"strings"
 
 	"github.com/nobl9/govy/internal/logging"
 )
@@ -24,15 +23,14 @@ func Format(v any) string {
 		}
 		return string(data)
 	case reflect.Slice, reflect.Array:
-		var result strings.Builder
-		result.WriteString("[")
+		result := "["
 		for i := 0; i < rv.Len(); i++ {
 			if i > 0 {
-				result.WriteString(", ")
+				result += ", "
 			}
-			result.WriteString(Format(rv.Index(i).Interface()))
+			result += Format(rv.Index(i).Interface())
 		}
-		return result.String() + "]"
+		return result + "]"
 	default:
 		return fmt.Sprint(v)
 	}
