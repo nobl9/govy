@@ -38,9 +38,13 @@
     "Fset",
     "Messagef",
     "Skłodowska",
+    "UUIDRFC",
+    "afbf",
     "atoi",
     "cidrv",
     "devbox",
+    "edebfe",
+    "eefb",
     "endef",
     "errorf",
     "gobin",
@@ -57,6 +61,7 @@
     "govytest",
     "issn",
     "ldflags",
+    "luhn",
     "mypkg",
     "nobl",
     "pkgs",
@@ -67,9 +72,13 @@
     "structs",
     "tmpl",
     "tpng",
+    "uuidv",
     "vuln",
     "vulns",
     "Implicits",
-    "mygovy"
+    "mygovy",
+    "unpadded",
+    "JWSB64",
+    "ITIN"
   ]
 }

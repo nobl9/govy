@@ -42,6 +42,14 @@ const (
 	StringNonEmptyTemplate
 	StringMatchRegexpTemplate
 	StringDenyRegexpTemplate
+	StringBase64Template
+	StringBase64URLTemplate
+	StringBase64RawURLTemplate
+	StringHexadecimalTemplate
+	StringMD5Template
+	StringSHA256Template
+	StringSHA384Template
+	StringSHA512Template
 	StringEmailTemplate
 	StringE164Template
 	StringMACTemplate
@@ -51,6 +59,17 @@ const (
 	StringCIDRTemplate
 	StringCIDRv4Template
 	StringCIDRv6Template
+	StringCreditCardTemplate
+	StringLuhnChecksumTemplate
+	StringBICTemplate
+	StringBICISO93622014Template
+	StringUUIDRFC4122Template
+	StringUUIDv3Template
+	StringUUIDv4Template
+	StringUUIDv5Template
+	StringULIDTemplate
+	StringEINTemplate
+	StringSSNTemplate
 	StringJSONTemplate
 	StringSemverTemplate
 	StringCVETemplate
@@ -58,6 +77,7 @@ const (
 	StringISBN10Template
 	StringISBN13Template
 	StringISSNTemplate
+	StringJWTTemplate
 	StringContainsTemplate
 	StringExcludesTemplate
 	StringStartsWithTemplate
@@ -73,6 +93,7 @@ const (
 	StringDateTimeTemplate
 	StringTimeZoneTemplate
 	StringKubernetesQualifiedNameTemplate
+	StringMongoDBObjectIDTemplate
 	URLTemplate
 	SliceUniqueTemplate
 	UniquePropertiesTemplate
@@ -116,28 +137,48 @@ var rawMessageTemplates = map[templateKey]string{
 {{- else }} [{{ joinSlice .Custom.EmptyProperties "" }}] properties must also be set
 {{- end }}
 `,
-	RequiredTemplate:          internal.RequiredMessage,
-	StringNonEmptyTemplate:    "string must not be empty",
-	StringMatchRegexpTemplate: "string must match regular expression: '{{ .ComparisonValue }}'",
-	StringDenyRegexpTemplate:  "string must not match regular expression: '{{ .ComparisonValue }}'",
-	StringEmailTemplate:       "string must be a valid email address: {{ .Error }}",
-	StringE164Template:        "string must be a valid E.164 phone number",
-	StringMACTemplate:         "string must be a valid MAC address",
-	StringIPTemplate:          "string must be a valid IP address",
-	StringIPv4Template:        "string must be a valid IPv4 address",
-	StringIPv6Template:        "string must be a valid IPv6 address",
-	StringCIDRTemplate:        "string must be a valid CIDR notation IP address",
-	StringCIDRv4Template:      "string must be a valid CIDR notation IPv4 address",
-	StringCIDRv6Template:      "string must be a valid CIDR notation IPv6 address",
-	StringJSONTemplate:        "string must be a valid JSON",
-	StringSemverTemplate:      "string must be a valid semantic version",
-	StringCVETemplate:         "string must be a valid CVE ID",
-	StringISBNTemplate:        "string must be a valid International Standard Book Number (ISBN) in ISBN-10 or ISBN-13 format",
-	StringISBN10Template:      "string must be a valid International Standard Book Number (ISBN) in ISBN-10 format",
-	StringISBN13Template:      "string must be a valid International Standard Book Number (ISBN) in ISBN-13 format",
-	StringISSNTemplate:        "string must be a valid International Standard Serial Number (ISSN)",
-	StringContainsTemplate:    `string must contain the following substrings: {{ joinSlice .ComparisonValue "'" }}`,
-	StringExcludesTemplate:    `string must not contain any of the following substrings: {{ joinSlice .ComparisonValue "'" }}`,
+	RequiredTemplate:             internal.RequiredMessage,
+	StringNonEmptyTemplate:       "string must not be empty",
+	StringMatchRegexpTemplate:    "string must match regular expression: '{{ .ComparisonValue }}'",
+	StringDenyRegexpTemplate:     "string must not match regular expression: '{{ .ComparisonValue }}'",
+	StringBase64Template:         "string must be a valid padded Base64 value using the standard alphabet",
+	StringBase64URLTemplate:      "string must be a valid padded URL-safe Base64 value",
+	StringBase64RawURLTemplate:   "string must be a valid URL-safe Base64 value without padding",
+	StringHexadecimalTemplate:    "string must be a valid hexadecimal value",
+	StringMD5Template:            "string must be a valid lowercase MD5 hexadecimal digest",
+	StringSHA256Template:         "string must be a valid lowercase SHA-256 hexadecimal digest",
+	StringSHA384Template:         "string must be a valid lowercase SHA-384 hexadecimal digest",
+	StringSHA512Template:         "string must be a valid lowercase SHA-512 hexadecimal digest",
+	StringEmailTemplate:          "string must be a valid email address: {{ .Error }}",
+	StringE164Template:           "string must be a valid E.164 phone number",
+	StringMACTemplate:            "string must be a valid MAC address",
+	StringIPTemplate:             "string must be a valid IP address",
+	StringIPv4Template:           "string must be a valid IPv4 address",
+	StringIPv6Template:           "string must be a valid IPv6 address",
+	StringCIDRTemplate:           "string must be a valid CIDR notation IP address",
+	StringCIDRv4Template:         "string must be a valid CIDR notation IPv4 address",
+	StringCIDRv6Template:         "string must be a valid CIDR notation IPv6 address",
+	StringCreditCardTemplate:     "string must be a valid payment card number",
+	StringLuhnChecksumTemplate:   "string must pass the Luhn checksum",
+	StringBICTemplate:            "string must be a valid Business Identifier Code (BIC)",
+	StringBICISO93622014Template: "string must be a valid ISO 9362:2014 Business Identifier Code (BIC)",
+	StringUUIDRFC4122Template:    "string must be a valid Universally Unique Identifier (UUID) as defined by RFC 4122",
+	StringUUIDv3Template:         "string must be a valid version 3 Universally Unique Identifier (UUID) as defined by RFC 4122",
+	StringUUIDv4Template:         "string must be a valid version 4 Universally Unique Identifier (UUID) as defined by RFC 4122",
+	StringUUIDv5Template:         "string must be a valid version 5 Universally Unique Identifier (UUID) as defined by RFC 4122",
+	StringULIDTemplate:           "string must be a valid Universally Unique Lexicographically Sortable Identifier (ULID)",
+	StringEINTemplate:            "string must be a valid Employer Identification Number (EIN)",
+	StringSSNTemplate:            "string must be a valid Social Security Number (SSN)",
+	StringJSONTemplate:           "string must be a valid JSON",
+	StringSemverTemplate:         "string must be a valid semantic version",
+	StringCVETemplate:            "string must be a valid CVE ID",
+	StringISBNTemplate:           "string must be a valid International Standard Book Number (ISBN) in ISBN-10 or ISBN-13 format",
+	StringISBN10Template:         "string must be a valid International Standard Book Number (ISBN) in ISBN-10 format",
+	StringISBN13Template:         "string must be a valid International Standard Book Number (ISBN) in ISBN-13 format",
+	StringISSNTemplate:           "string must be a valid International Standard Serial Number (ISSN)",
+	StringJWTTemplate:            "string must be a valid JSON Web Token (JWT){{- if .Error }}: {{ .Error }}{{- end }}",
+	StringContainsTemplate:       `string must contain the following substrings: {{ joinSlice .ComparisonValue "'" }}`,
+	StringExcludesTemplate:       `string must not contain any of the following substrings: {{ joinSlice .ComparisonValue "'" }}`,
 	StringStartsWithTemplate: `
 {{- if eq (len .ComparisonValue) 1 -}}
 	string must start with '{{ index .ComparisonValue 0 }}' prefix
@@ -197,6 +238,7 @@ var rawMessageTemplates = map[templateKey]string{
 	string must be a valid Kubernetes Qualified Name
 {{- end }}
 `,
+	StringMongoDBObjectIDTemplate: "string must be a 24-character hexadecimal MongoDB ObjectID",
 	SliceUniqueTemplate: `elements are not unique, {{ .Custom.FirstOrdinal }} and {{ .Custom.SecondOrdinal }} elements collide
 {{- if gt (len .Custom.Constraints) 0 }} based on constraints: {{ joinSlice .Custom.Constraints "" }}{{- end }}`,
 	UniquePropertiesTemplate: `all of [{{ joinSlice .ComparisonValue "" }}] properties must be unique, but '{{ .Custom.FirstProperty }}' collides with '{{ .Custom.SecondProperty }}'
