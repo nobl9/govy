@@ -29,6 +29,7 @@
     "bin/**",
     "docs/assets/**",
     "pkg/rules/string_test.go",
+    "internal/stringutil/blank_test.go",
     "context7.json"
   ],
   "words": [
