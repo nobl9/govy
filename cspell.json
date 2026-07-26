@@ -28,6 +28,7 @@
     "CODEOWNERS",
     "bin/**",
     "docs/assets/**",
+    "pkg/rules/string_test.go",
     "context7.json"
   ],
   "words": [
