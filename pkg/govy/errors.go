@@ -9,6 +9,7 @@ import (
 
 	"github.com/nobl9/govy/internal"
 	"github.com/nobl9/govy/internal/logging"
+	"github.com/nobl9/govy/internal/stringutil"
 	"github.com/nobl9/govy/pkg/jsonpath"
 )
 
@@ -247,7 +248,11 @@ func (r *RuleError) AddCode(code ErrorCode) *RuleError {
 }
 
 // HideValue replaces all occurrences of a string in the [RuleError.Message] with a '*' characters.
+// If the string is empty (including whitespace-only), it is not hidden.
 func (r *RuleError) HideValue(stringValue string) *RuleError {
+	if stringutil.IsBlank(stringValue) {
+		return r
+	}
 	r.Message = strings.ReplaceAll(r.Message, stringValue, hiddenValue)
 	return r
 }

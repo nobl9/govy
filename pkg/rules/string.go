@@ -16,6 +16,7 @@ import (
 	"unicode"
 
 	"github.com/nobl9/govy/internal/messagetemplates"
+	"github.com/nobl9/govy/internal/stringutil"
 	"github.com/nobl9/govy/pkg/govy"
 )
 
@@ -27,7 +28,7 @@ func StringNotEmpty() govy.Rule[string] {
 	tpl := messagetemplates.Get(messagetemplates.StringNonEmptyTemplate)
 
 	return govy.NewRule(func(s string) error {
-		if len(strings.TrimSpace(s)) == 0 {
+		if stringutil.IsBlank(s) {
 			return govy.NewRuleErrorTemplate(govy.TemplateVars{
 				PropertyValue: s,
 			})
@@ -1647,7 +1648,7 @@ func stringContainsGitRefForbiddenChars(s string) bool {
 }
 
 func osStatFile(path string) (os.FileInfo, error) {
-	if strings.TrimSpace(path) == "" {
+	if stringutil.IsBlank(path) {
 		return nil, errFilePathEmpty
 	}
 	hasSeparatorSuffix := strings.HasSuffix(path, string(filepath.Separator))

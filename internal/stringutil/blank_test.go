@@ -66,6 +66,7 @@ func TestIsBlank_NonBlank(t *testing.T) {
 		"nonblank after whitespace":  " \u3000a",
 		"nonblank before whitespace": "a \u3000",
 		"nonblank amid whitespace":   "\u3000a ",
+		"emoji":                      "x ☺",
 	}
 	for name, input := range testCases {
 		t.Run(name, func(t *testing.T) {
