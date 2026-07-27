@@ -601,7 +601,7 @@ func isISO3166Alpha3(s string) bool {
 }
 
 func isISO3166Numeric(s string) bool {
-	if len(s) != 3 || !isASCIIDigit(s) {
+	if len(s) != 3 || !isASCIIDigits(s) {
 		return false
 	}
 	region, err := language.ParseRegion(s)
@@ -752,7 +752,7 @@ func isASCIIUpper(s string) bool {
 	return true
 }
 
-func isASCIIDigit(s string) bool {
+func isASCIIDigits(s string) bool {
 	for _, c := range s {
 		if c < '0' || c > '9' {
 			return false

@@ -23,12 +23,11 @@
     "**/*.lock",
     "**/go*.mod",
     "**/go*.sum",
-    "**/node_modules/**",
     "cspell.json",
     "CODEOWNERS",
-    "bin/**",
     "docs/assets/**",
     "pkg/rules/testdata/iana_bcp47_complete_inputs_2026-06-14.txt",
+    "pkg/rules/string_test.go",
     "context7.json"
   ],
   "words": [
@@ -40,9 +39,13 @@
     "Skłodowska",
     "UNECE",
     "UNSD",
+    "UUIDRFC",
+    "afbf",
     "atoi",
     "cidrv",
     "devbox",
+    "edebfe",
+    "eefb",
     "endef",
     "errorf",
     "gobin",
@@ -57,8 +60,10 @@
     "govy",
     "govyconfig",
     "govytest",
+    "issn",
     "ldflags",
     "Leonean",
+    "luhn",
     "mypkg",
     "nobl",
     "pkgs",
@@ -70,9 +75,13 @@
     "structs",
     "tmpl",
     "tpng",
+    "uuidv",
     "vuln",
     "vulns",
     "Implicits",
-    "mygovy"
+    "mygovy",
+    "unpadded",
+    "JWSB64",
+    "ITIN"
   ]
 }
