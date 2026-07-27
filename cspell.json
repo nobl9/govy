@@ -26,7 +26,7 @@
     "cspell.json",
     "CODEOWNERS",
     "docs/assets/**",
-    "pkg/rules/testdata/iana_bcp47_complete_inputs_2026-06-14.txt",
+    "**/testdata/**",
     "pkg/rules/string_test.go",
     "context7.json"
   ],
