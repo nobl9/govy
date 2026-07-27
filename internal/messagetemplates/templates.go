@@ -42,6 +42,10 @@ const (
 	StringNonEmptyTemplate
 	StringMatchRegexpTemplate
 	StringDenyRegexpTemplate
+	StringBase64Template
+	StringBase64URLTemplate
+	StringBase64RawURLTemplate
+	StringHexadecimalTemplate
 	StringMD5Template
 	StringSHA256Template
 	StringSHA384Template
@@ -55,6 +59,10 @@ const (
 	StringCIDRTemplate
 	StringCIDRv4Template
 	StringCIDRv6Template
+	StringCreditCardTemplate
+	StringLuhnChecksumTemplate
+	StringBICTemplate
+	StringBICISO93622014Template
 	StringUUIDRFC4122Template
 	StringUUIDv3Template
 	StringUUIDv4Template
@@ -65,6 +73,10 @@ const (
 	StringJSONTemplate
 	StringSemverTemplate
 	StringCVETemplate
+	StringISBNTemplate
+	StringISBN10Template
+	StringISBN13Template
+	StringISSNTemplate
 	StringJWTTemplate
 	StringContainsTemplate
 	StringExcludesTemplate
@@ -80,6 +92,15 @@ const (
 	StringCrontabTemplate
 	StringDateTimeTemplate
 	StringTimeZoneTemplate
+	StringBCP47LanguageTagTemplate
+	StringBCP47StrictLanguageTagTemplate
+	StringISO3166Alpha2Template
+	StringISO3166Alpha3Template
+	StringISO3166NumericTemplate
+	StringISO31662Template
+	StringISO4217Template
+	StringLatitudeTemplate
+	StringLongitudeTemplate
 	StringKubernetesQualifiedNameTemplate
 	StringMongoDBObjectIDTemplate
 	URLTemplate
@@ -125,36 +146,48 @@ var rawMessageTemplates = map[templateKey]string{
 {{- else }} [{{ joinSlice .Custom.EmptyProperties "" }}] properties must also be set
 {{- end }}
 `,
-	RequiredTemplate:          internal.RequiredMessage,
-	StringNonEmptyTemplate:    "string must not be empty",
-	StringMatchRegexpTemplate: "string must match regular expression: '{{ .ComparisonValue }}'",
-	StringDenyRegexpTemplate:  "string must not match regular expression: '{{ .ComparisonValue }}'",
-	StringMD5Template:         "string must be a valid lowercase MD5 hexadecimal digest",
-	StringSHA256Template:      "string must be a valid lowercase SHA-256 hexadecimal digest",
-	StringSHA384Template:      "string must be a valid lowercase SHA-384 hexadecimal digest",
-	StringSHA512Template:      "string must be a valid lowercase SHA-512 hexadecimal digest",
-	StringEmailTemplate:       "string must be a valid email address: {{ .Error }}",
-	StringE164Template:        "string must be a valid E.164 phone number",
-	StringMACTemplate:         "string must be a valid MAC address",
-	StringIPTemplate:          "string must be a valid IP address",
-	StringIPv4Template:        "string must be a valid IPv4 address",
-	StringIPv6Template:        "string must be a valid IPv6 address",
-	StringCIDRTemplate:        "string must be a valid CIDR notation IP address",
-	StringCIDRv4Template:      "string must be a valid CIDR notation IPv4 address",
-	StringCIDRv6Template:      "string must be a valid CIDR notation IPv6 address",
-	StringUUIDRFC4122Template: "string must be a valid Universally Unique Identifier (UUID) as defined by RFC 4122",
-	StringUUIDv3Template:      "string must be a valid version 3 Universally Unique Identifier (UUID) as defined by RFC 4122",
-	StringUUIDv4Template:      "string must be a valid version 4 Universally Unique Identifier (UUID) as defined by RFC 4122",
-	StringUUIDv5Template:      "string must be a valid version 5 Universally Unique Identifier (UUID) as defined by RFC 4122",
-	StringULIDTemplate:        "string must be a valid Universally Unique Lexicographically Sortable Identifier (ULID)",
-	StringEINTemplate:         "string must be a valid Employer Identification Number (EIN)",
-	StringSSNTemplate:         "string must be a valid Social Security Number (SSN)",
-	StringJSONTemplate:        "string must be a valid JSON",
-	StringSemverTemplate:      "string must be a valid semantic version",
-	StringCVETemplate:         "string must be a valid CVE ID",
-	StringJWTTemplate:         "string must be a valid JSON Web Token (JWT){{- if .Error }}: {{ .Error }}{{- end }}",
-	StringContainsTemplate:    `string must contain the following substrings: {{ joinSlice .ComparisonValue "'" }}`,
-	StringExcludesTemplate:    `string must not contain any of the following substrings: {{ joinSlice .ComparisonValue "'" }}`,
+	RequiredTemplate:             internal.RequiredMessage,
+	StringNonEmptyTemplate:       "string must not be empty",
+	StringMatchRegexpTemplate:    "string must match regular expression: '{{ .ComparisonValue }}'",
+	StringDenyRegexpTemplate:     "string must not match regular expression: '{{ .ComparisonValue }}'",
+	StringBase64Template:         "string must be a valid padded Base64 value using the standard alphabet",
+	StringBase64URLTemplate:      "string must be a valid padded URL-safe Base64 value",
+	StringBase64RawURLTemplate:   "string must be a valid URL-safe Base64 value without padding",
+	StringHexadecimalTemplate:    "string must be a valid hexadecimal value",
+	StringMD5Template:            "string must be a valid lowercase MD5 hexadecimal digest",
+	StringSHA256Template:         "string must be a valid lowercase SHA-256 hexadecimal digest",
+	StringSHA384Template:         "string must be a valid lowercase SHA-384 hexadecimal digest",
+	StringSHA512Template:         "string must be a valid lowercase SHA-512 hexadecimal digest",
+	StringEmailTemplate:          "string must be a valid email address: {{ .Error }}",
+	StringE164Template:           "string must be a valid E.164 phone number",
+	StringMACTemplate:            "string must be a valid MAC address",
+	StringIPTemplate:             "string must be a valid IP address",
+	StringIPv4Template:           "string must be a valid IPv4 address",
+	StringIPv6Template:           "string must be a valid IPv6 address",
+	StringCIDRTemplate:           "string must be a valid CIDR notation IP address",
+	StringCIDRv4Template:         "string must be a valid CIDR notation IPv4 address",
+	StringCIDRv6Template:         "string must be a valid CIDR notation IPv6 address",
+	StringCreditCardTemplate:     "string must be a valid payment card number",
+	StringLuhnChecksumTemplate:   "string must pass the Luhn checksum",
+	StringBICTemplate:            "string must be a valid Business Identifier Code (BIC)",
+	StringBICISO93622014Template: "string must be a valid ISO 9362:2014 Business Identifier Code (BIC)",
+	StringUUIDRFC4122Template:    "string must be a valid Universally Unique Identifier (UUID) as defined by RFC 4122",
+	StringUUIDv3Template:         "string must be a valid version 3 Universally Unique Identifier (UUID) as defined by RFC 4122",
+	StringUUIDv4Template:         "string must be a valid version 4 Universally Unique Identifier (UUID) as defined by RFC 4122",
+	StringUUIDv5Template:         "string must be a valid version 5 Universally Unique Identifier (UUID) as defined by RFC 4122",
+	StringULIDTemplate:           "string must be a valid Universally Unique Lexicographically Sortable Identifier (ULID)",
+	StringEINTemplate:            "string must be a valid Employer Identification Number (EIN)",
+	StringSSNTemplate:            "string must be a valid Social Security Number (SSN)",
+	StringJSONTemplate:           "string must be a valid JSON",
+	StringSemverTemplate:         "string must be a valid semantic version",
+	StringCVETemplate:            "string must be a valid CVE ID",
+	StringISBNTemplate:           "string must be a valid International Standard Book Number (ISBN) in ISBN-10 or ISBN-13 format",
+	StringISBN10Template:         "string must be a valid International Standard Book Number (ISBN) in ISBN-10 format",
+	StringISBN13Template:         "string must be a valid International Standard Book Number (ISBN) in ISBN-13 format",
+	StringISSNTemplate:           "string must be a valid International Standard Serial Number (ISSN)",
+	StringJWTTemplate:            "string must be a valid JSON Web Token (JWT){{- if .Error }}: {{ .Error }}{{- end }}",
+	StringContainsTemplate:       `string must contain the following substrings: {{ joinSlice .ComparisonValue "'" }}`,
+	StringExcludesTemplate:       `string must not contain any of the following substrings: {{ joinSlice .ComparisonValue "'" }}`,
 	StringStartsWithTemplate: `
 {{- if eq (len .ComparisonValue) 1 -}}
 	string must start with '{{ index .ComparisonValue 0 }}' prefix
@@ -187,14 +220,23 @@ var rawMessageTemplates = map[templateKey]string{
 	string must be a valid git reference
 {{- end }}
 `,
-	StringFileSystemPathTemplate:      "string must be an existing file system path{{- if .Error }}: {{ .Error }}{{- end }}",
-	StringFilePathTemplate:            "string must be a file system path to an existing file{{- if .Error }}: {{ .Error }}{{- end }}",
-	StringDirPathTemplate:             "string must be a file system path to an existing directory{{- if .Error }}: {{ .Error }}{{- end }}",
-	StringMatchFileSystemPathTemplate: "string must match file path pattern: '{{ .ComparisonValue }}'{{- if .Error }}: {{ .Error }}{{- end }}",
-	StringRegexpTemplate:              "string must be a valid regular expression{{- if .Error }}: {{ .Error }}{{- end }}",
-	StringCrontabTemplate:             "string must be a valid cron schedule expression",
-	StringDateTimeTemplate:            "string must be a valid date and time in '{{ .ComparisonValue }}' format{{- if .Error }}: {{ .Error }}{{- end }}",
-	StringTimeZoneTemplate:            "string must be a valid IANA Time Zone Database code{{- if .Error }}: {{ .Error }}{{- end }}",
+	StringFileSystemPathTemplate:         "string must be an existing file system path{{- if .Error }}: {{ .Error }}{{- end }}",
+	StringFilePathTemplate:               "string must be a file system path to an existing file{{- if .Error }}: {{ .Error }}{{- end }}",
+	StringDirPathTemplate:                "string must be a file system path to an existing directory{{- if .Error }}: {{ .Error }}{{- end }}",
+	StringMatchFileSystemPathTemplate:    "string must match file path pattern: '{{ .ComparisonValue }}'{{- if .Error }}: {{ .Error }}{{- end }}",
+	StringRegexpTemplate:                 "string must be a valid regular expression{{- if .Error }}: {{ .Error }}{{- end }}",
+	StringCrontabTemplate:                "string must be a valid cron schedule expression",
+	StringDateTimeTemplate:               "string must be a valid date and time in '{{ .ComparisonValue }}' format{{- if .Error }}: {{ .Error }}{{- end }}",
+	StringTimeZoneTemplate:               "string must be a valid IANA Time Zone Database code{{- if .Error }}: {{ .Error }}{{- end }}",
+	StringBCP47LanguageTagTemplate:       "string must be a valid BCP 47 language tag",
+	StringBCP47StrictLanguageTagTemplate: "string must be a valid canonical BCP 47 language tag",
+	StringISO3166Alpha2Template:          "string must be a valid ISO 3166-1 alpha-2 country code",
+	StringISO3166Alpha3Template:          "string must be a valid ISO 3166-1 alpha-3 country code",
+	StringISO3166NumericTemplate:         "string must be a valid ISO 3166-1 numeric-3 country code",
+	StringISO31662Template:               "string must be a valid ISO 3166-2 country subdivision code",
+	StringISO4217Template:                "string must be a valid ISO 4217 three-letter alphabetic currency code",
+	StringLatitudeTemplate:               "string must be a valid latitude coordinate",
+	StringLongitudeTemplate:              "string must be a valid longitude coordinate",
 	StringKubernetesQualifiedNameTemplate: `
 {{- if eq .Custom.EmptyPrefixPart true -}}
 	prefix part must not be empty

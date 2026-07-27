@@ -1,6 +1,7 @@
 package rules
 
 import (
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"maps"
@@ -678,6 +679,395 @@ func BenchmarkStringASCII(b *testing.B) {
 			_ = rule.Validate(tc.in)
 		}
 	}
+}
+
+type stringPaymentBankingTestCases struct {
+	validInputs   map[string]string
+	invalidInputs map[string]string
+}
+
+var stringCreditCardTestCases = stringPaymentBankingTestCases{
+	validInputs: map[string]string{
+		"visa":                      "4111111111111111",
+		"visa alternate":            "4242424242424242",
+		"mastercard":                "5555555555554444",
+		"american express":          "378282246310005",
+		"discover":                  "6011111111111117",
+		"six-series sixteen digits": "6123451234567893",
+		"diners club":               "36227206271667",
+		"mastercard 2-series":       "2223003122003222",
+		"JCB":                       "3566002020360505",
+		"UnionPay nineteen digits":  "6205500000000000004",
+		"visa decline test number":  "4000111111111115",
+		"minimum thirteen digits":   "1000000000009",
+		"maximum nineteen digits":   "1000000000000000009",
+	},
+	invalidInputs: map[string]string{
+		"empty":                          "",
+		"minimum length minus one":       "100000000008",
+		"maximum length plus one":        "10000000000000000008",
+		"failed thirteen digit checksum": "1000000000008",
+		"failed nineteen digit checksum": "1000000000000000008",
+		"all same digits":                "6666666666666",
+		"leading space":                  " 1000000000009",
+		"trailing space":                 "1000000000009 ",
+		"trailing newline":               "1000000000009\n",
+		"embedded spaces":                "4111 1111 1111 1111",
+		"hyphens":                        "4111-1111-1111-1111",
+		"full-width digit":               "10000000000０9",
+		"alphabetic character":           "10000000000A9",
+	},
+}
+
+func TestStringCreditCard(t *testing.T) {
+	assertPaymentBankingRule(
+		t,
+		StringCreditCard(),
+		stringCreditCardTestCases,
+		"string must be a valid payment card number",
+		ErrorCodeStringCreditCard,
+	)
+}
+
+func BenchmarkStringCreditCard(b *testing.B) {
+	rule := StringCreditCard()
+	benchmarkStringPaymentBankingRule(b, rule, stringCreditCardTestCases)
+}
+
+var stringLuhnChecksumTestCases = stringPaymentBankingTestCases{
+	validInputs: map[string]string{
+		"single zero":                "0",
+		"four zeroes":                "0000",
+		"twenty zeroes":              "00000000000000000000",
+		"two digits ending in eight": "18",
+		"two digits ending in nine":  "59",
+		"sample number":              "79927398713",
+		"six-series example":         "6123451234567893",
+		"fifteen digit example":      "808401234567893",
+		"nineteen digit example":     "6205500000000000004",
+	},
+	invalidInputs: map[string]string{
+		"empty":                       "",
+		"failed thirteen digit check": "6123451234567894",
+		"failed fifteen digit check":  "808401234567894",
+		"slash before zero":           "/0",
+		"colon before zero":           ":0",
+		"plus before zero":            "+0",
+		"trailing space":              "0 ",
+		"alphabetic character":        "79927A398713",
+		"full-width digits":           "１２",
+	},
+}
+
+func TestStringLuhnChecksum(t *testing.T) {
+	assertPaymentBankingRule(
+		t,
+		StringLuhnChecksum(),
+		stringLuhnChecksumTestCases,
+		"string must pass the Luhn checksum",
+		ErrorCodeStringLuhnChecksum,
+	)
+}
+
+func BenchmarkStringLuhnChecksum(b *testing.B) {
+	rule := StringLuhnChecksum()
+	benchmarkStringPaymentBankingRule(b, rule, stringLuhnChecksumTestCases)
+}
+
+func TestStringPaymentCardProcessorFixtures(t *testing.T) {
+	fixtures := []struct {
+		name                   string
+		path                   string
+		source                 string
+		sourceSnapshotSHA256   string
+		normalizedValuesSHA256 string
+		expectedCount          int
+	}{
+		{
+			name:                   "Stripe",
+			path:                   "testdata/stripe_test_card_numbers_2026-07-21.txt",
+			source:                 "https://docs.stripe.com/testing",
+			sourceSnapshotSHA256:   "bcc37c3f58146fcadf2290b67058d66841b9adfbf207a56ae0bef557c675fc4e",
+			normalizedValuesSHA256: "00176aa47882a48d54cc1db7cb654536cd8889406d59ce67c88ae00897e54da9",
+			expectedCount:          148,
+		},
+		{
+			name:                   "Braintree",
+			path:                   "testdata/braintree_test_card_numbers_2026-07-21.txt",
+			source:                 "https://developer.paypal.com/braintree/docs/reference/general/testing/php",
+			sourceSnapshotSHA256:   "85231b65e2b6fa674d7ada4cd71512d0fe1756398e83564244af1bbf3cb27211",
+			normalizedValuesSHA256: "3ff5fb628215867a24156654d3a026a86bc5d2a089846b8de129ff444c0c1db7",
+			expectedCount:          44,
+		},
+		{
+			name:                   "Adyen",
+			path:                   "testdata/adyen_test_card_numbers_2026-07-21.txt",
+			source:                 "https://docs.adyen.com/development-resources/test-cards-and-credentials/test-card-numbers",
+			sourceSnapshotSHA256:   "be12e0c40e9d3cabbfe1025d956c13dbd4250dbc6574c23a7a3178ce06eff82e",
+			normalizedValuesSHA256: "636787e0d1b9af8aa73287d6e7e058b9f6f499f47756537dbdf9f322c44f23da",
+			expectedCount:          86,
+		},
+	}
+	rules := []struct {
+		name          string
+		rule          govy.Rule[string]
+		expectedError string
+		errorCode     govy.ErrorCode
+	}{
+		{
+			name:          "StringCreditCard",
+			rule:          StringCreditCard(),
+			expectedError: "string must be a valid payment card number",
+			errorCode:     ErrorCodeStringCreditCard,
+		},
+		{
+			name:          "StringLuhnChecksum",
+			rule:          StringLuhnChecksum(),
+			expectedError: "string must pass the Luhn checksum",
+			errorCode:     ErrorCodeStringLuhnChecksum,
+		},
+	}
+
+	const (
+		invalidProcessorCardNumber         = "4242424242424241"
+		expectedUniqueProcessorCardNumbers = 264
+	)
+	union := make(map[string]struct{}, expectedUniqueProcessorCardNumbers)
+	invalidOccurrences := 0
+	for _, fixture := range fixtures {
+		t.Run(fixture.name, func(t *testing.T) {
+			rawFixture, inputs := readTestDataFields(t, fixture.path)
+			assert.Require(t, assert.Len(t, inputs, fixture.expectedCount))
+			assert.True(t, strings.Contains(rawFixture, "# Source: "+fixture.source+"\n"))
+			assert.True(t, strings.Contains(
+				rawFixture,
+				"# Source snapshot SHA-256: "+fixture.sourceSnapshotSHA256+"\n",
+			))
+			normalizedValues := strings.Join(inputs, "\n") + "\n"
+			actualValuesSHA256 := fmt.Sprintf("%x", sha256.Sum256([]byte(normalizedValues)))
+			assert.Equal(t, fixture.normalizedValuesSHA256, actualValuesSHA256)
+
+			uniqueInputs := make(map[string]struct{}, len(inputs))
+			for _, input := range inputs {
+				uniqueInputs[input] = struct{}{}
+				union[input] = struct{}{}
+				if input == invalidProcessorCardNumber {
+					invalidOccurrences++
+				}
+				t.Run(input, func(t *testing.T) {
+					for _, testRule := range rules {
+						t.Run(testRule.name, func(t *testing.T) {
+							err := testRule.rule.Validate(input)
+							if input == invalidProcessorCardNumber {
+								assertPaymentBankingRuleError(
+									t,
+									err,
+									testRule.expectedError,
+									testRule.errorCode,
+								)
+								return
+							}
+							assert.NoError(t, err)
+						})
+					}
+				})
+			}
+			assert.Len(t, uniqueInputs, len(inputs))
+		})
+	}
+	assert.Len(t, union, expectedUniqueProcessorCardNumbers)
+	assert.Equal(t, 1, invalidOccurrences)
+}
+
+var stringBICTestCases = stringPaymentBankingTestCases{
+	validInputs: map[string]string{
+		"eight characters":                  "DEUTDEFF",
+		"eleven characters":                 "DEUTDEFF500",
+		"branch placeholder":                "NEDSZAJJXXX",
+		"ISO 9362 eight character example":  "ABCDFRPP",
+		"ISO 9362 eleven character example": "WG11US335AB",
+		"TC68 eight character example":      "ABCDBE22",
+		"TC68 eleven character example":     "ABCDBE22XYZ",
+		"alphanumeric party prefix":         "A1B2US33XXX",
+		"zero in party suffix":              "ABCDUS0A",
+		"one in party suffix":               "ABCDUS1A",
+		"letter O in party suffix":          "ABCDUSAO",
+		"Kosovo bank example":               "EKOMXKPR",
+		"Kosovo bank identifier":            "BPBXXKPR",
+	},
+	invalidInputs: map[string]string{
+		"empty":                       "",
+		"lowercase":                   "abcdfrpp",
+		"digit in country code":       "ABCD3R22",
+		"user-assigned country AA":    "ABCDAA22",
+		"user-assigned country QM":    "ABCDQM22",
+		"user-assigned country QZ":    "ABCDQZ22",
+		"user-assigned country XA":    "ABCDXA22",
+		"user-assigned country XZ":    "ABCDXZ22",
+		"user-assigned country ZZ":    "ABCDZZ22",
+		"deleted country AN":          "ABCDAN22",
+		"deleted country CS":          "ABCDCS22",
+		"seven characters":            "ABCDFR2",
+		"nine characters":             "ABCDFR22X",
+		"ten characters":              "ABCDFR22XX",
+		"twelve characters":           "ABCDFR22XXXX",
+		"punctuation in party prefix": "ABC-FR22",
+		"punctuation in party suffix": "ABCDFR2-",
+		"punctuation in branch":       "ABCDFR22XY-",
+		"trailing space":              "ABCDFR22 ",
+	},
+}
+
+func TestStringBIC(t *testing.T) {
+	assertPaymentBankingRule(
+		t,
+		StringBIC(),
+		stringBICTestCases,
+		"string must be a valid Business Identifier Code (BIC)",
+		ErrorCodeStringBIC,
+	)
+}
+
+func BenchmarkStringBIC(b *testing.B) {
+	rule := StringBIC()
+	benchmarkStringPaymentBankingRule(b, rule, stringBICTestCases)
+}
+
+var stringBICISO93622014TestCases = stringPaymentBankingTestCases{
+	validInputs: map[string]string{
+		"eight characters":                  "DEUTDEFF",
+		"eleven characters":                 "DEUTDEFF500",
+		"branch placeholder":                "NEDSZAJJXXX",
+		"ISO 9362 eight character example":  "ABCDFRPP",
+		"ISO 9362 eleven character example": "WG11US335AB",
+		"TC68 eight character example":      "ABCDBE22",
+		"TC68 eleven character example":     "ABCDBE22XYZ",
+		"alphanumeric party prefix":         "A1B2US33XXX",
+		"zero in party suffix":              "ABCDUS0A",
+		"one in party suffix":               "ABCDUS1A",
+		"letter O in party suffix":          "ABCDUSAO",
+		"Kosovo bank example":               "EKOMXKPR",
+		"Kosovo bank identifier":            "BPBXXKPR",
+	},
+	invalidInputs: map[string]string{
+		"empty":                       "",
+		"lowercase":                   "abcdfrpp",
+		"digit in country code":       "ABCD3R22",
+		"user-assigned country AA":    "ABCDAA22",
+		"user-assigned country QM":    "ABCDQM22",
+		"user-assigned country QZ":    "ABCDQZ22",
+		"user-assigned country XA":    "ABCDXA22",
+		"user-assigned country XZ":    "ABCDXZ22",
+		"user-assigned country ZZ":    "ABCDZZ22",
+		"deleted country AN":          "ABCDAN22",
+		"deleted country CS":          "ABCDCS22",
+		"seven characters":            "ABCDFR2",
+		"nine characters":             "ABCDFR22X",
+		"ten characters":              "ABCDFR22XX",
+		"twelve characters":           "ABCDFR22XXXX",
+		"punctuation in party prefix": "ABC-FR22",
+		"punctuation in party suffix": "ABCDFR2-",
+		"punctuation in branch":       "ABCDFR22XY-",
+		"trailing space":              "ABCDFR22 ",
+	},
+}
+
+func TestStringBICISO93622014(t *testing.T) {
+	assertPaymentBankingRule(
+		t,
+		StringBICISO93622014(),
+		stringBICISO93622014TestCases,
+		"string must be a valid ISO 9362:2014 Business Identifier Code (BIC)",
+		ErrorCodeStringBICISO93622014,
+	)
+}
+
+func TestStringBICCountryCodes(t *testing.T) {
+	countryCodes := readISOAlpha2CountryCodes(t)
+	assert.Require(t, assert.Len(t, countryCodes, 249))
+	uniqueCountryCodes := make(map[string]struct{}, len(countryCodes))
+	for _, countryCode := range countryCodes {
+		uniqueCountryCodes[countryCode] = struct{}{}
+	}
+	assert.Require(t, assert.Len(t, uniqueCountryCodes, len(countryCodes)))
+
+	rules := map[string]govy.Rule[string]{
+		"StringBIC":            StringBIC(),
+		"StringBICISO93622014": StringBICISO93622014(),
+	}
+	for ruleName, rule := range rules {
+		t.Run(ruleName, func(t *testing.T) {
+			for _, countryCode := range countryCodes {
+				t.Run(countryCode, func(t *testing.T) {
+					assert.NoError(t, rule.Validate("ABCD"+countryCode+"22"))
+				})
+			}
+			t.Run("Kosovo exception XK", func(t *testing.T) {
+				assert.NoError(t, rule.Validate("ABCDXK22"))
+			})
+		})
+	}
+}
+
+func TestBICPredicatesMatchRegexpOracle(t *testing.T) {
+	oracle := regexp.MustCompile(`^[A-Z0-9]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$`)
+	corpora := map[string]stringPaymentBankingTestCases{
+		"StringBIC":            stringBICTestCases,
+		"StringBICISO93622014": stringBICISO93622014TestCases,
+	}
+	for corpusName, testCases := range corpora {
+		t.Run(corpusName, func(t *testing.T) {
+			for caseName, input := range testCases.validInputs {
+				t.Run("valid "+caseName, func(t *testing.T) {
+					assertBICPredicatesMatchRegexpOracle(t, oracle, input)
+				})
+			}
+			for caseName, input := range testCases.invalidInputs {
+				t.Run("invalid "+caseName, func(t *testing.T) {
+					assertBICPredicatesMatchRegexpOracle(t, oracle, input)
+				})
+			}
+		})
+	}
+
+	t.Run("lengths zero through twelve", func(t *testing.T) {
+		for length := range 13 {
+			input := strings.Repeat("A", length)
+			assertBICPredicatesMatchRegexpOracle(t, oracle, input)
+		}
+	})
+
+	for name, base := range map[string]string{
+		"eight characters":  "ABCDUS22",
+		"eleven characters": "ABCDUS22XYZ",
+	} {
+		t.Run(name+" single-byte substitutions", func(t *testing.T) {
+			input := []byte(base)
+			for position := range len(input) {
+				for value := byte(0); ; value++ {
+					input[position] = value
+					assertBICPredicatesMatchRegexpOracle(t, oracle, string(input))
+					if value == 255 {
+						break
+					}
+				}
+				input[position] = base[position]
+			}
+		})
+	}
+
+	t.Run("ISO country codes", func(t *testing.T) {
+		countryCodes := append(readISOAlpha2CountryCodes(t), "XK")
+		for _, countryCode := range countryCodes {
+			assertBICPredicatesMatchRegexpOracle(t, oracle, "ABCD"+countryCode+"22")
+			assertBICPredicatesMatchRegexpOracle(t, oracle, "ABCD"+countryCode+"22XYZ")
+		}
+	})
+}
+
+func BenchmarkStringBICISO93622014(b *testing.B) {
+	rule := StringBICISO93622014()
+	benchmarkStringPaymentBankingRule(b, rule, stringBICISO93622014TestCases)
 }
 
 const stringMongoDBObjectIDErrorMessage = "string must be a 24-character hexadecimal MongoDB ObjectID"
@@ -1435,6 +1825,888 @@ func BenchmarkStringCVE(b *testing.B) {
 	for b.Loop() {
 		_ = rule.Validate("CVE-2021-44228")
 	}
+}
+
+// Corpus sources: RFC 4648 sections 9-10 and golang/go commit
+// fefb02adf45c4bcc879bd406a8d61f2a292c26a9 (Go 1.25.5),
+// src/encoding/base64/base64_test.go. The tables cover all 17 unique Go
+// pairs, all 24 TestDecodeCorrupt inputs, all 11 TestNewLineCharacters
+// inputs, and both strict-decoder issue 15656 inputs. Go's duplicate
+// "sure." pair is represented once. CR and LF are invalid under this rule's
+// RFC 4648 generic profile even though Go's decoder ignores them.
+var stringBase64ValidInputs = map[string]string{
+	"empty":                           "",
+	"rfc 4648 one byte":               "Zg==",
+	"rfc 4648 two bytes":              "Zm8=",
+	"rfc 4648 three bytes":            "Zm9v",
+	"rfc 4648 four bytes":             "Zm9vYg==",
+	"rfc 4648 five bytes":             "Zm9vYmE=",
+	"rfc 4648 six bytes":              "Zm9vYmFy",
+	"rfc 4648 six-byte illustration":  "FPucA9l+",
+	"rfc 4648 five-byte illustration": "FPucA9k=",
+	"rfc 4648 four-byte illustration": "FPucAw==",
+	"single zero byte":                "AA==",
+	"two zero bytes":                  "AAA=",
+	"three zero bytes":                "AAAA",
+	"standard alphabet characters":    "+/8=",
+	"go corpus sure with period":      "c3VyZS4=",
+	"go corpus sure":                  "c3VyZQ==",
+	"go corpus sur":                   "c3Vy",
+	"go corpus su":                    "c3U=",
+	"go corpus eight-byte variant":    "bGVhc3VyZS4=",
+	"go corpus seven-byte variant":    "ZWFzdXJlLg==",
+	"go corpus six-byte variant":      "YXN1cmUu",
+	"go strict canonical pad bits":    "WvLTlMrX9NpYDQlEIFlnDA==",
+}
+
+var stringBase64InvalidInputs = map[string]string{
+	"noncanonical one-byte pad bits":                              "Zh==",
+	"noncanonical two-byte pad bits":                              "Zm9=",
+	"invalid alphabet characters":                                 "!!!!",
+	"padding only":                                                "====",
+	"one symbol with three padding characters":                    "x===",
+	"leading padding":                                             "=AAA",
+	"padding in second position":                                  "A=AA",
+	"padding in third position":                                   "AA=A",
+	"data after double padding":                                   "AA==A",
+	"data after padding":                                          "AAA=AAAA",
+	"length modulo four is one":                                   "AAAAA",
+	"six symbols without required padding":                        "AAAAAA",
+	"one symbol with one padding character":                       "A=",
+	"one symbol with two padding characters":                      "A==",
+	"two symbols with one padding character":                      "AA=",
+	"six symbols with one padding character":                      "AAAAAA=",
+	"excess padding":                                              "YWJjZA=====",
+	"missing double padding":                                      "Zg",
+	"missing single padding":                                      "Zm8",
+	"padding after complete quantum":                              "Zm9v=",
+	"three padding characters after one byte":                     "Zg===",
+	"concatenated padded values":                                  "Zg==AA==",
+	"url-safe alphabet":                                           "-_8=",
+	"line feed":                                                   "Zm9v\n",
+	"carriage return and line feed":                               "Zm9v\r\n",
+	"embedded carriage return and line feed":                      "Zm\r\n9v",
+	"newline only":                                                "\n",
+	"padded data followed by newline":                             "AAA=\n",
+	"complete quantum followed by newline":                        "AAAA\n",
+	"invalid symbol followed by newline":                          "A!\n",
+	"incomplete padding followed by newline":                      "A=\n",
+	"go newline corpus trailing carriage return":                  "c3VyZQ==\r",
+	"go newline corpus trailing line feed":                        "c3VyZQ==\n",
+	"go newline corpus trailing CRLF":                             "c3VyZQ==\r\n",
+	"go newline corpus embedded CRLF":                             "c3VyZ\r\nQ==",
+	"go newline corpus interleaved carriage return and line feed": "c3V\ryZ\nQ==",
+	"go newline corpus interleaved line feed and carriage return": "c3V\nyZ\rQ==",
+	"go newline corpus before fourth symbol":                      "c3VyZ\nQ==",
+	"go newline corpus before padding":                            "c3VyZQ\n==",
+	"go newline corpus between padding":                           "c3VyZQ=\n=",
+	"go newline corpus repeated CRLF between padding":             "c3VyZQ=\r\n\r\n=",
+	"embedded space":                                              "Zm 9v",
+	"leading space":                                               " Zm9v",
+	"trailing tab":                                                "Zm9v\t",
+	"NUL byte":                                                    "Zm9v\x00",
+	"zero-width space":                                            "Zm9v\u200b",
+	"non-ASCII letter":                                            "Zm9vé",
+	"mixed standard and URL-safe alphabet":                        "AA+_",
+	"go strict noncanonical pad bits":                             "WvLTlMrX9NpYDQlEIFlnDB==",
+}
+
+func TestStringBase64(t *testing.T) {
+	runStringEncodingRuleTest(
+		t,
+		StringBase64(),
+		ErrorCodeStringBase64,
+		"string must be a valid padded Base64 value using the standard alphabet",
+		stringBase64ValidInputs,
+		stringBase64InvalidInputs,
+	)
+}
+
+func BenchmarkStringBase64(b *testing.B) {
+	benchmarkStringEncodingRule(
+		b,
+		StringBase64(),
+		stringBase64ValidInputs,
+		stringBase64InvalidInputs,
+	)
+}
+
+// The padded URL-safe corpus applies the same complete Go tables after the
+// standard-to-URL alphabet conversion and includes RFC 7515 Appendix C.
+var stringBase64URLValidInputs = map[string]string{
+	"empty":                             "",
+	"rfc 4648 one byte":                 "Zg==",
+	"rfc 4648 two bytes":                "Zm8=",
+	"rfc 4648 three bytes":              "Zm9v",
+	"rfc 4648 four bytes":               "Zm9vYg==",
+	"rfc 4648 five bytes":               "Zm9vYmE=",
+	"rfc 4648 six bytes":                "Zm9vYmFy",
+	"rfc 4648 six-byte URL form":        "FPucA9l-",
+	"rfc 4648 five-byte URL form":       "FPucA9k=",
+	"rfc 4648 four-byte URL form":       "FPucAw==",
+	"single zero byte":                  "AA==",
+	"two zero bytes":                    "AAA=",
+	"three zero bytes":                  "AAAA",
+	"six zero-bit symbols with padding": "AAAAAA==",
+	"rfc 7515 appendix C padded form":   "A-z_4ME=",
+	"url-safe alphabet characters":      "-_8=",
+	"go corpus sure with period":        "c3VyZS4=",
+	"go corpus sure":                    "c3VyZQ==",
+	"go corpus sur":                     "c3Vy",
+	"go corpus su":                      "c3U=",
+	"go corpus eight-byte variant":      "bGVhc3VyZS4=",
+	"go corpus seven-byte variant":      "ZWFzdXJlLg==",
+	"go corpus six-byte variant":        "YXN1cmUu",
+	"go strict canonical pad bits":      "WvLTlMrX9NpYDQlEIFlnDA==",
+}
+
+var stringBase64URLInvalidInputs = map[string]string{
+	"noncanonical one-byte pad bits":                              "Zh==",
+	"noncanonical two-byte pad bits":                              "Zm9=",
+	"invalid alphabet characters":                                 "!!!!",
+	"padding only":                                                "====",
+	"one symbol with three padding characters":                    "x===",
+	"leading padding":                                             "=AAA",
+	"padding in second position":                                  "A=AA",
+	"padding in third position":                                   "AA=A",
+	"data after double padding":                                   "AA==A",
+	"data after padding":                                          "AAA=AAAA",
+	"length modulo four is one":                                   "AAAAA",
+	"six symbols without required padding":                        "AAAAAA",
+	"one symbol with one padding character":                       "A=",
+	"one symbol with two padding characters":                      "A==",
+	"two symbols with one padding character":                      "AA=",
+	"six symbols with one padding character":                      "AAAAAA=",
+	"excess padding":                                              "YWJjZA=====",
+	"missing double padding":                                      "Zg",
+	"missing single padding":                                      "Zm8",
+	"padding after complete quantum":                              "Zm9v=",
+	"three padding characters after one byte":                     "Zg===",
+	"concatenated padded values":                                  "Zg==AA==",
+	"standard alphabet":                                           "+/8=",
+	"line feed":                                                   "Zm9v\n",
+	"carriage return and line feed":                               "Zm9v\r\n",
+	"embedded carriage return and line feed":                      "Zm\r\n9v",
+	"newline only":                                                "\n",
+	"padded data followed by newline":                             "AAA=\n",
+	"complete quantum followed by newline":                        "AAAA\n",
+	"invalid symbol followed by newline":                          "A!\n",
+	"incomplete padding followed by newline":                      "A=\n",
+	"go newline corpus trailing carriage return":                  "c3VyZQ==\r",
+	"go newline corpus trailing line feed":                        "c3VyZQ==\n",
+	"go newline corpus trailing CRLF":                             "c3VyZQ==\r\n",
+	"go newline corpus embedded CRLF":                             "c3VyZ\r\nQ==",
+	"go newline corpus interleaved carriage return and line feed": "c3V\ryZ\nQ==",
+	"go newline corpus interleaved line feed and carriage return": "c3V\nyZ\rQ==",
+	"go newline corpus before fourth symbol":                      "c3VyZ\nQ==",
+	"go newline corpus before padding":                            "c3VyZQ\n==",
+	"go newline corpus between padding":                           "c3VyZQ=\n=",
+	"go newline corpus repeated CRLF between padding":             "c3VyZQ=\r\n\r\n=",
+	"embedded space":                                              "Zm 9v",
+	"leading space":                                               " Zm9v",
+	"trailing tab":                                                "Zm9v\t",
+	"NUL byte":                                                    "Zm9v\x00",
+	"zero-width space":                                            "Zm9v\u200b",
+	"non-ASCII letter":                                            "Zm9vé",
+	"mixed standard and URL-safe alphabet":                        "AA+_",
+	"go strict noncanonical pad bits":                             "WvLTlMrX9NpYDQlEIFlnDB==",
+}
+
+func TestStringBase64URL(t *testing.T) {
+	runStringEncodingRuleTest(
+		t,
+		StringBase64URL(),
+		ErrorCodeStringBase64URL,
+		"string must be a valid padded URL-safe Base64 value",
+		stringBase64URLValidInputs,
+		stringBase64URLInvalidInputs,
+	)
+}
+
+func BenchmarkStringBase64URL(b *testing.B) {
+	benchmarkStringEncodingRule(
+		b,
+		StringBase64URL(),
+		stringBase64URLValidInputs,
+		stringBase64URLInvalidInputs,
+	)
+}
+
+// The raw URL-safe tables contain all 17 unique Go pairs after rawURLRef,
+// all 24 exact TestDecodeCorrupt inputs (3 valid and 21 invalid), and all 11
+// exact TestNewLineCharacters inputs (all invalid), plus RFC 7515 Appendix C
+// and strict canonical pad-bit boundaries. Overlapping literals are represented
+// once, and exact corpus inputs are not replaced by rawURLRef transformations.
+var stringBase64RawURLValidInputs = map[string]string{
+	"empty":                            "",
+	"one byte without padding":         "Zg",
+	"two bytes without padding":        "Zm8",
+	"three bytes":                      "Zm9v",
+	"four bytes without padding":       "Zm9vYg",
+	"five bytes without padding":       "Zm9vYmE",
+	"six bytes":                        "Zm9vYmFy",
+	"rfc 4648 six-byte raw URL form":   "FPucA9l-",
+	"rfc 4648 five-byte raw URL form":  "FPucA9k",
+	"rfc 4648 four-byte raw URL form":  "FPucAw",
+	"single zero byte without padding": "AA",
+	"two zero bytes without padding":   "AAA",
+	"three zero bytes":                 "AAAA",
+	"six zero-bit symbols":             "AAAAAA",
+	"rfc 7515 appendix C":              "A-z_4ME",
+	"url-safe alphabet characters":     "-_8",
+	"go corpus sure with period":       "c3VyZS4",
+	"go corpus sure":                   "c3VyZQ",
+	"go corpus sur":                    "c3Vy",
+	"go corpus su":                     "c3U",
+	"go corpus eight-byte variant":     "bGVhc3VyZS4",
+	"go corpus seven-byte variant":     "ZWFzdXJlLg",
+	"go corpus six-byte variant":       "YXN1cmUu",
+	"go strict canonical pad bits":     "WvLTlMrX9NpYDQlEIFlnDA",
+}
+
+var stringBase64RawURLInvalidInputs = map[string]string{
+	"noncanonical one-byte pad bits":                              "Zh",
+	"noncanonical two-byte pad bits":                              "Zm9",
+	"length modulo four is one":                                   "A",
+	"longer length modulo four is one":                            "AAAAA",
+	"single padding character":                                    "Zm8=",
+	"double padding characters":                                   "Zg==",
+	"padding after complete quantum":                              "Zm9v=",
+	"standard alphabet":                                           "+/8",
+	"line feed":                                                   "Zm9v\n",
+	"carriage return and line feed":                               "Zm9v\r\n",
+	"embedded carriage return and line feed":                      "Zm\r\n9v",
+	"embedded space":                                              "Zm 9v",
+	"leading space":                                               " Zm9v",
+	"trailing tab":                                                "Zm9v\t",
+	"NUL byte":                                                    "Zm9v\x00",
+	"zero-width space":                                            "Zm9v\u200b",
+	"non-ASCII letter":                                            "Zm9vé",
+	"mixed standard and URL-safe alphabet":                        "AA+_",
+	"go strict noncanonical pad bits":                             "WvLTlMrX9NpYDQlEIFlnDB",
+	"go corrupt corpus newline only":                              "\n",
+	"go corrupt corpus padded data followed by newline":           "AAA=\n",
+	"go corrupt corpus complete quantum followed by newline":      "AAAA\n",
+	"go corrupt corpus invalid alphabet":                          "!!!!",
+	"go corrupt corpus padding only":                              "====",
+	"go corrupt corpus excess padding after one symbol":           "x===",
+	"go corrupt corpus leading padding":                           "=AAA",
+	"go corrupt corpus padding in second position":                "A=AA",
+	"go corrupt corpus padding in third position":                 "AA=A",
+	"go corrupt corpus data after double padding":                 "AA==A",
+	"go corrupt corpus data after padding":                        "AAA=AAAA",
+	"go corrupt corpus one symbol with padding":                   "A=",
+	"go corrupt corpus one symbol with double padding":            "A==",
+	"go corrupt corpus two symbols with padding":                  "AA=",
+	"go corrupt corpus two symbols with double padding":           "AA==",
+	"go corrupt corpus three symbols with padding":                "AAA=",
+	"go corrupt corpus excess padding after six symbols":          "AAAAAA=",
+	"go corrupt corpus excess terminal padding":                   "YWJjZA=====",
+	"go corrupt corpus invalid symbol followed by newline":        "A!\n",
+	"go corrupt corpus incomplete padding followed by newline":    "A=\n",
+	"go newline corpus padded base":                               "c3VyZQ==",
+	"go newline corpus trailing carriage return":                  "c3VyZQ==\r",
+	"go newline corpus trailing line feed":                        "c3VyZQ==\n",
+	"go newline corpus trailing CRLF":                             "c3VyZQ==\r\n",
+	"go newline corpus embedded CRLF":                             "c3VyZ\r\nQ==",
+	"go newline corpus interleaved carriage return and line feed": "c3V\ryZ\nQ==",
+	"go newline corpus interleaved line feed and carriage return": "c3V\nyZ\rQ==",
+	"go newline corpus before fourth symbol":                      "c3VyZ\nQ==",
+	"go newline corpus before padding":                            "c3VyZQ\n==",
+	"go newline corpus between padding":                           "c3VyZQ=\n=",
+	"go newline corpus repeated CRLF between padding":             "c3VyZQ=\r\n\r\n=",
+}
+
+func TestStringBase64RawURL(t *testing.T) {
+	runStringEncodingRuleTest(
+		t,
+		StringBase64RawURL(),
+		ErrorCodeStringBase64RawURL,
+		"string must be a valid URL-safe Base64 value without padding",
+		stringBase64RawURLValidInputs,
+		stringBase64RawURLInvalidInputs,
+	)
+}
+
+func BenchmarkStringBase64RawURL(b *testing.B) {
+	benchmarkStringEncodingRule(
+		b,
+		StringBase64RawURL(),
+		stringBase64RawURLValidInputs,
+		stringBase64RawURLInvalidInputs,
+	)
+}
+
+// Corpus sources: RFC 4648 section 10 and golang/go commit
+// fefb02adf45c4bcc879bd406a8d61f2a292c26a9 (Go 1.25.5),
+// src/encoding/hex/hex_test.go. All 8 Go encode/decode inputs and all 9
+// error-table inputs are represented. Empty is invalid under this rule's
+// nonempty digit-string contract, while Go's three odd-length error inputs are
+// valid here.
+var stringHexadecimalValidInputs = map[string]string{
+	"two digits":                            "66",
+	"four digits":                           "666F",
+	"six digits":                            "666F6F",
+	"eight digits":                          "666F6F62",
+	"ten digits":                            "666F6F6261",
+	"twelve digits":                         "666F6F626172",
+	"single digit":                          "F",
+	"two zero digits":                       "00",
+	"lowercase":                             "deadbeef",
+	"uppercase":                             "DEADBEEF",
+	"lowercase prefix":                      "0xdeadBEEF",
+	"uppercase prefix":                      "0XABCDEF",
+	"lowercase prefix with one digit":       "0x0",
+	"uppercase prefix with one digit":       "0Xf",
+	"hex digits beginning with lowercase b": "0b1010",
+	"hex digits beginning with uppercase B": "0B1010",
+	"go byte range zero through seven":      "0001020304050607",
+	"go byte range eight through fifteen":   "08090a0b0c0d0e0f",
+	"go byte range f0 through f7":           "f0f1f2f3f4f5f6f7",
+	"go byte range f8 through ff":           "f8f9fafbfcfdfeff",
+	"go single byte":                        "67",
+	"go two bytes":                          "e3a1",
+	"go uppercase byte range":               "F8F9FAFBFCFDFEFF",
+	"go odd single digit":                   "0",
+	"go odd numeric sequence":               "30313",
+	"go odd alphabetic sequence":            "ffeed",
+}
+
+var stringHexadecimalInvalidInputs = map[string]string{
+	"empty":                            "",
+	"lowercase prefix only":            "0x",
+	"uppercase prefix only":            "0X",
+	"repeated prefix":                  "0x0x1",
+	"prefix after digit":               "10x1",
+	"minus sign":                       "-0x1",
+	"plus sign":                        "+F",
+	"underscore":                       "dead_beef",
+	"leading whitespace":               " deadbeef",
+	"trailing whitespace":              "deadbeef ",
+	"invalid digit G":                  "G",
+	"full-width F":                     "\uff26",
+	"Arabic-Indic digit":               "\u0660",
+	"NUL byte":                         "00\x00",
+	"octal prefix":                     "0o755",
+	"go invalid first digit":           "zd4aa",
+	"go invalid final digit":           "d4aaz",
+	"go invalid second digit":          "0g",
+	"go invalid trailing digits":       "00gg",
+	"go control byte":                  "0\x01",
+	"prefix after zero digit":          "00x1",
+	"plus before prefix":               "+0x1",
+	"underscore after prefix":          "0x1_2",
+	"leading whitespace before prefix": " 0x1",
+	"trailing whitespace after prefix": "0x1 ",
+	"whitespace after prefix":          "0x 1",
+	"invalid prefixed digit G":         "0xG",
+	"full-width digits":                "１２",
+	"non-ASCII letter":                 "é",
+	"NUL byte only":                    "\x00",
+	"audit octal prefix":               "0o77",
+}
+
+func TestStringHexadecimal(t *testing.T) {
+	runStringEncodingRuleTest(
+		t,
+		StringHexadecimal(),
+		ErrorCodeStringHexadecimal,
+		"string must be a valid hexadecimal value",
+		stringHexadecimalValidInputs,
+		stringHexadecimalInvalidInputs,
+	)
+}
+
+func Test_isHexadecimalMatchesRegexp(t *testing.T) {
+	reference := regexp.MustCompile(`^(?:0[xX])?[0-9a-fA-F]+$`)
+	check := func(input string) {
+		expected := reference.MatchString(input)
+		if actual := isHexadecimal(input); actual != expected {
+			t.Fatalf("isHexadecimal(%q) = %t, expected %t", input, actual, expected)
+		}
+	}
+
+	for _, prefix := range []string{"", "0x", "0X"} {
+		check(prefix)
+		for first := range 256 {
+			check(prefix + string([]byte{byte(first)}))
+			for second := range 256 {
+				check(prefix + string([]byte{byte(first), byte(second)}))
+			}
+		}
+	}
+}
+
+func BenchmarkStringHexadecimal(b *testing.B) {
+	benchmarkStringEncodingRule(
+		b,
+		StringHexadecimal(),
+		stringHexadecimalValidInputs,
+		stringHexadecimalInvalidInputs,
+	)
+}
+
+func runStringEncodingRuleTest(
+	t *testing.T,
+	rule govy.Rule[string],
+	errorCode govy.ErrorCode,
+	expectedError string,
+	validInputs map[string]string,
+	invalidInputs map[string]string,
+) {
+	t.Helper()
+	t.Run("valid", func(t *testing.T) {
+		for name, in := range validInputs {
+			t.Run(name, func(t *testing.T) {
+				assert.NoError(t, rule.Validate(in))
+			})
+		}
+	})
+	t.Run("invalid", func(t *testing.T) {
+		for name, in := range invalidInputs {
+			t.Run(name, func(t *testing.T) {
+				err := rule.Validate(in)
+				assert.EqualError(t, err, expectedError)
+				assert.True(t, govy.HasErrorCode(err, errorCode))
+			})
+		}
+	})
+}
+
+func benchmarkStringEncodingRule(
+	b *testing.B,
+	rule govy.Rule[string],
+	validInputs map[string]string,
+	invalidInputs map[string]string,
+) {
+	b.Helper()
+	b.Run("valid", func(b *testing.B) {
+		benchmarkStringEncodingInputs(b, rule, validInputs)
+	})
+	b.Run("invalid", func(b *testing.B) {
+		benchmarkStringEncodingInputs(b, rule, invalidInputs)
+	})
+}
+
+func benchmarkStringEncodingInputs(
+	b *testing.B,
+	rule govy.Rule[string],
+	inputs map[string]string,
+) {
+	b.Helper()
+	for b.Loop() {
+		for _, in := range inputs {
+			_ = rule.Validate(in)
+		}
+	}
+	b.ReportMetric(float64(len(inputs)), "validations/op")
+}
+
+const (
+	stringEINErrorMessage = "string must be a valid Employer Identification Number (EIN)"
+	stringSSNErrorMessage = "string must be a valid Social Security Number (SSN)"
+)
+
+type stringTaxIDTestCase struct {
+	name       string
+	in         string
+	shouldPass bool
+}
+
+// stringEINRecognizedPrefixes is the complete set of distinct prefixes
+// published by the IRS "Valid EINs" page, updated 2026-04-09.
+// https://www.irs.gov/businesses/small-businesses-self-employed/valid-eins
+var stringEINRecognizedPrefixes = map[string]struct{}{
+	"01": {}, "02": {}, "03": {}, "04": {}, "05": {}, "06": {},
+	"10": {}, "11": {}, "12": {}, "13": {}, "14": {}, "15": {}, "16": {},
+	"20": {}, "21": {}, "22": {}, "23": {}, "24": {}, "25": {}, "26": {}, "27": {},
+	"30": {}, "31": {}, "32": {}, "33": {}, "34": {}, "35": {}, "36": {}, "37": {}, "38": {}, "39": {},
+	"40": {}, "41": {}, "42": {}, "43": {}, "44": {}, "45": {}, "46": {}, "47": {}, "48": {},
+	"50": {}, "51": {}, "52": {}, "53": {}, "54": {}, "55": {}, "56": {}, "57": {}, "58": {}, "59": {},
+	"60": {}, "61": {}, "62": {}, "63": {}, "64": {}, "65": {}, "66": {}, "67": {}, "68": {},
+	"71": {}, "72": {}, "73": {}, "74": {}, "75": {}, "76": {}, "77": {},
+	"80": {}, "81": {}, "82": {}, "83": {}, "84": {}, "85": {}, "86": {}, "87": {}, "88": {},
+	"90": {}, "91": {}, "92": {}, "93": {}, "94": {}, "95": {}, "98": {}, "99": {},
+}
+
+var (
+	stringEINPrefixTestCases            = generateStringEINPrefixTestCases()
+	stringEINAcceptedStructureTestCases = []stringTaxIDTestCase{
+		{name: "lowest recognized prefix", in: "01-0000001", shouldPass: true},
+		{name: "highest recognized prefix", in: "99-9999999", shouldPass: true},
+	}
+	stringEINRejectedStructureTestCases = []stringTaxIDTestCase{
+		{name: "empty input", in: ""},
+		{name: "missing separator", in: "123456789"},
+		{name: "one-digit prefix", in: "1-3456789"},
+		{name: "three-digit prefix", in: "012-3456789"},
+		{name: "short serial", in: "12-345678"},
+		{name: "long serial", in: "12-34567890"},
+		{name: "letter prefix", in: "AB-3456789"},
+		{name: "letter serial", in: "12-345678A"},
+		{name: "space separator", in: "12 3456789"},
+		{name: "underscore separator", in: "12_3456789"},
+		{name: "en dash separator", in: "12–3456789"},
+		{name: "double separator", in: "12--3456789"},
+		{name: "leading whitespace", in: " 12-3456789"},
+		{name: "trailing whitespace", in: "12-3456789 "},
+		{name: "full-width digits", in: "１２-３４５６７８９"},
+		{name: "trailing newline", in: "12-3456789\n"},
+	}
+)
+
+// IRS IRM 3.13.5.21 (2022-01-01) lists the never-issued examples below.
+// https://www.irs.gov/irm/part3/irm_03-013-005
+var (
+	stringSSNAcceptedStructureTestCases = []stringTaxIDTestCase{
+		{name: "lowest structural fields", in: "001-01-0001", shouldPass: true},
+		{name: "area below 666", in: "665-99-9999", shouldPass: true},
+		{name: "area above 666", in: "667-01-0001", shouldPass: true},
+		{name: "area 772", in: "772-01-0001", shouldPass: true},
+		{name: "area 800", in: "800-01-0001", shouldPass: true},
+		{name: "highest structural fields", in: "899-99-9999", shouldPass: true},
+		{name: "IRS never-issued example 111 is structurally valid", in: "111-11-1111", shouldPass: true},
+		{name: "IRS never-issued example 222 is structurally valid", in: "222-22-2222", shouldPass: true},
+		{name: "IRS never-issued example 777 is structurally valid", in: "777-77-7777", shouldPass: true},
+		{name: "IRS never-issued example 123 is structurally valid", in: "123-45-6789", shouldPass: true},
+	}
+	stringSSNRejectedStructureTestCases = []stringTaxIDTestCase{
+		{name: "empty input", in: ""},
+		{name: "zero area", in: "000-01-0001"},
+		{name: "IRS never-issued area 666", in: "666-66-6666"},
+		{name: "area 900", in: "900-01-0001"},
+		{name: "area 901", in: "901-01-0001"},
+		{name: "area 998", in: "998-01-0001"},
+		{name: "area 999", in: "999-01-0001"},
+		{name: "zero group", in: "001-00-0001"},
+		{name: "zero serial", in: "001-01-0000"},
+		{name: "short area", in: "01-01-0001"},
+		{name: "long area", in: "0001-01-0001"},
+		{name: "short group", in: "001-1-0001"},
+		{name: "long group", in: "001-001-0001"},
+		{name: "short serial", in: "001-01-001"},
+		{name: "long serial", in: "001-01-00001"},
+		{name: "letter area", in: "00A-01-0001"},
+		{name: "letter group", in: "001-0A-0001"},
+		{name: "letter serial", in: "001-01-000A"},
+		{name: "missing separators", in: "001010001"},
+		{name: "slash separators", in: "001/01/0001"},
+		{name: "en dash separators", in: "001–01–0001"},
+		{name: "space separators", in: "001 01 0001"},
+		{name: "leading whitespace", in: " 001-01-0001"},
+		{name: "trailing whitespace", in: "001-01-0001 "},
+		{name: "full-width digits", in: "００１-０１-０００１"},
+		{name: "trailing newline", in: "001-01-0001\n"},
+		{name: "EIN-shaped input", in: "12-3456789"},
+	}
+	stringSSNAreaTestCases   = generateStringSSNAreaTestCases()
+	stringSSNGroupTestCases  = generateStringSSNGroupTestCases()
+	stringSSNSerialTestCases = generateStringSSNSerialTestCases()
+)
+
+func TestStringEIN(t *testing.T) {
+	t.Parallel()
+
+	rule := StringEIN()
+	assert.Require(t, assert.Len(t, stringEINRecognizedPrefixes, 83))
+
+	t.Run("IRS prefix corpus", func(t *testing.T) {
+		t.Parallel()
+
+		recognizedCount := 0
+		unrecognizedCount := 0
+		for _, tc := range stringEINPrefixTestCases {
+			if tc.shouldPass {
+				recognizedCount++
+			} else {
+				unrecognizedCount++
+			}
+			t.Run(tc.name, func(t *testing.T) {
+				assertTaxIDRuleValidity(
+					t,
+					rule,
+					tc.in,
+					tc.shouldPass,
+					stringEINErrorMessage,
+					ErrorCodeStringEIN,
+				)
+			})
+		}
+		assert.Equal(t, 83, recognizedCount)
+		assert.Equal(t, 17, unrecognizedCount)
+	})
+
+	t.Run("accepted structures", func(t *testing.T) {
+		t.Parallel()
+
+		for _, tc := range stringEINAcceptedStructureTestCases {
+			t.Run(tc.name, func(t *testing.T) {
+				t.Parallel()
+
+				assertTaxIDRuleValidity(
+					t,
+					rule,
+					tc.in,
+					tc.shouldPass,
+					stringEINErrorMessage,
+					ErrorCodeStringEIN,
+				)
+			})
+		}
+	})
+	t.Run("rejected structures", func(t *testing.T) {
+		t.Parallel()
+
+		for _, tc := range stringEINRejectedStructureTestCases {
+			t.Run(tc.name, func(t *testing.T) {
+				t.Parallel()
+
+				assertTaxIDRuleValidity(
+					t,
+					rule,
+					tc.in,
+					tc.shouldPass,
+					stringEINErrorMessage,
+					ErrorCodeStringEIN,
+				)
+			})
+		}
+	})
+}
+
+func TestStringSSN(t *testing.T) {
+	t.Parallel()
+
+	rule := StringSSN()
+	t.Run("accepted structures", func(t *testing.T) {
+		t.Parallel()
+
+		for _, tc := range stringSSNAcceptedStructureTestCases {
+			t.Run(tc.name, func(t *testing.T) {
+				t.Parallel()
+
+				assertTaxIDRuleValidity(
+					t,
+					rule,
+					tc.in,
+					tc.shouldPass,
+					stringSSNErrorMessage,
+					ErrorCodeStringSSN,
+				)
+			})
+		}
+	})
+	t.Run("rejected structures", func(t *testing.T) {
+		t.Parallel()
+
+		for _, tc := range stringSSNRejectedStructureTestCases {
+			t.Run(tc.name, func(t *testing.T) {
+				t.Parallel()
+
+				assertTaxIDRuleValidity(
+					t,
+					rule,
+					tc.in,
+					tc.shouldPass,
+					stringSSNErrorMessage,
+					ErrorCodeStringSSN,
+				)
+			})
+		}
+	})
+}
+
+func TestStringSSN_StructuralFields(t *testing.T) {
+	t.Parallel()
+
+	rule := StringSSN()
+	// SSA POMS RM 10201.035 (2011-06-23) defines these structural exclusions.
+	// https://secure.ssa.gov/poms.nsf/lnx/0110201035
+	t.Run("areas 000 through 999", func(t *testing.T) {
+		t.Parallel()
+
+		validCount := 0
+		invalidCount := 0
+		for _, tc := range stringSSNAreaTestCases {
+			if tc.shouldPass {
+				validCount++
+			} else {
+				invalidCount++
+			}
+			t.Run(tc.name, func(t *testing.T) {
+				assertTaxIDRuleValidity(
+					t,
+					rule,
+					tc.in,
+					tc.shouldPass,
+					stringSSNErrorMessage,
+					ErrorCodeStringSSN,
+				)
+			})
+		}
+		assert.Equal(t, 898, validCount)
+		assert.Equal(t, 102, invalidCount)
+	})
+	t.Run("groups 00 through 99", func(t *testing.T) {
+		t.Parallel()
+
+		validCount := 0
+		invalidCount := 0
+		for _, tc := range stringSSNGroupTestCases {
+			if tc.shouldPass {
+				validCount++
+			} else {
+				invalidCount++
+			}
+			t.Run(tc.name, func(t *testing.T) {
+				assertTaxIDRuleValidity(
+					t,
+					rule,
+					tc.in,
+					tc.shouldPass,
+					stringSSNErrorMessage,
+					ErrorCodeStringSSN,
+				)
+			})
+		}
+		assert.Equal(t, 99, validCount)
+		assert.Equal(t, 1, invalidCount)
+	})
+	t.Run("serials 0000 through 9999", func(t *testing.T) {
+		t.Parallel()
+
+		validCount := 0
+		invalidCount := 0
+		for _, tc := range stringSSNSerialTestCases {
+			if tc.shouldPass {
+				validCount++
+			} else {
+				invalidCount++
+			}
+			t.Run(tc.name, func(t *testing.T) {
+				assertTaxIDRuleValidity(
+					t,
+					rule,
+					tc.in,
+					tc.shouldPass,
+					stringSSNErrorMessage,
+					ErrorCodeStringSSN,
+				)
+			})
+		}
+		assert.Equal(t, 9_999, validCount)
+		assert.Equal(t, 1, invalidCount)
+	})
+}
+
+func BenchmarkStringEIN(b *testing.B) {
+	rule := StringEIN()
+	benchmarkStringTaxIDRule(
+		b,
+		rule,
+		stringEINPrefixTestCases,
+		stringEINAcceptedStructureTestCases,
+		stringEINRejectedStructureTestCases,
+	)
+}
+
+func BenchmarkStringSSN(b *testing.B) {
+	rule := StringSSN()
+	benchmarkStringTaxIDRule(
+		b,
+		rule,
+		stringSSNAcceptedStructureTestCases,
+		stringSSNRejectedStructureTestCases,
+		stringSSNAreaTestCases,
+		stringSSNGroupTestCases,
+		stringSSNSerialTestCases,
+	)
+}
+
+func benchmarkStringTaxIDRule(
+	b *testing.B,
+	rule govy.Rule[string],
+	testCaseGroups ...[]stringTaxIDTestCase,
+) {
+	b.Helper()
+	for b.Loop() {
+		for _, testCases := range testCaseGroups {
+			for _, tc := range testCases {
+				_ = rule.Validate(tc.in)
+			}
+		}
+	}
+}
+
+func assertTaxIDRuleValidity(
+	t *testing.T,
+	rule govy.Rule[string],
+	in string,
+	shouldPass bool,
+	expectedError string,
+	errorCode govy.ErrorCode,
+) {
+	t.Helper()
+	err := rule.Validate(in)
+	if shouldPass {
+		assert.NoError(t, err)
+		return
+	}
+	assert.EqualError(t, err, expectedError)
+	assert.True(t, govy.HasErrorCode(err, errorCode))
+}
+
+func generateStringEINPrefixTestCases() []stringTaxIDTestCase {
+	testCases := make([]stringTaxIDTestCase, 0, 100)
+	for prefixNumber := range 100 {
+		prefix := fmt.Sprintf("%02d", prefixNumber)
+		_, shouldPass := stringEINRecognizedPrefixes[prefix]
+		testCases = append(testCases, stringTaxIDTestCase{
+			name:       prefix,
+			in:         prefix + "-3456789",
+			shouldPass: shouldPass,
+		})
+	}
+	return testCases
+}
+
+func generateStringSSNAreaTestCases() []stringTaxIDTestCase {
+	testCases := make([]stringTaxIDTestCase, 0, 1_000)
+	for area := range 1_000 {
+		ssn := fmt.Sprintf("%03d-01-0001", area)
+		testCases = append(testCases, stringTaxIDTestCase{
+			name:       ssn,
+			in:         ssn,
+			shouldPass: area != 0 && area != 666 && area < 900,
+		})
+	}
+	return testCases
+}
+
+func generateStringSSNGroupTestCases() []stringTaxIDTestCase {
+	testCases := make([]stringTaxIDTestCase, 0, 100)
+	for group := range 100 {
+		ssn := fmt.Sprintf("001-%02d-0001", group)
+		testCases = append(testCases, stringTaxIDTestCase{
+			name:       ssn,
+			in:         ssn,
+			shouldPass: group != 0,
+		})
+	}
+	return testCases
+}
+
+func generateStringSSNSerialTestCases() []stringTaxIDTestCase {
+	testCases := make([]stringTaxIDTestCase, 0, 10_000)
+	for serial := range 10_000 {
+		ssn := fmt.Sprintf("001-01-%04d", serial)
+		testCases = append(testCases, stringTaxIDTestCase{
+			name:       ssn,
+			in:         ssn,
+			shouldPass: serial != 0,
+		})
+	}
+	return testCases
 }
 
 // The first seven values are the complete RFC 1321 Appendix A.5 output suite:
@@ -3338,6 +4610,102 @@ func BenchmarkStringKubernetesQualifiedName(b *testing.B) {
 	}
 }
 
+func benchmarkStringPaymentBankingRule(
+	b *testing.B,
+	rule govy.Rule[string],
+	testCases stringPaymentBankingTestCases,
+) {
+	b.Helper()
+	for b.Loop() {
+		for _, in := range testCases.validInputs {
+			_ = rule.Validate(in)
+		}
+		for _, in := range testCases.invalidInputs {
+			_ = rule.Validate(in)
+		}
+	}
+}
+
+func assertPaymentBankingRule(
+	t *testing.T,
+	rule govy.Rule[string],
+	testCases stringPaymentBankingTestCases,
+	expectedError string,
+	errorCode govy.ErrorCode,
+) {
+	t.Helper()
+	t.Run("valid inputs", func(t *testing.T) {
+		for name, in := range testCases.validInputs {
+			t.Run(name, func(t *testing.T) {
+				assert.NoError(t, rule.Validate(in))
+			})
+		}
+	})
+	t.Run("invalid inputs", func(t *testing.T) {
+		for name, in := range testCases.invalidInputs {
+			t.Run(name, func(t *testing.T) {
+				assertPaymentBankingRuleError(t, rule.Validate(in), expectedError, errorCode)
+			})
+		}
+	})
+}
+
+func assertPaymentBankingRuleError(
+	t *testing.T,
+	err error,
+	expectedError string,
+	errorCode govy.ErrorCode,
+) {
+	t.Helper()
+	assert.Require(t, assert.EqualError(t, err, expectedError))
+	assert.Require(t, assert.IsType[*govy.RuleError](t, err))
+	ruleError := err.(*govy.RuleError)
+	assert.Equal(t, expectedError, ruleError.Description)
+	assert.Equal(t, errorCode, ruleError.Code)
+}
+
+func assertBICPredicatesMatchRegexpOracle(
+	t *testing.T,
+	oracle *regexp.Regexp,
+	input string,
+) {
+	t.Helper()
+	expected := oracle.MatchString(input)
+	if expected {
+		expected = isValidBICCountryCode(input[4:6])
+	}
+	for name, predicate := range map[string]func(string) bool{
+		"isValidBIC":            isValidBIC,
+		"isValidBICISO93622014": isValidBICISO93622014,
+	} {
+		if actual := predicate(input); actual != expected {
+			t.Errorf("%s(%q) = %t, regexp oracle = %t", name, input, actual, expected)
+		}
+	}
+}
+
+func readISOAlpha2CountryCodes(t *testing.T) []string {
+	t.Helper()
+	_, codes := readTestDataFields(t, "testdata/iso_3166_1_alpha2_2026-07-21.txt")
+	return codes
+}
+
+func readTestDataFields(t *testing.T, path string) (raw string, fields []string) {
+	t.Helper()
+	data, err := os.ReadFile(path)
+	assert.Require(t, assert.NoError(t, err))
+
+	raw = string(data)
+	for line := range strings.Lines(raw) {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		fields = append(fields, strings.Fields(line)...)
+	}
+	return raw, fields
+}
+
 func testStringFormatIDRule(
 	t *testing.T,
 	rule govy.Rule[string],
@@ -3479,4 +4847,574 @@ func loadNISTDigestOutputs(t *testing.T, fixture string, expectedCount, digestLe
 		seen[digest] = line + 1
 	}
 	return digests
+}
+
+var validISBNTestCases = map[string]string{
+	"isbn 10 hyphenated":                  "0-306-40615-2",
+	"isbn 10 plain":                       "0306406152",
+	"isbn 10 x check":                     "0-9752298-0-X",
+	"isbn 10 spaced":                      "0 9752298 0 x",
+	"isbn 10 library converter numeric":   "0394170660",
+	"isbn 10 library converter alternate": "0717941728",
+	"isbn 10 library converter x check":   "087779443X",
+	"isbn 10 MARC hyphenated":             "0-87068-693-3",
+	"isbn 13 hyphenated":                  "978-0-306-40615-7",
+	"isbn 13 plain":                       "9780306406157",
+	"isbn 13 grouped":                     "978-3-16-148410-0",
+	"isbn 13 agency manual hyphenated":    "978-92-95055-12-4",
+	"isbn 13 agency manual spaced":        "978 92 95055 12 4",
+	"isbn 13 agency manual compact":       "9789295055124",
+	"isbn 13 agency manual hardback":      "978-951-45-9693-3",
+	"isbn 13 agency manual paperback":     "978-951-45-9694-0",
+	"isbn 13 agency manual PDF":           "978-951-45-9695-7",
+	"isbn 13 agency manual EPUB":          "978-951-45-9696-4",
+	"isbn 13 library converter first":     "9780060723804",
+	"isbn 13 library converter second":    "9780060799748",
+	"isbn 13 979 prefix":                  "979-10-90636-07-1",
+}
+
+var invalidISBNTestCases = map[string]string{
+	"empty":                               "",
+	"isbn 10 failed check":                "0-306-40615-3",
+	"isbn 10 x check mutation":            "0877794430",
+	"isbn 10 x in body":                   "08777X443X",
+	"isbn 10 x in fourth position":        "087X79443X",
+	"isbn 10 short":                       "087779443",
+	"isbn 10 trailing space":              "087779443X ",
+	"isbn 13 failed check":                "978-0-306-40615-8",
+	"isbn 13 manual check mutation":       "978-92-95055-12-5",
+	"isbn 13 checksum valid wrong prefix": "9779295055125",
+	"isbn 13 x in body":                   "978-92-X5055-12-4",
+	"isbn 13 x check":                     "978-92-95055-12-X",
+	"isbn 13 en dash separators":          "978–92–95055–12–4",
+	"isbn 13 full width digits":           "９７８９２９５０５５１２４",
+	"isbn 13 display prefix":              "ISBN 978-92-95055-12-4",
+	"repeated separator":                  "978--0-306-40615-7",
+	"letters":                             "abc",
+}
+
+func TestStringISBN(t *testing.T) {
+	rule := StringISBN()
+	t.Run("valid inputs", func(t *testing.T) {
+		for name, input := range validISBNTestCases {
+			t.Run(name, func(t *testing.T) {
+				assert.NoError(t, rule.Validate(input))
+			})
+		}
+	})
+	t.Run("invalid inputs", func(t *testing.T) {
+		for name, input := range invalidISBNTestCases {
+			t.Run(name, func(t *testing.T) {
+				err := rule.Validate(input)
+				assert.EqualError(
+					t,
+					err,
+					"string must be a valid International Standard Book Number (ISBN) in ISBN-10 or ISBN-13 format",
+				)
+				assert.True(t, govy.HasErrorCode(err, ErrorCodeStringISBN))
+			})
+		}
+	})
+}
+
+func TestStringISBN_VeryLargeInvalid(t *testing.T) {
+	input := strings.Repeat("0", 1<<20)
+	tests := map[string]struct {
+		rule    govy.Rule[string]
+		message string
+		code    govy.ErrorCode
+	}{
+		"isbn": {
+			rule:    StringISBN(),
+			message: "string must be a valid International Standard Book Number (ISBN) in ISBN-10 or ISBN-13 format",
+			code:    ErrorCodeStringISBN,
+		},
+		"isbn-10": {
+			rule:    StringISBN10(),
+			message: "string must be a valid International Standard Book Number (ISBN) in ISBN-10 format",
+			code:    ErrorCodeStringISBN10,
+		},
+		"isbn-13": {
+			rule:    StringISBN13(),
+			message: "string must be a valid International Standard Book Number (ISBN) in ISBN-13 format",
+			code:    ErrorCodeStringISBN13,
+		},
+	}
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			err := test.rule.Validate(input)
+			assert.EqualError(t, err, test.message)
+			assert.True(t, govy.HasErrorCode(err, test.code))
+		})
+	}
+}
+
+func BenchmarkStringISBN(b *testing.B) {
+	benchmarkStringPublicationRule(
+		b,
+		StringISBN(),
+		validISBNTestCases,
+		invalidISBNTestCases,
+	)
+}
+
+func BenchmarkStringISBNVeryLargeInvalid(b *testing.B) {
+	rule := StringISBN()
+	input := strings.Repeat("0", 1<<20)
+
+	for b.Loop() {
+		_ = rule.Validate(input)
+	}
+	b.ReportMetric(1, "validations/op")
+}
+
+var validISBN10TestCases = map[string]string{
+	"hyphenated":                  "0-306-40615-2",
+	"plain":                       "0306406152",
+	"x check":                     "0-9752298-0-X",
+	"spaced":                      "0 9752298 0 x",
+	"library converter numeric":   "0394170660",
+	"library converter alternate": "0717941728",
+	"library converter x check":   "087779443X",
+	"MARC hyphenated":             "0-87068-693-3",
+}
+
+var invalidISBN10TestCases = map[string]string{
+	"empty":                "",
+	"failed check":         "0-306-40615-3",
+	"x check mutation":     "0877794430",
+	"x in body":            "08777X443X",
+	"x in fourth position": "087X79443X",
+	"short":                "087779443",
+	"trailing space":       "087779443X ",
+	"isbn 13":              "978-0-306-40615-7",
+	"isbn 13 plain":        "9780306406157",
+	"repeated separator":   "0-306--40615-2",
+}
+
+func TestStringISBN10(t *testing.T) {
+	rule := StringISBN10()
+	t.Run("valid inputs", func(t *testing.T) {
+		for name, input := range validISBN10TestCases {
+			t.Run(name, func(t *testing.T) {
+				assert.NoError(t, rule.Validate(input))
+			})
+		}
+	})
+	t.Run("invalid inputs", func(t *testing.T) {
+		for name, input := range invalidISBN10TestCases {
+			t.Run(name, func(t *testing.T) {
+				err := rule.Validate(input)
+				assert.EqualError(
+					t,
+					err,
+					"string must be a valid International Standard Book Number (ISBN) in ISBN-10 format",
+				)
+				assert.True(t, govy.HasErrorCode(err, ErrorCodeStringISBN10))
+			})
+		}
+	})
+}
+
+func BenchmarkStringISBN10(b *testing.B) {
+	benchmarkStringPublicationRule(
+		b,
+		StringISBN10(),
+		validISBN10TestCases,
+		invalidISBN10TestCases,
+	)
+}
+
+var validISBN13TestCases = map[string]string{
+	"hyphenated":               "978-0-306-40615-7",
+	"plain":                    "9780306406157",
+	"grouped":                  "978-3-16-148410-0",
+	"agency manual hyphenated": "978-92-95055-12-4",
+	"agency manual spaced":     "978 92 95055 12 4",
+	"agency manual compact":    "9789295055124",
+	"agency manual hardback":   "978-951-45-9693-3",
+	"agency manual paperback":  "978-951-45-9694-0",
+	"agency manual PDF":        "978-951-45-9695-7",
+	"agency manual EPUB":       "978-951-45-9696-4",
+	"library converter first":  "9780060723804",
+	"library converter second": "9780060799748",
+	"979 prefix":               "979-10-90636-07-1",
+}
+
+var invalidISBN13TestCases = map[string]string{
+	"empty":                       "",
+	"isbn 10":                     "0-306-40615-2",
+	"failed check":                "978-0-306-40615-8",
+	"manual check mutation":       "978-92-95055-12-5",
+	"checksum valid wrong prefix": "9779295055125",
+	"x in body":                   "978-92-X5055-12-4",
+	"x check":                     "978-92-95055-12-X",
+	"en dash separators":          "978–92–95055–12–4",
+	"full width digits":           "９７８９２９５０５５１２４",
+	"display prefix":              "ISBN 978-92-95055-12-4",
+	"invalid prefix":              "9770306406157",
+	"trailing space":              "978 0 306 40615 7 ",
+}
+
+func TestStringISBN13(t *testing.T) {
+	rule := StringISBN13()
+	t.Run("valid inputs", func(t *testing.T) {
+		for name, input := range validISBN13TestCases {
+			t.Run(name, func(t *testing.T) {
+				assert.NoError(t, rule.Validate(input))
+			})
+		}
+	})
+	t.Run("invalid inputs", func(t *testing.T) {
+		for name, input := range invalidISBN13TestCases {
+			t.Run(name, func(t *testing.T) {
+				err := rule.Validate(input)
+				assert.EqualError(
+					t,
+					err,
+					"string must be a valid International Standard Book Number (ISBN) in ISBN-13 format",
+				)
+				assert.True(t, govy.HasErrorCode(err, ErrorCodeStringISBN13))
+			})
+		}
+	})
+}
+
+func TestISBNPredicatesMatchReference(t *testing.T) {
+	tests := map[string]struct {
+		predicate func(string) bool
+		reference func(string) bool
+		inputs    []map[string]string
+	}{
+		"isbn": {
+			predicate: isISBN,
+			reference: referenceISBN,
+			inputs: []map[string]string{
+				validISBNTestCases,
+				invalidISBNTestCases,
+			},
+		},
+		"isbn-10": {
+			predicate: isISBN10,
+			reference: referenceISBN10,
+			inputs: []map[string]string{
+				validISBN10TestCases,
+				invalidISBN10TestCases,
+			},
+		},
+		"isbn-13": {
+			predicate: isISBN13,
+			reference: referenceISBN13,
+			inputs: []map[string]string{
+				validISBN13TestCases,
+				invalidISBN13TestCases,
+			},
+		},
+	}
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			testStringPredicateMatchesReference(t, test.predicate, test.reference, test.inputs...)
+		})
+	}
+}
+
+func BenchmarkStringISBN13(b *testing.B) {
+	benchmarkStringPublicationRule(
+		b,
+		StringISBN13(),
+		validISBN13TestCases,
+		invalidISBN13TestCases,
+	)
+}
+
+var validISSNTestCases = map[string]string{
+	"numeric check":       "2049-3630",
+	"numeric example":     "0378-5955",
+	"uppercase x":         "2434-561X",
+	"lowercase x":         "2434-561x",
+	"manual numeric":      "1106-1111",
+	"manual uppercase x":  "1092-003X",
+	"library check digit": "0317-8471",
+	"numeric 2162":        "2162-3546",
+	"numeric 1548":        "1548-7180",
+	"uppercase x 1204":    "1204-539X",
+}
+
+// invalidISSNTestCases includes exact compact construction examples from the
+// [ISSN Manual, May 2025] because StringISSN requires the ASCII-hyphenated form.
+// Their derived hyphenated forms are accepted in validISSNTestCases.
+//
+// [ISSN Manual, May 2025]: https://www.issn.org/wp-content/uploads/2025/05/Manual-ISSN_ENG-marc21_May2025.pdf
+var invalidISSNTestCases = map[string]string{
+	"empty":                      "",
+	"missing hyphen":             "20493630",
+	"manual compact 2162":        "21623546",
+	"manual compact 1548":        "15487180",
+	"failed check":               "2049-3631",
+	"numeric check mutation":     "1106-1112",
+	"uppercase x check mutation": "1092-0030",
+	"wrong grouping":             "204-93630",
+	"x before check":             "2049-36X0",
+	"hyphen as check":            "2049-363-",
+	"unicode hyphen":             "1106–1111",
+	"U+2010 hyphen":              "1092‐003X",
+	"space separator":            "1106 1111",
+	"display prefix":             "ISSN 1106-1111",
+	"trailing newline":           "1106-1111\n",
+	"full width digits":          "１１０６-１１１１",
+}
+
+func TestStringISSN(t *testing.T) {
+	rule := StringISSN()
+	t.Run("valid inputs", func(t *testing.T) {
+		for name, input := range validISSNTestCases {
+			t.Run(name, func(t *testing.T) {
+				assert.NoError(t, rule.Validate(input))
+			})
+		}
+	})
+	t.Run("invalid inputs", func(t *testing.T) {
+		for name, input := range invalidISSNTestCases {
+			t.Run(name, func(t *testing.T) {
+				err := rule.Validate(input)
+				assert.EqualError(t, err, "string must be a valid International Standard Serial Number (ISSN)")
+				assert.True(t, govy.HasErrorCode(err, ErrorCodeStringISSN))
+			})
+		}
+	})
+}
+
+func TestISSNPredicateMatchesReference(t *testing.T) {
+	format := regexp.MustCompile(`^\d{4}-\d{3}[0-9Xx]$`)
+	testStringPredicateMatchesReference(
+		t,
+		isISSN,
+		func(s string) bool {
+			return referenceISSN(format, s)
+		},
+		validISSNTestCases,
+		invalidISSNTestCases,
+	)
+}
+
+func BenchmarkStringISSN(b *testing.B) {
+	benchmarkStringPublicationRule(
+		b,
+		StringISSN(),
+		validISSNTestCases,
+		invalidISSNTestCases,
+	)
+}
+
+func Benchmark_isISSN(b *testing.B) {
+	for b.Loop() {
+		for name, input := range validISSNTestCases {
+			if !isISSN(input) {
+				b.Fatalf("%s: expected valid ISSN", name)
+			}
+		}
+		for name, input := range invalidISSNTestCases {
+			if isISSN(input) {
+				b.Fatalf("%s: expected invalid ISSN", name)
+			}
+		}
+	}
+	b.ReportMetric(float64(len(validISSNTestCases)+len(invalidISSNTestCases)), "validations/op")
+}
+
+func benchmarkStringPublicationRule(
+	b *testing.B,
+	rule govy.Rule[string],
+	validInputs map[string]string,
+	invalidInputs map[string]string,
+) {
+	b.Helper()
+	for b.Loop() {
+		for _, in := range validInputs {
+			_ = rule.Validate(in)
+		}
+		for _, in := range invalidInputs {
+			_ = rule.Validate(in)
+		}
+	}
+	b.ReportMetric(float64(len(validInputs)+len(invalidInputs)), "validations/op")
+}
+
+type stringPredicate func(string) bool
+
+func testStringPredicateMatchesReference(
+	t *testing.T,
+	predicate stringPredicate,
+	reference stringPredicate,
+	inputs ...map[string]string,
+) {
+	t.Helper()
+	for _, inputSet := range inputs {
+		for name, input := range inputSet {
+			assertStringPredicateMatchesReference(t, predicate, reference, name, input)
+			testStringPredicateByteEdits(t, predicate, reference, input)
+		}
+	}
+}
+
+func testStringPredicateByteEdits(
+	t *testing.T,
+	predicate stringPredicate,
+	reference stringPredicate,
+	input string,
+) {
+	t.Helper()
+	for position := range len(input) {
+		candidate := input[:position] + input[position+1:]
+		assertStringPredicateMatchesReference(t, predicate, reference, "byte deletion", candidate)
+	}
+
+	replacement := []byte(input)
+	for position := range len(replacement) {
+		original := replacement[position]
+		for value := range 256 {
+			replacement[position] = byte(value)
+			assertStringPredicateMatchesReference(
+				t,
+				predicate,
+				reference,
+				"byte replacement",
+				string(replacement),
+			)
+		}
+		replacement[position] = original
+	}
+
+	for position := range len(input) + 1 {
+		insertion := make([]byte, len(input)+1)
+		copy(insertion, input[:position])
+		copy(insertion[position+1:], input[position:])
+		for value := range 256 {
+			insertion[position] = byte(value)
+			assertStringPredicateMatchesReference(
+				t,
+				predicate,
+				reference,
+				"byte insertion",
+				string(insertion),
+			)
+		}
+	}
+}
+
+func assertStringPredicateMatchesReference(
+	t *testing.T,
+	predicate stringPredicate,
+	reference stringPredicate,
+	name string,
+	input string,
+) {
+	t.Helper()
+	got := predicate(input)
+	expected := reference(input)
+	if got != expected {
+		t.Fatalf("%s for %q: got %t, expected %t", name, input, got, expected)
+	}
+}
+
+func referenceISBN(s string) bool {
+	return referenceISBN10(s) || referenceISBN13(s)
+}
+
+func referenceISBN10(s string) bool {
+	isbn, ok := referenceNormalizeISBN(s)
+	if !ok || len(isbn) != isbn10Length {
+		return false
+	}
+
+	sum := 0
+	for i := range isbn10Length - 1 {
+		if !isASCIIDigit(isbn[i]) {
+			return false
+		}
+		sum += int(isbn[i]-'0') * (isbn10Length - i)
+	}
+
+	switch checkDigit := isbn[isbn10Length-1]; {
+	case isASCIIDigit(checkDigit):
+		sum += int(checkDigit - '0')
+	case checkDigit == 'X' || checkDigit == 'x':
+		sum += 10
+	default:
+		return false
+	}
+	return sum%11 == 0
+}
+
+func referenceISBN13(s string) bool {
+	isbn, ok := referenceNormalizeISBN(s)
+	if !ok || len(isbn) != isbn13Length ||
+		(!strings.HasPrefix(isbn, "978") && !strings.HasPrefix(isbn, "979")) {
+		return false
+	}
+
+	sum := 0
+	for i := range isbn13Length - 1 {
+		if !isASCIIDigit(isbn[i]) {
+			return false
+		}
+		weight := 1
+		if i%2 != 0 {
+			weight = 3
+		}
+		sum += int(isbn[i]-'0') * weight
+	}
+	if !isASCIIDigit(isbn[isbn13Length-1]) {
+		return false
+	}
+	return (10-sum%10)%10 == int(isbn[isbn13Length-1]-'0')
+}
+
+func referenceNormalizeISBN(s string) (string, bool) {
+	if s == "" {
+		return "", false
+	}
+
+	var builder strings.Builder
+	previousWasSeparator := false
+	for i := range len(s) {
+		switch c := s[i]; {
+		case isASCIIDigit(c) || c == 'X' || c == 'x':
+			builder.WriteByte(c)
+			previousWasSeparator = false
+		case c == '-' || c == ' ':
+			if i == 0 || i == len(s)-1 || previousWasSeparator {
+				return "", false
+			}
+			previousWasSeparator = true
+		default:
+			return "", false
+		}
+	}
+	return builder.String(), true
+}
+
+func referenceISSN(format *regexp.Regexp, s string) bool {
+	if !format.MatchString(s) {
+		return false
+	}
+
+	issn := strings.ReplaceAll(s, "-", "")
+	sum := 0
+	for i := range 7 {
+		if !isASCIIDigit(issn[i]) {
+			return false
+		}
+		sum += int(issn[i]-'0') * (8 - i)
+	}
+
+	switch checkDigit := issn[7]; {
+	case isASCIIDigit(checkDigit):
+		sum += int(checkDigit - '0')
+	case checkDigit == 'X' || checkDigit == 'x':
+		sum += 10
+	default:
+		return false
+	}
+	return sum%11 == 0
 }
