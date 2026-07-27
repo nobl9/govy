@@ -27,7 +27,7 @@ func StringNotEmpty() govy.Rule[string] {
 	tpl := messagetemplates.Get(messagetemplates.StringNonEmptyTemplate)
 
 	return govy.NewRule(func(s string) error {
-		if len(strings.TrimSpace(s)) == 0 {
+		if strings.TrimSpace(s) == "" {
 			return govy.NewRuleErrorTemplate(govy.TemplateVars{
 				PropertyValue: s,
 			})

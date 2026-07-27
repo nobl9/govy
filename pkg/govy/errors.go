@@ -246,8 +246,12 @@ func (r *RuleError) AddCode(code ErrorCode) *RuleError {
 	return r
 }
 
-// HideValue replaces all occurrences of a string in the [RuleError.Message] with a '*' characters.
+// HideValue replaces all occurrences of stringValue in [RuleError.Message] with `[hidden]`.
+// If stringValue is empty or contains only Unicode whitespace, it leaves the message unchanged.
 func (r *RuleError) HideValue(stringValue string) *RuleError {
+	if strings.TrimSpace(stringValue) == "" {
+		return r
+	}
 	r.Message = strings.ReplaceAll(r.Message, stringValue, hiddenValue)
 	return r
 }
