@@ -30,7 +30,7 @@ func (i instanceID) withNextGeneratedID() instanceID {
 	return newInstanceID()
 }
 
-func (i instanceID) GetID() string {
+func (i instanceID) ID() string {
 	if i.userSuppliedID != "" {
 		return i.userSuppliedID
 	}

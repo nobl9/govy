@@ -219,9 +219,9 @@ func (r PropertyRulesForMap[M, K, V, P]) InferPath(mode InferPathMode) PropertyR
 	return r
 }
 
-// GetID => refer to [PropertyRules.GetID] documentation.
-func (r PropertyRulesForMap[M, K, V, P]) GetID() string {
-	return r.mapRules.GetID()
+// ID => refer to [PropertyRules.ID] documentation.
+func (r PropertyRulesForMap[M, K, V, P]) ID() string {
+	return r.mapRules.ID()
 }
 
 // cascadeInternal is an internal wrapper around [PropertyRulesForMap.Cascade] which

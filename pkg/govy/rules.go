@@ -272,13 +272,13 @@ func (r PropertyRules[T, P]) InferPath(mode InferPathMode) PropertyRules[T, P] {
 	return r
 }
 
-// GetID returns the identifier for these property rules.
+// ID returns the identifier for these property rules.
 // Property rules have a generated identifier by default.
 // Generated identifiers can change when a builder method derives a new value,
 // so retrieve the identifier from the final property definition.
 // An identifier set with [PropertyRules.WithID] persists across builder methods until cleared.
-func (r PropertyRules[T, P]) GetID() string {
-	return r.id.GetID()
+func (r PropertyRules[T, P]) ID() string {
+	return r.id.ID()
 }
 
 func (r PropertyRules[T, P]) withNextGeneratedID() PropertyRules[T, P] {

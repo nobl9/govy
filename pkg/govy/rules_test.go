@@ -491,7 +491,7 @@ func TestPropertyRulesWithID(t *testing.T) {
 		}
 		ids := make([]string, len(propertyRules))
 		for i, property := range propertyRules {
-			ids[i] = property.GetID()
+			ids[i] = property.ID()
 			assert.True(t, ids[i] != "")
 		}
 
@@ -502,7 +502,7 @@ func TestPropertyRulesWithID(t *testing.T) {
 		assert.Len(t, plan.Properties, len(propertyRules))
 
 		for i, property := range propertyRules {
-			assert.Equal(t, ids[i], property.GetID())
+			assert.Equal(t, ids[i], property.ID())
 		}
 	})
 
@@ -517,22 +517,22 @@ func TestPropertyRulesWithID(t *testing.T) {
 			name string
 			id   string
 		}{
-			{"WithName", base.WithName("field").GetID()},
-			{"WithPath", base.WithPath(jsonpath.New().Name("field")).GetID()},
-			{"WithExamples", base.WithExamples("example").GetID()},
-			{"Rules", base.Rules(govy.NewRule(func(string) error { return nil })).GetID()},
-			{"Include", base.Include(included).GetID()},
-			{"When", base.When(func(mockStruct) bool { return true }).GetID()},
-			{"Required", base.Required().GetID()},
-			{"OmitEmpty", base.OmitEmpty().GetID()},
-			{"HideValue", base.HideValue().GetID()},
-			{"Cascade", base.Cascade(govy.CascadeModeStop).GetID()},
-			{"InferPath", base.InferPath(govy.InferPathModeRuntime).GetID()},
+			{"WithName", base.WithName("field").ID()},
+			{"WithPath", base.WithPath(jsonpath.New().Name("field")).ID()},
+			{"WithExamples", base.WithExamples("example").ID()},
+			{"Rules", base.Rules(govy.NewRule(func(string) error { return nil })).ID()},
+			{"Include", base.Include(included).ID()},
+			{"When", base.When(func(mockStruct) bool { return true }).ID()},
+			{"Required", base.Required().ID()},
+			{"OmitEmpty", base.OmitEmpty().ID()},
+			{"HideValue", base.HideValue().ID()},
+			{"Cascade", base.Cascade(govy.CascadeModeStop).ID()},
+			{"InferPath", base.InferPath(govy.InferPathModeRuntime).ID()},
 		}
 
 		for _, tc := range derived {
 			t.Run(tc.name, func(t *testing.T) {
-				assert.Equal(t, "stable", base.GetID())
+				assert.Equal(t, "stable", base.ID())
 				assert.Equal(t, "stable", tc.id)
 			})
 		}
@@ -554,21 +554,21 @@ func TestPropertyRulesWithID(t *testing.T) {
 			name string
 			id   string
 		}{
-			{"WithName", base.WithName("items").GetID()},
-			{"WithPath", base.WithPath(jsonpath.New().Name("items")).GetID()},
-			{"WithExamples", base.WithExamples("example").GetID()},
-			{"Rules", base.Rules(govy.NewRule(func([]string) error { return nil })).GetID()},
-			{"RulesForEach", base.RulesForEach(govy.NewRule(func(string) error { return nil })).GetID()},
-			{"When", base.When(func(mockStruct) bool { return true }).GetID()},
-			{"Include", base.Include(wholeSlice).GetID()},
-			{"IncludeForEach", base.IncludeForEach(element).GetID()},
-			{"Cascade", base.Cascade(govy.CascadeModeStop).GetID()},
-			{"InferPath", base.InferPath(govy.InferPathModeRuntime).GetID()},
+			{"WithName", base.WithName("items").ID()},
+			{"WithPath", base.WithPath(jsonpath.New().Name("items")).ID()},
+			{"WithExamples", base.WithExamples("example").ID()},
+			{"Rules", base.Rules(govy.NewRule(func([]string) error { return nil })).ID()},
+			{"RulesForEach", base.RulesForEach(govy.NewRule(func(string) error { return nil })).ID()},
+			{"When", base.When(func(mockStruct) bool { return true }).ID()},
+			{"Include", base.Include(wholeSlice).ID()},
+			{"IncludeForEach", base.IncludeForEach(element).ID()},
+			{"Cascade", base.Cascade(govy.CascadeModeStop).ID()},
+			{"InferPath", base.InferPath(govy.InferPathModeRuntime).ID()},
 		}
 
 		for _, tc := range derived {
 			t.Run(tc.name, func(t *testing.T) {
-				assert.Equal(t, "stable", base.GetID())
+				assert.Equal(t, "stable", base.ID())
 				assert.Equal(t, "stable", tc.id)
 			})
 		}
@@ -597,28 +597,28 @@ func TestPropertyRulesWithID(t *testing.T) {
 			name string
 			id   string
 		}{
-			{"WithName", base.WithName("data").GetID()},
-			{"WithPath", base.WithPath(jsonpath.New().Name("data")).GetID()},
-			{"WithExamples", base.WithExamples("example").GetID()},
-			{"Rules", base.Rules(govy.NewRule(func(map[string]string) error { return nil })).GetID()},
-			{"RulesForKeys", base.RulesForKeys(govy.NewRule(func(string) error { return nil })).GetID()},
-			{"RulesForValues", base.RulesForValues(govy.NewRule(func(string) error { return nil })).GetID()},
+			{"WithName", base.WithName("data").ID()},
+			{"WithPath", base.WithPath(jsonpath.New().Name("data")).ID()},
+			{"WithExamples", base.WithExamples("example").ID()},
+			{"Rules", base.Rules(govy.NewRule(func(map[string]string) error { return nil })).ID()},
+			{"RulesForKeys", base.RulesForKeys(govy.NewRule(func(string) error { return nil })).ID()},
+			{"RulesForValues", base.RulesForValues(govy.NewRule(func(string) error { return nil })).ID()},
 			{
 				"RulesForItems",
-				base.RulesForItems(govy.NewRule(func(govy.MapItem[string, string]) error { return nil })).GetID(),
+				base.RulesForItems(govy.NewRule(func(govy.MapItem[string, string]) error { return nil })).ID(),
 			},
-			{"When", base.When(func(mockStruct) bool { return true }).GetID()},
-			{"Include", base.Include(wholeMap).GetID()},
-			{"IncludeForKeys", base.IncludeForKeys(stringValue).GetID()},
-			{"IncludeForValues", base.IncludeForValues(stringValue).GetID()},
-			{"IncludeForItems", base.IncludeForItems(item).GetID()},
-			{"Cascade", base.Cascade(govy.CascadeModeStop).GetID()},
-			{"InferPath", base.InferPath(govy.InferPathModeRuntime).GetID()},
+			{"When", base.When(func(mockStruct) bool { return true }).ID()},
+			{"Include", base.Include(wholeMap).ID()},
+			{"IncludeForKeys", base.IncludeForKeys(stringValue).ID()},
+			{"IncludeForValues", base.IncludeForValues(stringValue).ID()},
+			{"IncludeForItems", base.IncludeForItems(item).ID()},
+			{"Cascade", base.Cascade(govy.CascadeModeStop).ID()},
+			{"InferPath", base.InferPath(govy.InferPathModeRuntime).ID()},
 		}
 
 		for _, tc := range derived {
 			t.Run(tc.name, func(t *testing.T) {
-				assert.Equal(t, "stable", base.GetID())
+				assert.Equal(t, "stable", base.ID())
 				assert.Equal(t, "stable", tc.id)
 			})
 		}
@@ -633,20 +633,20 @@ func TestPropertyRulesWithID(t *testing.T) {
 				name: "scalar",
 				ids: func() []string {
 					base := govy.For(func(m mockStruct) string { return m.Field })
-					baseID := base.GetID()
+					baseID := base.ID()
 					first := base.WithID("first")
 					second := first.WithID("second")
-					return []string{baseID, base.GetID(), first.GetID(), second.GetID()}
+					return []string{baseID, base.ID(), first.ID(), second.ID()}
 				},
 			},
 			{
 				name: "slice",
 				ids: func() []string {
 					base := govy.ForSlice(func(m mockStruct) []string { return []string{m.Field} })
-					baseID := base.GetID()
+					baseID := base.ID()
 					first := base.WithID("first")
 					second := first.WithID("second")
-					return []string{baseID, base.GetID(), first.GetID(), second.GetID()}
+					return []string{baseID, base.ID(), first.ID(), second.ID()}
 				},
 			},
 			{
@@ -655,10 +655,10 @@ func TestPropertyRulesWithID(t *testing.T) {
 					base := govy.ForMap(func(m mockStruct) map[string]string {
 						return map[string]string{"key": m.Field}
 					})
-					baseID := base.GetID()
+					baseID := base.ID()
 					first := base.WithID("first")
 					second := first.WithID("second")
-					return []string{baseID, base.GetID(), first.GetID(), second.GetID()}
+					return []string{baseID, base.ID(), first.ID(), second.ID()}
 				},
 			},
 		}
@@ -726,7 +726,7 @@ func TestPropertyRulesWithID(t *testing.T) {
 		for _, tc := range testCases {
 			t.Run(tc.name, func(t *testing.T) {
 				properties := tc.new()
-				assert.True(t, properties.base.GetID() != properties.derived.GetID())
+				assert.True(t, properties.base.ID() != properties.derived.ID())
 
 				validator := govy.New(properties.base, properties.derived)
 				assert.Equal(
@@ -734,7 +734,7 @@ func TestPropertyRulesWithID(t *testing.T) {
 					[]string{tc.name + "Derived"},
 					validatorErrorPaths(
 						t,
-						validator.RemovePropertiesByID(properties.base.GetID()),
+						validator.RemovePropertiesByID(properties.base.ID()),
 						mockStruct{},
 					),
 				)
@@ -743,7 +743,7 @@ func TestPropertyRulesWithID(t *testing.T) {
 					[]string{tc.name + "Base"},
 					validatorErrorPaths(
 						t,
-						validator.RemovePropertiesByID(properties.derived.GetID()),
+						validator.RemovePropertiesByID(properties.derived.ID()),
 						mockStruct{},
 					),
 				)
@@ -785,9 +785,9 @@ func TestPropertyRulesWithID(t *testing.T) {
 			derivedID string
 			property  govy.PropertyRulesInterface[mockStruct]
 		}{
-			{"scalar", scalarBase.GetID(), scalarDerived.GetID(), scalarDerived},
-			{"slice", sliceBase.GetID(), sliceDerived.GetID(), sliceDerived},
-			{"map", mapBase.GetID(), mapDerived.GetID(), mapDerived},
+			{"scalar", scalarBase.ID(), scalarDerived.ID(), scalarDerived},
+			{"slice", sliceBase.ID(), sliceDerived.ID(), sliceDerived},
+			{"map", mapBase.ID(), mapDerived.ID(), mapDerived},
 		}
 		for _, tc := range testCases {
 			t.Run(tc.name, func(t *testing.T) {

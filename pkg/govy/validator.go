@@ -108,13 +108,13 @@ func (v Validator[T]) RemovePropertiesByID(ids ...string) Validator[T] {
 
 func (v Validator[T]) removePropertiesByIDs(ids []string) Validator[T] {
 	for index, prop := range v.props {
-		if !slices.Contains(ids, prop.GetID()) {
+		if !slices.Contains(ids, prop.ID()) {
 			continue
 		}
 		filtered := make([]PropertyRulesInterface[T], 0, len(v.props)-1)
 		filtered = append(filtered, v.props[:index]...)
 		for _, remainingProp := range v.props[index+1:] {
-			if !slices.Contains(ids, remainingProp.GetID()) {
+			if !slices.Contains(ids, remainingProp.ID()) {
 				filtered = append(filtered, remainingProp)
 			}
 		}
@@ -126,13 +126,13 @@ func (v Validator[T]) removePropertiesByIDs(ids []string) Validator[T] {
 
 func (v Validator[T]) removePropertiesByIDSet(idSet map[string]struct{}) Validator[T] {
 	for index, prop := range v.props {
-		if _, ok := idSet[prop.GetID()]; !ok {
+		if _, ok := idSet[prop.ID()]; !ok {
 			continue
 		}
 		filtered := make([]PropertyRulesInterface[T], 0, len(v.props)-1)
 		filtered = append(filtered, v.props[:index]...)
 		for _, remainingProp := range v.props[index+1:] {
-			if _, ok := idSet[remainingProp.GetID()]; !ok {
+			if _, ok := idSet[remainingProp.ID()]; !ok {
 				filtered = append(filtered, remainingProp)
 			}
 		}
@@ -148,7 +148,7 @@ func (v Validator[T]) removePropertyByID(id string) Validator[T] {
 		removed  bool
 	)
 	for index, prop := range v.props {
-		if prop.GetID() != id {
+		if prop.ID() != id {
 			if removed {
 				filtered = append(filtered, prop)
 			}

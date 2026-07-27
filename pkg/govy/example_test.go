@@ -1970,7 +1970,7 @@ func ExampleValidator_RemovePropertiesByID() {
 	teacher := Teacher{Name: "John", Age: -1}
 	fmt.Println(baseValidator.Validate(teacher) != nil)
 
-	modifiedValidator := baseValidator.RemovePropertiesByID(ageProperty.GetID())
+	modifiedValidator := baseValidator.RemovePropertiesByID(ageProperty.ID())
 	fmt.Println(modifiedValidator.Validate(teacher) == nil)
 
 	// Output:

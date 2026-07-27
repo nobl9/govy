@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 )
 
+// GenerateUUID returns a randomly generated version 4 UUID in canonical string form.
 func GenerateUUID() string {
 	var randomBytes [16]byte
 	_, _ = rand.Read(randomBytes[:])

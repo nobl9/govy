@@ -142,9 +142,9 @@ func (r PropertyRulesForSlice[S, T, P]) InferPath(mode InferPathMode) PropertyRu
 	return r
 }
 
-// GetID => refer to [PropertyRules.GetID] documentation.
-func (r PropertyRulesForSlice[S, T, P]) GetID() string {
-	return r.sliceRules.GetID()
+// ID => refer to [PropertyRules.ID] documentation.
+func (r PropertyRulesForSlice[S, T, P]) ID() string {
+	return r.sliceRules.ID()
 }
 
 // cascadeInternal is an internal wrapper around [PropertyRulesForSlice.Cascade] which

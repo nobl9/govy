@@ -12,13 +12,13 @@ type ValidatorInterface[T any] interface {
 // PropertyRulesInterface defines validation entities which describe properties,
 // such as [PropertyRules], [PropertyRulesForSlice] and [PropertyRulesForMap].
 //
-// GetID exposes the property identifier used by [Validator.RemovePropertiesByID].
+// ID exposes the property identifier used by [Validator.RemovePropertiesByID].
 // The remaining methods allow the package to interact with property rules
 // in an immutable fashion without pointer receivers.
 type PropertyRulesInterface[T any] interface {
 	validationInterface[T]
 	cascadeInternal(mode CascadeMode) PropertyRulesInterface[T]
-	GetID() string
+	ID() string
 	getPath() jsonpath.Path
 	inferPathInternal(mode InferPathMode) PropertyRulesInterface[T]
 	isPropertyRules()
