@@ -15,8 +15,6 @@
     "/\\|\\s+[T|G]{2,}\\s+\\|/g",
     "/\\b[13mn2][0-9A-HJ-NP-Za-km-z]{25,34}\\b/g",
     "/\\b(?:bc|tb)1[ac-hj-np-z02-9]{11,71}\\b/gi",
-    "/123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz/g",
-    "/qpzry9x8gf2tvdw0s3jn54khce6mua7l/g",
     "/https?:\\/\\/.*/g",
     "/github.*/g",
     "/nolint.*/g",
@@ -35,12 +33,10 @@
     "context7.json"
   ],
   "words": [
-    "Bech",
     "Descriptionf",
     "Detailsf",
     "Elts",
     "Fset",
-    "Keccak",
     "Messagef",
     "Skłodowska",
     "UNECE",
@@ -94,6 +90,8 @@
     "mygovy",
     "unpadded",
     "JWSB64",
-    "ITIN"
+    "ITIN",
+    "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz",
+    "qpzry9x8gf2tvdw0s3jn54khce6mua7l"
   ]
 }
