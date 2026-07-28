@@ -37,6 +37,7 @@ for upcoming, planned features.
     8. [Validation plan](#validation-plan)
     9. [Properties path inference](#properties-path-inference)
     10. [Testing helpers](#testing-helpers)
+    11. [Minimal dependencies](#dependency-policy)
 4. [Rationale](#rationale)
     1. [Reflection](#reflection)
     2. [Trivia](#trivia)
@@ -730,6 +731,17 @@ Package [govytest](./pkg/govytest/) provides utilities which aid the process of
 writing unit tests for validation rules defined with govy.
 Checkout [testable examples](https://pkg.go.dev/github.com/nobl9/govy/pkg/govytest#pkg-examples)
 for a concise overview of the package's capabilities.
+
+### Dependency policy
+
+Govy **strives** to be dependency free.
+We'd rather implement the required code ourselves then burden your projects with bloated
+dependency tree. Doing otherwise is in our honest opinion lazy and not secure!
+
+The only external dependencies you will inherit from govy are the modules
+officially maintained by the Go team under [golang.org/x](https://pkg.go.dev/golang.org/x).
+Here, the trade-off is in favor of the external source,
+which is high quality and under constant security scrutiny and maintenance.
 
 ## Rationale
 
