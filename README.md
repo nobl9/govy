@@ -1,7 +1,6 @@
 # govy
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/nobl9/govy.svg)](https://pkg.go.dev/github.com/nobl9/govy)
-[![Go Report Card](https://goreportcard.com/badge/github.com/nobl9/govy)](https://goreportcard.com/report/github.com/nobl9/govy)
 [![Go Coverage](https://github.com/nobl9/govy/wiki/coverage.svg)](https://raw.githack.com/wiki/nobl9/govy/coverage.html)
 
 Validation library for Go that uses a functional interface for building
