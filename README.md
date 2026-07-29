@@ -735,8 +735,9 @@ for a concise overview of the package's capabilities.
 ### Dependency policy
 
 Govy **strives** to be dependency free.
-We'd rather implement the required code ourselves then burden your projects with bloated
-dependency tree. Doing otherwise is in our honest opinion lazy and not secure!
+We'd rather implement the required code ourselves then burden your projects
+with bloated dependency tree.
+Doing otherwise is in our honest opinion lazy and not secure!
 
 The only external dependencies you will inherit from govy are the modules
 officially maintained by the Go team under [golang.org/x](https://pkg.go.dev/golang.org/x).
