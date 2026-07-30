@@ -1,0 +1,174 @@
+{
+  "source": {
+    "repository": "https://github.com/bitcoin/bips",
+    "commit": "8c369ac8e60629ac6c032ffe21bb5ec5b35213d7",
+    "file": "bip-0350.mediawiki",
+    "file_sha256": "63634b06aa8bae88b31929674736e74964c4598684269ac2b0b140c43a7a0dec",
+    "valid_count": 8,
+    "invalid_count": 15
+  },
+  "vectors": [
+    {
+      "address": "BC1QW508D6QEJXTDG4Y5R3ZARVARY0C5XW7KV8F3T4",
+      "source_valid": true,
+      "script_pub_key": "0014751e76e8199196d454941c45d1b3a323f1433bd6",
+      "network": "mainnet",
+      "witness_version": 0,
+      "encoding": "bech32",
+      "contract": "accepted"
+    },
+    {
+      "address": "tb1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3q0sl5k7",
+      "source_valid": true,
+      "script_pub_key": "00201863143c14c5166804bd19203356da136c985678cd4d27a1b8c6329604903262",
+      "network": "testnet",
+      "witness_version": 0,
+      "encoding": "bech32",
+      "contract": "non-mainnet"
+    },
+    {
+      "address": "bc1pw508d6qejxtdg4y5r3zarvary0c5xw7kw508d6qejxtdg4y5r3zarvary0c5xw7kt5nd6y",
+      "source_valid": true,
+      "script_pub_key": "5128751e76e8199196d454941c45d1b3a323f1433bd6751e76e8199196d454941c45d1b3a323f1433bd6",
+      "network": "mainnet",
+      "witness_version": 1,
+      "encoding": "bech32m",
+      "contract": "v1+"
+    },
+    {
+      "address": "BC1SW50QGDZ25J",
+      "source_valid": true,
+      "script_pub_key": "6002751e",
+      "network": "mainnet",
+      "witness_version": 16,
+      "encoding": "bech32m",
+      "contract": "v1+"
+    },
+    {
+      "address": "bc1zw508d6qejxtdg4y5r3zarvaryvaxxpcs",
+      "source_valid": true,
+      "script_pub_key": "5210751e76e8199196d454941c45d1b3a323",
+      "network": "mainnet",
+      "witness_version": 2,
+      "encoding": "bech32m",
+      "contract": "v1+"
+    },
+    {
+      "address": "tb1qqqqqp399et2xygdj5xreqhjjvcmzhxw4aywxecjdzew6hylgvsesrxh6hy",
+      "source_valid": true,
+      "script_pub_key": "0020000000c4a5cad46221b2a187905e5266362b99d5e91c6ce24d165dab93e86433",
+      "network": "testnet",
+      "witness_version": 0,
+      "encoding": "bech32",
+      "contract": "non-mainnet"
+    },
+    {
+      "address": "tb1pqqqqp399et2xygdj5xreqhjjvcmzhxw4aywxecjdzew6hylgvsesf3hn0c",
+      "source_valid": true,
+      "script_pub_key": "5120000000c4a5cad46221b2a187905e5266362b99d5e91c6ce24d165dab93e86433",
+      "network": "testnet",
+      "witness_version": 1,
+      "encoding": "bech32m",
+      "contract": "non-mainnet v1+"
+    },
+    {
+      "address": "bc1p0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vqzk5jj0",
+      "source_valid": true,
+      "script_pub_key": "512079be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+      "network": "mainnet",
+      "witness_version": 1,
+      "encoding": "bech32m",
+      "contract": "v1+"
+    },
+    {
+      "address": "tc1p0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vq5zuyut",
+      "source_valid": false,
+      "reason": "Invalid human-readable part",
+      "contract": "source-invalid"
+    },
+    {
+      "address": "bc1p0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vqh2y7hd",
+      "source_valid": false,
+      "reason": "Invalid checksum (Bech32 instead of Bech32m)",
+      "contract": "source-invalid"
+    },
+    {
+      "address": "tb1z0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vqglt7rf",
+      "source_valid": false,
+      "reason": "Invalid checksum (Bech32 instead of Bech32m)",
+      "contract": "source-invalid"
+    },
+    {
+      "address": "BC1S0XLXVLHEMJA6C4DQV22UAPCTQUPFHLXM9H8Z3K2E72Q4K9HCZ7VQ54WELL",
+      "source_valid": false,
+      "reason": "Invalid checksum (Bech32 instead of Bech32m)",
+      "contract": "source-invalid"
+    },
+    {
+      "address": "bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kemeawh",
+      "source_valid": false,
+      "reason": "Invalid checksum (Bech32m instead of Bech32)",
+      "contract": "source-invalid"
+    },
+    {
+      "address": "tb1q0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vq24jc47",
+      "source_valid": false,
+      "reason": "Invalid checksum (Bech32m instead of Bech32)",
+      "contract": "source-invalid"
+    },
+    {
+      "address": "bc1p38j9r5y49hruaue7wxjce0updqjuyyx0kh56v8s25huc6995vvpql3jow4",
+      "source_valid": false,
+      "reason": "Invalid character in checksum",
+      "contract": "source-invalid"
+    },
+    {
+      "address": "BC130XLXVLHEMJA6C4DQV22UAPCTQUPFHLXM9H8Z3K2E72Q4K9HCZ7VQ7ZWS8R",
+      "source_valid": false,
+      "reason": "Invalid witness version",
+      "contract": "source-invalid"
+    },
+    {
+      "address": "bc1pw5dgrnzv",
+      "source_valid": false,
+      "reason": "Invalid program length (1 byte)",
+      "contract": "source-invalid"
+    },
+    {
+      "address": "bc1p0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7v8n0nx0muaewav253zgeav",
+      "source_valid": false,
+      "reason": "Invalid program length (41 bytes)",
+      "contract": "source-invalid"
+    },
+    {
+      "address": "BC1QR508D6QEJXTDG4Y5R3ZARVARYV98GJ9P",
+      "source_valid": false,
+      "reason": "Invalid program length for witness version 0 (per BIP141)",
+      "contract": "source-invalid"
+    },
+    {
+      "address": "tb1p0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vq47Zagq",
+      "source_valid": false,
+      "reason": "Mixed case",
+      "contract": "source-invalid"
+    },
+    {
+      "address": "bc1p0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7v07qwwzcrf",
+      "source_valid": false,
+      "reason": "zero padding of more than 4 bits",
+      "contract": "source-invalid"
+    },
+    {
+      "address": "tb1p0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vpggkg4j",
+      "source_valid": false,
+      "reason": "Non-zero padding in 8-to-5 conversion",
+      "contract": "source-invalid"
+    },
+    {
+      "address": "bc1gmk9yu",
+      "source_valid": false,
+      "reason": "Empty data section",
+      "contract": "source-invalid"
+    }
+  ]
+}

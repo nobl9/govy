@@ -29,6 +29,7 @@ var (
 	fqdnRegexp                 = lazyRegexCompile(
 		`^([a-zA-Z0-9]{1}[a-zA-Z0-9-]{0,62})(\.[a-zA-Z0-9]{1}[a-zA-Z0-9-]{0,62})*?(\.[a-zA-Z]{1}[a-zA-Z0-9]{0,62})\.?$`,
 	)
+	btcAddressRegexp = lazyRegexCompile(`^[13][1-9A-HJ-NP-Za-km-z]{25,34}$`)
 )
 
 // lazyRegexCompile returns a function that compiles the regular expression

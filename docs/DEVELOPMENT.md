@@ -71,6 +71,10 @@ Refer to this [README.md](../internal/validation/README.md) for more information
 
 ## Dependencies
 
+The only acceptable dependencies are the
+[golang.org/x](https://pkg.go.dev/golang.org/x) modules.
+Any other third-party dependency is to be rejected.
+
 Renovate is configured to automatically merge minor and patch updates.
 For major versions, which sadly includes GitHub Actions, manual approval
 is required.

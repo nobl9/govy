@@ -102,6 +102,9 @@ const (
 	StringLatitudeTemplate
 	StringLongitudeTemplate
 	StringKubernetesQualifiedNameTemplate
+	StringBTCAddressTemplate
+	StringBTCBech32AddressTemplate
+	StringETHAddressTemplate
 	StringMongoDBObjectIDTemplate
 	URLTemplate
 	SliceUniqueTemplate
@@ -256,7 +259,10 @@ var rawMessageTemplates = map[templateKey]string{
 	string must be a valid Kubernetes Qualified Name
 {{- end }}
 `,
-	StringMongoDBObjectIDTemplate: "string must be a 24-character hexadecimal MongoDB ObjectID",
+	StringBTCAddressTemplate:       "string must be a valid mainnet legacy Bitcoin Base58Check address",
+	StringBTCBech32AddressTemplate: "string must be a valid mainnet Bitcoin Bech32 address",
+	StringETHAddressTemplate:       "string must be a valid Ethereum address (0x plus 40 hexadecimal characters)",
+	StringMongoDBObjectIDTemplate:  "string must be a 24-character hexadecimal MongoDB ObjectID",
 	SliceUniqueTemplate: `elements are not unique, {{ .Custom.FirstOrdinal }} and {{ .Custom.SecondOrdinal }} elements collide
 {{- if gt (len .Custom.Constraints) 0 }} based on constraints: {{ joinSlice .Custom.Constraints "" }}{{- end }}`,
 	UniquePropertiesTemplate: `all of [{{ joinSlice .ComparisonValue "" }}] properties must be unique, but '{{ .Custom.FirstProperty }}' collides with '{{ .Custom.SecondProperty }}'
