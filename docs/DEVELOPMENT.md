@@ -61,8 +61,8 @@ shortcomings.
 Some parts of the codebase are automatically generated.
 We use the following tools to do that:
 
-- [embed-example-in-readme.bash](../scripts/embed-example-in-readme.bash)
-  for embedding tested examples in [README.md](../README.md).
+- [embed-examples-in-markdown.bash](../scripts/embed-examples-in-markdown.bash)
+  for embedding tested examples in Markdown documents.
 
 ## Validation
 
