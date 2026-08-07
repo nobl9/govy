@@ -106,18 +106,28 @@ func (r PropertyRulesForSlice[S, T, P]) When(
 }
 
 // IncludeForEach associates specified [Validator] and its [PropertyRules] with each element of the slice.
+// Included validators retain their own cascade modes;
+// configure them directly with [Validator.Cascade].
 func (r PropertyRulesForSlice[S, T, P]) IncludeForEach(rules ...ValidatorInterface[T]) PropertyRulesForSlice[S, T, P] {
 	r.forEachRules = r.forEachRules.Include(rules...)
 	return r
 }
 
 // Include embeds specified [Validator] and its [PropertyRules] into the property.
+// Included validators retain their own cascade modes;
+// configure them directly with [Validator.Cascade].
 func (r PropertyRulesForSlice[S, T, P]) Include(rules ...ValidatorInterface[S]) PropertyRulesForSlice[S, T, P] {
 	r.sliceRules = r.sliceRules.Include(rules...)
 	return r
 }
 
-// Cascade => refer to [PropertyRules.Cascade] documentation.
+// Cascade sets the [CascadeMode] for rules associated with the whole slice
+// and for rules associated with each element.
+// It does not propagate into validators added with
+// [PropertyRulesForSlice.Include] or [PropertyRulesForSlice.IncludeForEach].
+//
+// When set explicitly, the mode takes precedence over the mode inherited from
+// the containing [Validator].
 func (r PropertyRulesForSlice[S, T, P]) Cascade(mode CascadeMode) PropertyRulesForSlice[S, T, P] {
 	r.cascadeMode = mode
 	r.sliceRules = r.sliceRules.Cascade(mode)

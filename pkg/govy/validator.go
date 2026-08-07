@@ -44,8 +44,13 @@ func (v Validator[T]) When(predicate Predicate[T], opts ...WhenOption) Validator
 	return v
 }
 
-// Cascade sets the [CascadeMode] for the validator,
-// which controls the flow of evaluating the validation rules.
+// Cascade sets the [CascadeMode] for the validator.
+// The mode controls whether validation continues with the next property after
+// a property fails and is inherited by each direct property whose cascade mode
+// has not been explicitly set.
+//
+// Validators added through Include methods retain their own cascade modes.
+// Call [Validator.Cascade] on an included validator to configure it.
 func (v Validator[T]) Cascade(mode CascadeMode) Validator[T] {
 	v.cascadeMode = mode
 	props := make([]PropertyRulesInterface[T], 0, len(v.props))

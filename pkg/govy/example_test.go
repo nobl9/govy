@@ -1504,13 +1504,19 @@ func ExamplePropertyRules_When() {
 	//     - must not be equal to 'Jerry'
 }
 
-// To customize how [govy.Rule] are evaluated use [govy.PropertyRules.Cascade].
-// Use [govy.CascadeModeStop] to stop validation after the first error.
-// If you wish to revert to the default behavior, use [govy.CascadeModeContinue].
+// To customize how directly associated [govy.Rule] instances are evaluated,
+// use [govy.PropertyRules.Cascade].
+// [govy.CascadeModeStop] stops validation after the first error,
+// while [govy.CascadeModeContinue] evaluates the remaining rules.
 //
-// Note: the cascade mode change only applies to the given [govy.PropertyRules] instance
-// and not the parent [govy.Validator] or neighboring [govy.PropertyRules].
-// It does however override the [govy.CascadeMode] set for [govy.Validator].
+// The mode applies only to the given [govy.PropertyRules].
+// It does not affect the containing [govy.Validator], neighboring property rules,
+// the internal evaluation of a [govy.RuleSet] added with [govy.PropertyRules.Rules],
+// or a [govy.Validator] added with [govy.PropertyRules.Include].
+//
+// An explicitly configured property mode takes precedence over a mode inherited
+// from the containing validator.
+// See [ExampleValidator_Cascade] for an example of this precedence.
 func ExamplePropertyRules_Cascade() {
 	alwaysFailingRule := govy.NewRule(func(string) error {
 		return fmt.Errorf("always fails")
@@ -1577,12 +1583,14 @@ func ExampleValidator_ValidateSlice() {
 	//     - always fails
 }
 
-// Unlike [govy.PropertyRules.Cascade] which works on [govy.PropertyRules] level,
-// [govy.Validator.Cascade] propagates to all the properties of [govy.Validator] and
-// furthermore, will stop evaluating the next property if any preceding property fails.
+// Unlike [govy.PropertyRules.Cascade], [govy.Validator.Cascade] controls whether
+// validation continues with the next direct property after a property fails.
+// It also propagates the mode to each direct property whose cascade mode
+// has not been explicitly set.
 //
-// If [govy.PropertyRules.Cascade] is set, the setting will take precedence over
-// [govy.Validator] cascade mode.
+// A mode explicitly set with [govy.PropertyRules.Cascade] takes precedence.
+// The validator mode does not propagate into validators added through Include methods;
+// configure each included validator directly with [govy.Validator.Cascade].
 //
 // See [ExamplePropertyRules_Cascade] for more details on [govy.PropertyRules.Cascade].
 func ExampleValidator_Cascade() {
@@ -2035,7 +2043,7 @@ func ExampleInferPathModeGenerate() {
 	govyconfig.SetInferredPath(govyconfig.InferredPath{
 		Path: jsonpath.New().Name("name"),
 		File: "pkg/govy/example_test.go",
-		Line: 2042,
+		Line: 2050,
 	})
 
 	v2 := govy.New(
