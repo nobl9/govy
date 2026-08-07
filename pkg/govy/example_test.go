@@ -1200,7 +1200,8 @@ func ExampleNewPropertyError() {
 						jsonpath.Parse("name"),
 						t.Name,
 						govy.NewRuleError("name cannot be Jake", "error_code_jake"),
-						govy.NewRuleError("you can pass me too!"))
+						govy.NewRuleError("you can pass me too!"),
+					)
 				}
 				return nil
 			})),
@@ -1307,7 +1308,8 @@ func ExampleForSlice() {
 			WithName("students").
 			Rules(
 				rules.SliceMaxLength[[]Student](2),
-				rules.SliceUnique(func(v Student) string { return v.Index })).
+				rules.SliceUnique(func(v Student) string { return v.Index }),
+			).
 			IncludeForEach(studentValidator),
 	).When(func(t Teacher) bool { return t.Age < 50 })
 
@@ -1704,12 +1706,14 @@ func ExampleValidator() {
 			Required().
 			Rules(
 				rules.StringNotEmpty(),
-				rules.OneOf("Jake", "George")),
+				rules.OneOf("Jake", "George"),
+			),
 		govy.ForSlice(func(t Teacher) []Student { return t.Students }).
 			WithName("students").
 			Rules(
 				rules.SliceMaxLength[[]Student](2),
-				rules.SliceUnique(func(v Student) string { return v.Index })).
+				rules.SliceUnique(func(v Student) string { return v.Index }),
+			).
 			IncludeForEach(studentValidator),
 		govy.For(func(t Teacher) University { return t.University }).
 			WithName("university").
@@ -1953,29 +1957,43 @@ func ExampleValidator_RemovePropertiesByPath() {
 	// Modified validator passed
 }
 
-// This example demonstrates how to remove specific properties from a [govy.Validator]
-// by their identifiers.
+// If you want surgical precision and remove only select properties from [govy.Validator]
+// you can use [govy.Validator.RemovePropertiesByID].
+// Unlike [govy.Validator.RemovePropertiesByPath] it accpets an ID, which is auto generated,
+// but you can also provide your own using `WithID` method.
+//
+// Just like the path-based version, the function is not modyfing the original validator.
+// Instead it returns a modified copy.
 func ExampleValidator_RemovePropertiesByID() {
 	ageProperty := govy.For(func(t Teacher) time.Duration { return t.Age }).
 		WithName("age").
-		WithID("positive-age").
+		WithID("age-id").
 		Rules(rules.GT(time.Duration(0)))
+	anotherAgeProperty := govy.For(func(t Teacher) time.Duration { return t.Age }).
+		WithName("age").
+		Rules(rules.GT(time.Duration(1)))
+	yetAnotherAgeProperty := govy.For(func(t Teacher) time.Duration { return t.Age }).
+		WithName("age").
+		Rules(rules.GT(time.Duration(2)))
 	baseValidator := govy.New(
-		govy.For(func(t Teacher) string { return t.Name }).
-			WithName("name").
-			Rules(rules.StringNotEmpty()),
 		ageProperty,
+		anotherAgeProperty,
+		yetAnotherAgeProperty,
 	)
 
 	teacher := Teacher{Name: "John", Age: -1}
-	fmt.Println(baseValidator.Validate(teacher) != nil)
 
-	modifiedValidator := baseValidator.RemovePropertiesByID(ageProperty.ID())
-	fmt.Println(modifiedValidator.Validate(teacher) == nil)
+	// We remove first two validators, the output shows us that only the last one was triggered.
+	modifiedValidator := baseValidator.RemovePropertiesByID(
+		"age-id",
+		anotherAgeProperty.ID(),
+	)
+	fmt.Println(modifiedValidator.Validate(teacher))
 
 	// Output:
-	// true
-	// true
+	// Validation has failed for the following properties:
+	//   - 'age' with value '-1ns':
+	//     - must be greater than '2ns'
 }
 
 // In the interactive tutorial for govy, we've been using
@@ -2060,7 +2078,7 @@ func ExampleInferPathModeGenerate() {
 	govyconfig.SetInferredPath(govyconfig.InferredPath{
 		Path: jsonpath.New().Name("name"),
 		File: "pkg/govy/example_test.go",
-		Line: 2067,
+		Line: 2085,
 	})
 
 	v2 := govy.New(
