@@ -196,6 +196,34 @@ func TestPropertyRules(t *testing.T) {
 			Errors:        []*govy.RuleError{{Message: "oh no! here's the value: '[hidden]'"}},
 		}, errs[0])
 	})
+
+	t.Run("do not hide empty value", func(t *testing.T) {
+		r := govy.For(func(mockStruct) string { return "" }).
+			WithName("password").
+			Required().
+			HideValue()
+
+		err := r.Validate(mockStruct{})
+		assert.EqualError(t, err, "- 'password':\n  - property is required but was empty")
+	})
+
+	t.Run("do not hide whitespace-only value", func(t *testing.T) {
+		testCases := map[string]string{
+			"ASCII whitespace":   " \t\n",
+			"Unicode whitespace": "\u3000",
+		}
+		for name, value := range testCases {
+			t.Run(name, func(t *testing.T) {
+				r := govy.For(func(mockStruct) string { return value }).
+					WithName("password").
+					HideValue().
+					Rules(rules.StringNotEmpty())
+
+				err := r.Validate(mockStruct{})
+				assert.EqualError(t, err, "- 'password':\n  - string must not be empty")
+			})
+		}
+	})
 }
 
 func TestForPointer(t *testing.T) {
