@@ -49,9 +49,9 @@ func TestStringNotEmpty(t *testing.T) {
 }
 
 func BenchmarkStringNotEmpty(b *testing.B) {
-	rule := StringNotEmpty()
-	for b.Loop() {
-		for _, tc := range stringNotEmptyTestCases {
+	for _, tc := range stringNotEmptyTestCases {
+		rule := StringNotEmpty()
+		for range b.N {
 			_ = rule.Validate(tc.in)
 		}
 	}
@@ -86,9 +86,9 @@ func TestStringMatchRegexp(t *testing.T) {
 }
 
 func BenchmarkStringMatchRegexp(b *testing.B) {
-	rule := StringMatchRegexp(stringMatchRegexpRegexp)
-	for b.Loop() {
-		for _, tc := range stringMatchRegexpTestCases {
+	for _, tc := range stringMatchRegexpTestCases {
+		rule := StringMatchRegexp(stringMatchRegexpRegexp)
+		for range b.N {
 			_ = rule.Validate(tc.in)
 		}
 	}
@@ -123,9 +123,9 @@ func TestStringDenyRegexp(t *testing.T) {
 }
 
 func BenchmarkStringDenyRegexp(b *testing.B) {
-	rule := StringDenyRegexp(stringDenyRegexpRegexp)
-	for b.Loop() {
-		for _, tc := range stringDenyRegexpTestCases {
+	for _, tc := range stringDenyRegexpTestCases {
+		rule := StringDenyRegexp(stringDenyRegexpRegexp)
+		for range b.N {
 			_ = rule.Validate(tc.in)
 		}
 	}
@@ -164,9 +164,9 @@ func TestStringDNSLabel(t *testing.T) {
 }
 
 func BenchmarkStringDNSLabel(b *testing.B) {
-	rule := StringDNSLabel()
-	for b.Loop() {
-		for _, tc := range stringDNSLabelTestCases {
+	for _, tc := range stringDNSLabelTestCases {
+		rule := StringDNSLabel()
+		for range b.N {
 			_ = rule.Validate(tc.in)
 		}
 	}
@@ -226,9 +226,9 @@ func TestStringDNSSubdomain(t *testing.T) {
 }
 
 func BenchmarkStringDNSSubdomain(b *testing.B) {
-	rule := StringDNSSubdomain()
-	for b.Loop() {
-		for _, tc := range stringDNSSubdomainTestCases {
+	for _, tc := range stringDNSSubdomainTestCases {
+		rule := StringDNSSubdomain()
+		for range b.N {
 			_ = rule.Validate(tc.in)
 		}
 	}
@@ -673,9 +673,9 @@ func TestStringASCII(t *testing.T) {
 }
 
 func BenchmarkStringASCII(b *testing.B) {
-	rule := StringASCII()
-	for b.Loop() {
-		for _, tc := range stringASCIITestCases {
+	for _, tc := range stringASCIITestCases {
+		rule := StringASCII()
+		for range b.N {
 			_ = rule.Validate(tc.in)
 		}
 	}
@@ -1211,9 +1211,9 @@ func TestStringEmail(t *testing.T) {
 }
 
 func BenchmarkStringEmail(b *testing.B) {
-	rule := StringEmail()
-	for b.Loop() {
-		for _, tc := range stringEmailTestCases {
+	for _, tc := range stringEmailTestCases {
+		rule := StringEmail()
+		for range b.N {
 			_ = rule.Validate(tc.in)
 		}
 	}
@@ -1241,9 +1241,9 @@ func TestStringURL(t *testing.T) {
 }
 
 func BenchmarkStringURL(b *testing.B) {
-	rule := StringURL()
-	for b.Loop() {
-		for _, tc := range urlTestCases {
+	for _, tc := range urlTestCases {
+		rule := StringURL()
+		for range b.N {
 			_ = rule.Validate(tc.url)
 		}
 	}
@@ -1275,9 +1275,9 @@ func TestStringMAC(t *testing.T) {
 }
 
 func BenchmarkStringMAC(b *testing.B) {
-	rule := StringMAC()
-	for b.Loop() {
-		for _, tc := range stringMACTestCases {
+	for _, tc := range stringMACTestCases {
+		rule := StringMAC()
+		for range b.N {
 			_ = rule.Validate(tc.in)
 		}
 	}
@@ -1313,9 +1313,9 @@ func TestStringIP(t *testing.T) {
 }
 
 func BenchmarkStringIP(b *testing.B) {
-	rule := StringIP()
-	for b.Loop() {
-		for _, tc := range stringIPTestCases {
+	for _, tc := range stringIPTestCases {
+		rule := StringIP()
+		for range b.N {
 			_ = rule.Validate(tc.in)
 		}
 	}
@@ -1350,9 +1350,9 @@ func TestStringIPv4(t *testing.T) {
 }
 
 func BenchmarkStringIPv4(b *testing.B) {
-	rule := StringIPv4()
-	for b.Loop() {
-		for _, tc := range stringIPv4TestCases {
+	for _, tc := range stringIPv4TestCases {
+		rule := StringIPv4()
+		for range b.N {
 			_ = rule.Validate(tc.in)
 		}
 	}
@@ -1387,9 +1387,9 @@ func TestStringIPv6(t *testing.T) {
 }
 
 func BenchmarkStringIPv6(b *testing.B) {
-	rule := StringIPv6()
-	for b.Loop() {
-		for _, tc := range stringIPv6TestCases {
+	for _, tc := range stringIPv6TestCases {
+		rule := StringIPv6()
+		for range b.N {
 			_ = rule.Validate(tc.in)
 		}
 	}
@@ -1427,9 +1427,9 @@ func TestStringCIDR(t *testing.T) {
 }
 
 func BenchmarkStringCIDR(b *testing.B) {
-	rule := StringCIDR()
-	for b.Loop() {
-		for _, tc := range stringCIDRTestCases {
+	for _, tc := range stringCIDRTestCases {
+		rule := StringCIDR()
+		for range b.N {
 			_ = rule.Validate(tc.in)
 		}
 	}
@@ -1474,9 +1474,9 @@ func TestStringCIDRv4(t *testing.T) {
 }
 
 func BenchmarkStringCIDRv4(b *testing.B) {
-	rule := StringCIDRv4()
-	for b.Loop() {
-		for _, tc := range stringCIDRv4TestCases {
+	for _, tc := range stringCIDRv4TestCases {
+		rule := StringCIDRv4()
+		for range b.N {
 			_ = rule.Validate(tc.in)
 		}
 	}
@@ -1514,9 +1514,9 @@ func TestStringCIDRv6(t *testing.T) {
 }
 
 func BenchmarkStringCIDRv6(b *testing.B) {
-	rule := StringCIDRv6()
-	for b.Loop() {
-		for _, tc := range stringCIDRv6TestCases {
+	for _, tc := range stringCIDRv6TestCases {
+		rule := StringCIDRv6()
+		for range b.N {
 			_ = rule.Validate(tc.in)
 		}
 	}
@@ -1547,9 +1547,9 @@ func TestStringJSON(t *testing.T) {
 }
 
 func BenchmarkStringJSON(b *testing.B) {
-	rule := StringJSON()
-	for b.Loop() {
-		for _, tc := range stringJSONTestCases {
+	for _, tc := range stringJSONTestCases {
+		rule := StringJSON()
+		for range b.N {
 			_ = rule.Validate(tc.in)
 		}
 	}
@@ -3462,13 +3462,10 @@ func TestStringContains(t *testing.T) {
 }
 
 func BenchmarkStringContains(b *testing.B) {
-	rules := make([]govy.Rule[string], len(stringContainsTestCases))
-	for i, tc := range stringContainsTestCases {
-		rules[i] = StringContains(tc.substrings...)
-	}
-	for b.Loop() {
-		for i, tc := range stringContainsTestCases {
-			_ = rules[i].Validate(tc.in)
+	for _, tc := range stringContainsTestCases {
+		rule := StringContains(tc.substrings...)
+		for range b.N {
+			_ = rule.Validate(tc.in)
 		}
 	}
 }
@@ -3525,13 +3522,10 @@ func TestStringExcludes(t *testing.T) {
 }
 
 func BenchmarkStringExcludes(b *testing.B) {
-	rules := make([]govy.Rule[string], len(stringExcludesTestCases))
-	for i, tc := range stringExcludesTestCases {
-		rules[i] = StringExcludes(tc.substrings...)
-	}
-	for b.Loop() {
-		for i, tc := range stringExcludesTestCases {
-			_ = rules[i].Validate(tc.in)
+	for _, tc := range stringExcludesTestCases {
+		rule := StringExcludes(tc.substrings...)
+		for range b.N {
+			_ = rule.Validate(tc.in)
 		}
 	}
 }
@@ -3574,13 +3568,10 @@ func TestStringStartsWith(t *testing.T) {
 }
 
 func BenchmarkStringStartsWith(b *testing.B) {
-	rules := make([]govy.Rule[string], len(stringStartsWithTestCases))
-	for i, tc := range stringStartsWithTestCases {
-		rules[i] = StringStartsWith(tc.prefixes...)
-	}
-	for b.Loop() {
-		for i, tc := range stringStartsWithTestCases {
-			_ = rules[i].Validate(tc.in)
+	for _, tc := range stringStartsWithTestCases {
+		rule := StringStartsWith(tc.prefixes...)
+		for range b.N {
+			_ = rule.Validate(tc.in)
 		}
 	}
 }
@@ -3623,13 +3614,10 @@ func TestStringEndsWith(t *testing.T) {
 }
 
 func BenchmarkStringEndsWith(b *testing.B) {
-	rules := make([]govy.Rule[string], len(stringEndsWithTestCases))
-	for i, tc := range stringEndsWithTestCases {
-		rules[i] = StringEndsWith(tc.suffixes...)
-	}
-	for b.Loop() {
-		for i, tc := range stringEndsWithTestCases {
-			_ = rules[i].Validate(tc.in)
+	for _, tc := range stringEndsWithTestCases {
+		rule := StringEndsWith(tc.suffixes...)
+		for range b.N {
+			_ = rule.Validate(tc.in)
 		}
 	}
 }
@@ -3667,9 +3655,9 @@ func TestStringTitle(t *testing.T) {
 }
 
 func BenchmarkStringTitle(b *testing.B) {
-	rule := StringTitle()
-	for b.Loop() {
-		for _, tc := range stringTitleTestCases {
+	for _, tc := range stringTitleTestCases {
+		rule := StringTitle()
+		for range b.N {
 			_ = rule.Validate(tc.in)
 		}
 	}
@@ -3754,9 +3742,9 @@ func TestStringGitRef(t *testing.T) {
 }
 
 func BenchmarkStringGitRef(b *testing.B) {
-	rule := StringGitRef()
-	for b.Loop() {
-		for _, tc := range stringGitRefTestCases {
+	for _, tc := range stringGitRefTestCases {
+		rule := StringGitRef()
+		for range b.N {
 			_ = rule.Validate(tc.in)
 		}
 	}
@@ -3836,9 +3824,9 @@ func TestStringFileSystemPath(t *testing.T) {
 func BenchmarkStringFileSystemPath(b *testing.B) {
 	root := prepareFileSystemTests(b)
 	testCases := getStringFileSystemPathTestCases(root)
-	rule := StringFileSystemPath()
-	for b.Loop() {
-		for _, tc := range testCases {
+	for _, tc := range testCases {
+		rule := StringFileSystemPath()
+		for range b.N {
 			_ = rule.Validate(tc.in)
 		}
 	}
@@ -3887,9 +3875,9 @@ func TestStringFilePath(t *testing.T) {
 func BenchmarkStringFilePath(b *testing.B) {
 	root := prepareFileSystemTests(b)
 	testCases := getStringFilePathTestCases(root)
-	rule := StringFilePath()
-	for b.Loop() {
-		for _, tc := range testCases {
+	for _, tc := range testCases {
+		rule := StringFilePath()
+		for range b.N {
 			_ = rule.Validate(tc.in)
 		}
 	}
@@ -3938,9 +3926,9 @@ func TestStringDirPath(t *testing.T) {
 func BenchmarkStringDirPath(b *testing.B) {
 	root := prepareFileSystemTests(b)
 	testCases := getStringDirPathTestCases(root)
-	rule := StringDirPath()
-	for b.Loop() {
-		for _, tc := range testCases {
+	for _, tc := range testCases {
+		rule := StringDirPath()
+		for range b.N {
 			_ = rule.Validate(tc.in)
 		}
 	}
@@ -4025,13 +4013,10 @@ func TestStringMatchFileSystemPath(t *testing.T) {
 }
 
 func BenchmarkStringMatchFileSystemPath(b *testing.B) {
-	rules := make([]govy.Rule[string], len(stringMatchFileSystemPathTestCases))
-	for i, tc := range stringMatchFileSystemPathTestCases {
-		rules[i] = StringMatchFileSystemPath(tc.pattern)
-	}
-	for b.Loop() {
-		for i, tc := range stringMatchFileSystemPathTestCases {
-			_ = rules[i].Validate(tc.in)
+	for _, tc := range stringMatchFileSystemPathTestCases {
+		rule := StringMatchFileSystemPath(tc.pattern)
+		for range b.N {
+			_ = rule.Validate(tc.in)
 		}
 	}
 }
@@ -4085,9 +4070,9 @@ func TestStringRegexp(t *testing.T) {
 }
 
 func BenchmarkStringRegexp(b *testing.B) {
-	rule := StringRegexp()
-	for b.Loop() {
-		for _, tc := range stringRegexpTestCases {
+	for _, tc := range stringRegexpTestCases {
+		rule := StringRegexp()
+		for range b.N {
 			_ = rule.Validate(tc.in)
 		}
 	}
@@ -4225,7 +4210,7 @@ func TestStringCrontab(t *testing.T) {
 }
 
 func BenchmarkStringCrontab(b *testing.B) {
-	for b.Loop() {
+	for range b.N {
 		testCases := getStringCronTestCases()
 		for _, tc := range testCases {
 			_ = StringCrontab().Validate(tc.in)
@@ -4275,13 +4260,10 @@ func TestStringDateTime(t *testing.T) {
 }
 
 func BenchmarkStringDateTime(b *testing.B) {
-	rules := make([]govy.Rule[string], len(stringDateTimeTestCases))
-	for i, tc := range stringDateTimeTestCases {
-		rules[i] = StringDateTime(tc.layout)
-	}
-	for b.Loop() {
-		for i, tc := range stringDateTimeTestCases {
-			_ = rules[i].Validate(tc.in)
+	for _, tc := range stringDateTimeTestCases {
+		rule := StringDateTime(tc.layout)
+		for range b.N {
+			_ = rule.Validate(tc.in)
 		}
 	}
 }
@@ -4315,9 +4297,9 @@ func TestStringTimeZone(t *testing.T) {
 }
 
 func BenchmarkStringTimeZone(b *testing.B) {
-	rule := StringTimeZone()
-	for b.Loop() {
-		for _, tc := range stringTimeZoneTestCases {
+	for _, tc := range stringDateTimeTestCases {
+		rule := StringTimeZone()
+		for range b.N {
 			_ = rule.Validate(tc.in)
 		}
 	}
@@ -4352,9 +4334,9 @@ func TestStringAlpha(t *testing.T) {
 }
 
 func BenchmarkStringAlpha(b *testing.B) {
-	rule := StringAlpha()
-	for b.Loop() {
-		for _, tc := range stringAlphaTestCases {
+	for _, tc := range stringAlphaTestCases {
+		rule := StringAlpha()
+		for range b.N {
 			_ = rule.Validate(tc.in)
 		}
 	}
@@ -4393,9 +4375,9 @@ func TestStringAlphanumeric(t *testing.T) {
 }
 
 func BenchmarkStringAlphanumeric(b *testing.B) {
-	rule := StringAlphanumeric()
-	for b.Loop() {
-		for _, tc := range stringAlphanumericTestCases {
+	for _, tc := range stringAlphanumericTestCases {
+		rule := StringAlphanumeric()
+		for range b.N {
 			_ = rule.Validate(tc.in)
 		}
 	}
@@ -4434,9 +4416,9 @@ func TestStringAlphaUnicode(t *testing.T) {
 }
 
 func BenchmarkStringAlphaUnicode(b *testing.B) {
-	rule := StringAlphaUnicode()
-	for b.Loop() {
-		for _, tc := range stringAlphaUnicodeTestCases {
+	for _, tc := range stringAlphaUnicodeTestCases {
+		rule := StringAlphaUnicode()
+		for range b.N {
 			_ = rule.Validate(tc.in)
 		}
 	}
@@ -4480,9 +4462,9 @@ func TestStringAlphanumericUnicode(t *testing.T) {
 }
 
 func BenchmarkStringAlphanumericUnicode(b *testing.B) {
-	rule := StringAlphanumericUnicode()
-	for b.Loop() {
-		for _, tc := range stringAlphanumericUnicodeTestCases {
+	for _, tc := range stringAlphanumericUnicodeTestCases {
+		rule := StringAlphanumericUnicode()
+		for range b.N {
 			_ = rule.Validate(tc.in)
 		}
 	}
@@ -4527,9 +4509,9 @@ func TestStringFQDN(t *testing.T) {
 }
 
 func BenchmarkStringFQDN(b *testing.B) {
-	rule := StringFQDN()
-	for b.Loop() {
-		for _, tc := range stringFQDNTestCases {
+	for _, tc := range stringFQDNTestCases {
+		rule := StringFQDN()
+		for range b.N {
 			_ = rule.Validate(tc.in)
 		}
 	}
@@ -4602,9 +4584,9 @@ func TestStringKubernetesQualifiedName(t *testing.T) {
 }
 
 func BenchmarkStringKubernetesQualifiedName(b *testing.B) {
-	rule := StringKubernetesQualifiedName()
-	for b.Loop() {
-		for _, tc := range stringK8sQualifiedNameTestCases {
+	for _, tc := range stringK8sQualifiedNameTestCases {
+		rule := StringKubernetesQualifiedName()
+		for range b.N {
 			_ = rule.Validate(tc.in)
 		}
 	}
