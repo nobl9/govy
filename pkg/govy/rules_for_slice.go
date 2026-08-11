@@ -106,28 +106,29 @@ func (r PropertyRulesForSlice[S, T, P]) When(
 }
 
 // IncludeForEach associates specified [Validator] and its [PropertyRules] with each element of the slice.
-// Included validators retain their own cascade modes;
-// configure them directly with [Validator.Cascade].
+// Included validators use their own cascade modes.
+// To change a mode, call [Validator.Cascade] before you pass the validator to this method.
 func (r PropertyRulesForSlice[S, T, P]) IncludeForEach(rules ...ValidatorInterface[T]) PropertyRulesForSlice[S, T, P] {
 	r.forEachRules = r.forEachRules.Include(rules...)
 	return r
 }
 
 // Include embeds specified [Validator] and its [PropertyRules] into the property.
-// Included validators retain their own cascade modes;
-// configure them directly with [Validator.Cascade].
+// Included validators use their own cascade modes.
+// To change a mode, call [Validator.Cascade] before you pass the validator to this method.
 func (r PropertyRulesForSlice[S, T, P]) Include(rules ...ValidatorInterface[S]) PropertyRulesForSlice[S, T, P] {
 	r.sliceRules = r.sliceRules.Include(rules...)
 	return r
 }
 
-// Cascade sets the [CascadeMode] for rules associated with the whole slice
-// and for rules associated with each element.
-// It does not propagate into validators added with
-// [PropertyRulesForSlice.Include] or [PropertyRulesForSlice.IncludeForEach].
+// Cascade sets the [CascadeMode] for rules that validate the whole slice
+// and each element.
+// If whole-slice validation returns an error, [CascadeModeStop] skips all elements.
+// The mode applies separately to the rules for each element.
+// An element error does not stop validation of later elements.
 //
-// When set explicitly, the mode takes precedence over the mode inherited from
-// the containing [Validator].
+// Each included [Validator] uses its own cascade mode internally.
+// An explicit slice mode takes precedence over the containing validator's mode.
 func (r PropertyRulesForSlice[S, T, P]) Cascade(mode CascadeMode) PropertyRulesForSlice[S, T, P] {
 	r.cascadeMode = mode
 	r.sliceRules = r.sliceRules.Cascade(mode)
