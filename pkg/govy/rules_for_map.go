@@ -156,6 +156,8 @@ func (r PropertyRulesForMap[M, K, V, P]) When(
 }
 
 // Include embeds specified [Validator] and its [PropertyRules] into the property.
+// Included validators use their own cascade modes.
+// To change a mode, call [Validator.Cascade] before you pass the validator to this method.
 func (r PropertyRulesForMap[M, K, V, P]) Include(
 	validators ...ValidatorInterface[M],
 ) PropertyRulesForMap[M, K, V, P] {
@@ -164,6 +166,8 @@ func (r PropertyRulesForMap[M, K, V, P]) Include(
 }
 
 // IncludeForKeys associates specified [Validator] and its [PropertyRules] with map's keys.
+// Included validators use their own cascade modes.
+// To change a mode, call [Validator.Cascade] before you pass the validator to this method.
 func (r PropertyRulesForMap[M, K, V, P]) IncludeForKeys(
 	validators ...ValidatorInterface[K],
 ) PropertyRulesForMap[M, K, V, P] {
@@ -172,6 +176,8 @@ func (r PropertyRulesForMap[M, K, V, P]) IncludeForKeys(
 }
 
 // IncludeForValues associates specified [Validator] and its [PropertyRules] with map's values.
+// Included validators use their own cascade modes.
+// To change a mode, call [Validator.Cascade] before you pass the validator to this method.
 func (r PropertyRulesForMap[M, K, V, P]) IncludeForValues(
 	rules ...ValidatorInterface[V],
 ) PropertyRulesForMap[M, K, V, P] {
@@ -181,6 +187,8 @@ func (r PropertyRulesForMap[M, K, V, P]) IncludeForValues(
 
 // IncludeForItems associates specified [Validator] and its [PropertyRules] with [MapItem].
 // It allows validating both key and value in conjunction.
+// Included validators use their own cascade modes.
+// To change a mode, call [Validator.Cascade] before you pass the validator to this method.
 func (r PropertyRulesForMap[M, K, V, P]) IncludeForItems(
 	rules ...ValidatorInterface[MapItem[K, V]],
 ) PropertyRulesForMap[M, K, V, P] {
@@ -188,7 +196,14 @@ func (r PropertyRulesForMap[M, K, V, P]) IncludeForItems(
 	return r
 }
 
-// Cascade => refer to [PropertyRules.Cascade] documentation.
+// Cascade sets the [CascadeMode] for rules that validate the whole map,
+// each key, each value, and each [MapItem].
+// If whole-map validation returns an error, [CascadeModeStop] skips all entries.
+// The key, value, and [MapItem] rule groups apply the mode independently.
+// An entry error does not stop validation of other entries.
+//
+// Each included [Validator] uses its own cascade mode internally.
+// An explicit map mode takes precedence over the containing validator's mode.
 func (r PropertyRulesForMap[M, K, V, P]) Cascade(mode CascadeMode) PropertyRulesForMap[M, K, V, P] {
 	r.cascadeMode = mode
 	r.mapRules = r.mapRules.Cascade(mode)

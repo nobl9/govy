@@ -234,6 +234,14 @@ func TestValidatorCascade(t *testing.T) {
 		propertyRulesForSlice,
 		propertyRulesForMap,
 	)
+	includedValidator := govy.New(
+		govy.For(func(m mockValidatorStruct) string { return "test" }).
+			WithName("first").
+			Rules(govy.NewRule(func(v string) error { return errors.New("1") })),
+		govy.For(func(m mockValidatorStruct) string { return "test" }).
+			WithName("second").
+			Rules(govy.NewRule(func(v string) error { return errors.New("2") })),
+	)
 
 	allErrors := []govytest.ExpectedRuleError{
 		{PropertyPath: "string", Message: "1"},
@@ -306,6 +314,17 @@ func TestValidatorCascade(t *testing.T) {
 			[]govytest.ExpectedRuleError{
 				{PropertyPath: "string", Message: "1"},
 				{PropertyPath: "string", Message: "2"},
+			},
+		},
+		"included validator retains default mode": {
+			govy.New(
+				govy.For(govy.GetSelf[mockValidatorStruct]()).
+					WithName("included").
+					Include(includedValidator),
+			).Cascade(govy.CascadeModeStop),
+			[]govytest.ExpectedRuleError{
+				{PropertyPath: "included.first", Message: "1"},
+				{PropertyPath: "included.second", Message: "2"},
 			},
 		},
 	}
@@ -538,7 +557,7 @@ func TestValidatorInferPath(t *testing.T) {
 			// Changed name to differentiate between runtime and generate modes.
 			Path: jsonpath.New().Name("generated-students"),
 			File: "pkg/govy/validator_test.go",
-			Line: 551,
+			Line: 570,
 		})
 
 		v := govy.New(

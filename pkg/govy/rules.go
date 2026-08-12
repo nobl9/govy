@@ -201,6 +201,8 @@ func (r PropertyRules[T, P]) Rules(rules ...RulesInterface[T]) PropertyRules[T, 
 }
 
 // Include embeds specified [Validator] and its [PropertyRules] into the property.
+// Included validators use their own cascade modes.
+// To change a mode, call [Validator.Cascade] before you pass the validator to this method.
 func (r PropertyRules[T, P]) Include(rules ...ValidatorInterface[T]) PropertyRules[T, P] {
 	for _, rule := range rules {
 		r.rules = append(r.rules, rule)
@@ -236,8 +238,14 @@ func (r PropertyRules[T, P]) HideValue() PropertyRules[T, P] {
 	return r
 }
 
-// Cascade sets the [CascadeMode] for the property,
-// which controls the flow of evaluating the validation rules.
+// Cascade sets the [CascadeMode] for the property's rules and included validators.
+// [CascadeModeStop] stops after the first [Rule], [RuleSet], or included
+// [Validator] returns an error.
+// Each [RuleSet] uses its own cascade mode internally.
+// Each included [Validator] also uses its own cascade mode internally.
+//
+// The mode does not affect the containing [Validator] or sibling properties.
+// An explicit property mode takes precedence over the containing validator's mode.
 func (r PropertyRules[T, P]) Cascade(mode CascadeMode) PropertyRules[T, P] {
 	r.cascadeMode = mode
 	return r
