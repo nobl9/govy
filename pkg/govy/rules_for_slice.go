@@ -27,7 +27,7 @@ type PropertyRulesForSlice[S ~[]T, T, P any] struct {
 }
 
 // Validate executes each of the rules sequentially and aggregates the encountered errors.
-func (r PropertyRulesForSlice[S, T, P]) Validate(parent P) error {
+func (r PropertyRulesForSlice[S, T, P]) Validate(parent P, opts ...ValidationOption) error {
 	if !r.matchPredicates(parent) {
 		return nil
 	}

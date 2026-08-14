@@ -42,14 +42,15 @@ func RuleToPointer[T any](rule Rule[T]) Rule[*T] {
 // It evaluates the provided validation function and enhances it
 // with optional [ErrorCode] and arbitrary details.
 type Rule[T any] struct {
-	validate        func(v T) error
-	errorCode       ErrorCode
-	details         string
-	message         string
-	messageTemplate *template.Template
-	examples        []string
-	description     string
-	planModifiers   []RulePlanModifier
+	validate          func(v T) error
+	errorCode         ErrorCode
+	details           string
+	message           string
+	messageTemplate   *template.Template
+	examples          []string
+	description       string
+	planModifiers     []RulePlanModifier
+	validationOptions []ValidationOption
 }
 
 // Validate runs validation function on the provided value.
@@ -61,51 +62,63 @@ type Rule[T any] struct {
 //     using variables passed inside [RuleErrorTemplate.vars].
 //
 // By default, it will construct a new [*RuleError].
-func (r Rule[T]) Validate(v T) error {
-	if err := r.validate(v); err != nil {
-		switch ev := err.(type) {
-		case *RuleError:
-			if len(r.message) > 0 {
-				ev.Message = createErrorMessage(r.message, r.details, r.examples)
-			}
-			ev.Description = r.description
-			return ev.AddCode(r.errorCode)
-		case *PropertyError:
-			for _, e := range ev.Errors {
-				_ = e.AddCode(r.errorCode)
-			}
-			return ev
-		case RuleErrorTemplate:
-			if r.message != "" {
-				break
-			}
-			if r.messageTemplate == nil {
-				panic(fmt.Sprintf("rule returned %T error but message template is not set", ev))
-			}
-			ev.vars.PropertyValue = v
-			ev.vars.Details = r.details
-			ev.vars.Examples = r.examples
-			var buf bytes.Buffer
-			if err = r.messageTemplate.Execute(&buf, ev.vars); err != nil {
-				panic(fmt.Sprintf("failed to execute message template: %s", err))
-			}
-			return &RuleError{
-				Message:     buf.String(),
-				Code:        r.errorCode,
-				Description: r.description,
-			}
-		}
-		msg := err.Error()
+func (r Rule[T]) Validate(v T, opts ...ValidationOption) error {
+	err := r.validate(v)
+	if err == nil {
+		return nil
+	}
+	opts = append(r.validationOptions, opts...)
+	vOpts := newValidationOptions(opts...)
+
+	switch ev := err.(type) {
+	case *RuleError:
 		if len(r.message) > 0 {
-			msg = r.message
+			ev.Message = createErrorMessage(r.message, r.details, r.examples)
+		}
+		ev.Description = r.description
+		return ev.AddCode(r.errorCode)
+	case *PropertyError:
+		for _, e := range ev.Errors {
+			_ = e.AddCode(r.errorCode)
+		}
+		return ev
+	case RuleErrorTemplate:
+		if r.message != "" {
+			break
+		}
+		if r.messageTemplate == nil {
+			panic(fmt.Sprintf("rule returned %T error but message template is not set", ev))
+		}
+		if vOpts.hideValue {
+			ev.vars.PropertyValue = hiddenValue
+		} else {
+			ev.vars.PropertyValue = v
+		}
+		ev.vars.Details = r.details
+		ev.vars.Examples = r.examples
+		var buf bytes.Buffer
+		if err = r.messageTemplate.Execute(&buf, ev.vars); err != nil {
+			panic(fmt.Sprintf("failed to execute message template: %s", err))
 		}
 		return &RuleError{
-			Message:     createErrorMessage(msg, r.details, r.examples),
+			Message:     buf.String(),
 			Code:        r.errorCode,
 			Description: r.description,
 		}
 	}
-	return nil
+	msg := err.Error()
+	if len(r.message) > 0 {
+		msg = r.message
+	}
+	ruleErr := &RuleError{
+		Message:     createErrorMessage(msg, r.details, r.examples),
+		Code:        r.errorCode,
+		Description: r.description,
+	}
+	if vOpts.hideValue {
+		ruleErr.Message = hideStringValue(ruleErr.Message, internal.PropertyValueString(v))
+	}
+	return ruleErr
 }
 
 // WithErrorCode sets the error code for the returned [RuleError].
@@ -174,6 +187,12 @@ func (r Rule[T]) WithPlanModifiers(mods ...RulePlanModifier) Rule[T] {
 // It is used to enhance the [RulePlan], but otherwise does not appear in standard [RuleError.Error] output.
 func (r Rule[T]) WithDescription(description string) Rule[T] {
 	r.description = description
+	return r
+}
+
+// HideValue will hide the value in the [RuleError] returned by this [Rule].
+func (r Rule[T]) HideValue() Rule[T] {
+	r.validationOptions = append(r.validationOptions, hideValue())
 	return r
 }
 

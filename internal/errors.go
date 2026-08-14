@@ -52,43 +52,50 @@ func PropertyValueString(v any) string {
 	if v == nil {
 		return ""
 	}
-	rv := reflect.ValueOf(v)
-	ft := reflect.Indirect(rv)
+
+	// Fast, refelection-free path.
 	var s string
-	switch ft.Kind() {
-	case reflect.Interface, reflect.Map, reflect.Slice:
-		if rv.IsZero() {
-			break
-		}
-		raw, _ := json.Marshal(v)
-		s = string(raw)
-	case reflect.Struct:
-		// If the struct is empty and it has.
-		if rv.IsZero() && rv.NumField() != 0 {
-			break
-		}
-		if timeDate, ok := v.(time.Time); ok {
-			s = timeDate.Format(time.RFC3339)
-			break
-		}
-		if stringer, ok := v.(fmt.Stringer); ok && !hasJSONTags(v, rv.Kind() == reflect.Pointer) {
-			s = stringer.String()
-			break
-		}
-		raw, _ := json.Marshal(v)
-		s = string(raw)
-	case reflect.Pointer:
-		if rv.IsNil() {
-			return ""
-		}
-		deref := rv.Elem().Interface()
-		return PropertyValueString(deref)
-	case reflect.Func:
-		return "func"
-	case reflect.Invalid:
-		return ""
+	switch v := v.(type) {
+	case string:
+		s = v
 	default:
-		s = fmt.Sprint(ft.Interface())
+		rv := reflect.ValueOf(v)
+		ft := reflect.Indirect(rv)
+		switch ft.Kind() {
+		case reflect.Interface, reflect.Map, reflect.Slice:
+			if rv.IsZero() {
+				break
+			}
+			raw, _ := json.Marshal(v)
+			s = string(raw)
+		case reflect.Struct:
+			// If the struct is empty and it has.
+			if rv.IsZero() && rv.NumField() != 0 {
+				break
+			}
+			if timeDate, ok := v.(time.Time); ok {
+				s = timeDate.Format(time.RFC3339)
+				break
+			}
+			if stringer, ok := v.(fmt.Stringer); ok && !hasJSONTags(v, rv.Kind() == reflect.Pointer) {
+				s = stringer.String()
+				break
+			}
+			raw, _ := json.Marshal(v)
+			s = string(raw)
+		case reflect.Pointer:
+			if rv.IsNil() {
+				return ""
+			}
+			deref := rv.Elem().Interface()
+			return PropertyValueString(deref)
+		case reflect.Func:
+			return "func"
+		case reflect.Invalid:
+			return ""
+		default:
+			s = fmt.Sprint(ft.Interface())
+		}
 	}
 	s = limitString(s, 100)
 	s = strings.TrimSpace(s)

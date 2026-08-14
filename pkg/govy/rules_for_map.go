@@ -40,7 +40,7 @@ type MapItem[K comparable, V any] struct {
 }
 
 // Validate executes each of the rules sequentially and aggregates the encountered errors.
-func (r PropertyRulesForMap[M, K, V, P]) Validate(parent P) error {
+func (r PropertyRulesForMap[M, K, V, P]) Validate(parent P, opts ...ValidationOption) error {
 	if !r.matchPredicates(parent) {
 		return nil
 	}

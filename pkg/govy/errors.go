@@ -94,14 +94,6 @@ func (e PropertyErrors) Error() string {
 	return b.String()
 }
 
-// HideValue hides the property value from each of the [PropertyError].
-func (e PropertyErrors) HideValue() PropertyErrors {
-	for _, err := range e {
-		_ = err.HideValue()
-	}
-	return e
-}
-
 // sort should be always called after aggregate.
 func (e PropertyErrors) sort() PropertyErrors {
 	if len(e) == 0 {
@@ -200,16 +192,6 @@ func (e *PropertyError) Equal(cmp *PropertyError) bool {
 		e.IsSliceElementError == cmp.IsSliceElementError
 }
 
-// HideValue hides the property value from each of the [PropertyError.Errors].
-func (e *PropertyError) HideValue() *PropertyError {
-	sv := internal.PropertyValueString(e.PropertyValue)
-	e.PropertyValue = ""
-	for _, err := range e.Errors {
-		_ = err.HideValue(sv)
-	}
-	return e
-}
-
 func (e *PropertyError) prependParentPropertyPath(path jsonpath.Path) *PropertyError {
 	e.PropertyPath = path.Join(e.PropertyPath)
 	return e
@@ -243,16 +225,6 @@ func (r *RuleError) Error() string {
 // See [ErrorCode.Add] for more details.
 func (r *RuleError) AddCode(code ErrorCode) *RuleError {
 	r.Code = r.Code.Add(code)
-	return r
-}
-
-// HideValue replaces all occurrences of stringValue in [RuleError.Message] with `[hidden]`.
-// If stringValue is empty or contains only Unicode whitespace, it leaves the message unchanged.
-func (r *RuleError) HideValue(stringValue string) *RuleError {
-	if strings.TrimSpace(stringValue) == "" {
-		return r
-	}
-	r.Message = strings.ReplaceAll(r.Message, stringValue, hiddenValue)
 	return r
 }
 

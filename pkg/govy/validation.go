@@ -1,6 +1,10 @@
 package govy
 
-import "github.com/nobl9/govy/pkg/jsonpath"
+import (
+	"strings"
+
+	"github.com/nobl9/govy/pkg/jsonpath"
+)
 
 // ValidatorInterface defines validation entities which group properties,
 // such as [Validator].
@@ -33,5 +37,35 @@ type RulesInterface[T any] interface {
 // validationInterface is a common interface implemented by all validation entities.
 // These include [Validator], [PropertyRules] and [Rule].
 type validationInterface[T any] interface {
-	Validate(v T) error
+	Validate(v T, opts ...ValidationOption) error
+}
+
+// validationOptions defines optional configuration passed to [validationInterface.Validate] invocations.
+type validationOptions struct {
+	hideValue bool
+}
+
+func newValidationOptions(opts ...ValidationOption) validationOptions {
+	vo := validationOptions{}
+	for _, opt := range opts {
+		vo = opt(vo)
+	}
+	return vo
+}
+
+// ValidationOption applies optional configuration to [Rule.Validate].
+type ValidationOption func(options validationOptions) validationOptions
+
+func hideValue() ValidationOption {
+	return func(options validationOptions) validationOptions {
+		options.hideValue = true
+		return options
+	}
+}
+
+func hideStringValue(message, stringValue string) string {
+	if strings.TrimSpace(stringValue) == "" {
+		return message
+	}
+	return strings.ReplaceAll(message, stringValue, hiddenValue)
 }
