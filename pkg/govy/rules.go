@@ -50,7 +50,7 @@ func Transform[T, N, P any](getter PropertyGetter[T, P], transform Transformer[T
 			if err != nil {
 				message := err.Error()
 				if hideValue {
-					message = hideStringValue(message, internal.PropertyValueString(v))
+					message = hideStringValue(message, v)
 				}
 				return transformed, v, NewRuleError(message, ErrorCodeTransform)
 			}

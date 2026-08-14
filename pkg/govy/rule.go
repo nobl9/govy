@@ -91,6 +91,9 @@ func (r Rule[T]) Validate(v T, opts ...ValidationOption) error {
 		}
 		if vOpts.hideValue {
 			ev.vars.PropertyValue = hiddenValue
+			if ev.vars.Error != "" {
+				ev.vars.Error = hideStringValue(ev.vars.Error, v)
+			}
 		} else {
 			ev.vars.PropertyValue = v
 		}
@@ -116,7 +119,7 @@ func (r Rule[T]) Validate(v T, opts ...ValidationOption) error {
 		Description: r.description,
 	}
 	if vOpts.hideValue {
-		ruleErr.Message = hideStringValue(ruleErr.Message, internal.PropertyValueString(v))
+		ruleErr.Message = hideStringValue(ruleErr.Message, v)
 	}
 	return ruleErr
 }

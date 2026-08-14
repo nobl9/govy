@@ -3,6 +3,7 @@ package govy
 import (
 	"strings"
 
+	"github.com/nobl9/govy/internal"
 	"github.com/nobl9/govy/pkg/jsonpath"
 )
 
@@ -63,7 +64,8 @@ func hideValue() ValidationOption {
 	}
 }
 
-func hideStringValue(message, stringValue string) string {
+func hideStringValue(message string, v any) string {
+	stringValue := internal.PropertyValueString(v)
 	if strings.TrimSpace(stringValue) == "" {
 		return message
 	}
