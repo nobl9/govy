@@ -28,13 +28,14 @@ func RuleToPointer[T any](rule Rule[T]) Rule[*T] {
 			}
 			return rule.validate(*v)
 		},
-		errorCode:       rule.errorCode,
-		details:         rule.details,
-		message:         rule.message,
-		messageTemplate: rule.messageTemplate,
-		examples:        rule.examples,
-		description:     rule.description,
-		planModifiers:   rule.planModifiers,
+		errorCode:         rule.errorCode,
+		details:           rule.details,
+		message:           rule.message,
+		messageTemplate:   rule.messageTemplate,
+		examples:          rule.examples,
+		description:       rule.description,
+		planModifiers:     rule.planModifiers,
+		validationOptions: rule.validationOptions,
 	}
 }
 
@@ -76,10 +77,17 @@ func (r Rule[T]) Validate(v T, opts ...ValidationOption) error {
 			ev.Message = createErrorMessage(r.message, r.details, r.examples)
 		}
 		ev.Description = r.description
-		return ev.AddCode(r.errorCode)
+		_ = ev.AddCode(r.errorCode)
+		if vOpts.hideValue {
+			ev.Message = hideStringValue(ev.Message, v)
+		}
+		return ev
 	case *PropertyError:
 		for _, e := range ev.Errors {
 			_ = e.AddCode(r.errorCode)
+		}
+		if vOpts.hideValue {
+			hidePropertyErrorValue(ev, ev.PropertyValue, v)
 		}
 		return ev
 	case RuleErrorTemplate:
@@ -103,8 +111,12 @@ func (r Rule[T]) Validate(v T, opts ...ValidationOption) error {
 		if err = r.messageTemplate.Execute(&buf, ev.vars); err != nil {
 			panic(fmt.Sprintf("failed to execute message template: %s", err))
 		}
+		message := buf.String()
+		if vOpts.hideValue {
+			message = hideStringValue(message, v)
+		}
 		return &RuleError{
-			Message:     buf.String(),
+			Message:     message,
 			Code:        r.errorCode,
 			Description: r.description,
 		}

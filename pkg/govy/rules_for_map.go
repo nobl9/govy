@@ -44,7 +44,8 @@ func (r PropertyRulesForMap[M, K, V, P]) Validate(parent P, opts ...ValidationOp
 	if !r.matchPredicates(parent) {
 		return nil
 	}
-	err := r.mapRules.Validate(parent)
+	vOpts := newValidationOptions(opts...)
+	err := r.mapRules.Validate(parent, opts...)
 	var propErrs PropertyErrors
 	if err != nil {
 		if r.cascadeMode == CascadeModeStop {
@@ -59,7 +60,7 @@ func (r PropertyRulesForMap[M, K, V, P]) Validate(parent P, opts ...ValidationOp
 	}
 	for k, v := range r.getter(parent) {
 		keyPath := r.getPathForKey(k)
-		if err = r.forKeyRules.Validate(k); err != nil {
+		if err = r.forKeyRules.Validate(k, opts...); err != nil {
 			if keyErrors, ok := err.(PropertyErrors); ok {
 				for _, e := range keyErrors {
 					e.IsKeyError = true
@@ -69,7 +70,7 @@ func (r PropertyRulesForMap[M, K, V, P]) Validate(parent P, opts ...ValidationOp
 				logWrongErrorType(PropertyErrors{}, err)
 			}
 		}
-		if err = r.forValueRules.Validate(v); err != nil {
+		if err = r.forValueRules.Validate(v, opts...); err != nil {
 			if valueErrors, ok := err.(PropertyErrors); ok {
 				for _, e := range valueErrors {
 					propErrs = append(propErrs, e.prependParentPropertyPath(keyPath))
@@ -78,12 +79,10 @@ func (r PropertyRulesForMap[M, K, V, P]) Validate(parent P, opts ...ValidationOp
 				logWrongErrorType(PropertyErrors{}, err)
 			}
 		}
-		if err = r.forItemRules.Validate(MapItem[K, V]{Key: k, Value: v}); err != nil {
+		if err = r.forItemRules.Validate(MapItem[K, V]{Key: k, Value: v}, opts...); err != nil {
 			if itemErrors, ok := err.(PropertyErrors); ok {
 				for _, e := range itemErrors {
-					// TODO: Figure out how to handle custom PropertyErrors.
-					// Custom errors' value for nested item will be overridden by the actual value.
-					e.PropertyValue = internal.PropertyValueString(v)
+					setMapItemErrorValue(e, v, vOpts.hideValue)
 					propErrs = append(propErrs, e.prependParentPropertyPath(keyPath))
 				}
 			} else {
@@ -95,6 +94,16 @@ func (r PropertyRulesForMap[M, K, V, P]) Validate(parent P, opts ...ValidationOp
 		return propErrs.aggregate().sort()
 	}
 	return nil
+}
+
+func setMapItemErrorValue[V any](err *PropertyError, value V, hideValue bool) {
+	if hideValue {
+		hidePropertyErrorValue(err, value)
+		return
+	}
+	// TODO: Figure out how to handle custom PropertyErrors.
+	// Custom errors' value for nested item will be overridden by the actual value.
+	err.PropertyValue = internal.PropertyValueString(value)
 }
 
 // WithName => refer to [PropertyRules.WithName] documentation.

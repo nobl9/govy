@@ -100,7 +100,7 @@ func (v Validator[T]) Validate(value T, opts ...ValidationOption) error {
 	}
 	var allErrors PropertyErrors
 	for _, rules := range v.props {
-		err := rules.Validate(value)
+		err := rules.Validate(value, opts...)
 		if err == nil {
 			continue
 		}

@@ -54,7 +54,7 @@ func newValidationOptions(opts ...ValidationOption) validationOptions {
 	return vo
 }
 
-// ValidationOption applies optional configuration to [Rule.Validate].
+// ValidationOption configures value handling during validation.
 type ValidationOption func(options validationOptions) validationOptions
 
 func hideValue() ValidationOption {
@@ -65,9 +65,22 @@ func hideValue() ValidationOption {
 }
 
 func hideStringValue(message string, v any) string {
-	stringValue := internal.PropertyValueString(v)
-	if strings.TrimSpace(stringValue) == "" {
-		return message
+	fullValue := internal.PropertyValueStringForRedaction(v)
+	if strings.TrimSpace(fullValue) != "" {
+		message = strings.ReplaceAll(message, fullValue, hiddenValue)
 	}
-	return strings.ReplaceAll(message, stringValue, hiddenValue)
+	displayValue := internal.PropertyValueString(v)
+	if displayValue != fullValue && strings.TrimSpace(displayValue) != "" {
+		message = strings.ReplaceAll(message, displayValue, hiddenValue)
+	}
+	return message
+}
+
+func hidePropertyErrorValue(err *PropertyError, values ...any) {
+	err.PropertyValue = ""
+	for _, ruleErr := range err.Errors {
+		for _, v := range values {
+			ruleErr.Message = hideStringValue(ruleErr.Message, v)
+		}
+	}
 }

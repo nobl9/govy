@@ -32,7 +32,7 @@ type RuleSet[T any] struct {
 func (r RuleSet[T]) Validate(v T, opts ...ValidationOption) error {
 	var errs RuleSetError
 	for i := range r.rules {
-		err := r.rules[i].Validate(v)
+		err := r.rules[i].Validate(v, opts...)
 		if err == nil {
 			continue
 		}

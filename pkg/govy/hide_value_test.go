@@ -38,6 +38,15 @@ func TestRule_HideValue(t *testing.T) {
 		assert.EqualError(t, rule.Validate(longSecret), `invalid values "[hidden]" and "[hidden]"`)
 	})
 
+	t.Run("truncated long value", func(t *testing.T) {
+		longSecret := strings.Repeat("sensitive-value-", 8)
+		rule := govy.NewRule(func(v string) error {
+			return fmt.Errorf("invalid value %q", v[:100]+"...")
+		}).HideValue()
+
+		assert.EqualError(t, rule.Validate(longSecret), `invalid value "[hidden]"`)
+	})
+
 	t.Run("non-string value", func(t *testing.T) {
 		rule := govy.NewRule(func(v int) error {
 			return fmt.Errorf("invalid value %d", v)
@@ -126,6 +135,23 @@ func TestRule_HideValue(t *testing.T) {
 			Code:        "outer:inner",
 			Description: "validation description",
 		}, rule.Validate(secret))
+	})
+
+	t.Run("structured property error without property value", func(t *testing.T) {
+		rule := govy.NewRule(func(v string) error {
+			return govy.NewPropertyError(
+				jsonpath.New().Name("nested"),
+				nil,
+				govy.NewRuleError(fmt.Sprintf("invalid value %q", v)),
+			)
+		}).HideValue()
+
+		err := mustErrorType[*govy.PropertyError](t, rule.Validate(secret))
+		assert.Equal(t, &govy.PropertyError{
+			PropertyPath: jsonpath.Parse("nested"),
+			Errors:       []*govy.RuleError{{Message: `invalid value "[hidden]"`}},
+		}, err)
+		assertDoesNotContainSecret(t, err, secret)
 	})
 
 	t.Run("pointer conversion", func(t *testing.T) {

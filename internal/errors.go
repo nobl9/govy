@@ -49,11 +49,21 @@ var newLineReplacer = strings.NewReplacer("\n", "\\n", "\r", "\\r")
 //
 // If a value is a struct of type [time.Time] it will be formatted using [time.RFC3339] layout.
 func PropertyValueString(v any) string {
+	return propertyValueString(v, 100)
+}
+
+// PropertyValueStringForRedaction returns the untruncated string representation
+// used to remove sensitive property values from messages.
+func PropertyValueStringForRedaction(v any) string {
+	return propertyValueString(v, 0)
+}
+
+func propertyValueString(v any, maxLength int) string {
 	if v == nil {
 		return ""
 	}
 
-	// Fast, refelection-free path.
+	// Fast, reflection-free path.
 	var s string
 	switch v := v.(type) {
 	case string:
@@ -88,7 +98,7 @@ func PropertyValueString(v any) string {
 				return ""
 			}
 			deref := rv.Elem().Interface()
-			return PropertyValueString(deref)
+			return propertyValueString(deref, maxLength)
 		case reflect.Func:
 			return "func"
 		case reflect.Invalid:
@@ -97,7 +107,9 @@ func PropertyValueString(v any) string {
 			s = fmt.Sprint(ft.Interface())
 		}
 	}
-	s = limitString(s, 100)
+	if maxLength > 0 {
+		s = limitString(s, maxLength)
+	}
 	s = strings.TrimSpace(s)
 	s = newLineReplacer.Replace(s)
 	return s

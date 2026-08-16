@@ -32,7 +32,7 @@ func (r PropertyRulesForSlice[S, T, P]) Validate(parent P, opts ...ValidationOpt
 		return nil
 	}
 	v := r.getter(parent)
-	err := r.sliceRules.Validate(v)
+	err := r.sliceRules.Validate(v, opts...)
 	var propErrs PropertyErrors
 	if err != nil {
 		if r.cascadeMode == CascadeModeStop {
@@ -46,7 +46,7 @@ func (r PropertyRulesForSlice[S, T, P]) Validate(parent P, opts ...ValidationOpt
 		}
 	}
 	for i, element := range v {
-		err = r.forEachRules.Validate(element)
+		err = r.forEachRules.Validate(element, opts...)
 		if err == nil {
 			continue
 		}
