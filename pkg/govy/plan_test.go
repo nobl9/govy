@@ -361,6 +361,53 @@ func TestPlan_optionalProperties(t *testing.T) {
 	assert.Equal(t, readExpectedPlan(t, "expected_optional_properties_plan.json"), actual)
 }
 
+func TestPlan_preservesConditionsAcrossSiblingProperties(t *testing.T) {
+	type ratioMetric struct {
+		Good string
+		Bad  string
+	}
+
+	// Three inherited conditions leave spare capacity in the shared slice,
+	// reproducing the overwrite when sibling conditions are appended.
+	validator := govy.New(
+		govy.For(func(metric ratioMetric) string { return metric.Good }).
+			WithName("good").
+			Rules(rules.StringNotEmpty()).
+			When(
+				func(ratioMetric) bool { return true },
+				govy.WhenDescription("good is set"),
+			),
+		govy.For(func(metric ratioMetric) string { return metric.Bad }).
+			WithName("bad").
+			Rules(rules.StringNotEmpty()).
+			When(
+				func(ratioMetric) bool { return true },
+				govy.WhenDescription("bad is set"),
+			),
+	).
+		When(func(ratioMetric) bool { return true }, govy.WhenDescription("ratio is set")).
+		When(func(ratioMetric) bool { return true }, govy.WhenDescription("metric is set")).
+		When(func(ratioMetric) bool { return true }, govy.WhenDescription("source is set"))
+
+	plan, err := govy.Plan(validator)
+	assert.Require(t, assert.NoError(t, err))
+	assert.Require(t, assert.Len(t, plan.Properties, 2))
+
+	conditionsByPath := make(map[string][]string, len(plan.Properties))
+	for _, property := range plan.Properties {
+		assert.Require(t, assert.Len(t, property.Rules, 1))
+		conditionsByPath[property.Path.String()] = property.Rules[0].Conditions
+	}
+	assert.Equal(t, map[string][]string{
+		"$.bad": {
+			"ratio is set", "metric is set", "source is set", "bad is set",
+		},
+		"$.good": {
+			"ratio is set", "metric is set", "source is set", "good is set",
+		},
+	}, conditionsByPath)
+}
+
 func requireJSON(t *testing.T, plan *govy.ValidatorPlan) string {
 	buf := bytes.Buffer{}
 	enc := json.NewEncoder(&buf)
