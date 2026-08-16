@@ -236,8 +236,11 @@ func (r PropertyRules[T, P]) OmitEmpty() PropertyRules[T, P] {
 	return r
 }
 
-// HideValue omits values from errors produced by this property
-// and replaces their string representations in rule error messages with `[hidden]`.
+// HideValue omits values from errors produced by this property.
+// For rule errors without a message template, it replaces the value text with `[hidden]`.
+// Before it executes a message template, it sets [TemplateVars.PropertyValue] to `[hidden]`
+// and redacts the value text in [TemplateVars.Error].
+// It returns the rendered template without additional redaction.
 // The setting propagates to nested rules and included validators.
 func (r PropertyRules[T, P]) HideValue() PropertyRules[T, P] {
 	r.validationOptions = append(r.validationOptions, hideValue())

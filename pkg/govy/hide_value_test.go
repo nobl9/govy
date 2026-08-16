@@ -77,7 +77,7 @@ func TestPropertyRules_HideValue_RuleErrors(t *testing.T) {
 		)
 	})
 
-	t.Run("message template metadata", func(t *testing.T) {
+	t.Run("message template redacts only property value and error", func(t *testing.T) {
 		rule := govy.NewRule(func(v string) error {
 			return govy.NewRuleErrorTemplate(govy.TemplateVars{
 				Error:  fmt.Sprintf("nested error for %q", v),
@@ -94,7 +94,7 @@ func TestPropertyRules_HideValue_RuleErrors(t *testing.T) {
 			t,
 			hiddenPropertyRules(rule).Validate(secret),
 			"property",
-			`[hidden]: nested error for "[hidden]"; details for "[hidden]"; [hidden]; custom value "[hidden]"`,
+			`[hidden]: nested error for "[hidden]"; details for "secret"; secret; custom value "secret"`,
 		)
 	})
 

@@ -108,12 +108,8 @@ func (r Rule[T]) Validate(v T, opts ...ValidationOption) error {
 		if err = r.messageTemplate.Execute(&buf, ev.vars); err != nil {
 			panic(fmt.Sprintf("failed to execute message template: %s", err))
 		}
-		message := buf.String()
-		if vOpts.hideValue {
-			message = hideStringValue(message, v)
-		}
 		return &RuleError{
-			Message:     message,
+			Message:     buf.String(),
 			Code:        r.errorCode,
 			Description: r.description,
 		}
