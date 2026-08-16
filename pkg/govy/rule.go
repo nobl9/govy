@@ -28,14 +28,13 @@ func RuleToPointer[T any](rule Rule[T]) Rule[*T] {
 			}
 			return rule.validate(*v)
 		},
-		errorCode:         rule.errorCode,
-		details:           rule.details,
-		message:           rule.message,
-		messageTemplate:   rule.messageTemplate,
-		examples:          rule.examples,
-		description:       rule.description,
-		planModifiers:     rule.planModifiers,
-		validationOptions: rule.validationOptions,
+		errorCode:       rule.errorCode,
+		details:         rule.details,
+		message:         rule.message,
+		messageTemplate: rule.messageTemplate,
+		examples:        rule.examples,
+		description:     rule.description,
+		planModifiers:   rule.planModifiers,
 	}
 }
 
@@ -43,15 +42,14 @@ func RuleToPointer[T any](rule Rule[T]) Rule[*T] {
 // It evaluates the provided validation function and enhances it
 // with optional [ErrorCode] and arbitrary details.
 type Rule[T any] struct {
-	validate          func(v T) error
-	errorCode         ErrorCode
-	details           string
-	message           string
-	messageTemplate   *template.Template
-	examples          []string
-	description       string
-	planModifiers     []RulePlanModifier
-	validationOptions []ValidationOption
+	validate        func(v T) error
+	errorCode       ErrorCode
+	details         string
+	message         string
+	messageTemplate *template.Template
+	examples        []string
+	description     string
+	planModifiers   []RulePlanModifier
 }
 
 // Validate runs validation function on the provided value.
@@ -68,7 +66,6 @@ func (r Rule[T]) Validate(v T, opts ...ValidationOption) error {
 	if err == nil {
 		return nil
 	}
-	opts = append(r.validationOptions, opts...)
 	vOpts := newValidationOptions(opts...)
 
 	switch ev := err.(type) {
@@ -202,12 +199,6 @@ func (r Rule[T]) WithPlanModifiers(mods ...RulePlanModifier) Rule[T] {
 // It is used to enhance the [RulePlan], but otherwise does not appear in standard [RuleError.Error] output.
 func (r Rule[T]) WithDescription(description string) Rule[T] {
 	r.description = description
-	return r
-}
-
-// HideValue will hide the value in the [RuleError] returned by this [Rule].
-func (r Rule[T]) HideValue() Rule[T] {
-	r.validationOptions = append(r.validationOptions, hideValue())
 	return r
 }
 

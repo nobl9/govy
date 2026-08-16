@@ -54,7 +54,8 @@ func newValidationOptions(opts ...ValidationOption) validationOptions {
 	return vo
 }
 
-// ValidationOption configures value handling during validation.
+// ValidationOption carries property configuration through nested validation calls.
+// Builder methods such as [PropertyRules.HideValue] create these values internally.
 type ValidationOption func(options validationOptions) validationOptions
 
 func hideValue() ValidationOption {

@@ -15,44 +15,50 @@ import (
 	"github.com/nobl9/govy/pkg/rules"
 )
 
-func TestRule_HideValue(t *testing.T) {
+func TestPropertyRules_HideValue_RuleErrors(t *testing.T) {
 	const secret = "secret"
-
-	t.Run("plain error", func(t *testing.T) {
-		rule := govy.NewRule(func(v string) error {
-			return fmt.Errorf("invalid value %q", v)
-		})
-		hiddenRule := rule.HideValue()
-
-		assert.EqualError(t, rule.Validate(secret), `invalid value "secret"`)
-		assert.EqualError(t, hiddenRule.Validate(secret), `invalid value "[hidden]"`)
-		assert.EqualError(t, rule.Validate(secret), `invalid value "secret"`)
-	})
 
 	t.Run("long repeated value", func(t *testing.T) {
 		longSecret := strings.Repeat("sensitive-value-", 8)
 		rule := govy.NewRule(func(v string) error {
 			return fmt.Errorf("invalid values %q and %q", v, v)
-		}).HideValue()
+		})
 
-		assert.EqualError(t, rule.Validate(longSecret), `invalid values "[hidden]" and "[hidden]"`)
+		propErr := assertHiddenPropertyError(
+			t,
+			hiddenPropertyRules(rule).Validate(longSecret),
+			"property",
+			`invalid values "[hidden]" and "[hidden]"`,
+		)
+		assertDoesNotContainSecret(t, propErr, longSecret)
 	})
 
 	t.Run("truncated long value", func(t *testing.T) {
 		longSecret := strings.Repeat("sensitive-value-", 8)
 		rule := govy.NewRule(func(v string) error {
 			return fmt.Errorf("invalid value %q", v[:100]+"...")
-		}).HideValue()
+		})
 
-		assert.EqualError(t, rule.Validate(longSecret), `invalid value "[hidden]"`)
+		propErr := assertHiddenPropertyError(
+			t,
+			hiddenPropertyRules(rule).Validate(longSecret),
+			"property",
+			`invalid value "[hidden]"`,
+		)
+		assertDoesNotContainSecret(t, propErr, longSecret)
 	})
 
 	t.Run("non-string value", func(t *testing.T) {
 		rule := govy.NewRule(func(v int) error {
 			return fmt.Errorf("invalid value %d", v)
-		}).HideValue()
+		})
 
-		assert.EqualError(t, rule.Validate(42), "invalid value [hidden]")
+		_ = assertHiddenPropertyError(
+			t,
+			hiddenPropertyRules(rule).Validate(42),
+			"property",
+			"invalid value [hidden]",
+		)
 	})
 
 	t.Run("message template", func(t *testing.T) {
@@ -61,10 +67,14 @@ func TestRule_HideValue(t *testing.T) {
 				Error: fmt.Sprintf("nested error for %q", v),
 			})
 		}).
-			WithMessageTemplateString("{{ .PropertyValue }}: {{ .Error }}").
-			HideValue()
+			WithMessageTemplateString("{{ .PropertyValue }}: {{ .Error }}")
 
-		assert.EqualError(t, rule.Validate(secret), `[hidden]: nested error for "[hidden]"`)
+		_ = assertHiddenPropertyError(
+			t,
+			hiddenPropertyRules(rule).Validate(secret),
+			"property",
+			`[hidden]: nested error for "[hidden]"`,
+		)
 	})
 
 	t.Run("message template metadata", func(t *testing.T) {
@@ -78,12 +88,12 @@ func TestRule_HideValue(t *testing.T) {
 			WithExamples(secret).
 			WithMessageTemplateString(
 				"{{ .PropertyValue }}: {{ .Error }}; {{ .Details }}; {{ index .Examples 0 }}; {{ .Custom }}",
-			).
-			HideValue()
+			)
 
-		assert.EqualError(
+		_ = assertHiddenPropertyError(
 			t,
-			rule.Validate(secret),
+			hiddenPropertyRules(rule).Validate(secret),
+			"property",
 			`[hidden]: nested error for "[hidden]"; details for "[hidden]"; [hidden]; custom value "[hidden]"`,
 		)
 	})
@@ -94,12 +104,12 @@ func TestRule_HideValue(t *testing.T) {
 		}).
 			WithMessage(fmt.Sprintf("invalid value %q", secret)).
 			WithDetails(fmt.Sprintf("details for %q", secret)).
-			WithExamples(secret).
-			HideValue()
+			WithExamples(secret)
 
-		assert.EqualError(
+		_ = assertHiddenPropertyError(
 			t,
-			rule.Validate(secret),
+			hiddenPropertyRules(rule).Validate(secret),
+			"property",
 			`invalid value "[hidden]" (e.g. '[hidden]'); details for "[hidden]"`,
 		)
 	})
@@ -109,14 +119,19 @@ func TestRule_HideValue(t *testing.T) {
 			return govy.NewRuleError(fmt.Sprintf("invalid value %q", v), "inner")
 		}).
 			WithErrorCode("outer").
-			WithDescription("validation description").
-			HideValue()
+			WithDescription("validation description")
 
+		propErr := assertHiddenPropertyError(
+			t,
+			hiddenPropertyRules(rule).Validate(secret),
+			"property",
+			`invalid value "[hidden]"`,
+		)
 		assert.Equal(t, &govy.RuleError{
 			Message:     `invalid value "[hidden]"`,
 			Code:        "outer:inner",
 			Description: "validation description",
-		}, rule.Validate(secret))
+		}, propErr.Errors[0])
 	})
 
 	t.Run("structured rule error with configured message", func(t *testing.T) {
@@ -127,14 +142,19 @@ func TestRule_HideValue(t *testing.T) {
 			WithDetails(fmt.Sprintf("details for %q", secret)).
 			WithExamples(secret).
 			WithErrorCode("outer").
-			WithDescription("validation description").
-			HideValue()
+			WithDescription("validation description")
 
+		propErr := assertHiddenPropertyError(
+			t,
+			hiddenPropertyRules(rule).Validate(secret),
+			"property",
+			`invalid value "[hidden]" (e.g. '[hidden]'); details for "[hidden]"`,
+		)
 		assert.Equal(t, &govy.RuleError{
 			Message:     `invalid value "[hidden]" (e.g. '[hidden]'); details for "[hidden]"`,
 			Code:        "outer:inner",
 			Description: "validation description",
-		}, rule.Validate(secret))
+		}, propErr.Errors[0])
 	})
 
 	t.Run("structured property error without property value", func(t *testing.T) {
@@ -144,33 +164,41 @@ func TestRule_HideValue(t *testing.T) {
 				nil,
 				govy.NewRuleError(fmt.Sprintf("invalid value %q", v)),
 			)
-		}).HideValue()
+		})
 
-		err := mustErrorType[*govy.PropertyError](t, rule.Validate(secret))
+		err := mustPropertyErrors(t, hiddenPropertyRules(rule).Validate(secret))
+		assert.Require(t, assert.Len(t, err, 1))
 		assert.Equal(t, &govy.PropertyError{
-			PropertyPath: jsonpath.Parse("nested"),
+			PropertyPath: jsonpath.Parse("property.nested"),
 			Errors:       []*govy.RuleError{{Message: `invalid value "[hidden]"`}},
-		}, err)
-		assertDoesNotContainSecret(t, err, secret)
+		}, err[0])
+		assertDoesNotContainSecret(t, err[0], secret)
 	})
 
 	t.Run("pointer conversion", func(t *testing.T) {
 		rule := govy.NewRule(func(v string) error {
 			return fmt.Errorf("invalid value %q", v)
-		}).HideValue()
+		})
 
-		assert.EqualError(t, govy.RuleToPointer(rule).Validate(ptr(secret)), `invalid value "[hidden]"`)
+		_ = assertHiddenPropertyError(
+			t,
+			hiddenPropertyRules(govy.RuleToPointer(rule)).Validate(ptr(secret)),
+			"property",
+			`invalid value "[hidden]"`,
+		)
 	})
 
 	t.Run("rule set pointer conversion", func(t *testing.T) {
 		ruleSet := govy.NewRuleSet(govy.NewRule(func(v string) error {
 			return fmt.Errorf("invalid value %q", v)
-		}).HideValue())
+		}))
 
-		err := govy.RuleSetToPointer(ruleSet).Validate(ptr(secret))
-		errs := mustErrorType[govy.RuleSetError](t, err)
-		assert.Require(t, assert.Len(t, errs, 1))
-		assert.EqualError(t, errs[0], `invalid value "[hidden]"`)
+		_ = assertHiddenPropertyError(
+			t,
+			hiddenPropertyRules(govy.RuleSetToPointer(ruleSet)).Validate(ptr(secret)),
+			"property",
+			`invalid value "[hidden]"`,
+		)
 	})
 }
 
@@ -229,22 +257,6 @@ func TestPropertyRules_HideValue(t *testing.T) {
 				assert.EqualError(t, err, "- 'password':\n  - string must not be empty")
 			})
 		}
-	})
-
-	t.Run("rule-only scope", func(t *testing.T) {
-		propertyRules := govy.For(govy.GetSelf[string]()).
-			WithName("password").
-			Rules(govy.NewRule(func(v string) error {
-				return fmt.Errorf("invalid value %q", v)
-			}).HideValue())
-
-		errs := mustPropertyErrors(t, propertyRules.Validate(secret))
-		assert.Require(t, assert.Len(t, errs, 1))
-		assert.Equal(t, &govy.PropertyError{
-			PropertyPath:  jsonpath.Parse("password"),
-			PropertyValue: secret,
-			Errors:        []*govy.RuleError{{Message: `invalid value "[hidden]"`}},
-		}, errs[0])
 	})
 
 	t.Run("sibling property scope", func(t *testing.T) {
@@ -553,4 +565,11 @@ func assertDoesNotContainSecret(t *testing.T, value any, secret string) {
 	if strings.Contains(string(data), secret) {
 		assert.Fail(t, "JSON error contains secret %q: %s", secret, data)
 	}
+}
+
+func hiddenPropertyRules[T any](ruleDefs ...govy.RulesInterface[T]) govy.PropertyRules[T, T] {
+	return govy.For(govy.GetSelf[T]()).
+		WithName("property").
+		HideValue().
+		Rules(ruleDefs...)
 }

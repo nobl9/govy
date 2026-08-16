@@ -236,8 +236,9 @@ func (r PropertyRules[T, P]) OmitEmpty() PropertyRules[T, P] {
 	return r
 }
 
-// HideValue hides the property value in the error message.
-// It's useful when the value is sensitive and should not be exposed.
+// HideValue omits values from errors produced by this property
+// and replaces their string representations in rule error messages with `[hidden]`.
+// The setting propagates to nested rules and included validators.
 func (r PropertyRules[T, P]) HideValue() PropertyRules[T, P] {
 	r.validationOptions = append(r.validationOptions, hideValue())
 	return r
