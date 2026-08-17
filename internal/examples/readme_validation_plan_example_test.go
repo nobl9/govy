@@ -79,6 +79,11 @@ func Example_validationPlan() {
 	// Output:
 	// {
 	//   "name": "Teacher",
+	//   "typeInfo": {
+	//     "name": "Teacher",
+	//     "kind": "struct",
+	//     "package": "github.com/nobl9/govy/internal/examples"
+	//   },
 	//   "properties": [
 	//     {
 	//       "path": "$.middleName",
