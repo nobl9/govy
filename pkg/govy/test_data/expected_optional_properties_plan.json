@@ -1,4 +1,8 @@
 {
+  "typeInfo": {
+    "name": "string",
+    "kind": "string"
+  },
   "properties": [
     {
       "path": "$.String1",
@@ -33,9 +37,5 @@
         }
       ]
     }
-  ],
-  "typeInfo": {
-    "name": "string",
-    "kind": "string"
-  }
+  ]
 }

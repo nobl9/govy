@@ -1867,6 +1867,11 @@ func ExamplePlan() {
 	// Output:
 	// {
 	//   "name": "Teacher",
+	//   "typeInfo": {
+	//     "name": "Teacher",
+	//     "kind": "struct",
+	//     "package": "github.com/nobl9/govy/pkg/govy_test"
+	//   },
 	//   "properties": [
 	//     {
 	//       "path": "$.name",
@@ -1895,12 +1900,7 @@ func ExamplePlan() {
 	//         }
 	//       ]
 	//     }
-	//   ],
-	//   "typeInfo": {
-	//     "name": "Teacher",
-	//     "kind": "struct",
-	//     "package": "github.com/nobl9/govy/pkg/govy_test"
-	//   }
+	//   ]
 	// }
 }
 

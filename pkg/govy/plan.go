@@ -15,10 +15,10 @@ import (
 type ValidatorPlan struct {
 	// Name is the value provided to [Validator.WithName].
 	Name string `json:"name,omitempty"`
-	// Properties which this [Validator] defines.
-	Properties []*PropertyPlan `json:"properties"`
 	// TypeInfo contains the type information of the validator.
 	TypeInfo TypeInfo `json:"typeInfo"`
+	// Properties which this [Validator] defines.
+	Properties []*PropertyPlan `json:"properties"`
 }
 
 // PropertyPlan is a validation plan for a single [PropertyRules].
