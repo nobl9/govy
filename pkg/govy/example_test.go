@@ -1867,6 +1867,11 @@ func ExamplePlan() {
 	// Output:
 	// {
 	//   "name": "Teacher",
+	//   "typeInfo": {
+	//     "name": "Teacher",
+	//     "kind": "struct",
+	//     "package": "github.com/nobl9/govy/pkg/govy_test"
+	//   },
 	//   "properties": [
 	//     {
 	//       "path": "$.name",
@@ -2043,7 +2048,7 @@ func ExampleInferPathModeGenerate() {
 	govyconfig.SetInferredPath(govyconfig.InferredPath{
 		Path: jsonpath.New().Name("name"),
 		File: "pkg/govy/example_test.go",
-		Line: 2050,
+		Line: 2055,
 	})
 
 	v2 := govy.New(
