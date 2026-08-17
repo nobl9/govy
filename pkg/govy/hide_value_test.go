@@ -103,8 +103,8 @@ func TestPropertyRules_HideValue_RuleErrors(t *testing.T) {
 			return errors.New("original error")
 		}).
 			WithMessage(fmt.Sprintf("invalid value %q", secret)).
-			WithDetails(fmt.Sprintf("details for %q", secret)).
-			WithExamples(secret)
+			WithExamples(secret).
+			WithDetails(fmt.Sprintf("details for %q", secret))
 
 		_ = assertHiddenPropertyError(
 			t,
@@ -139,8 +139,6 @@ func TestPropertyRules_HideValue_RuleErrors(t *testing.T) {
 			return govy.NewRuleError("underlying error", "inner")
 		}).
 			WithMessage(fmt.Sprintf("invalid value %q", secret)).
-			WithDetails(fmt.Sprintf("details for %q", secret)).
-			WithExamples(secret).
 			WithErrorCode("outer").
 			WithDescription("validation description")
 
@@ -148,10 +146,10 @@ func TestPropertyRules_HideValue_RuleErrors(t *testing.T) {
 			t,
 			hiddenPropertyRules(rule).Validate(secret),
 			"property",
-			`invalid value "[hidden]" (e.g. '[hidden]'); details for "[hidden]"`,
+			`invalid value "[hidden]"`,
 		)
 		assert.Equal(t, &govy.RuleError{
-			Message:     `invalid value "[hidden]" (e.g. '[hidden]'); details for "[hidden]"`,
+			Message:     `invalid value "[hidden]"`,
 			Code:        "outer:inner",
 			Description: "validation description",
 		}, propErr.Errors[0])
