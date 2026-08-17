@@ -615,16 +615,12 @@ func TestValidatorInferPath(t *testing.T) {
 
 	t.Run("preserves property IDs", func(t *testing.T) {
 		v := govy.New(
-			propertyRules,
-			propertyRulesForSlice,
-			propertyRulesForMap,
+			propertyRules.WithID("scalar"),
+			propertyRulesForSlice.WithID("slice"),
+			propertyRulesForMap.WithID("map"),
 		).
 			InferPath(govy.InferPathModeRuntime).
-			RemovePropertiesByID(
-				propertyRules.ID(),
-				propertyRulesForSlice.ID(),
-				propertyRulesForMap.ID(),
-			)
+			RemovePropertiesByID("scalar", "slice", "map")
 
 		assert.NoError(t, v.Validate(mockInferPathStruct{}))
 	})
@@ -636,13 +632,14 @@ func TestValidatorRemovePropertiesByID(t *testing.T) {
 		err2 := errors.New("error2")
 		prop1 := govy.For(func(m mockValidatorStruct) string { return "test1" }).
 			WithName("property1").
+			WithID("property-1").
 			Rules(govy.NewRule(func(v string) error { return err1 }))
 		prop2 := govy.For(func(m mockValidatorStruct) string { return "test2" }).
 			WithName("property2").
 			Rules(govy.NewRule(func(v string) error { return err2 }))
 		v := govy.New(prop1, prop2)
 
-		filteredV := v.RemovePropertiesByID(prop1.ID())
+		filteredV := v.RemovePropertiesByID("property-1")
 		err := mustValidatorError(t, filteredV.Validate(mockValidatorStruct{}))
 
 		assert.Require(t, assert.Len(t, err.Errors, 1))
@@ -655,28 +652,31 @@ func TestValidatorRemovePropertiesByID(t *testing.T) {
 		err3 := errors.New("error3")
 		prop1 := govy.For(func(m mockValidatorStruct) string { return "test1" }).
 			WithName("property1").
+			WithID("property-1").
 			Rules(govy.NewRule(func(v string) error { return err1 }))
 		prop2 := govy.For(func(m mockValidatorStruct) string { return "test2" }).
 			WithName("property2").
 			Rules(govy.NewRule(func(v string) error { return err2 }))
 		prop3 := govy.For(func(m mockValidatorStruct) string { return "test3" }).
 			WithName("property3").
+			WithID("property-3").
 			Rules(govy.NewRule(func(v string) error { return err3 }))
 		v := govy.New(prop1, prop2, prop3)
 
-		filteredV := v.RemovePropertiesByID(prop1.ID(), prop3.ID())
+		filteredV := v.RemovePropertiesByID("", "property-1", "property-3")
 		err := mustValidatorError(t, filteredV.Validate(mockValidatorStruct{}))
 
 		assert.Require(t, assert.Len(t, err.Errors, 1))
 		assert.Equal(t, jsonpath.Parse("property2"), err.Errors[0].PropertyPath)
 	})
 
-	t.Run("remove property by generated ID", func(t *testing.T) {
+	t.Run("properties without non-empty IDs are retained", func(t *testing.T) {
 		err1 := errors.New("error1")
 		err2 := errors.New("error2")
 
 		prop1 := govy.For(func(m mockValidatorStruct) string { return "test1" }).
 			WithName("property1").
+			WithID("").
 			Rules(govy.NewRule(func(v string) error { return err1 }))
 
 		prop2 := govy.For(func(m mockValidatorStruct) string { return "test2" }).
@@ -685,11 +685,12 @@ func TestValidatorRemovePropertiesByID(t *testing.T) {
 
 		v := govy.New(prop1, prop2)
 
-		filteredV := v.RemovePropertiesByID(prop1.ID())
+		filteredV := v.RemovePropertiesByID("")
 		err := mustValidatorError(t, filteredV.Validate(mockValidatorStruct{}))
 
-		assert.Require(t, assert.Len(t, err.Errors, 1))
-		assert.Equal(t, jsonpath.Parse("property2"), err.Errors[0].PropertyPath)
+		assert.Require(t, assert.Len(t, err.Errors, 2))
+		assert.Equal(t, jsonpath.Parse("property1"), err.Errors[0].PropertyPath)
+		assert.Equal(t, jsonpath.Parse("property2"), err.Errors[1].PropertyPath)
 	})
 
 	t.Run("remove property by user-supplied ID", func(t *testing.T) {
@@ -715,28 +716,28 @@ func TestValidatorRemovePropertiesByID(t *testing.T) {
 		assert.Equal(t, jsonpath.Parse("property2"), err.Errors[0].PropertyPath)
 	})
 
-	t.Run("remove derived property by generated ID", func(t *testing.T) {
+	t.Run("derived properties use their supplied IDs", func(t *testing.T) {
 		err1 := errors.New("error1")
 		err2 := errors.New("error2")
 
 		base := govy.For(func(m mockValidatorStruct) string { return m.Field })
 		prop1 := base.WithName("property1").
+			WithID("property-1").
 			Rules(govy.NewRule(func(v string) error { return err1 }))
 		prop2 := base.WithName("property2").
+			WithID("property-2").
 			Rules(govy.NewRule(func(v string) error { return err2 }))
-
-		assert.True(t, prop1.ID() != prop2.ID())
 
 		v := govy.New(prop1, prop2)
 
-		filteredV := v.RemovePropertiesByID(prop1.ID())
+		filteredV := v.RemovePropertiesByID("property-1")
 		err := mustValidatorError(t, filteredV.Validate(mockValidatorStruct{}))
 
 		assert.Require(t, assert.Len(t, err.Errors, 1))
 		assert.Equal(t, jsonpath.Parse("property2"), err.Errors[0].PropertyPath)
 	})
 
-	t.Run("remove pointer property by generated ID", func(t *testing.T) {
+	t.Run("remove pointer property by supplied ID", func(t *testing.T) {
 		type withPointers struct {
 			Primary   *string
 			Secondary *string
@@ -744,13 +745,14 @@ func TestValidatorRemovePropertiesByID(t *testing.T) {
 
 		prop1 := govy.ForPointer(func(w withPointers) *string { return w.Primary }).
 			WithName("primary").
+			WithID("primary").
 			Rules(rules.StringMinLength(3))
 		prop2 := govy.ForPointer(func(w withPointers) *string { return w.Secondary }).
 			WithName("secondary").
 			Rules(rules.StringMinLength(3))
 		v := govy.New(prop1, prop2)
 
-		filteredV := v.RemovePropertiesByID(prop1.ID())
+		filteredV := v.RemovePropertiesByID("primary")
 		err := mustValidatorError(t, filteredV.Validate(withPointers{
 			Primary:   ptr("a"),
 			Secondary: ptr("b"),
@@ -760,7 +762,7 @@ func TestValidatorRemovePropertiesByID(t *testing.T) {
 		assert.Equal(t, jsonpath.Parse("secondary"), err.Errors[0].PropertyPath)
 	})
 
-	t.Run("remove transformed property by generated ID", func(t *testing.T) {
+	t.Run("remove transformed property by supplied ID", func(t *testing.T) {
 		type withTransformed struct {
 			Primary   string
 			Secondary string
@@ -769,13 +771,14 @@ func TestValidatorRemovePropertiesByID(t *testing.T) {
 
 		prop1 := govy.Transform(func(w withTransformed) string { return w.Primary }, transform).
 			WithName("primary").
+			WithID("primary").
 			Rules(rules.GT(1))
 		prop2 := govy.Transform(func(w withTransformed) string { return w.Secondary }, transform).
 			WithName("secondary").
 			Rules(rules.GT(1))
 		v := govy.New(prop1, prop2)
 
-		filteredV := v.RemovePropertiesByID(prop1.ID())
+		filteredV := v.RemovePropertiesByID("primary")
 		err := mustValidatorError(t, filteredV.Validate(withTransformed{
 			Primary:   "a",
 			Secondary: "b",
@@ -788,13 +791,15 @@ func TestValidatorRemovePropertiesByID(t *testing.T) {
 	t.Run("remove all properties", func(t *testing.T) {
 		prop1 := govy.For(func(m mockValidatorStruct) string { return "test1" }).
 			WithName("property1").
+			WithID("property-1").
 			Rules(govy.NewRule(func(v string) error { return errors.New("error1") }))
 		prop2 := govy.For(func(m mockValidatorStruct) string { return "test2" }).
 			WithName("property2").
+			WithID("property-2").
 			Rules(govy.NewRule(func(v string) error { return errors.New("error2") }))
 		v := govy.New(prop1, prop2)
 
-		filteredV := v.RemovePropertiesByID(prop1.ID(), prop2.ID())
+		filteredV := v.RemovePropertiesByID("property-1", "property-2")
 		err := filteredV.Validate(mockValidatorStruct{})
 
 		assert.NoError(t, err)
@@ -807,7 +812,7 @@ func TestValidatorRemovePropertiesByID(t *testing.T) {
 			Rules(govy.NewRule(func(v string) error { return err1 }))
 		v := govy.New(prop1)
 
-		filteredV := v.RemovePropertiesByID("non-existent-uuid-12345")
+		filteredV := v.RemovePropertiesByID("non-existent")
 		err := mustValidatorError(t, filteredV.Validate(mockValidatorStruct{}))
 
 		assert.Require(t, assert.Len(t, err.Errors, 1))
@@ -834,13 +839,14 @@ func TestValidatorRemovePropertiesByID(t *testing.T) {
 		err2 := errors.New("error2")
 		prop1 := govy.For(func(m mockValidatorStruct) string { return "test1" }).
 			WithName("property1").
+			WithID("property-1").
 			Rules(govy.NewRule(func(v string) error { return err1 }))
 		prop2 := govy.For(func(m mockValidatorStruct) string { return "test2" }).
 			WithName("property2").
 			Rules(govy.NewRule(func(v string) error { return err2 }))
 		v := govy.New(prop1, prop2)
 
-		filteredV := v.RemovePropertiesByID(prop1.ID())
+		filteredV := v.RemovePropertiesByID("property-1")
 
 		originalErr := mustValidatorError(t, v.Validate(mockValidatorStruct{}))
 		assert.Len(t, originalErr.Errors, 2)
@@ -865,6 +871,7 @@ func TestValidatorRemovePropertiesByID(t *testing.T) {
 
 		nestedProp := govy.For(func(p parent) nested { return p.Nested }).
 			WithName("nested").
+			WithID("nested").
 			Include(nestedValidator)
 
 		parentValidator := govy.New(nestedProp)
@@ -874,7 +881,7 @@ func TestValidatorRemovePropertiesByID(t *testing.T) {
 		err := mustValidatorError(t, parentValidator.Validate(obj))
 		assert.Require(t, assert.Len(t, err.Errors, 1))
 
-		filteredValidator := parentValidator.RemovePropertiesByID(nestedProp.ID())
+		filteredValidator := parentValidator.RemovePropertiesByID("nested")
 		filteredErr := filteredValidator.Validate(obj)
 		assert.NoError(t, filteredErr)
 	})
@@ -886,6 +893,7 @@ func TestValidatorRemovePropertiesByID(t *testing.T) {
 
 		sliceProp := govy.ForSlice(func(w withSlice) []string { return w.Items }).
 			WithName("items").
+			WithID("items").
 			Rules(rules.SliceMaxLength[[]string](1))
 
 		v := govy.New(sliceProp)
@@ -895,7 +903,7 @@ func TestValidatorRemovePropertiesByID(t *testing.T) {
 		err := mustValidatorError(t, v.Validate(obj))
 		assert.Require(t, assert.Len(t, err.Errors, 1))
 
-		filteredV := v.RemovePropertiesByID(sliceProp.ID())
+		filteredV := v.RemovePropertiesByID("items")
 		filteredErr := filteredV.Validate(obj)
 		assert.NoError(t, filteredErr)
 	})
@@ -907,6 +915,7 @@ func TestValidatorRemovePropertiesByID(t *testing.T) {
 
 		mapProp := govy.ForMap(func(w withMap) map[string]string { return w.Data }).
 			WithName("data").
+			WithID("data").
 			Rules(rules.MapMaxLength[map[string]string](1))
 
 		v := govy.New(mapProp)
@@ -916,7 +925,7 @@ func TestValidatorRemovePropertiesByID(t *testing.T) {
 		err := mustValidatorError(t, v.Validate(obj))
 		assert.Require(t, assert.Len(t, err.Errors, 1))
 
-		filteredV := v.RemovePropertiesByID(mapProp.ID())
+		filteredV := v.RemovePropertiesByID("data")
 		filteredErr := filteredV.Validate(obj)
 		assert.NoError(t, filteredErr)
 	})
@@ -1061,9 +1070,15 @@ func TestValidatorRemovePropertiesByIDDeterminism(t *testing.T) {
 		for i := range propertyCount {
 			id := "id" + strconv.Itoa(i)
 			path := "path" + strconv.Itoa(i)
+			if i == 0 {
+				id = ""
+			}
 			properties[i] = newProperty(id, path)
 			if i%8 == 0 {
 				ids = append(ids, id)
+				if id == "" {
+					expectedPaths = append(expectedPaths, path)
+				}
 				continue
 			}
 			expectedPaths = append(expectedPaths, path)
@@ -1128,13 +1143,13 @@ func TestValidatorRemovePropertiesByIDConcurrentDerivations(t *testing.T) {
 	assert.Equal(t, []string{"a", "b", "c"}, validatorErrorPaths(t, base, mockValidatorStruct{}))
 }
 
-func TestValidatorBuildersPreservePropertyIDs(t *testing.T) {
+func TestValidatorBuildersPreserveSuppliedPropertyIDs(t *testing.T) {
 	type fixture struct {
 		Scalar string
 		Slice  []string
 		Map    map[string]string
 	}
-	type validatorFactory func(customID, explicitMode string) (govy.Validator[fixture], string)
+	type validatorFactory func(id, explicitMode string) govy.Validator[fixture]
 
 	failingScalarRule := govy.NewRule(func(string) error { return errors.New("scalar") })
 	failingSliceRule := govy.NewRule(func([]string) error { return errors.New("slice") })
@@ -1145,84 +1160,70 @@ func TestValidatorBuildersPreservePropertyIDs(t *testing.T) {
 	}{
 		{
 			name: "scalar",
-			new: func(customID, explicitMode string) (govy.Validator[fixture], string) {
+			new: func(id, explicitMode string) govy.Validator[fixture] {
 				property := govy.For(func(value fixture) string { return value.Scalar }).
 					WithName("scalar").
+					WithID(id).
 					Rules(failingScalarRule)
-				if customID != "" {
-					property = property.WithID(customID)
-				}
 				switch explicitMode {
 				case "cascade":
 					property = property.Cascade(govy.CascadeModeStop)
 				case "infer-path":
 					property = property.InferPath(govy.InferPathModeDisable)
 				}
-				return govy.New(property), property.ID()
+				return govy.New(property)
 			},
 		},
 		{
 			name: "slice",
-			new: func(customID, explicitMode string) (govy.Validator[fixture], string) {
+			new: func(id, explicitMode string) govy.Validator[fixture] {
 				property := govy.ForSlice(func(value fixture) []string { return value.Slice }).
 					WithName("slice").
+					WithID(id).
 					Rules(failingSliceRule)
-				if customID != "" {
-					property = property.WithID(customID)
-				}
 				switch explicitMode {
 				case "cascade":
 					property = property.Cascade(govy.CascadeModeStop)
 				case "infer-path":
 					property = property.InferPath(govy.InferPathModeDisable)
 				}
-				return govy.New(property), property.ID()
+				return govy.New(property)
 			},
 		},
 		{
 			name: "map",
-			new: func(customID, explicitMode string) (govy.Validator[fixture], string) {
+			new: func(id, explicitMode string) govy.Validator[fixture] {
 				property := govy.ForMap(func(value fixture) map[string]string { return value.Map }).
 					WithName("map").
+					WithID(id).
 					Rules(failingMapRule)
-				if customID != "" {
-					property = property.WithID(customID)
-				}
 				switch explicitMode {
 				case "cascade":
 					property = property.Cascade(govy.CascadeModeStop)
 				case "infer-path":
 					property = property.InferPath(govy.InferPathModeDisable)
 				}
-				return govy.New(property), property.ID()
+				return govy.New(property)
 			},
 		},
 	}
 	modifiers := []struct {
 		name         string
 		explicitMode string
-		customOnly   bool
 		apply        func(govy.Validator[fixture]) govy.Validator[fixture]
 	}{
-		{"Cascade inherited", "", false, func(v govy.Validator[fixture]) govy.Validator[fixture] {
+		{"Cascade inherited", "", func(v govy.Validator[fixture]) govy.Validator[fixture] {
 			return v.Cascade(govy.CascadeModeContinue)
 		}},
-		{"Cascade property override", "cascade", false, func(v govy.Validator[fixture]) govy.Validator[fixture] {
+		{"Cascade property override", "cascade", func(v govy.Validator[fixture]) govy.Validator[fixture] {
 			return v.Cascade(govy.CascadeModeContinue)
 		}},
-		{"InferPath inherited custom ID", "", true, func(v govy.Validator[fixture]) govy.Validator[fixture] {
+		{"InferPath inherited", "", func(v govy.Validator[fixture]) govy.Validator[fixture] {
 			return v.InferPath(govy.InferPathModeRuntime)
 		}},
-		{"InferPath property override", "infer-path", false, func(v govy.Validator[fixture]) govy.Validator[fixture] {
+		{"InferPath property override", "infer-path", func(v govy.Validator[fixture]) govy.Validator[fixture] {
 			return v.InferPath(govy.InferPathModeRuntime)
 		}},
-	}
-	identityKinds := []struct {
-		name string
-		id   string
-	}{
-		{"generated ID", ""},
-		{"custom ID", "stable"},
 	}
 	value := fixture{
 		Scalar: "value",
@@ -1232,20 +1233,16 @@ func TestValidatorBuildersPreservePropertyIDs(t *testing.T) {
 
 	for _, factory := range factories {
 		for _, modifier := range modifiers {
-			for _, identity := range identityKinds {
-				if modifier.customOnly && identity.id == "" {
-					continue
-				}
-				t.Run(factory.name+"/"+modifier.name+"/"+identity.name, func(t *testing.T) {
-					validator, id := factory.new(identity.id, modifier.explicitMode)
-					assert.Error(t, validator.Validate(value))
+			t.Run(factory.name+"/"+modifier.name, func(t *testing.T) {
+				const id = "stable"
+				validator := factory.new(id, modifier.explicitMode)
+				assert.Error(t, validator.Validate(value))
 
-					derived := modifier.apply(validator)
-					assert.Error(t, derived.Validate(value))
-					assert.NoError(t, derived.RemovePropertiesByID(id).Validate(value))
-					assert.Error(t, validator.Validate(value))
-				})
-			}
+				derived := modifier.apply(validator)
+				assert.Error(t, derived.Validate(value))
+				assert.NoError(t, derived.RemovePropertiesByID(id).Validate(value))
+				assert.Error(t, validator.Validate(value))
+			})
 		}
 	}
 }
@@ -1266,19 +1263,15 @@ func TestValidatorRemovePropertiesByID_PlanAndInferredPath(t *testing.T) {
 		WithID("b").
 		InferPath(govy.InferPathModeRuntime).
 		Rules(govy.NewRule(func(string) error { return errors.New("b") }).WithDescription("b rule"))
-	aID := a.ID()
-	bID := b.ID()
 	base := govy.New(a, b)
 
 	assert.Equal(t, []string{"a", "b"}, validatorErrorPaths(t, base, fixture{}))
-	assert.Equal(t, aID, a.ID())
-	assert.Equal(t, bID, b.ID())
 	basePlan, err := govy.Plan(base)
 	assert.Require(t, assert.NoError(t, err))
 	expectedBasePlan := readExpectedPlan(t, "expected_remove_properties_by_id_base_plan.json")
 	assert.Equal(t, expectedBasePlan, requireJSON(t, basePlan))
 
-	filtered := base.RemovePropertiesByID(aID)
+	filtered := base.RemovePropertiesByID("a")
 	assert.Equal(t, []string{"b"}, validatorErrorPaths(t, filtered, fixture{}))
 	filteredPlan, err := govy.Plan(filtered)
 	assert.Require(t, assert.NoError(t, err))
@@ -1294,7 +1287,7 @@ func TestValidatorRemovePropertiesByID_PlanAndInferredPath(t *testing.T) {
 	onlyA := govy.New(a)
 	assert.Equal(t, []string{"a"}, validatorErrorPaths(t, onlyA, fixture{}))
 	assert.Equal(t, []string{"$.a"}, validatorPlanPaths(t, onlyA))
-	removed := onlyA.RemovePropertiesByID(aID)
+	removed := onlyA.RemovePropertiesByID("a")
 	assert.NoError(t, removed.Validate(fixture{}))
 	assert.Len(t, validatorPlanPaths(t, removed), 0)
 }

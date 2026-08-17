@@ -1959,10 +1959,9 @@ func ExampleValidator_RemovePropertiesByPath() {
 
 // If you want surgical precision and remove only select properties from [govy.Validator]
 // you can use [govy.Validator.RemovePropertiesByID].
-// Unlike [govy.Validator.RemovePropertiesByPath] it accpets an ID, which is auto generated,
-// but you can also provide your own using `WithID` method.
+// Unlike [govy.Validator.RemovePropertiesByPath], it accepts IDs assigned with [govy.PropertyRules.WithID].
 //
-// Just like the path-based version, the function is not modyfing the original validator.
+// Just like the path-based version, the function does not modify the original validator.
 // Instead it returns a modified copy.
 func ExampleValidator_RemovePropertiesByID() {
 	ageProperty := govy.For(func(t Teacher) time.Duration { return t.Age }).
@@ -1971,6 +1970,7 @@ func ExampleValidator_RemovePropertiesByID() {
 		Rules(rules.GT(time.Duration(0)))
 	anotherAgeProperty := govy.For(func(t Teacher) time.Duration { return t.Age }).
 		WithName("age").
+		WithID("another-age-id").
 		Rules(rules.GT(time.Duration(1)))
 	yetAnotherAgeProperty := govy.For(func(t Teacher) time.Duration { return t.Age }).
 		WithName("age").
@@ -1986,7 +1986,7 @@ func ExampleValidator_RemovePropertiesByID() {
 	// We remove first two validators, the output shows us that only the last one was triggered.
 	modifiedValidator := baseValidator.RemovePropertiesByID(
 		"age-id",
-		anotherAgeProperty.ID(),
+		"another-age-id",
 	)
 	fmt.Println(modifiedValidator.Validate(teacher))
 

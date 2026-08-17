@@ -20,7 +20,6 @@ func For[T, P any](getter PropertyGetter[T, P]) PropertyRules[T, P] {
 // validation will not proceed.
 func ForPointer[T, P any](getter PropertyGetter[*T, P]) PropertyRules[T, P] {
 	return PropertyRules[T, P]{
-		id:       newInstanceID(),
 		pathFunc: getInferPathFunc(getCallersAndProgramCounter(4)),
 		getter: func(parent P) (indirect T, err error) {
 			ptr := getter(parent)
@@ -41,7 +40,6 @@ func ForPointer[T, P any](getter PropertyGetter[*T, P]) PropertyRules[T, P] {
 func Transform[T, N, P any](getter PropertyGetter[T, P], transform Transformer[T, N]) PropertyRules[N, P] {
 	typInfo := typeinfo.Get[T]()
 	return PropertyRules[N, P]{
-		id:       newInstanceID(),
 		pathFunc: getInferPathFunc(getCallersAndProgramCounter(4)),
 		transformGetter: func(parent P) (transformed N, original any, err error) {
 			v := getter(parent)
@@ -62,15 +60,13 @@ func Transform[T, N, P any](getter PropertyGetter[T, P], transform Transformer[T
 // It wraps the getter function in [internalPropertyGetter] and adds path inference.
 func forConstructor[T, P any](getter PropertyGetter[T, P]) PropertyRules[T, P] {
 	return PropertyRules[T, P]{
-		id:       newInstanceID(),
 		pathFunc: getInferPathFunc(getCallersAndProgramCounter(4)),
 		getter:   func(parent P) (v T, err error) { return getter(parent), nil },
 	}
 }
 
-// newInternalPropertyRules creates [PropertyRules] with only a getter.
-// The enclosing slice or map rule supplies path and identity behavior.
-func newInternalPropertyRules[T, P any](getter PropertyGetter[T, P]) PropertyRules[T, P] {
+// forConstructorWithoutPathInference creates [PropertyRules] with only a getter.
+func forConstructorWithoutPathInference[T, P any](getter PropertyGetter[T, P]) PropertyRules[T, P] {
 	return PropertyRules[T, P]{
 		getter: func(parent P) (v T, err error) { return getter(parent), nil },
 	}
@@ -101,7 +97,7 @@ func (emptyErr) Error() string { return "" }
 // It is the middle-level building block of the validation process,
 // aggregated by [Validator] and aggregating [Rule].
 type PropertyRules[T, P any] struct {
-	id               instanceID
+	id               string
 	path             jsonpath.Path
 	pathFunc         inferPathFunc
 	getter           internalPropertyGetter[T, P]
@@ -176,7 +172,6 @@ func (r PropertyRules[T, P]) Validate(parent P) error {
 // Special characters in the segment are automatically escaped using JSONPath bracket notation.
 // Dotted or bracketed multi-segment paths must be provided with [PropertyRules.WithPath].
 func (r PropertyRules[T, P]) WithName(name string) PropertyRules[T, P] {
-	r = r.withNextGeneratedID()
 	r.path = jsonpath.New().Name(name)
 	return r
 }
@@ -187,45 +182,46 @@ func (r PropertyRules[T, P]) WithName(name string) PropertyRules[T, P] {
 // This is useful when the property path contains multiple segments
 // or when you need explicit control over the path construction.
 func (r PropertyRules[T, P]) WithPath(path jsonpath.Path) PropertyRules[T, P] {
-	r = r.withNextGeneratedID()
 	r.path = path
 	return r
 }
 
-// WithID sets a caller-supplied identifier for these property rules.
+// WithID sets an identifier for these property rules.
 // The identifier is preserved by subsequent builder methods
 // and can be used with [Validator.RemovePropertiesByID].
 // Identifiers do not need to be unique; removal deletes every direct property with a matching identifier.
-// An empty identifier clears the caller-supplied value and assigns a new generated identifier.
+// An empty identifier leaves the property without an identifier.
 func (r PropertyRules[T, P]) WithID(id string) PropertyRules[T, P] {
-	r.id = r.id.WithUserSuppliedID(id)
+	r.id = id
 	return r
 }
 
 // WithExamples sets the examples for the property.
 func (r PropertyRules[T, P]) WithExamples(examples ...string) PropertyRules[T, P] {
-	r = r.withNextGeneratedID()
 	r.examples = append(r.examples, examples...)
 	return r
 }
 
 // Rules associates provided [Rule] with the property.
 func (r PropertyRules[T, P]) Rules(rules ...RulesInterface[T]) PropertyRules[T, P] {
-	r = r.withNextGeneratedID()
-	return r.appendRules(rules...)
+	for _, rule := range rules {
+		r.rules = append(r.rules, rule)
+	}
+	return r
 }
 
 // Include embeds specified [Validator] and its [PropertyRules] into the property.
 func (r PropertyRules[T, P]) Include(rules ...ValidatorInterface[T]) PropertyRules[T, P] {
-	r = r.withNextGeneratedID()
-	return r.appendValidators(rules...)
+	for _, rule := range rules {
+		r.rules = append(r.rules, rule)
+	}
+	return r
 }
 
 // When defines a [Predicate] which determines when the rules for this property should be evaluated.
 // It can be called multiple times to set multiple predicates.
 // Additionally, it accepts [WhenOption] which customizes the behavior of the predicate.
 func (r PropertyRules[T, P]) When(predicate Predicate[P], opts ...WhenOption) PropertyRules[T, P] {
-	r = r.withNextGeneratedID()
 	r.predicateMatcher = r.when(predicate, opts...)
 	return r
 }
@@ -233,14 +229,12 @@ func (r PropertyRules[T, P]) When(predicate Predicate[P], opts ...WhenOption) Pr
 // Required sets the property as required.
 // If the property is its type's zero value a [rules.ErrorCodeRequired] will be returned.
 func (r PropertyRules[T, P]) Required() PropertyRules[T, P] {
-	r = r.withNextGeneratedID()
 	r.required = true
 	return r
 }
 
 // OmitEmpty sets the property rules to be omitted if its value is its type's zero value.
 func (r PropertyRules[T, P]) OmitEmpty() PropertyRules[T, P] {
-	r = r.withNextGeneratedID()
 	r.omitEmpty = true
 	return r
 }
@@ -248,7 +242,6 @@ func (r PropertyRules[T, P]) OmitEmpty() PropertyRules[T, P] {
 // HideValue hides the property value in the error message.
 // It's useful when the value is sensitive and should not be exposed.
 func (r PropertyRules[T, P]) HideValue() PropertyRules[T, P] {
-	r = r.withNextGeneratedID()
 	r.hideValue = true
 	return r
 }
@@ -256,7 +249,6 @@ func (r PropertyRules[T, P]) HideValue() PropertyRules[T, P] {
 // Cascade sets the [CascadeMode] for the property,
 // which controls the flow of evaluating the validation rules.
 func (r PropertyRules[T, P]) Cascade(mode CascadeMode) PropertyRules[T, P] {
-	r = r.withNextGeneratedID()
 	r.cascadeMode = mode
 	return r
 }
@@ -266,37 +258,8 @@ func (r PropertyRules[T, P]) Cascade(mode CascadeMode) PropertyRules[T, P] {
 // If you manually provide a path using [PropertyRules.WithName] or [PropertyRules.WithPath],
 // this setting will have no effect, acting like [InferPathModeDisable].
 func (r PropertyRules[T, P]) InferPath(mode InferPathMode) PropertyRules[T, P] {
-	r = r.withNextGeneratedID()
 	r.inferPathMode = mode
 	r.inferPathModeSet = true
-	return r
-}
-
-// ID returns the identifier for these property rules.
-// Property rules have a generated identifier by default.
-// Generated identifiers can change when a builder method derives a new value,
-// so retrieve the identifier from the final property definition.
-// An identifier set with [PropertyRules.WithID] persists across builder methods until cleared.
-func (r PropertyRules[T, P]) ID() string {
-	return r.id.ID()
-}
-
-func (r PropertyRules[T, P]) withNextGeneratedID() PropertyRules[T, P] {
-	r.id = r.id.withNextGeneratedID()
-	return r
-}
-
-func (r PropertyRules[T, P]) appendRules(rules ...RulesInterface[T]) PropertyRules[T, P] {
-	for _, rule := range rules {
-		r.rules = append(r.rules, rule)
-	}
-	return r
-}
-
-func (r PropertyRules[T, P]) appendValidators(rules ...ValidatorInterface[T]) PropertyRules[T, P] {
-	for _, rule := range rules {
-		r.rules = append(r.rules, rule)
-	}
 	return r
 }
 
@@ -319,6 +282,10 @@ func (r PropertyRules[T, P]) inferPathInternal(mode InferPathMode) PropertyRules
 	r.inferPathMode = mode
 	r.inferPathModeSet = true
 	return r
+}
+
+func (r PropertyRules[T, P]) propertyID() string {
+	return r.id
 }
 
 // plan constructs a validation plan for the property.

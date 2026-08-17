@@ -9,7 +9,7 @@ import (
 func ForSlice[S ~[]T, T, P any](getter PropertyGetter[S, P]) PropertyRulesForSlice[S, T, P] {
 	return PropertyRulesForSlice[S, T, P]{
 		sliceRules:   forConstructor(GetSelf[S]()),
-		forEachRules: newInternalPropertyRules(GetSelf[T]()),
+		forEachRules: forConstructorWithoutPathInference(GetSelf[T]()),
 		getter:       getter,
 	}
 }
@@ -92,8 +92,7 @@ func (r PropertyRulesForSlice[S, T, P]) WithExamples(examples ...string) Propert
 
 // RulesForEach adds [Rule] for each element of the slice.
 func (r PropertyRulesForSlice[S, T, P]) RulesForEach(rules ...RulesInterface[T]) PropertyRulesForSlice[S, T, P] {
-	r.sliceRules = r.sliceRules.withNextGeneratedID()
-	r.forEachRules = r.forEachRules.appendRules(rules...)
+	r.forEachRules = r.forEachRules.Rules(rules...)
 	return r
 }
 
@@ -108,15 +107,13 @@ func (r PropertyRulesForSlice[S, T, P]) When(
 	predicate Predicate[P],
 	opts ...WhenOption,
 ) PropertyRulesForSlice[S, T, P] {
-	r.sliceRules = r.sliceRules.withNextGeneratedID()
 	r.predicateMatcher = r.when(predicate, opts...)
 	return r
 }
 
 // IncludeForEach associates specified [Validator] and its [PropertyRules] with each element of the slice.
 func (r PropertyRulesForSlice[S, T, P]) IncludeForEach(rules ...ValidatorInterface[T]) PropertyRulesForSlice[S, T, P] {
-	r.sliceRules = r.sliceRules.withNextGeneratedID()
-	r.forEachRules = r.forEachRules.appendValidators(rules...)
+	r.forEachRules = r.forEachRules.Include(rules...)
 	return r
 }
 
@@ -130,7 +127,7 @@ func (r PropertyRulesForSlice[S, T, P]) Include(rules ...ValidatorInterface[S]) 
 func (r PropertyRulesForSlice[S, T, P]) Cascade(mode CascadeMode) PropertyRulesForSlice[S, T, P] {
 	r.cascadeMode = mode
 	r.sliceRules = r.sliceRules.Cascade(mode)
-	r.forEachRules.cascadeMode = mode
+	r.forEachRules = r.forEachRules.Cascade(mode)
 	return r
 }
 
@@ -140,11 +137,6 @@ func (r PropertyRulesForSlice[S, T, P]) InferPath(mode InferPathMode) PropertyRu
 	r.inferPathModeSet = true
 	r.sliceRules = r.sliceRules.InferPath(mode)
 	return r
-}
-
-// ID => refer to [PropertyRules.ID] documentation.
-func (r PropertyRulesForSlice[S, T, P]) ID() string {
-	return r.sliceRules.ID()
 }
 
 // cascadeInternal is an internal wrapper around [PropertyRulesForSlice.Cascade] which
@@ -170,6 +162,10 @@ func (r PropertyRulesForSlice[S, T, P]) inferPathInternal(mode InferPathMode) Pr
 	r.sliceRules.inferPathMode = mode
 	r.sliceRules.inferPathModeSet = true
 	return r
+}
+
+func (r PropertyRulesForSlice[S, T, P]) propertyID() string {
+	return r.sliceRules.propertyID()
 }
 
 // plan generates a validation plan for the property rules.

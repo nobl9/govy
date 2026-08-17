@@ -12,9 +12,9 @@ import (
 func ForMap[M ~map[K]V, K comparable, V, P any](getter PropertyGetter[M, P]) PropertyRulesForMap[M, K, V, P] {
 	return PropertyRulesForMap[M, K, V, P]{
 		mapRules:      forConstructor(getter),
-		forKeyRules:   newInternalPropertyRules(GetSelf[K]()),
-		forValueRules: newInternalPropertyRules(GetSelf[V]()),
-		forItemRules:  newInternalPropertyRules(GetSelf[MapItem[K, V]]()),
+		forKeyRules:   forConstructorWithoutPathInference(GetSelf[K]()),
+		forValueRules: forConstructorWithoutPathInference(GetSelf[V]()),
+		forItemRules:  forConstructorWithoutPathInference(GetSelf[MapItem[K, V]]()),
 		getter:        getter,
 	}
 }
@@ -125,8 +125,7 @@ func (r PropertyRulesForMap[M, K, V, P]) WithExamples(examples ...string) Proper
 func (r PropertyRulesForMap[M, K, V, P]) RulesForKeys(
 	rules ...RulesInterface[K],
 ) PropertyRulesForMap[M, K, V, P] {
-	r.mapRules = r.mapRules.withNextGeneratedID()
-	r.forKeyRules = r.forKeyRules.appendRules(rules...)
+	r.forKeyRules = r.forKeyRules.Rules(rules...)
 	return r
 }
 
@@ -134,8 +133,7 @@ func (r PropertyRulesForMap[M, K, V, P]) RulesForKeys(
 func (r PropertyRulesForMap[M, K, V, P]) RulesForValues(
 	rules ...RulesInterface[V],
 ) PropertyRulesForMap[M, K, V, P] {
-	r.mapRules = r.mapRules.withNextGeneratedID()
-	r.forValueRules = r.forValueRules.appendRules(rules...)
+	r.forValueRules = r.forValueRules.Rules(rules...)
 	return r
 }
 
@@ -144,8 +142,7 @@ func (r PropertyRulesForMap[M, K, V, P]) RulesForValues(
 func (r PropertyRulesForMap[M, K, V, P]) RulesForItems(
 	rules ...RulesInterface[MapItem[K, V]],
 ) PropertyRulesForMap[M, K, V, P] {
-	r.mapRules = r.mapRules.withNextGeneratedID()
-	r.forItemRules = r.forItemRules.appendRules(rules...)
+	r.forItemRules = r.forItemRules.Rules(rules...)
 	return r
 }
 
@@ -160,7 +157,6 @@ func (r PropertyRulesForMap[M, K, V, P]) When(
 	predicate Predicate[P],
 	opts ...WhenOption,
 ) PropertyRulesForMap[M, K, V, P] {
-	r.mapRules = r.mapRules.withNextGeneratedID()
 	r.predicateMatcher = r.when(predicate, opts...)
 	return r
 }
@@ -177,8 +173,7 @@ func (r PropertyRulesForMap[M, K, V, P]) Include(
 func (r PropertyRulesForMap[M, K, V, P]) IncludeForKeys(
 	validators ...ValidatorInterface[K],
 ) PropertyRulesForMap[M, K, V, P] {
-	r.mapRules = r.mapRules.withNextGeneratedID()
-	r.forKeyRules = r.forKeyRules.appendValidators(validators...)
+	r.forKeyRules = r.forKeyRules.Include(validators...)
 	return r
 }
 
@@ -186,8 +181,7 @@ func (r PropertyRulesForMap[M, K, V, P]) IncludeForKeys(
 func (r PropertyRulesForMap[M, K, V, P]) IncludeForValues(
 	rules ...ValidatorInterface[V],
 ) PropertyRulesForMap[M, K, V, P] {
-	r.mapRules = r.mapRules.withNextGeneratedID()
-	r.forValueRules = r.forValueRules.appendValidators(rules...)
+	r.forValueRules = r.forValueRules.Include(rules...)
 	return r
 }
 
@@ -196,8 +190,7 @@ func (r PropertyRulesForMap[M, K, V, P]) IncludeForValues(
 func (r PropertyRulesForMap[M, K, V, P]) IncludeForItems(
 	rules ...ValidatorInterface[MapItem[K, V]],
 ) PropertyRulesForMap[M, K, V, P] {
-	r.mapRules = r.mapRules.withNextGeneratedID()
-	r.forItemRules = r.forItemRules.appendValidators(rules...)
+	r.forItemRules = r.forItemRules.Include(rules...)
 	return r
 }
 
@@ -205,9 +198,9 @@ func (r PropertyRulesForMap[M, K, V, P]) IncludeForItems(
 func (r PropertyRulesForMap[M, K, V, P]) Cascade(mode CascadeMode) PropertyRulesForMap[M, K, V, P] {
 	r.cascadeMode = mode
 	r.mapRules = r.mapRules.Cascade(mode)
-	r.forKeyRules.cascadeMode = mode
-	r.forValueRules.cascadeMode = mode
-	r.forItemRules.cascadeMode = mode
+	r.forKeyRules = r.forKeyRules.Cascade(mode)
+	r.forValueRules = r.forValueRules.Cascade(mode)
+	r.forItemRules = r.forItemRules.Cascade(mode)
 	return r
 }
 
@@ -217,11 +210,6 @@ func (r PropertyRulesForMap[M, K, V, P]) InferPath(mode InferPathMode) PropertyR
 	r.inferPathModeSet = true
 	r.mapRules = r.mapRules.InferPath(mode)
 	return r
-}
-
-// ID => refer to [PropertyRules.ID] documentation.
-func (r PropertyRulesForMap[M, K, V, P]) ID() string {
-	return r.mapRules.ID()
 }
 
 // cascadeInternal is an internal wrapper around [PropertyRulesForMap.Cascade] which
@@ -249,6 +237,10 @@ func (r PropertyRulesForMap[M, K, V, P]) inferPathInternal(mode InferPathMode) P
 	r.mapRules.inferPathMode = mode
 	r.mapRules.inferPathModeSet = true
 	return r
+}
+
+func (r PropertyRulesForMap[M, K, V, P]) propertyID() string {
+	return r.mapRules.propertyID()
 }
 
 // plan constructs a validation plan for the property rules.

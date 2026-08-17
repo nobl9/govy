@@ -84,6 +84,7 @@ func (v Validator[T]) RemovePropertiesByPath(paths ...jsonpath.Path) Validator[T
 
 // RemovePropertiesByID removes every direct property whose identifier matches
 // one of the provided identifiers.
+// Properties without an identifier and empty identifiers passed to this method are ignored.
 // It does not traverse validators included by a property;
 // derive the included validator separately to remove one of its properties.
 // It returns a modified [Validator] instance without these rules,
@@ -93,6 +94,9 @@ func (v Validator[T]) RemovePropertiesByID(ids ...string) Validator[T] {
 		return v
 	}
 	if len(ids) == 1 {
+		if ids[0] == "" {
+			return v
+		}
 		return v.removePropertyByID(ids[0])
 	}
 	if len(ids) >= removePropertiesByIDSetThreshold &&
@@ -108,13 +112,15 @@ func (v Validator[T]) RemovePropertiesByID(ids ...string) Validator[T] {
 
 func (v Validator[T]) removePropertiesByIDs(ids []string) Validator[T] {
 	for index, prop := range v.props {
-		if !slices.Contains(ids, prop.ID()) {
+		id := prop.propertyID()
+		if id == "" || !slices.Contains(ids, id) {
 			continue
 		}
 		filtered := make([]PropertyRulesInterface[T], 0, len(v.props)-1)
 		filtered = append(filtered, v.props[:index]...)
 		for _, remainingProp := range v.props[index+1:] {
-			if !slices.Contains(ids, remainingProp.ID()) {
+			id = remainingProp.propertyID()
+			if id == "" || !slices.Contains(ids, id) {
 				filtered = append(filtered, remainingProp)
 			}
 		}
@@ -126,13 +132,22 @@ func (v Validator[T]) removePropertiesByIDs(ids []string) Validator[T] {
 
 func (v Validator[T]) removePropertiesByIDSet(idSet map[string]struct{}) Validator[T] {
 	for index, prop := range v.props {
-		if _, ok := idSet[prop.ID()]; !ok {
+		id := prop.propertyID()
+		if id == "" {
+			continue
+		}
+		if _, ok := idSet[id]; !ok {
 			continue
 		}
 		filtered := make([]PropertyRulesInterface[T], 0, len(v.props)-1)
 		filtered = append(filtered, v.props[:index]...)
 		for _, remainingProp := range v.props[index+1:] {
-			if _, ok := idSet[remainingProp.ID()]; !ok {
+			id = remainingProp.propertyID()
+			if id == "" {
+				filtered = append(filtered, remainingProp)
+				continue
+			}
+			if _, ok := idSet[id]; !ok {
 				filtered = append(filtered, remainingProp)
 			}
 		}
@@ -148,7 +163,7 @@ func (v Validator[T]) removePropertyByID(id string) Validator[T] {
 		removed  bool
 	)
 	for index, prop := range v.props {
-		if prop.ID() != id {
+		if prop.propertyID() != id {
 			if removed {
 				filtered = append(filtered, prop)
 			}
