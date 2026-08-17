@@ -282,6 +282,10 @@ func (p planBuilder) validate() error {
 }
 
 func appendPredicatesToPlanBuilder[T any](builder planBuilder, predicates []predicateContainer[T]) planBuilder {
+	// Plan branches share inherited conditions, so clone before appending branch-specific predicates.
+	if len(predicates) > 0 {
+		builder.rulePlan.Conditions = slices.Clone(builder.rulePlan.Conditions)
+	}
 	for _, predicate := range predicates {
 		if predicate.description == "" {
 			if builder.options.requirePredicateDescriptions && builder.missingDescriptions != nil {
