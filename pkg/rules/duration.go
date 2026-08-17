@@ -25,7 +25,7 @@ func DurationPrecision(precision time.Duration) govy.Rule[time.Duration] {
 	}).
 		WithErrorCode(ErrorCodeDurationPrecision).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			PropertyValue: precision,
-		}))
+		})
 }
