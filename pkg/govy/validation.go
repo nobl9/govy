@@ -17,13 +17,14 @@ type ValidatorInterface[T any] interface {
 // PropertyRulesInterface defines validation entities which describe properties,
 // such as [PropertyRules], [PropertyRulesForSlice] and [PropertyRulesForMap].
 //
-// Its internal methods allow the package to interact with property rules
-// in an immutable fashion without pointer receivers.
+// On top of [validationInterface] requirements it specifies internal functions
+// which allow interacting with [PropertyRulesInterface] instances like [PropertyRules]
+// in an immutable fashion (no pointer receivers).
 type PropertyRulesInterface[T any] interface {
 	validationInterface[T]
 	cascadeInternal(mode CascadeMode) PropertyRulesInterface[T]
 	getPath() jsonpath.Path
-	inferPathInternal(mode InferPathMode) PropertyRulesInterface[T]
+	inferPathModeInternal(mode InferPathMode) PropertyRulesInterface[T]
 	isPropertyRules()
 	propertyID() string
 }

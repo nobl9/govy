@@ -69,7 +69,8 @@ func forConstructor[T, P any](getter PropertyGetter[T, P]) PropertyRules[T, P] {
 	}
 }
 
-// forConstructorWithoutPathInference creates [PropertyRules] with only a getter.
+// forConstructorWithoutPathInference creates [PropertyRules] without path inference.
+// Used for internal rules in [ForSlice] and [ForMap] where paths are managed separately.
 func forConstructorWithoutPathInference[T, P any](getter PropertyGetter[T, P]) PropertyRules[T, P] {
 	return PropertyRules[T, P]{
 		getter: func(parent P) (v T, err error) { return getter(parent), nil },
@@ -192,9 +193,7 @@ func (r PropertyRules[T, P]) WithPath(path jsonpath.Path) PropertyRules[T, P] {
 }
 
 // WithID sets an identifier for these property rules.
-// The identifier is preserved by subsequent builder methods
-// and can be used with [Validator.RemovePropertiesByID].
-// Identifiers do not need to be unique; removal deletes every direct property with a matching identifier.
+// It can be used with [Validator.RemovePropertiesByID].
 // An empty identifier leaves the property without an identifier.
 func (r PropertyRules[T, P]) WithID(id string) PropertyRules[T, P] {
 	r.id = id
@@ -287,18 +286,16 @@ func (r PropertyRules[T, P]) cascadeInternal(mode CascadeMode) PropertyRulesInte
 	if r.cascadeMode != 0 {
 		return r
 	}
-	r.cascadeMode = mode
-	return r
+	return r.Cascade(mode)
 }
 
-// inferPathInternal sets the [InferPathMode] unless it was already configured.
-func (r PropertyRules[T, P]) inferPathInternal(mode InferPathMode) PropertyRulesInterface[P] {
+// inferPathModeInternal is an internal wrapper around [PropertyRules.InferPath] which
+// fulfills [PropertyRulesInterface] interface.
+func (r PropertyRules[T, P]) inferPathModeInternal(mode InferPathMode) PropertyRulesInterface[P] {
 	if r.inferPathModeSet {
 		return r
 	}
-	r.inferPathMode = mode
-	r.inferPathModeSet = true
-	return r
+	return r.InferPath(mode)
 }
 
 func (r PropertyRules[T, P]) propertyID() string {

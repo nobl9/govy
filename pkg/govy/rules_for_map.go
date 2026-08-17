@@ -243,24 +243,17 @@ func (r PropertyRulesForMap[M, K, V, P]) cascadeInternal(mode CascadeMode) Prope
 	if r.cascadeMode != 0 {
 		return r
 	}
-	r.cascadeMode = mode
-	r.mapRules.cascadeMode = mode
-	r.forKeyRules.cascadeMode = mode
-	r.forValueRules.cascadeMode = mode
-	r.forItemRules.cascadeMode = mode
-	return r
+	return r.Cascade(mode)
 }
 
-// inferPathInternal sets the [InferPathMode] unless it was already configured.
-func (r PropertyRulesForMap[M, K, V, P]) inferPathInternal(mode InferPathMode) PropertyRulesInterface[P] {
+// inferPathModeInternal is an internal wrapper around [PropertyRulesForMap.InferPath] which
+// fulfills [PropertyRulesInterface] interface.
+// If the [InferPathMode] is already set, it won't change it.
+func (r PropertyRulesForMap[M, K, V, P]) inferPathModeInternal(mode InferPathMode) PropertyRulesInterface[P] {
 	if r.inferPathModeSet {
 		return r
 	}
-	r.inferPathMode = mode
-	r.inferPathModeSet = true
-	r.mapRules.inferPathMode = mode
-	r.mapRules.inferPathModeSet = true
-	return r
+	return r.InferPath(mode)
 }
 
 func (r PropertyRulesForMap[M, K, V, P]) propertyID() string {

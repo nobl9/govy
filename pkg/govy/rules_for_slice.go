@@ -157,22 +157,17 @@ func (r PropertyRulesForSlice[S, T, P]) cascadeInternal(mode CascadeMode) Proper
 	if r.cascadeMode != 0 {
 		return r
 	}
-	r.cascadeMode = mode
-	r.sliceRules.cascadeMode = mode
-	r.forEachRules.cascadeMode = mode
-	return r
+	return r.Cascade(mode)
 }
 
-// inferPathInternal sets the [InferPathMode] unless it was already configured.
-func (r PropertyRulesForSlice[S, T, P]) inferPathInternal(mode InferPathMode) PropertyRulesInterface[P] {
+// inferPathModeInternal is an internal wrapper around [PropertyRulesForSlice.InferPath] which
+// fulfills [PropertyRulesInterface] interface.
+// If the [InferPathMode] is already set, it won't change it.
+func (r PropertyRulesForSlice[S, T, P]) inferPathModeInternal(mode InferPathMode) PropertyRulesInterface[P] {
 	if r.inferPathModeSet {
 		return r
 	}
-	r.inferPathMode = mode
-	r.inferPathModeSet = true
-	r.sliceRules.inferPathMode = mode
-	r.sliceRules.inferPathModeSet = true
-	return r
+	return r.InferPath(mode)
 }
 
 func (r PropertyRulesForSlice[S, T, P]) propertyID() string {
