@@ -94,14 +94,6 @@ func (e PropertyErrors) Error() string {
 	return b.String()
 }
 
-// HideValue hides the property value from each of the [PropertyError].
-func (e PropertyErrors) HideValue() PropertyErrors {
-	for _, err := range e {
-		_ = err.HideValue()
-	}
-	return e
-}
-
 // sort should be always called after aggregate.
 func (e PropertyErrors) sort() PropertyErrors {
 	if len(e) == 0 {
@@ -200,16 +192,6 @@ func (e *PropertyError) Equal(cmp *PropertyError) bool {
 		e.IsSliceElementError == cmp.IsSliceElementError
 }
 
-// HideValue hides the property value from each of the [PropertyError.Errors].
-func (e *PropertyError) HideValue() *PropertyError {
-	sv := internal.PropertyValueString(e.PropertyValue)
-	e.PropertyValue = ""
-	for _, err := range e.Errors {
-		_ = err.HideValue(sv)
-	}
-	return e
-}
-
 func (e *PropertyError) prependParentPropertyPath(path jsonpath.Path) *PropertyError {
 	e.PropertyPath = path.Join(e.PropertyPath)
 	return e
@@ -243,16 +225,6 @@ func (r *RuleError) Error() string {
 // See [ErrorCode.Add] for more details.
 func (r *RuleError) AddCode(code ErrorCode) *RuleError {
 	r.Code = r.Code.Add(code)
-	return r
-}
-
-// HideValue replaces all occurrences of stringValue in [RuleError.Message] with `[hidden]`.
-// If stringValue is empty or contains only Unicode whitespace, it leaves the message unchanged.
-func (r *RuleError) HideValue(stringValue string) *RuleError {
-	if strings.TrimSpace(stringValue) == "" {
-		return r
-	}
-	r.Message = strings.ReplaceAll(r.Message, stringValue, hiddenValue)
 	return r
 }
 
@@ -294,8 +266,11 @@ func (e RuleErrorTemplate) Error() string {
 	return fmt.Sprintf("%T should not be used directly", e)
 }
 
-// TemplateVars lists all the possible variables that can be used by builtin rules' message templates.
-// Reuse the variable names to keep the consistency across all the rules.
+// TemplateVars lists variables available to builtin rule message templates.
+// Use the same names for consistent behavior across rules.
+// When [PropertyRules.HideValue] applies, it sets [TemplateVars.PropertyValue] to `[hidden]`
+// and redacts the property value from [TemplateVars.Error] before template execution.
+// It does not change the other fields.
 type TemplateVars struct {
 	// Common variables which are available for all the rules.
 	PropertyValue any

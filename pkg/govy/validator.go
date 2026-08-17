@@ -94,13 +94,13 @@ func (v Validator[T]) InferPath(mode InferPathMode) Validator[T] {
 // Validate will first evaluate predicates before validating any rules.
 // If any predicate does not pass the validation won't be executed (returns nil).
 // All errors returned by property rules will be aggregated and wrapped in [ValidatorError].
-func (v Validator[T]) Validate(value T) error {
+func (v Validator[T]) Validate(value T, opts ...ValidationOption) error {
 	if !v.matchPredicates(value) {
 		return nil
 	}
 	var allErrors PropertyErrors
 	for _, rules := range v.props {
-		err := rules.Validate(value)
+		err := rules.Validate(value, opts...)
 		if err == nil {
 			continue
 		}
