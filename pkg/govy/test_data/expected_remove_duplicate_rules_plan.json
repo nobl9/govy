@@ -17,5 +17,9 @@
         }
       ]
     }
-  ]
+  ],
+  "typeInfo": {
+    "name": "string",
+    "kind": "string"
+  }
 }

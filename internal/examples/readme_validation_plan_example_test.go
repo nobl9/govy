@@ -186,6 +186,11 @@ func Example_validationPlan() {
 	//         }
 	//       ]
 	//     }
-	//   ]
+	//   ],
+	//   "typeInfo": {
+	//     "name": "Teacher",
+	//     "kind": "struct",
+	//     "package": "github.com/nobl9/govy/internal/examples"
+	//   }
 	// }
 }

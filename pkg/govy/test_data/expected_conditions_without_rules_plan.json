@@ -21,5 +21,10 @@
         }
       ]
     }
-  ]
+  ],
+  "typeInfo": {
+    "name": "Foo",
+    "kind": "struct",
+    "package": "github.com/nobl9/govy/pkg/govy_test"
+  }
 }

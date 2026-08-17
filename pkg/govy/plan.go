@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/nobl9/govy/internal/collections"
+	"github.com/nobl9/govy/internal/typeinfo"
 	"github.com/nobl9/govy/pkg/jsonpath"
 )
 
@@ -16,6 +17,8 @@ type ValidatorPlan struct {
 	Name string `json:"name,omitempty"`
 	// Properties which this [Validator] defines.
 	Properties []*PropertyPlan `json:"properties"`
+	// TypeInfo contains the type information of the validator.
+	TypeInfo TypeInfo `json:"typeInfo"`
 }
 
 // PropertyPlan is a validation plan for a single [PropertyRules].
@@ -52,7 +55,7 @@ func (p *PropertyPlan) Compare(other *PropertyPlan) int {
 	return strings.Compare(p.TypeInfo.Kind, other.TypeInfo.Kind)
 }
 
-// TypeInfo contains the type information of a property.
+// TypeInfo contains the type information of a validator or property.
 type TypeInfo struct {
 	// Name is a Go type name.
 	// Example: "Pod", "string", "int", "bool", etc.
@@ -164,6 +167,7 @@ func Plan[T any](v Validator[T], opts ...PlanOption) (*ValidatorPlan, error) {
 	return &ValidatorPlan{
 		Name:       name,
 		Properties: properties,
+		TypeInfo:   TypeInfo(typeinfo.Get[T]()),
 	}, nil
 }
 
