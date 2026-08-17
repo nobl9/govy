@@ -51,8 +51,13 @@ func (v Validator[T]) When(predicate Predicate[T], opts ...WhenOption) Validator
 	return v
 }
 
-// Cascade sets the [CascadeMode] for the validator,
-// which controls the flow of evaluating the validation rules.
+// Cascade sets the [CascadeMode] for the validator.
+// [CascadeModeStop] stops validation after the first property returns an error.
+// The method also sets the mode on each property that has no explicit mode.
+//
+// Included validators use their own cascade modes.
+// To change an included validator's mode, call [Validator.Cascade] before you
+// pass the validator to an Include method.
 func (v Validator[T]) Cascade(mode CascadeMode) Validator[T] {
 	v.cascadeMode = mode
 	props := make([]PropertyRulesInterface[T], 0, len(v.props))
@@ -195,13 +200,13 @@ func (v Validator[T]) InferPath(mode InferPathMode) Validator[T] {
 // Validate will first evaluate predicates before validating any rules.
 // If any predicate does not pass the validation won't be executed (returns nil).
 // All errors returned by property rules will be aggregated and wrapped in [ValidatorError].
-func (v Validator[T]) Validate(value T) error {
+func (v Validator[T]) Validate(value T, opts ...ValidationOption) error {
 	if !v.matchPredicates(value) {
 		return nil
 	}
 	var allErrors PropertyErrors
 	for _, rules := range v.props {
-		err := rules.Validate(value)
+		err := rules.Validate(value, opts...)
 		if err == nil {
 			continue
 		}

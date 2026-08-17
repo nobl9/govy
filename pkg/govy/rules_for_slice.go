@@ -27,12 +27,12 @@ type PropertyRulesForSlice[S ~[]T, T, P any] struct {
 }
 
 // Validate executes each of the rules sequentially and aggregates the encountered errors.
-func (r PropertyRulesForSlice[S, T, P]) Validate(parent P) error {
+func (r PropertyRulesForSlice[S, T, P]) Validate(parent P, opts ...ValidationOption) error {
 	if !r.matchPredicates(parent) {
 		return nil
 	}
 	v := r.getter(parent)
-	err := r.sliceRules.Validate(v)
+	err := r.sliceRules.Validate(v, opts...)
 	var propErrs PropertyErrors
 	if err != nil {
 		if r.cascadeMode == CascadeModeStop {
@@ -46,7 +46,7 @@ func (r PropertyRulesForSlice[S, T, P]) Validate(parent P) error {
 		}
 	}
 	for i, element := range v {
-		err = r.forEachRules.Validate(element)
+		err = r.forEachRules.Validate(element, opts...)
 		if err == nil {
 			continue
 		}
@@ -112,18 +112,29 @@ func (r PropertyRulesForSlice[S, T, P]) When(
 }
 
 // IncludeForEach associates specified [Validator] and its [PropertyRules] with each element of the slice.
+// Included validators use their own cascade modes.
+// To change a mode, call [Validator.Cascade] before you pass the validator to this method.
 func (r PropertyRulesForSlice[S, T, P]) IncludeForEach(rules ...ValidatorInterface[T]) PropertyRulesForSlice[S, T, P] {
 	r.forEachRules = r.forEachRules.Include(rules...)
 	return r
 }
 
 // Include embeds specified [Validator] and its [PropertyRules] into the property.
+// Included validators use their own cascade modes.
+// To change a mode, call [Validator.Cascade] before you pass the validator to this method.
 func (r PropertyRulesForSlice[S, T, P]) Include(rules ...ValidatorInterface[S]) PropertyRulesForSlice[S, T, P] {
 	r.sliceRules = r.sliceRules.Include(rules...)
 	return r
 }
 
-// Cascade => refer to [PropertyRules.Cascade] documentation.
+// Cascade sets the [CascadeMode] for rules that validate the whole slice
+// and each element.
+// If whole-slice validation returns an error, [CascadeModeStop] skips all elements.
+// The mode applies separately to the rules for each element.
+// An element error does not stop validation of later elements.
+//
+// Each included [Validator] uses its own cascade mode internally.
+// An explicit slice mode takes precedence over the containing validator's mode.
 func (r PropertyRulesForSlice[S, T, P]) Cascade(mode CascadeMode) PropertyRulesForSlice[S, T, P] {
 	r.cascadeMode = mode
 	r.sliceRules = r.sliceRules.Cascade(mode)

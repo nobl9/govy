@@ -61,51 +61,72 @@ type Rule[T any] struct {
 //     using variables passed inside [RuleErrorTemplate.vars].
 //
 // By default, it will construct a new [*RuleError].
-func (r Rule[T]) Validate(v T) error {
-	if err := r.validate(v); err != nil {
-		switch ev := err.(type) {
-		case *RuleError:
-			if len(r.message) > 0 {
-				ev.Message = createErrorMessage(r.message, r.details, r.examples)
-			}
-			ev.Description = r.description
-			return ev.AddCode(r.errorCode)
-		case *PropertyError:
-			for _, e := range ev.Errors {
-				_ = e.AddCode(r.errorCode)
-			}
-			return ev
-		case RuleErrorTemplate:
-			if r.message != "" {
-				break
-			}
-			if r.messageTemplate == nil {
-				panic(fmt.Sprintf("rule returned %T error but message template is not set", ev))
-			}
-			ev.vars.PropertyValue = v
-			ev.vars.Details = r.details
-			ev.vars.Examples = r.examples
-			var buf bytes.Buffer
-			if err = r.messageTemplate.Execute(&buf, ev.vars); err != nil {
-				panic(fmt.Sprintf("failed to execute message template: %s", err))
-			}
-			return &RuleError{
-				Message:     buf.String(),
-				Code:        r.errorCode,
-				Description: r.description,
-			}
-		}
-		msg := err.Error()
+func (r Rule[T]) Validate(v T, opts ...ValidationOption) error {
+	err := r.validate(v)
+	if err == nil {
+		return nil
+	}
+	vOpts := newValidationOptions(opts...)
+
+	switch ev := err.(type) {
+	case *RuleError:
 		if len(r.message) > 0 {
-			msg = r.message
+			ev.Message = createErrorMessage(r.message, r.details, r.examples)
+		}
+		ev.Description = r.description
+		_ = ev.AddCode(r.errorCode)
+		if vOpts.hideValue {
+			ev.Message = hideStringValue(ev.Message, v)
+		}
+		return ev
+	case *PropertyError:
+		for _, e := range ev.Errors {
+			_ = e.AddCode(r.errorCode)
+		}
+		if vOpts.hideValue {
+			hidePropertyErrorValue(ev, ev.PropertyValue, v)
+		}
+		return ev
+	case RuleErrorTemplate:
+		if r.message != "" {
+			break
+		}
+		if r.messageTemplate == nil {
+			panic(fmt.Sprintf("rule returned %T error but message template is not set", ev))
+		}
+		if vOpts.hideValue {
+			ev.vars.PropertyValue = hiddenValue
+			if ev.vars.Error != "" {
+				ev.vars.Error = hideStringValue(ev.vars.Error, v)
+			}
+		} else {
+			ev.vars.PropertyValue = v
+		}
+		ev.vars.Details = r.details
+		ev.vars.Examples = r.examples
+		var buf bytes.Buffer
+		if err = r.messageTemplate.Execute(&buf, ev.vars); err != nil {
+			panic(fmt.Sprintf("failed to execute message template: %s", err))
 		}
 		return &RuleError{
-			Message:     createErrorMessage(msg, r.details, r.examples),
+			Message:     buf.String(),
 			Code:        r.errorCode,
 			Description: r.description,
 		}
 	}
-	return nil
+	msg := err.Error()
+	if len(r.message) > 0 {
+		msg = r.message
+	}
+	ruleErr := &RuleError{
+		Message:     createErrorMessage(msg, r.details, r.examples),
+		Code:        r.errorCode,
+		Description: r.description,
+	}
+	if vOpts.hideValue {
+		ruleErr.Message = hideStringValue(ruleErr.Message, v)
+	}
+	return ruleErr
 }
 
 // WithErrorCode sets the error code for the returned [RuleError].

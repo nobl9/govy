@@ -41,14 +41,18 @@ func Transform[T, N, P any](getter PropertyGetter[T, P], transform Transformer[T
 	typInfo := typeinfo.Get[T]()
 	return PropertyRules[N, P]{
 		pathFunc: getInferPathFunc(getCallersAndProgramCounter(4)),
-		transformGetter: func(parent P) (transformed N, original any, err error) {
+		transformGetter: func(parent P, hideValue bool) (transformed N, original any, err error) {
 			v := getter(parent)
 			if internal.IsEmpty(v) {
 				return transformed, nil, emptyErr{}
 			}
 			transformed, err = transform(v)
 			if err != nil {
-				return transformed, v, NewRuleError(err.Error(), ErrorCodeTransform)
+				message := err.Error()
+				if hideValue {
+					message = hideStringValue(message, v)
+				}
+				return transformed, v, NewRuleError(message, ErrorCodeTransform)
 			}
 			return transformed, v, nil
 		},
@@ -85,8 +89,8 @@ type Transformer[T, N any] func(value T) (N, error)
 type PropertyGetter[T, P any] func(parent P) T
 
 type (
-	internalPropertyGetter[T, P any]          func(P) (v T, err error)
-	internalTransformPropertyGetter[T, P any] func(P) (transformed T, original any, err error)
+	internalPropertyGetter[T, P any]          func(parent P) (v T, err error)
+	internalTransformPropertyGetter[T, P any] func(parent P, hideValue bool) (transformed T, original any, err error)
 	emptyErr                                  struct{}
 )
 
@@ -97,27 +101,27 @@ func (emptyErr) Error() string { return "" }
 // It is the middle-level building block of the validation process,
 // aggregated by [Validator] and aggregating [Rule].
 type PropertyRules[T, P any] struct {
-	id               string
-	path             jsonpath.Path
-	pathFunc         inferPathFunc
-	getter           internalPropertyGetter[T, P]
-	transformGetter  internalTransformPropertyGetter[T, P]
-	rules            []validationInterface[T]
-	required         bool
-	omitEmpty        bool
-	hideValue        bool
-	isPointer        bool
-	cascadeMode      CascadeMode
-	inferPathMode    InferPathMode
-	inferPathModeSet bool
-	examples         []string
-	originalType     *typeinfo.TypeInfo
+	id                string
+	path              jsonpath.Path
+	pathFunc          inferPathFunc
+	getter            internalPropertyGetter[T, P]
+	transformGetter   internalTransformPropertyGetter[T, P]
+	rules             []validationInterface[T]
+	required          bool
+	omitEmpty         bool
+	isPointer         bool
+	cascadeMode       CascadeMode
+	inferPathMode     InferPathMode
+	inferPathModeSet  bool
+	examples          []string
+	originalType      *typeinfo.TypeInfo
+	validationOptions []ValidationOption
 
 	predicateMatcher[P]
 }
 
 // Validate validates the property value using provided rules.
-func (r PropertyRules[T, P]) Validate(parent P) error {
+func (r PropertyRules[T, P]) Validate(parent P, opts ...ValidationOption) error {
 	if !r.matchPredicates(parent) {
 		return nil
 	}
@@ -125,18 +129,18 @@ func (r PropertyRules[T, P]) Validate(parent P) error {
 		ruleErrors []error
 		allErrors  PropertyErrors
 	)
-	propValue, skip, propErr := r.getValue(parent)
+	opts = append(r.validationOptions, opts...)
+	vOpts := newValidationOptions(opts...)
+
+	propValue, skip, propErr := r.getValue(parent, vOpts)
 	if propErr != nil {
-		if r.hideValue {
-			propErr = propErr.HideValue()
-		}
 		return PropertyErrors{propErr}
 	}
 	if skip {
 		return nil
 	}
 	for i := range r.rules {
-		err := r.rules[i].Validate(propValue)
+		err := r.rules[i].Validate(propValue, opts...)
 		if err == nil {
 			continue
 		}
@@ -156,12 +160,13 @@ func (r PropertyRules[T, P]) Validate(parent P) error {
 		}
 	}
 	if len(ruleErrors) > 0 {
-		allErrors = append(allErrors, NewPropertyError(r.getPath(), propValue, ruleErrors...))
+		anyPropValue := any(propValue)
+		if vOpts.hideValue {
+			anyPropValue = nil
+		}
+		allErrors = append(allErrors, NewPropertyError(r.getPath(), anyPropValue, ruleErrors...))
 	}
 	if len(allErrors) > 0 {
-		if r.hideValue {
-			allErrors = allErrors.HideValue()
-		}
 		return allErrors.aggregate()
 	}
 	return nil
@@ -211,6 +216,8 @@ func (r PropertyRules[T, P]) Rules(rules ...RulesInterface[T]) PropertyRules[T, 
 }
 
 // Include embeds specified [Validator] and its [PropertyRules] into the property.
+// Included validators use their own cascade modes.
+// To change a mode, call [Validator.Cascade] before you pass the validator to this method.
 func (r PropertyRules[T, P]) Include(rules ...ValidatorInterface[T]) PropertyRules[T, P] {
 	for _, rule := range rules {
 		r.rules = append(r.rules, rule)
@@ -239,15 +246,25 @@ func (r PropertyRules[T, P]) OmitEmpty() PropertyRules[T, P] {
 	return r
 }
 
-// HideValue hides the property value in the error message.
-// It's useful when the value is sensitive and should not be exposed.
+// HideValue omits values from errors produced by this property.
+// For rule errors without a message template, it replaces the value text with `[hidden]`.
+// Before it executes a message template, it sets [TemplateVars.PropertyValue] to `[hidden]`
+// and redacts the value text in [TemplateVars.Error].
+// It returns the rendered template without additional redaction.
+// The setting propagates to nested rules and included validators.
 func (r PropertyRules[T, P]) HideValue() PropertyRules[T, P] {
-	r.hideValue = true
+	r.validationOptions = append(r.validationOptions, hideValue())
 	return r
 }
 
-// Cascade sets the [CascadeMode] for the property,
-// which controls the flow of evaluating the validation rules.
+// Cascade sets the [CascadeMode] for the property's rules and included validators.
+// [CascadeModeStop] stops after the first [Rule], [RuleSet], or included
+// [Validator] returns an error.
+// Each [RuleSet] uses its own cascade mode internally.
+// Each included [Validator] also uses its own cascade mode internally.
+//
+// The mode does not affect the containing [Validator] or sibling properties.
+// An explicit property mode takes precedence over the containing validator's mode.
 func (r PropertyRules[T, P]) Cascade(mode CascadeMode) PropertyRules[T, P] {
 	r.cascadeMode = mode
 	return r
@@ -290,7 +307,8 @@ func (r PropertyRules[T, P]) propertyID() string {
 
 // plan constructs a validation plan for the property.
 func (r PropertyRules[T, P]) plan(builder planBuilder) {
-	builder.propertyPlan.IsHidden = r.hideValue
+	vOpts := newValidationOptions(r.validationOptions...)
+	builder.propertyPlan.IsHidden = vOpts.hideValue
 	if r.originalType != nil {
 		builder.propertyPlan.TypeInfo = TypeInfo(*r.originalType)
 	} else {
@@ -325,14 +343,14 @@ func (r PropertyRules[T, P]) plan(builder planBuilder) {
 
 // getValue extracts the property value from the provided property.
 // It returns the value, a flag indicating whether the validation should be skipped, and any errors encountered.
-func (r PropertyRules[T, P]) getValue(parent P) (v T, skip bool, propErr *PropertyError) {
+func (r PropertyRules[T, P]) getValue(parent P, vo validationOptions) (v T, skip bool, propErr *PropertyError) {
 	var (
 		err           error
 		originalValue any
 	)
 	// Extract value from the property through correct getter.
 	if r.transformGetter != nil {
-		v, originalValue, err = r.transformGetter(parent)
+		v, originalValue, err = r.transformGetter(parent, vo.hideValue)
 	} else {
 		v, err = r.getter(parent)
 	}
@@ -345,6 +363,9 @@ func (r PropertyRules[T, P]) getValue(parent P) (v T, skip bool, propErr *Proper
 			propValue = originalValue
 		} else {
 			propValue = v
+		}
+		if vo.hideValue {
+			propValue = nil
 		}
 		return v, false, NewPropertyError(r.getPath(), propValue, err)
 	}
