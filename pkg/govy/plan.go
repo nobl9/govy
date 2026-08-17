@@ -103,6 +103,13 @@ type planOptions struct {
 	requirePredicateDescriptions bool
 }
 
+func (p planOptions) apply(opts []PlanOption) planOptions {
+	for _, opt := range opts {
+		p = opt(p)
+	}
+	return p
+}
+
 type PlanOption func(options planOptions) planOptions
 
 // PlanRequirePredicateDescription returns a [PlanOption] that will cause [Plan] to return an error
@@ -135,9 +142,7 @@ func Plan[T any](v Validator[T], opts ...PlanOption) (*ValidatorPlan, error) {
 		propertyPath:        jsonpath.NewRoot(),
 		path:                &builders,
 		missingDescriptions: ptr(make([]predicateLocation, 0)),
-	}
-	for _, opt := range opts {
-		rootBuilder.options = opt(rootBuilder.options)
+		options:             planOptions{}.apply(opts),
 	}
 	v.plan(rootBuilder)
 
@@ -277,6 +282,10 @@ func (p planBuilder) validate() error {
 }
 
 func appendPredicatesToPlanBuilder[T any](builder planBuilder, predicates []predicateContainer[T]) planBuilder {
+	// Plan branches share inherited conditions, so clone before appending branch-specific predicates.
+	if len(predicates) > 0 {
+		builder.rulePlan.Conditions = slices.Clone(builder.rulePlan.Conditions)
+	}
 	for _, predicate := range predicates {
 		if predicate.description == "" {
 			if builder.options.requirePredicateDescriptions && builder.missingDescriptions != nil {

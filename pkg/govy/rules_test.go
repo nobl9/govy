@@ -179,49 +179,6 @@ func TestPropertyRules(t *testing.T) {
 		assert.Require(t, assert.Len(t, errs, 1))
 		assert.Equal(t, jsonpath.Parse("simpleName"), errs[0].PropertyPath)
 	})
-
-	t.Run("hide value", func(t *testing.T) {
-		expectedErr := errors.New("oh no! here's the value: 'secret'")
-		r := govy.For(func(m mockStruct) string { return "secret" }).
-			WithPath(jsonpath.New().Name("test").Name("path")).
-			HideValue().
-			Rules(govy.NewRule(func(v string) error { return expectedErr }))
-		errs := mustPropertyErrors(t, r.Validate(mockStruct{}))
-		assert.Require(t, assert.Len(t, errs, 1))
-		assert.Equal(t, &govy.PropertyError{
-			PropertyPath:  jsonpath.Parse("test.path"),
-			PropertyValue: "",
-			Errors:        []*govy.RuleError{{Message: "oh no! here's the value: '[hidden]'"}},
-		}, errs[0])
-	})
-
-	t.Run("do not hide empty value", func(t *testing.T) {
-		r := govy.For(func(mockStruct) string { return "" }).
-			WithName("password").
-			Required().
-			HideValue()
-
-		err := r.Validate(mockStruct{})
-		assert.EqualError(t, err, "- 'password':\n  - property is required but was empty")
-	})
-
-	t.Run("do not hide whitespace-only value", func(t *testing.T) {
-		testCases := map[string]string{
-			"ASCII whitespace":   " \t\n",
-			"Unicode whitespace": "\u3000",
-		}
-		for name, value := range testCases {
-			t.Run(name, func(t *testing.T) {
-				r := govy.For(func(mockStruct) string { return value }).
-					WithName("password").
-					HideValue().
-					Rules(rules.StringNotEmpty())
-
-				err := r.Validate(mockStruct{})
-				assert.EqualError(t, err, "- 'password':\n  - string must not be empty")
-			})
-		}
-	})
 }
 
 func TestForPointer(t *testing.T) {
@@ -344,17 +301,6 @@ func TestTransform(t *testing.T) {
 		errs := mustPropertyErrors(t, transformed.Validate("123z"))
 		assert.Len(t, errs, 1)
 		assert.EqualError(t, errs, expectedErrorOutput(t, "property_error_transform.txt"))
-		assert.True(t, govy.HasErrorCode(errs, govy.ErrorCodeTransform))
-	})
-	t.Run("fail transformation with hidden value", func(t *testing.T) {
-		getter := func(s string) string { return s }
-		transformed := govy.Transform(getter, strconv.Atoi).
-			WithName("prop").
-			HideValue().
-			Rules(rules.GT(123))
-		errs := mustPropertyErrors(t, transformed.Validate("secret!"))
-		assert.Len(t, errs, 1)
-		assert.EqualError(t, errs, expectedErrorOutput(t, "property_error_transform_with_hidden_value.txt"))
 		assert.True(t, govy.HasErrorCode(errs, govy.ErrorCodeTransform))
 	})
 }

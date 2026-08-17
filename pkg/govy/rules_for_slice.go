@@ -27,12 +27,12 @@ type PropertyRulesForSlice[S ~[]T, T, P any] struct {
 }
 
 // Validate executes each of the rules sequentially and aggregates the encountered errors.
-func (r PropertyRulesForSlice[S, T, P]) Validate(parent P) error {
+func (r PropertyRulesForSlice[S, T, P]) Validate(parent P, opts ...ValidationOption) error {
 	if !r.matchPredicates(parent) {
 		return nil
 	}
 	v := r.getter(parent)
-	err := r.sliceRules.Validate(v)
+	err := r.sliceRules.Validate(v, opts...)
 	var propErrs PropertyErrors
 	if err != nil {
 		if r.cascadeMode == CascadeModeStop {
@@ -46,7 +46,7 @@ func (r PropertyRulesForSlice[S, T, P]) Validate(parent P) error {
 		}
 	}
 	for i, element := range v {
-		err = r.forEachRules.Validate(element)
+		err = r.forEachRules.Validate(element, opts...)
 		if err == nil {
 			continue
 		}
