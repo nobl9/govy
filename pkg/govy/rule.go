@@ -42,14 +42,15 @@ func RuleToPointer[T any](rule Rule[T]) Rule[*T] {
 // It evaluates the provided validation function and enhances it
 // with optional [ErrorCode] and arbitrary details.
 type Rule[T any] struct {
-	validate        func(v T) error
-	errorCode       ErrorCode
-	details         string
-	message         string
-	messageTemplate *template.Template
-	examples        []string
-	description     string
-	planModifiers   []RulePlanModifier
+	validate          func(v T) error
+	errorCode         ErrorCode
+	details           string
+	message           string
+	messageTemplate   *template.Template
+	examples          []string
+	description       string
+	planModifiers     []RulePlanModifier
+	jsonSchemaBuilder JSONSchemaBuilder
 }
 
 // Validate runs validation function on the provided value.
@@ -198,6 +199,13 @@ func (r Rule[T]) WithDescription(description string) Rule[T] {
 	return r
 }
 
+// WithJSONSchema adds JSON Schema generation support to this [Rule].
+// It is utilized by [JSONSchema].
+func (r Rule[T]) WithJSONSchema(builder JSONSchemaBuilder) Rule[T] {
+	r.jsonSchemaBuilder = builder
+	return r
+}
+
 // RulePlanModifier allows modifying [RulePlan] calculated when calling [Plan].
 type RulePlanModifier func(plan RulePlan) RulePlan
 
@@ -221,6 +229,9 @@ func (r Rule[T]) plan(builder planBuilder) {
 	}
 	for _, mod := range r.planModifiers {
 		rulePlan = mod(rulePlan)
+	}
+	if builder.options.recordJSONSchema {
+		rulePlan.jsonSchemaBuilders = []JSONSchemaBuilder{r.jsonSchemaBuilder}
 	}
 	builder.rulePlan = rulePlan
 	*builder.path = append(*builder.path, builder)

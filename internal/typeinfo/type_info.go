@@ -7,9 +7,10 @@ import (
 
 // TypeInfo stores the Go type information.
 type TypeInfo struct {
-	Name    string
-	Kind    string
-	Package string
+	Name        string
+	Kind        string
+	Package     string
+	ReflectKind reflect.Kind
 }
 
 // Get returns the information for the type T.
@@ -33,22 +34,23 @@ func Get[T any]() TypeInfo {
 	if typ.Kind() == reflect.Pointer {
 		typ = typ.Elem()
 	}
-	result := TypeInfo{
-		Kind: getKindString(typ),
+	info := TypeInfo{
+		Kind:        getKindString(typ),
+		ReflectKind: typ.Kind(),
 	}
 
 	if typ.PkgPath() == "" && typ.Kind() == reflect.Slice {
-		result.Name = "[]"
+		info.Name = "[]"
 		typ = typ.Elem()
 	}
 	switch {
 	case typ.PkgPath() == "":
-		result.Name += typ.String()
+		info.Name += typ.String()
 	default:
-		result.Name += typ.Name()
-		result.Package = typ.PkgPath()
+		info.Name += typ.Name()
+		info.Package = typ.PkgPath()
 	}
-	return result
+	return info
 }
 
 func getKindString(typ reflect.Type) string {

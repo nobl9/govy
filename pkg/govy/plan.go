@@ -3,6 +3,7 @@ package govy
 import (
 	"fmt"
 	"maps"
+	"reflect"
 	"slices"
 	"strings"
 
@@ -67,6 +68,9 @@ type TypeInfo struct {
 	// It's empty for builtin types.
 	// Example: "github.com/nobl9/govy/pkg/govy", "time", etc.
 	Package string `json:"package,omitempty"`
+
+	// reflectKind preserves the original, dereferenced [reflect.Kind] of the type.
+	reflectKind reflect.Kind
 }
 
 // RulePlan is a validation plan for a single [Rule].
@@ -87,10 +91,14 @@ type RulePlan struct {
 	// values unlike [Examples] should list ALL valid values which meet this rule.
 	// It is not exported as it is only here to contribute to the [PropertyPlan.ValidValues].
 	values []string
+	// jsonSchemaBuilders records the JSON Schema builder passed to [Rule.WithJSONSchema].
+	// It is only recorded if [Plan] was called with [planRecordJSONSchema] option.
+	jsonSchemaBuilders []JSONSchemaBuilder
 }
 
-func (r RulePlan) isEmpty() bool {
-	return r.Description == "" && r.Details == "" && r.ErrorCode == ""
+func (r RulePlan) isEmpty(recordJSONSchema bool) bool {
+	return (r.Description == "" && r.Details == "" && r.ErrorCode == "") ||
+		(recordJSONSchema && len(r.jsonSchemaBuilders) == 0)
 }
 
 func (r RulePlan) equal(r2 RulePlan) bool {
@@ -104,6 +112,7 @@ func (r RulePlan) equal(r2 RulePlan) bool {
 // planOptions contains options for configuring the behavior of the [Plan] function.
 type planOptions struct {
 	requirePredicateDescriptions bool
+	recordJSONSchema             bool
 }
 
 func (p planOptions) apply(opts []PlanOption) planOptions {
@@ -131,6 +140,14 @@ func PlanRequirePredicateDescription() PlanOption {
 func PlanStrictMode() PlanOption {
 	return func(options planOptions) planOptions {
 		options = PlanRequirePredicateDescription()(options)
+		return options
+	}
+}
+
+// planRecordJSONSchema TODO
+func planRecordJSONSchema() PlanOption {
+	return func(options planOptions) planOptions {
+		options.recordJSONSchema = true
 		return options
 	}
 }
@@ -167,7 +184,7 @@ func Plan[T any](v Validator[T], opts ...PlanOption) (*ValidatorPlan, error) {
 	return &ValidatorPlan{
 		Name:       name,
 		Properties: properties,
-		TypeInfo:   TypeInfo(typeinfo.Get[T]()),
+		TypeInfo:   typeInfoFromInternal(typeinfo.Get[T]()),
 	}, nil
 }
 
@@ -210,7 +227,7 @@ func aggregatePropertyPlans(builders []planBuilder) []*PropertyPlan {
 				IsHidden: b.propertyPlan.IsHidden,
 			}
 		}
-		if !b.rulePlan.isEmpty() {
+		if !b.rulePlan.isEmpty(b.options.recordJSONSchema) {
 			entry.Rules = append(entry.Rules, b.rulePlan)
 		}
 		propertiesMap[path] = entry
@@ -232,17 +249,23 @@ func (p *PropertyPlan) collectValidValuesFromRules() {
 	p.Values = collections.Intersection(validValuesSlices...)
 }
 
-// removeDeduplicatedRules removes duplicate rules from the [PropertyPlan].
+// removeDeduplicatedRules removes duplicate rules from the [PropertyPlan]
+// while preserving their JSON Schema builders.
 func (p *PropertyPlan) removeDeduplicatedRules() {
 	if len(p.Rules) == 0 {
 		return
 	}
 	uniqueRules := make([]RulePlan, 0, len(p.Rules))
 	for _, rule := range p.Rules {
-		isDuplicate := slices.ContainsFunc(uniqueRules, rule.equal)
-		if !isDuplicate {
+		duplicateIndex := slices.IndexFunc(uniqueRules, rule.equal)
+		if duplicateIndex < 0 {
 			uniqueRules = append(uniqueRules, rule)
+			continue
 		}
+		uniqueRules[duplicateIndex].jsonSchemaBuilders = append(
+			uniqueRules[duplicateIndex].jsonSchemaBuilders,
+			rule.jsonSchemaBuilders...,
+		)
 	}
 	p.Rules = uniqueRules
 }
@@ -302,6 +325,15 @@ func appendPredicatesToPlanBuilder[T any](builder planBuilder, predicates []pred
 		builder.rulePlan.Conditions = append(builder.rulePlan.Conditions, predicate.description)
 	}
 	return builder
+}
+
+func typeInfoFromInternal(info typeinfo.TypeInfo) TypeInfo {
+	return TypeInfo{
+		Name:        info.Name,
+		Kind:        info.Kind,
+		Package:     info.Package,
+		reflectKind: info.ReflectKind,
+	}
 }
 
 func ptr[T any](v T) *T { return &v }

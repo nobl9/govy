@@ -9,7 +9,6 @@ import (
 
 const (
 	jsonPathSeparator = '.'
-	escapedChars      = string(jsonPathSeparator) + "[]'*$ \t\n\r"
 	valueWildcard     = "*"
 	keyWildcard       = "*~"
 	indexWildcard     = "[*]"

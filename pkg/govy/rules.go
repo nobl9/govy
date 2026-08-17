@@ -294,9 +294,9 @@ func (r PropertyRules[T, P]) plan(builder planBuilder) {
 	vOpts := newValidationOptions(r.validationOptions...)
 	builder.propertyPlan.IsHidden = vOpts.hideValue
 	if r.originalType != nil {
-		builder.propertyPlan.TypeInfo = TypeInfo(*r.originalType)
+		builder.propertyPlan.TypeInfo = typeInfoFromInternal(*r.originalType)
 	} else {
-		builder.propertyPlan.TypeInfo = TypeInfo(typeinfo.Get[T]())
+		builder.propertyPlan.TypeInfo = typeInfoFromInternal(typeinfo.Get[T]())
 	}
 	builder = builder.appendPath(r.getPath()).setExamples(r.examples...)
 	builder = appendPredicatesToPlanBuilder(builder, r.predicates)

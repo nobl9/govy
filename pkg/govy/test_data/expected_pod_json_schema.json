@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Pod",
+  "type": "object",
+  "properties": {
+    "apiVersion": {
+      "type": "string",
+      "enum": ["v1", "v2"]
+    },
+    "kind": {
+      "type": "string",
+      "const": "Pod"
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "annotations": {
+          "type": "object",
+          "maxProperties": 10,
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "labels": {
+          "type": "object",
+          "maxProperties": 10,
+          "propertyNames": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 63,
+            "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$"
+          },
+          "additionalProperties": {
+            "type": "string",
+            "maxLength": 120
+          }
+        },
+        "name": {
+          "type": "string",
+          "pattern": "[^\\u0009-\\u000D\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028-\\u2029\\u202F\\u205F\\u3000]"
+        },
+        "namespace": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": ["name", "namespace"]
+    },
+    "spec": {
+      "type": "object",
+      "properties": {
+        "containers": {
+          "type": "array",
+          "maxItems": 10,
+          "items": {
+            "type": "object",
+            "properties": {
+              "env": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              },
+              "image": {
+                "type": "string",
+                "pattern": "[^\\u0009-\\u000D\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028-\\u2029\\u202F\\u205F\\u3000]"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 63,
+                "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$"
+              }
+            },
+            "required": ["image", "name"]
+          }
+        },
+        "dnsPolicy": {
+          "type": "string",
+          "enum": ["", "ClusterFirst", "Default"]
+        }
+      },
+      "anyOf": [
+        {
+          "properties": {
+            "containers": {
+              "type": "array"
+            }
+          },
+          "required": ["containers"]
+        },
+        {
+          "properties": {
+            "dnsPolicy": {
+              "not": {
+                "const": ""
+              }
+            }
+          },
+          "required": ["dnsPolicy"]
+        }
+      ]
+    }
+  },
+  "required": ["apiVersion", "kind", "metadata", "spec"]
+}
