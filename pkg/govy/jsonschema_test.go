@@ -1,13 +1,17 @@
 package govy_test
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
+	"math"
 	"testing"
 	"unsafe"
 
 	"github.com/nobl9/govy/internal/assert"
 
 	"github.com/nobl9/govy/pkg/govy"
+	"github.com/nobl9/govy/pkg/jsonpath"
 )
 
 func TestValidatorPlan_JSONSchema(t *testing.T) {
@@ -57,6 +61,74 @@ func TestJSONSchema_UnsupportedType(t *testing.T) {
 			assert.EqualError(t, tc.run(), tc.expectedError)
 		})
 	}
+}
+
+func TestJSONSchema_MapItemUsesValueType(t *testing.T) {
+	t.Parallel()
+
+	type annotations map[string]string
+	type document struct{}
+	validator := govy.New(
+		govy.ForMap(func(document) annotations { return nil }).
+			WithName("annotations").
+			RulesForItems(
+				govy.NewRule(func(govy.MapItem[string, string]) error { return nil }).
+					WithDescription("key and value must differ"),
+			),
+	)
+
+	schema, err := govy.JSONSchema(validator)
+	assert.Require(t, assert.NoError(t, err))
+
+	expected := readTestData(t, "expected_map_item_json_schema.json")
+	var actual bytes.Buffer
+	encoder := json.NewEncoder(&actual)
+	encoder.SetIndent("", "  ")
+	assert.Require(t, assert.NoError(t, encoder.Encode(schema)))
+	assert.Equal(t, expected, actual.String())
+}
+
+func TestJSONSchema_FixedArrayIndexes(t *testing.T) {
+	t.Parallel()
+
+	type document struct{}
+	validator := govy.New(
+		govy.For(func(document) string { return "" }).
+			WithPath(jsonpath.New().Name("tuple").Index(2).Name("a")),
+		govy.For(func(document) string { return "" }).
+			WithPath(jsonpath.New().Name("tuple").Index(2).Name("b")),
+		govy.For(func(document) string { return "" }).
+			WithPath(jsonpath.New().Name("tuple").Index(10).Name("c")),
+	)
+
+	schema, err := govy.JSONSchema(validator)
+	assert.Require(t, assert.NoError(t, err))
+
+	expected := readTestData(t, "expected_fixed_array_indexes_json_schema.json")
+	var actual bytes.Buffer
+	encoder := json.NewEncoder(&actual)
+	encoder.SetIndent("", "  ")
+	assert.Require(t, assert.NoError(t, encoder.Encode(schema)))
+	assert.Equal(t, expected, actual.String())
+}
+
+func TestJSONSchema_ArrayIndexOutsideIntRange(t *testing.T) {
+	t.Parallel()
+
+	type document struct{}
+	index := uint(math.MaxUint)
+	validator := govy.New(
+		govy.For(func(document) string { return "" }).
+			WithPath(jsonpath.New().Name("tuple").Index(index)),
+	)
+
+	_, err := govy.JSONSchema(validator)
+	assert.EqualError(t, err, fmt.Sprintf(
+		`failed to generate JSON Schema for %q property: array index %d exceeds maximum supported index %d`,
+		jsonpath.NewRoot().Name("tuple").Index(index),
+		index,
+		math.MaxInt-1,
+	))
 }
 
 func runJSONSchema[T any]() error {

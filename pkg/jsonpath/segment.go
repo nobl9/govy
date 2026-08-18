@@ -44,8 +44,8 @@ func (s Segment) Name() string {
 }
 
 // Index returns the array index carried by a [SegmentIndex] segment.
-func (s Segment) Index() int {
-	return int(s.index)
+func (s Segment) Index() uint {
+	return s.index
 }
 
 // EscapeSegment accepts a single named path segment and escapes any special characters.

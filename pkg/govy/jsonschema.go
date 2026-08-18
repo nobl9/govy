@@ -2,13 +2,16 @@ package govy
 
 import (
 	"fmt"
+	"math"
 	"reflect"
 
 	"github.com/nobl9/govy/pkg/jsonpath"
 	"github.com/nobl9/govy/pkg/jsonschema"
 )
 
-type JSONSchemaBuilder func(schema jsonschema.Schema) (jsonschema.Schema, error)
+type JSONSchemaBuilder func(schema *jsonschema.Schema) error
+
+const maxJSONSchemaPrefixItemsIndex = math.MaxInt - 1
 
 // JSONSchema creates a JSON Schema document for the provided [Validator].
 // It uses exclusively [Draft 2020-12] version.
@@ -34,6 +37,14 @@ func JSONSchema[T any](v Validator[T]) (*jsonschema.Document, error) {
 		schemaSelector := schema
 		var segment jsonpath.Segment
 		for _, segment = range prop.Path.Segments() {
+			if segment.Kind() == jsonpath.SegmentIndex && segment.Index() > maxJSONSchemaPrefixItemsIndex {
+				return nil, fmt.Errorf(
+					"failed to generate JSON Schema for %q property: array index %d exceeds maximum supported index %d",
+					prop.Path,
+					segment.Index(),
+					maxJSONSchemaPrefixItemsIndex,
+				)
+			}
 			schemaSelector = getJSONSchemaForSegment(schemaSelector, segment)
 		}
 		schemaSelector.Type, err = jsonSchemaTypeFromTypeInfo(prop.TypeInfo)
@@ -55,11 +66,11 @@ func JSONSchema[T any](v Validator[T]) (*jsonschema.Document, error) {
 func getJSONSchemaForSegment(schema *jsonschema.Schema, segment jsonpath.Segment) *jsonschema.Schema {
 	switch segment.Kind() {
 	case jsonpath.SegmentName:
-		if schema.Properties == nil {
-			schema.Properties = make(map[string]*jsonschema.Schema)
-		}
 		if existing, ok := schema.Properties[segment.Name()]; ok {
 			return existing
+		}
+		if schema.Properties == nil {
+			schema.Properties = make(map[string]*jsonschema.Schema)
 		}
 		newSchema := new(jsonschema.Schema)
 		schema.Properties[segment.Name()] = newSchema
@@ -67,18 +78,17 @@ func getJSONSchemaForSegment(schema *jsonschema.Schema, segment jsonpath.Segment
 	case jsonpath.SegmentRoot:
 		// Do nothing, schema is already initalized.
 	case jsonpath.SegmentIndex:
-		if schema.PrefixItems == nil {
-			schema.PrefixItems = make([]*jsonschema.Schema, 0)
-		}
-		// We assume the plan returns sorted properties.
-		// This way if the index was not seen yet, we can safely append it to the top.
-		idx := segment.Index()
-		if idx < len(schema.PrefixItems) {
+		idx := int(segment.Index())
+		if idx < len(schema.PrefixItems) && schema.PrefixItems[idx] != nil {
 			return schema.PrefixItems[idx]
 		}
-		newSchema := new(jsonschema.Schema)
-		schema.PrefixItems = append(schema.PrefixItems, newSchema)
-		return newSchema
+		for len(schema.PrefixItems) <= idx {
+			schema.PrefixItems = append(schema.PrefixItems, new(jsonschema.Schema))
+		}
+		if schema.PrefixItems[idx] == nil {
+			schema.PrefixItems[idx] = new(jsonschema.Schema)
+		}
+		return schema.PrefixItems[idx]
 	case jsonpath.SegmentIndexWildcard, jsonpath.SegmentUnknownIndex:
 		if schema.Items != nil {
 			return schema.Items

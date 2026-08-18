@@ -285,5 +285,3 @@ func BenchmarkMutuallyDependent(b *testing.B) {
 		}
 	}
 }
-
-func ptr[T any](v T) *T { return &v }

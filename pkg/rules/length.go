@@ -6,6 +6,7 @@ import (
 
 	"github.com/nobl9/govy/internal/messagetemplates"
 	"github.com/nobl9/govy/pkg/govy"
+	"github.com/nobl9/govy/pkg/jsonschema"
 )
 
 // StringLength ensures the string's length is between min and max (closed interval).
@@ -33,7 +34,12 @@ func StringLength(minLen, maxLen int) govy.Rule[string] {
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
 			MinLength: minLen,
 			MaxLength: maxLen,
-		}))
+		})).
+		WithJSONSchema(func(schema *jsonschema.Schema) error {
+			schema.MinLength = ptr(uint64(minLen))
+			schema.MaxLength = ptr(uint64(maxLen))
+			return nil
+		})
 }
 
 // StringMinLength ensures the string's length is greater than or equal to the limit.
@@ -223,3 +229,5 @@ func enforceMinMaxLength(minLen, maxLen int) {
 		panic(fmt.Sprintf("minLen '%d' is greater than maxLen '%d'", minLen, maxLen))
 	}
 }
+
+func ptr[T any](v T) *T { return &v }

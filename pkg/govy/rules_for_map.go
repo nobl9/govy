@@ -4,17 +4,21 @@ import (
 	"fmt"
 
 	"github.com/nobl9/govy/internal"
+	"github.com/nobl9/govy/internal/typeinfo"
 	"github.com/nobl9/govy/pkg/jsonpath"
 )
 
 // ForMap creates a new [PropertyRulesForMap] instance for a map property
 // which value is extracted through [PropertyGetter] function.
 func ForMap[M ~map[K]V, K comparable, V, P any](getter PropertyGetter[M, P]) PropertyRulesForMap[M, K, V, P] {
+	forItemRules := forConstructorWithoutPathInference(GetSelf[MapItem[K, V]]())
+	valueType := typeinfo.Get[V]()
+	forItemRules.originalType = &valueType
 	return PropertyRulesForMap[M, K, V, P]{
 		mapRules:      forConstructor(getter),
 		forKeyRules:   forConstructorWithoutPathInference(GetSelf[K]()),
 		forValueRules: forConstructorWithoutPathInference(GetSelf[V]()),
-		forItemRules:  forConstructorWithoutPathInference(GetSelf[MapItem[K, V]]()),
+		forItemRules:  forItemRules,
 		getter:        getter,
 	}
 }
