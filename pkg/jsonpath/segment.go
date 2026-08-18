@@ -5,29 +5,47 @@ import (
 	"unicode/utf8"
 )
 
-// segmentKind identifies the type of a path segment.
-type segmentKind uint8
+// SegmentKind identifies the type of a path segment.
+type SegmentKind uint8
 
 const (
-	// segmentName is a named path segment or map key, e.g. "metadata".
-	segmentName segmentKind = iota
-	// segmentRoot is the JSONPath root selector, rendered as `$`.
-	segmentRoot
-	// segmentIndex is an array index, e.g. `[0]`.
-	segmentIndex
-	// segmentUnknownIndex is an unknown array index, rendered as `[]`.
-	segmentUnknownIndex
-	// segmentValueWildcard represents value wildcard selectors: `*` and `[*]`.
-	segmentValueWildcard
-	// segmentKeyWildcard represents the govy map key wildcard selector `*~`.
-	segmentKeyWildcard
+	// SegmentName is a named path segment or map key, e.g. "metadata".
+	SegmentName SegmentKind = iota
+	// SegmentRoot is the JSONPath root selector, rendered as `$`.
+	SegmentRoot
+	// SegmentIndex is an array index, e.g. `[0]`.
+	SegmentIndex
+	// SegmentUnknownIndex is an unknown array index, rendered as `[]`.
+	SegmentUnknownIndex
+	// SegmentValueWildcard is a value wildcard selector, rendered as `*`.
+	SegmentValueWildcard
+	// SegmentIndexWildcard is an array wildcard selector, rendered as `[*]`.
+	SegmentIndexWildcard
+	// SegmentKeyWildcard represents the govy map key wildcard selector `*~`.
+	SegmentKeyWildcard
 )
 
-// segment is a single component of a [Path].
-type segment struct {
-	kind  segmentKind
-	name  string // used by [segmentName], [segmentValueWildcard]
-	index uint   // used by [segmentIndex]
+// Segment is a single component of a [Path].
+type Segment struct {
+	kind  SegmentKind
+	name  string // used by [SegmentName]
+	index uint   // used by [SegmentIndex]
+}
+
+// Kind returns the segment's [SegmentKind].
+func (s Segment) Kind() SegmentKind {
+	return s.kind
+}
+
+// Name returns the name carried by a [SegmentName] segment.
+// It returns an empty string for other segment kinds.
+func (s Segment) Name() string {
+	return s.name
+}
+
+// Index returns the array index carried by a [SegmentIndex] segment.
+func (s Segment) Index() int {
+	return int(s.index)
 }
 
 // EscapeSegment accepts a single named path segment and escapes any special characters.

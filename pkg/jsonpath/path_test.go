@@ -93,6 +93,52 @@ func TestPath(t *testing.T) {
 	}
 }
 
+func TestPath_Segments(t *testing.T) {
+	t.Parallel()
+
+	t.Run("empty path", func(t *testing.T) {
+		t.Parallel()
+
+		count := 0
+		for range jsonpath.New().Segments() {
+			count++
+		}
+		assert.Equal(t, 0, count)
+	})
+
+	t.Run("preserves segment order and data", func(t *testing.T) {
+		t.Parallel()
+
+		type segmentData struct {
+			kind  jsonpath.SegmentKind
+			name  string
+			index uint
+		}
+
+		path := jsonpath.Parse("$.items[2][].*.*~[*]")
+
+		var actual []segmentData
+		for _, segment := range path.Segments() {
+			actual = append(actual, segmentData{
+				kind:  segment.Kind(),
+				name:  segment.Name(),
+				index: segment.Index(),
+			})
+		}
+
+		expected := []segmentData{
+			{kind: jsonpath.SegmentRoot},
+			{kind: jsonpath.SegmentName, name: "items"},
+			{kind: jsonpath.SegmentIndex, index: 2},
+			{kind: jsonpath.SegmentUnknownIndex},
+			{kind: jsonpath.SegmentValueWildcard},
+			{kind: jsonpath.SegmentKeyWildcard},
+			{kind: jsonpath.SegmentIndexWildcard},
+		}
+		assert.Equal(t, expected, actual)
+	})
+}
+
 func TestParsePath(t *testing.T) {
 	tests := map[string]struct {
 		input    string

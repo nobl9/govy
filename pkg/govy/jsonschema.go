@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/nobl9/govy/pkg/jsonpath"
 	"github.com/nobl9/govy/pkg/jsonschema"
 )
 
@@ -21,14 +22,86 @@ func JSONSchema[T any](v Validator[T]) (*jsonschema.Document, error) {
 	}
 	schemaType, err := jsonSchemaTypeFromTypeInfo(plan.TypeInfo)
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate JSON Schema: %w", err)
+		return nil, fmt.Errorf("failed to generate JSON Schema type info for validator: %w", err)
 	}
 
-	document := jsonschema.Document{
+	schema := &jsonschema.Schema{
 		Title: plan.Name,
 		Type:  schemaType,
 	}
+
+	for _, prop := range plan.Properties {
+		schemaSelector := schema
+		var segment jsonpath.Segment
+		for _, segment = range prop.Path.Segments() {
+			schemaSelector = getJSONSchemaForSegment(schemaSelector, segment)
+		}
+		schemaSelector.Type, err = jsonSchemaTypeFromTypeInfo(prop.TypeInfo)
+		if err != nil {
+			return nil, fmt.Errorf("failed to generate JSON Schema type info for %q property: %w", prop.Path, err)
+		}
+		switch segment.Kind() {
+		case jsonpath.SegmentName:
+		case jsonpath.SegmentRoot:
+		case jsonpath.SegmentUnknownIndex, jsonpath.SegmentIndex, jsonpath.SegmentValueWildcard:
+		case jsonpath.SegmentKeyWildcard:
+		}
+	}
+
+	document := jsonschema.Document(*schema)
 	return &document, nil
+}
+
+func getJSONSchemaForSegment(schema *jsonschema.Schema, segment jsonpath.Segment) *jsonschema.Schema {
+	switch segment.Kind() {
+	case jsonpath.SegmentName:
+		if schema.Properties == nil {
+			schema.Properties = make(map[string]*jsonschema.Schema)
+		}
+		if existing, ok := schema.Properties[segment.Name()]; ok {
+			return existing
+		}
+		newSchema := new(jsonschema.Schema)
+		schema.Properties[segment.Name()] = newSchema
+		return newSchema
+	case jsonpath.SegmentRoot:
+		// Do nothing, schema is already initalized.
+	case jsonpath.SegmentIndex:
+		if schema.PrefixItems == nil {
+			schema.PrefixItems = make([]*jsonschema.Schema, 0)
+		}
+		// We assume the plan returns sorted properties.
+		// This way if the index was not seen yet, we can safely append it to the top.
+		idx := segment.Index()
+		if idx < len(schema.PrefixItems) {
+			return schema.PrefixItems[idx]
+		}
+		newSchema := new(jsonschema.Schema)
+		schema.PrefixItems = append(schema.PrefixItems, newSchema)
+		return newSchema
+	case jsonpath.SegmentIndexWildcard, jsonpath.SegmentUnknownIndex:
+		if schema.Items != nil {
+			return schema.Items
+		}
+		newSchema := new(jsonschema.Schema)
+		schema.Items = newSchema
+		return newSchema
+	case jsonpath.SegmentValueWildcard:
+		if schema.AdditionalProperties != nil {
+			return schema.AdditionalProperties
+		}
+		newSchema := new(jsonschema.Schema)
+		schema.AdditionalProperties = newSchema
+		return newSchema
+	case jsonpath.SegmentKeyWildcard:
+		if schema.PropertyNames != nil {
+			return schema.PropertyNames
+		}
+		newSchema := new(jsonschema.Schema)
+		schema.PropertyNames = newSchema
+		return newSchema
+	}
+	return schema
 }
 
 func jsonSchemaTypeFromTypeInfo(info TypeInfo) (jsonschema.Type, error) {

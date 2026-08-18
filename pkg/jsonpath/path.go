@@ -2,6 +2,7 @@ package jsonpath
 
 import (
 	"cmp"
+	"iter"
 	"slices"
 	"strconv"
 	"strings"
@@ -31,7 +32,7 @@ const (
 //
 // [JSONPath]: https://www.rfc-editor.org/rfc/rfc9535.html
 type Path struct {
-	segments []segment
+	segments []Segment
 }
 
 // New creates a new empty [Path].
@@ -41,7 +42,7 @@ func New() Path {
 
 // NewRoot creates a new [Path] rooted at the JSON document root ($).
 func NewRoot() Path {
-	return Path{segments: []segment{{kind: segmentRoot}}}
+	return Path{segments: []Segment{{kind: SegmentRoot}}}
 }
 
 // Parse parses a JSONPath string or relative path fragment into a structured [Path].
@@ -57,27 +58,27 @@ func Parse(s string) Path {
 
 // Name appends a named segment to the path, escaping special characters as needed.
 func (p Path) Name(name string) Path {
-	return p.appendSegment(segment{kind: segmentName, name: name})
+	return p.appendSegment(Segment{kind: SegmentName, name: name})
 }
 
 // Index appends an array index segment to the path.
 func (p Path) Index(index uint) Path {
-	return p.appendSegment(segment{kind: segmentIndex, index: index})
+	return p.appendSegment(Segment{kind: SegmentIndex, index: index})
 }
 
 // ValueWildcard appends a value wildcard segment (`*`) to the path.
 func (p Path) ValueWildcard() Path {
-	return p.appendSegment(segment{kind: segmentValueWildcard, name: valueWildcard})
+	return p.appendSegment(Segment{kind: SegmentValueWildcard})
 }
 
 // KeyWildcard appends the govy map key wildcard segment (`*~`).
 func (p Path) KeyWildcard() Path {
-	return p.appendSegment(segment{kind: segmentKeyWildcard})
+	return p.appendSegment(Segment{kind: SegmentKeyWildcard})
 }
 
 // IndexWildcard appends an array wildcard segment to the path.
 func (p Path) IndexWildcard() Path {
-	return p.appendSegment(segment{kind: segmentValueWildcard, name: indexWildcard})
+	return p.appendSegment(Segment{kind: SegmentIndexWildcard})
 }
 
 // Join appends another [Path] to this one.
@@ -99,7 +100,7 @@ func (p Path) Join(other Path) Path {
 	if len(p.segments) == 0 {
 		return other
 	}
-	joined := make([]segment, 0, len(p.segments)+len(other.segments))
+	joined := make([]Segment, 0, len(p.segments)+len(other.segments))
 	joined = append(joined, p.segments...)
 	joined = append(joined, other.segments...)
 	return Path{segments: joined}
@@ -119,7 +120,7 @@ func (p Path) Compare(other Path) int {
 // UnknownIndex appends an unknown array index segment "[]" to the path.
 // This is used when the actual index is not statically known.
 func (p Path) UnknownIndex() Path {
-	return p.appendSegment(segment{kind: segmentUnknownIndex})
+	return p.appendSegment(Segment{kind: SegmentUnknownIndex})
 }
 
 // IsEmpty returns true if the path contains no segments.
@@ -129,7 +130,7 @@ func (p Path) IsEmpty() bool {
 
 // IsRoot returns true if the path contains ONLY the '$' root segment.
 func (p Path) IsRoot() bool {
-	return len(p.segments) == 1 && p.segments[0].kind == segmentRoot
+	return len(p.segments) == 1 && p.segments[0].kind == SegmentRoot
 }
 
 // String returns the string representation of the path fragment.
@@ -140,30 +141,28 @@ func (p Path) String() string {
 	var b strings.Builder
 	for i, s := range p.segments {
 		switch s.kind {
-		case segmentName:
+		case SegmentName:
 			rendered := EscapeSegment(s.name)
 			if i > 0 && !strings.HasPrefix(rendered, "[") {
 				b.WriteByte(jsonPathSeparator)
 			}
 			b.WriteString(rendered)
-		case segmentRoot:
+		case SegmentRoot:
 			b.WriteByte('$')
-		case segmentIndex:
+		case SegmentIndex:
 			b.WriteByte('[')
 			b.WriteString(strconv.FormatUint(uint64(s.index), 10))
 			b.WriteByte(']')
-		case segmentUnknownIndex:
+		case SegmentUnknownIndex:
 			b.WriteString("[]")
-		case segmentValueWildcard:
-			rendered := s.name
-			if rendered == "" {
-				rendered = valueWildcard
-			}
-			if i > 0 && !strings.HasPrefix(rendered, "[") {
+		case SegmentValueWildcard:
+			if i > 0 {
 				b.WriteByte(jsonPathSeparator)
 			}
-			b.WriteString(rendered)
-		case segmentKeyWildcard:
+			b.WriteString(valueWildcard)
+		case SegmentIndexWildcard:
+			b.WriteString(indexWildcard)
+		case SegmentKeyWildcard:
 			if i > 0 {
 				b.WriteByte(jsonPathSeparator)
 			}
@@ -171,6 +170,17 @@ func (p Path) String() string {
 		}
 	}
 	return b.String()
+}
+
+// Segments returns an iterator over the path segments in order.
+// A rooted path includes [SegmentRoot] as its first segment.
+func (p Path) Segments() iter.Seq2[int, Segment] {
+	return slices.All(p.segments)
+}
+
+// Len returns the number of [Segment] the path contains.
+func (p Path) Len() int {
+	return len(p.segments)
 }
 
 // MarshalText implements [encoding.TextMarshaler].
@@ -186,8 +196,8 @@ func (p *Path) UnmarshalText(data []byte) error {
 }
 
 // appendSegment returns a new Path with the given segment appended.
-func (p Path) appendSegment(s segment) Path {
-	result := make([]segment, len(p.segments)+1)
+func (p Path) appendSegment(s Segment) Path {
+	result := make([]Segment, len(p.segments)+1)
 	copy(result, p.segments)
 	result[len(p.segments)] = s
 	return Path{segments: result}
@@ -195,8 +205,8 @@ func (p Path) appendSegment(s segment) Path {
 
 // parseSegments tokenizes a JSONPath string into segments.
 // The root selector ($) is recognized only as the first segment.
-func parseSegments(s string) []segment {
-	var segments []segment
+func parseSegments(s string) []Segment {
+	var segments []Segment
 	i := 0
 	for i < len(s) {
 		switch s[i] {
@@ -208,12 +218,12 @@ func parseSegments(s string) []segment {
 			i = end
 		case '*':
 			if isStandaloneKeyWildcard(s, i) {
-				segments = append(segments, segment{kind: segmentKeyWildcard})
+				segments = append(segments, Segment{kind: SegmentKeyWildcard})
 				i += len(keyWildcard)
 				continue
 			}
 			if isStandaloneWildcard(s, i) {
-				segments = append(segments, segment{kind: segmentValueWildcard, name: valueWildcard})
+				segments = append(segments, Segment{kind: SegmentValueWildcard})
 				i++
 				continue
 			}
@@ -222,7 +232,7 @@ func parseSegments(s string) []segment {
 			i = end
 		case '$':
 			if i == 0 && len(segments) == 0 {
-				segments = append(segments, segment{kind: segmentRoot})
+				segments = append(segments, Segment{kind: SegmentRoot})
 				i++
 				continue
 			}
@@ -239,7 +249,7 @@ func parseSegments(s string) []segment {
 }
 
 func (p Path) isRooted() bool {
-	return len(p.segments) > 0 && p.segments[0].kind == segmentRoot
+	return len(p.segments) > 0 && p.segments[0].kind == SegmentRoot
 }
 
 func isStandaloneWildcard(s string, i int) bool {
@@ -258,44 +268,44 @@ func isStandaloneKeyWildcard(s string, i int) bool {
 // parseBracketSegment parses a bracket-delimited segment starting at position i.
 // It handles: [N] (index), [] (unknown index), [*] (wildcard), ['name'] (quoted name).
 // Returns the segment and the position after the closing ']'.
-func parseBracketSegment(s string, i int) (seg segment, end int) {
+func parseBracketSegment(s string, i int) (seg Segment, end int) {
 	start := i + 1 // skip opening '['
 	if start >= len(s) {
-		return segment{kind: segmentName, name: s[i:]}, len(s)
+		return Segment{kind: SegmentName, name: s[i:]}, len(s)
 	}
 	// For quoted names, find the matching closing '] after the quote.
 	if s[start] == '\'' {
 		quoteEnd := findQuotedEnd(s, start)
 		if quoteEnd == -1 {
-			return segment{kind: segmentName, name: s[i:]}, len(s)
+			return Segment{kind: SegmentName, name: s[i:]}, len(s)
 		}
 		inner := s[start:quoteEnd]
 		name := parseQuotedName(inner)
 		// quoteEnd points after closing quote; expect ']' next.
 		if quoteEnd < len(s) && s[quoteEnd] == ']' {
-			return segment{kind: segmentName, name: name}, quoteEnd + 1
+			return Segment{kind: SegmentName, name: name}, quoteEnd + 1
 		}
-		return segment{kind: segmentName, name: name}, quoteEnd
+		return Segment{kind: SegmentName, name: name}, quoteEnd
 	}
 	// Non-quoted: find closing bracket.
 	closeIdx := strings.IndexByte(s[i:], ']')
 	if closeIdx == -1 {
-		return segment{kind: segmentName, name: s[i:]}, len(s)
+		return Segment{kind: SegmentName, name: s[i:]}, len(s)
 	}
 	closeIdx += i
 	inner := s[i+1 : closeIdx]
 	end = closeIdx + 1
 	switch inner {
 	case "":
-		return segment{kind: segmentUnknownIndex}, end
+		return Segment{kind: SegmentUnknownIndex}, end
 	case "*":
-		return segment{kind: segmentValueWildcard, name: indexWildcard}, end
+		return Segment{kind: SegmentIndexWildcard}, end
 	default:
 		v, err := strconv.ParseUint(inner, 10, 64)
 		if err == nil {
-			return segment{kind: segmentIndex, index: uint(v)}, end
+			return Segment{kind: SegmentIndex, index: uint(v)}, end
 		}
-		return segment{kind: segmentName, name: inner}, end
+		return Segment{kind: SegmentName, name: inner}, end
 	}
 }
 
@@ -328,12 +338,12 @@ func parseQuotedName(inner string) string {
 
 // parseNameSegment parses a dot-separated name segment starting at position i.
 // Returns the segment and the position after the name.
-func parseNameSegment(s string, i int) (seg segment, end int) {
+func parseNameSegment(s string, i int) (seg Segment, end int) {
 	end = i
 	for end < len(s) && s[end] != jsonPathSeparator && s[end] != '[' {
 		end++
 	}
-	return segment{kind: segmentName, name: s[i:end]}, end
+	return Segment{kind: SegmentName, name: s[i:end]}, end
 }
 
 // unescapeCharacters reverses the escaping done by [escapeCharacters].

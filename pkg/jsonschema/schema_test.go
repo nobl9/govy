@@ -24,6 +24,13 @@ func TestDocument_MarshalJSON(t *testing.T) {
 				MinLength: &zero,
 			},
 			"nothing": {Const: &null},
+			"pair": {
+				Type: jsonschema.TypeArray,
+				PrefixItems: []*jsonschema.Schema{
+					{Type: jsonschema.TypeString},
+					{Type: jsonschema.TypeInteger},
+				},
+			},
 		},
 		Required: []string{"value"},
 		AllOf: []*jsonschema.Schema{
@@ -43,7 +50,14 @@ func TestDocument_MarshalJSON(t *testing.T) {
 				"type": "string",
 				"minLength": 0
 			},
-			"nothing": {"const": null}
+			"nothing": {"const": null},
+			"pair": {
+				"type": "array",
+				"prefixItems": [
+					{"type": "string"},
+					{"type": "integer"}
+				]
+			}
 		},
 		"required": ["value"],
 		"allOf": [{"not": {"const": ""}}]

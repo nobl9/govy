@@ -57,7 +57,9 @@ type Schema struct {
 	// MaxProperties is the inclusive upper bound for an object's property count.
 	MaxProperties *uint64 `json:"maxProperties,omitempty"`
 
-	// Items constrains every item in an array.
+	// PrefixItems constrains array items at the corresponding positions.
+	PrefixItems []*Schema `json:"prefixItems,omitempty"`
+	// Items constrains array items not covered by [Schema.PrefixItems].
 	Items *Schema `json:"items,omitempty"`
 	// MinItems is the inclusive lower bound for an array's length.
 	MinItems *uint64 `json:"minItems,omitempty"`
