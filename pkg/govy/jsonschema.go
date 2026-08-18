@@ -51,6 +51,18 @@ func JSONSchema[T any](v Validator[T]) (*jsonschema.Document, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to generate JSON Schema type info for %q property: %w", prop.Path, err)
 		}
+		for _, rule := range prop.Rules {
+			for _, builder := range rule.jsonSchemaBuilders {
+				if err = builder(schemaSelector); err != nil {
+					return nil, fmt.Errorf(
+						"failed to build JSON Schema for %q property and %q rule: %w",
+						prop.Path,
+						rule.ErrorCode,
+						err,
+					)
+				}
+			}
+		}
 		switch segment.Kind() {
 		case jsonpath.SegmentName:
 		case jsonpath.SegmentRoot:

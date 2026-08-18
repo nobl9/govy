@@ -230,7 +230,7 @@ func (r Rule[T]) plan(builder planBuilder) {
 	for _, mod := range r.planModifiers {
 		rulePlan = mod(rulePlan)
 	}
-	if builder.options.recordJSONSchema {
+	if builder.options.recordJSONSchema && r.jsonSchemaBuilder != nil {
 		rulePlan.jsonSchemaBuilders = []JSONSchemaBuilder{r.jsonSchemaBuilder}
 	}
 	builder.rulePlan = rulePlan
