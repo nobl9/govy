@@ -2,6 +2,9 @@ package govy_test
 
 import (
 	"errors"
+	"strings"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"text/template"
 
@@ -231,6 +234,256 @@ func TestRule_WithDescription(t *testing.T) {
 		Code:        "test",
 		Description: "the integer must be positive",
 	}, err)
+}
+
+func TestRule_WithDescriptionTemplate(t *testing.T) {
+	t.Run("nil template panics during configuration", func(t *testing.T) {
+		defer func() {
+			if recovered := recover(); recovered != "description template must not be nil" {
+				t.Fatalf("unexpected panic: %v", recovered)
+			}
+		}()
+		_ = govy.NewRule(func(int) error { return nil }).
+			WithDescriptionTemplate(nil, govy.TemplateVars{})
+	})
+
+	t.Run("deferred and cached", func(t *testing.T) {
+		var executions atomic.Int32
+		tpl := template.Must(template.New("description").
+			Funcs(template.FuncMap{
+				"render": func(value string) string {
+					executions.Add(1)
+					return value
+				},
+			}).
+			Parse("must be {{ render .Custom.Requirement }}"))
+		requirements := map[string]string{"Requirement": "positive"}
+		vars := govy.TemplateVars{Custom: requirements}
+		rule := govy.NewRule(func(v int) error {
+			if v < 0 {
+				return errors.New("invalid")
+			}
+			return nil
+		}).WithDescriptionTemplate(tpl, vars)
+
+		assert.NoError(t, rule.Validate(1))
+		assert.Equal(t, int32(0), executions.Load())
+
+		err := rule.Validate(-1)
+		assert.Require(t, assert.Error(t, err))
+		assert.Equal(t, "must be positive", err.(*govy.RuleError).Description)
+		assert.Equal(t, int32(1), executions.Load())
+
+		err = rule.Validate(-1)
+		assert.Require(t, assert.Error(t, err))
+		assert.Equal(t, "must be positive", err.(*govy.RuleError).Description)
+
+		validator := govy.New(
+			govy.For(func(value int) int { return value }).
+				WithName("value").
+				Rules(rule),
+		)
+		plan, planErr := govy.Plan(validator)
+		assert.Require(t, assert.NoError(t, planErr))
+		if len(plan.Properties) != 1 || len(plan.Properties[0].Rules) != 1 {
+			t.Fatalf("unexpected plan shape: %#v", plan)
+		}
+		assert.Equal(t, "must be positive", plan.Properties[0].Rules[0].Description)
+		assert.Equal(t, int32(1), executions.Load())
+	})
+
+	t.Run("execution failure is cached and panics for every consumer", func(t *testing.T) {
+		var executions atomic.Int32
+		renderErr := errors.New("render failed")
+		tpl := template.Must(template.New("description").
+			Funcs(template.FuncMap{
+				"fail": func() (string, error) {
+					executions.Add(1)
+					return "", renderErr
+				},
+			}).
+			Parse("partial {{ fail }}"))
+		rule := govy.NewRule(func(int) error { return errors.New("invalid") }).
+			WithDescriptionTemplate(tpl, govy.TemplateVars{})
+		validator := govy.New(
+			govy.For(func(value int) int { return value }).
+				WithName("value").
+				Rules(rule),
+		)
+		assertExecutionPanic := func(call func()) {
+			t.Helper()
+			defer func() {
+				recovered := recover()
+				executionErr, ok := recovered.(error)
+				if !ok {
+					t.Fatalf("unexpected panic: %v", recovered)
+				}
+				if !errors.Is(executionErr, renderErr) {
+					t.Fatalf("panic does not wrap the execution error: %v", executionErr)
+				}
+				if !strings.Contains(
+					executionErr.Error(),
+					`failed to execute description template "description"`,
+				) {
+					t.Fatalf("unexpected panic: %s", executionErr)
+				}
+			}()
+			call()
+		}
+
+		assertExecutionPanic(func() {
+			_ = rule.Validate(0)
+		})
+		assertExecutionPanic(func() {
+			_, _ = govy.Plan(validator)
+		})
+		assert.Equal(t, int32(1), executions.Load())
+	})
+
+	t.Run("last description setter wins", func(t *testing.T) {
+		var executions atomic.Int32
+		tpl := template.Must(template.New("description").
+			Funcs(template.FuncMap{
+				"render": func() string {
+					executions.Add(1)
+					return "templated"
+				},
+			}).
+			Parse("{{ render }}"))
+		newRule := func() govy.Rule[int] {
+			return govy.NewRule(func(int) error { return errors.New("invalid") })
+		}
+
+		err := newRule().
+			WithDescriptionTemplate(tpl, govy.TemplateVars{}).
+			WithDescription("eager").
+			Validate(0)
+		assert.Require(t, assert.Error(t, err))
+		assert.Equal(t, "eager", err.(*govy.RuleError).Description)
+		assert.Equal(t, int32(0), executions.Load())
+
+		err = newRule().
+			WithDescription("eager").
+			WithDescriptionTemplate(tpl, govy.TemplateVars{}).
+			Validate(0)
+		assert.Require(t, assert.Error(t, err))
+		assert.Equal(t, "templated", err.(*govy.RuleError).Description)
+		assert.Equal(t, int32(1), executions.Load())
+	})
+
+	t.Run("plan can resolve first", func(t *testing.T) {
+		var executions atomic.Int32
+		tpl := template.Must(template.New("description").
+			Funcs(template.FuncMap{
+				"render": func() string {
+					executions.Add(1)
+					return "templated"
+				},
+			}).
+			Parse("{{ render }}"))
+		rule := govy.NewRule(func(int) error { return errors.New("invalid") }).
+			WithDescriptionTemplate(tpl, govy.TemplateVars{})
+		validator := govy.New(
+			govy.For(func(value int) int { return value }).
+				WithName("value").
+				Rules(rule),
+		)
+
+		plan, planErr := govy.Plan(validator)
+		assert.Require(t, assert.NoError(t, planErr))
+		if len(plan.Properties) != 1 || len(plan.Properties[0].Rules) != 1 {
+			t.Fatalf("unexpected plan shape: %#v", plan)
+		}
+		assert.Equal(t, "templated", plan.Properties[0].Rules[0].Description)
+
+		err := rule.Validate(0)
+		assert.Require(t, assert.Error(t, err))
+		assert.Equal(t, "templated", err.(*govy.RuleError).Description)
+		assert.Equal(t, int32(1), executions.Load())
+	})
+
+	t.Run("copies share concurrent resolution", func(t *testing.T) {
+		var executions atomic.Int32
+		tpl := template.Must(template.New("description").
+			Funcs(template.FuncMap{
+				"render": func() string {
+					executions.Add(1)
+					return "templated"
+				},
+			}).
+			Parse("{{ render }}"))
+		rule := govy.NewRule(func(v int) error {
+			if v < 0 {
+				return errors.New("invalid")
+			}
+			return nil
+		}).WithDescriptionTemplate(tpl, govy.TemplateVars{})
+		pointerRule := govy.RuleToPointer(rule)
+
+		errs := make([]error, 64)
+		var wg sync.WaitGroup
+		for i := range errs {
+			wg.Go(func() {
+				if i%2 == 0 {
+					errs[i] = rule.Validate(-1)
+					return
+				}
+				value := -1
+				errs[i] = pointerRule.Validate(&value)
+			})
+		}
+		wg.Wait()
+
+		for i, err := range errs {
+			ruleErr, ok := err.(*govy.RuleError)
+			if !ok {
+				t.Fatalf("error %d has type %T, expected *govy.RuleError", i, err)
+			}
+			assert.Equal(t, "templated", ruleErr.Description)
+		}
+		assert.Equal(t, int32(1), executions.Load())
+	})
+}
+
+func TestRule_WithDescriptionTemplateErrorBranches(t *testing.T) {
+	for _, tc := range []struct {
+		name                string
+		validate            func(int) error
+		withMessageTemplate bool
+	}{
+		{
+			name:     "RuleError",
+			validate: func(int) error { return &govy.RuleError{Message: "invalid"} },
+		},
+		{
+			name: "RuleErrorTemplate",
+			validate: func(int) error {
+				return govy.NewRuleErrorTemplate(govy.TemplateVars{})
+			},
+			withMessageTemplate: true,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			rule := govy.NewRule(tc.validate)
+			if tc.withMessageTemplate {
+				rule = rule.WithMessageTemplate(
+					template.Must(template.New("message").Parse("invalid")),
+				)
+			}
+			rule = rule.WithDescriptionTemplate(
+				template.Must(template.New("description").Parse("templated")),
+				govy.TemplateVars{},
+			)
+
+			err := rule.Validate(0)
+			assert.Require(t, assert.Error(t, err))
+			ruleErr, ok := err.(*govy.RuleError)
+			if !ok {
+				t.Fatalf("expected *govy.RuleError, got %T", err)
+			}
+			assert.Equal(t, "templated", ruleErr.Description)
+		})
+	}
 }
 
 func TestRule_WithExamples(t *testing.T) {

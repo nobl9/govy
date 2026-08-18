@@ -266,11 +266,15 @@ func (e RuleErrorTemplate) Error() string {
 	return fmt.Sprintf("%T should not be used directly", e)
 }
 
-// TemplateVars lists variables available to builtin rule message templates.
+// TemplateVars lists variables available to builtin rule message and description templates.
 // Use the same names for consistent behavior across rules.
-// When [PropertyRules.HideValue] applies, it sets [TemplateVars.PropertyValue] to `[hidden]`
-// and redacts the property value from [TemplateVars.Error] before template execution.
-// It does not change the other fields.
+//
+// Before executing a message template, [Rule.Validate] sets PropertyValue to the
+// validated value and Details and Examples to the rule's configuration.
+// When [PropertyRules.HideValue] applies, it sets PropertyValue to `[hidden]`
+// and redacts the property value from Error. It does not change the other fields.
+// Description templates use the values passed to [Rule.WithDescriptionTemplate]
+// without validation-time injection. Their rendered descriptions are cached.
 type TemplateVars struct {
 	// Common variables which are available for all the rules.
 	PropertyValue any

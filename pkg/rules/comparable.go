@@ -27,9 +27,9 @@ func EQ[T comparable](compared T) govy.Rule[T] {
 	}).
 		WithErrorCode(ErrorCodeEqualTo).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: compared,
-		})).
+		}).
 		WithPlanModifiers(govy.RulePlanModifierValidValues(compared))
 }
 
@@ -48,9 +48,9 @@ func NEQ[T comparable](compared T) govy.Rule[T] {
 	}).
 		WithErrorCode(ErrorCodeNotEqualTo).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: compared,
-		}))
+		})
 }
 
 // GT ensures the property's value is greater than the compared value.
@@ -68,9 +68,9 @@ func GT[T cmp.Ordered](compared T) govy.Rule[T] {
 	}).
 		WithErrorCode(ErrorCodeGreaterThan).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: compared,
-		}))
+		})
 }
 
 // GTE ensures the property's value is greater than or equal to the compared value.
@@ -88,9 +88,9 @@ func GTE[T cmp.Ordered](compared T) govy.Rule[T] {
 	}).
 		WithErrorCode(ErrorCodeGreaterThanOrEqualTo).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: compared,
-		}))
+		})
 }
 
 // LT ensures the property's value is less than the compared value.
@@ -108,9 +108,9 @@ func LT[T cmp.Ordered](compared T) govy.Rule[T] {
 	}).
 		WithErrorCode(ErrorCodeLessThan).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: compared,
-		}))
+		})
 }
 
 // LTE ensures the property's value is less than or equal to the compared value.
@@ -128,9 +128,9 @@ func LTE[T cmp.Ordered](compared T) govy.Rule[T] {
 	}).
 		WithErrorCode(ErrorCodeLessThanOrEqualTo).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: compared,
-		}))
+		})
 }
 
 // ComparisonFunc defines a shape for a function that compares two values.
