@@ -58,9 +58,50 @@ func JSONSchema[T any](v Validator[T]) (*jsonschema.Document, error) {
 		case jsonpath.SegmentKeyWildcard:
 		}
 	}
+	normalizeJSONSchemaWildcardApplicators(schema)
 
 	document := jsonschema.Document(*schema)
 	return &document, nil
+}
+
+// normalizeJSONSchemaWildcardApplicators separates wildcard and specific applicators
+// so both apply to matching children.
+func normalizeJSONSchemaWildcardApplicators(schema *jsonschema.Schema) {
+	if schema == nil {
+		return
+	}
+	if schema.Items != nil && len(schema.PrefixItems) > 0 {
+		items := schema.Items
+		schema.Items = nil
+		schema.AllOf = append(schema.AllOf, &jsonschema.Schema{Items: items})
+	}
+	if schema.AdditionalProperties != nil && len(schema.Properties) > 0 {
+		additionalProperties := schema.AdditionalProperties
+		schema.AdditionalProperties = nil
+		schema.AllOf = append(schema.AllOf, &jsonschema.Schema{
+			AdditionalProperties: additionalProperties,
+		})
+	}
+
+	for _, child := range schema.AllOf {
+		normalizeJSONSchemaWildcardApplicators(child)
+	}
+	for _, child := range schema.AnyOf {
+		normalizeJSONSchemaWildcardApplicators(child)
+	}
+	for _, child := range schema.OneOf {
+		normalizeJSONSchemaWildcardApplicators(child)
+	}
+	normalizeJSONSchemaWildcardApplicators(schema.Not)
+	for _, child := range schema.Properties {
+		normalizeJSONSchemaWildcardApplicators(child)
+	}
+	normalizeJSONSchemaWildcardApplicators(schema.AdditionalProperties)
+	normalizeJSONSchemaWildcardApplicators(schema.PropertyNames)
+	for _, child := range schema.PrefixItems {
+		normalizeJSONSchemaWildcardApplicators(child)
+	}
+	normalizeJSONSchemaWildcardApplicators(schema.Items)
 }
 
 func getJSONSchemaForSegment(schema *jsonschema.Schema, segment jsonpath.Segment) *jsonschema.Schema {

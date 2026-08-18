@@ -9,6 +9,7 @@ import (
 	"github.com/nobl9/govy/internal/collections"
 	"github.com/nobl9/govy/internal/messagetemplates"
 	"github.com/nobl9/govy/pkg/govy"
+	"github.com/nobl9/govy/pkg/jsonschema"
 )
 
 // OneOf checks if the property's value matches one of the provided values.
@@ -32,7 +33,10 @@ func OneOf[T comparable](values ...T) govy.Rule[T] {
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: values,
 		})).
-		WithPlanModifiers(govy.RulePlanModifierValidValues(values...))
+		WithPlanModifiers(govy.RulePlanModifierValidValues(values...)).
+		WithJSONSchema(func(schema *jsonschema.Schema) error {
+			return nil
+		})
 }
 
 // NotOneOf checks if the property's value does not match any of the provided values.

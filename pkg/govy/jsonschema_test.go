@@ -112,6 +112,50 @@ func TestJSONSchema_FixedArrayIndexes(t *testing.T) {
 	assert.Equal(t, expected, actual.String())
 }
 
+func TestJSONSchema_ArrayWildcardWithFixedIndex(t *testing.T) {
+	t.Parallel()
+
+	type document struct{}
+	validator := govy.New(
+		govy.For(func(document) string { return "" }).
+			WithPath(jsonpath.New().Name("values").IndexWildcard()),
+		govy.For(func(document) int { return 0 }).
+			WithPath(jsonpath.New().Name("values").Index(0)),
+	)
+
+	schema, err := govy.JSONSchema(validator)
+	assert.Require(t, assert.NoError(t, err))
+
+	expected := readTestData(t, "expected_array_wildcard_with_fixed_index_json_schema.json")
+	var actual bytes.Buffer
+	encoder := json.NewEncoder(&actual)
+	encoder.SetIndent("", "  ")
+	assert.Require(t, assert.NoError(t, encoder.Encode(schema)))
+	assert.Equal(t, expected, actual.String())
+}
+
+func TestJSONSchema_ValueWildcardWithNamedProperty(t *testing.T) {
+	t.Parallel()
+
+	type document struct{}
+	validator := govy.New(
+		govy.For(func(document) string { return "" }).
+			WithPath(jsonpath.New().Name("values").ValueWildcard()),
+		govy.For(func(document) int { return 0 }).
+			WithPath(jsonpath.New().Name("values").Name("foo")),
+	)
+
+	schema, err := govy.JSONSchema(validator)
+	assert.Require(t, assert.NoError(t, err))
+
+	expected := readTestData(t, "expected_value_wildcard_with_named_property_json_schema.json")
+	var actual bytes.Buffer
+	encoder := json.NewEncoder(&actual)
+	encoder.SetIndent("", "  ")
+	assert.Require(t, assert.NoError(t, encoder.Encode(schema)))
+	assert.Equal(t, expected, actual.String())
+}
+
 func TestJSONSchema_ArrayIndexOutsideIntRange(t *testing.T) {
 	t.Parallel()
 
