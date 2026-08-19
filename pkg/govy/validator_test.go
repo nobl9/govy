@@ -665,30 +665,46 @@ func TestValidatorRemovePropertiesByID(t *testing.T) {
 		assert.Len(t, noIDErr.Errors, 5)
 	})
 
-	t.Run("does not traverse included validators", func(t *testing.T) {
-		type child struct {
+	t.Run("traverses included validators", func(t *testing.T) {
+		type leaf struct {
 			Value string
 		}
+		type child struct {
+			Leaf leaf
+		}
 		type parent struct {
-			Child child
+			Children map[string][]child
 		}
 
-		childValidator := govy.New(
-			govy.For(func(value child) string { return value.Value }).
+		leafValidator := govy.New(
+			govy.For(func(value leaf) string { return value.Value }).
 				WithName("value").
 				WithID("inner").
 				Rules(rules.EQ("expected")),
 		)
-		parentValidator := govy.New(
-			govy.For(func(value parent) child { return value.Child }).
-				WithName("child").
-				WithID("outer").
-				Include(childValidator),
+		childValidator := govy.New(
+			govy.For(func(value child) leaf { return value.Leaf }).
+				WithName("leaf").
+				Include(leafValidator),
 		)
-		value := parent{Child: child{Value: "actual"}}
+		sliceValidator := govy.New(
+			govy.ForSlice(govy.GetSelf[[]child]()).
+				IncludeForEach(childValidator),
+		)
+		parentValidator := govy.New(
+			govy.ForMap(func(value parent) map[string][]child { return value.Children }).
+				WithName("children").
+				IncludeForValues(sliceValidator),
+		)
+		value := parent{
+			Children: map[string][]child{
+				"first": {{Leaf: leaf{Value: "actual"}}},
+			},
+		}
 
-		assert.Error(t, parentValidator.RemovePropertiesByID("inner").Validate(value))
-		assert.NoError(t, parentValidator.RemovePropertiesByID("outer").Validate(value))
+		filtered := parentValidator.RemovePropertiesByID("inner")
+		assert.Error(t, parentValidator.Validate(value))
+		assert.NoError(t, filtered.Validate(value))
 	})
 
 	t.Run("supports scalar, slice, and map properties", func(t *testing.T) {

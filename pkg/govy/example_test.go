@@ -1966,8 +1966,8 @@ func ExampleValidator_RemovePropertiesByPath() {
 	// Modified validator passed
 }
 
-// RemovePropertiesByID selects direct property rules by IDs set with [govy.PropertyRules.WithID].
-// It returns a modified copy and leaves the original validator unchanged.
+// RemovePropertiesByID selects property rules by IDs set with [govy.PropertyRules.WithID].
+// It traverses included validators and leaves the original validator unchanged.
 func ExampleValidator_RemovePropertiesByID() {
 	ageProperty := govy.For(func(t Teacher) time.Duration { return t.Age }).
 		WithName("age").
@@ -1978,11 +1978,11 @@ func ExampleValidator_RemovePropertiesByID() {
 	teacher := Teacher{Age: -1}
 
 	fmt.Println(baseValidator.Validate(teacher) != nil)
-	fmt.Println(modifiedValidator.Validate(teacher))
+	fmt.Println(modifiedValidator.Validate(teacher) != nil)
 
 	// Output:
 	// true
-	// <nil>
+	// false
 }
 
 // In the interactive tutorial for govy, we've been using

@@ -80,13 +80,11 @@ func (v Validator[T]) RemovePropertiesByPath(paths ...jsonpath.Path) Validator[T
 	return v
 }
 
-// RemovePropertiesByID removes every direct property whose identifier matches
-// one of the provided identifiers.
+// RemovePropertiesByID recursively removes every property whose identifier
+// matches one of the provided identifiers, including properties of included validators.
 // Properties without an identifier and empty identifiers passed to this method are ignored.
-// It does not traverse validators included by a property;
-// derive the included validator separately to remove one of its properties.
-// It returns a modified [Validator] instance without these rules,
-// the original [Validator] is not changed.
+// It returns a modified [Validator] without the matching properties.
+// The original [Validator] is not changed.
 func (v Validator[T]) RemovePropertiesByID(ids ...string) Validator[T] {
 	if len(ids) == 0 {
 		return v
@@ -94,12 +92,17 @@ func (v Validator[T]) RemovePropertiesByID(ids ...string) Validator[T] {
 	filtered := make([]PropertyRulesInterface[T], 0, len(v.props))
 	for _, prop := range v.props {
 		id := prop.propertyID()
-		if id == "" || !slices.Contains(ids, id) {
-			filtered = append(filtered, prop)
+		if id != "" && slices.Contains(ids, id) {
+			continue
 		}
+		filtered = append(filtered, prop.removePropertiesByID(ids))
 	}
 	v.props = filtered
 	return v
+}
+
+func (v Validator[T]) removePropertiesByID(ids []string) ValidatorInterface[T] {
+	return v.RemovePropertiesByID(ids...)
 }
 
 // InferPath sets the [InferPathMode] for the validator,

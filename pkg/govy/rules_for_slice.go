@@ -174,6 +174,12 @@ func (r PropertyRulesForSlice[S, T, P]) propertyID() string {
 	return r.sliceRules.propertyID()
 }
 
+func (r PropertyRulesForSlice[S, T, P]) removePropertiesByID(ids []string) PropertyRulesInterface[P] {
+	r.sliceRules = r.sliceRules.removePropertiesByIDFromIncludes(ids)
+	r.forEachRules = r.forEachRules.removePropertiesByIDFromIncludes(ids)
+	return r
+}
+
 // plan generates a validation plan for the property rules.
 func (r PropertyRulesForSlice[S, T, P]) plan(builder planBuilder) {
 	builder = appendPredicatesToPlanBuilder(builder, r.predicates)

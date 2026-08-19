@@ -260,6 +260,14 @@ func (r PropertyRulesForMap[M, K, V, P]) propertyID() string {
 	return r.mapRules.propertyID()
 }
 
+func (r PropertyRulesForMap[M, K, V, P]) removePropertiesByID(ids []string) PropertyRulesInterface[P] {
+	r.mapRules = r.mapRules.removePropertiesByIDFromIncludes(ids)
+	r.forKeyRules = r.forKeyRules.removePropertiesByIDFromIncludes(ids)
+	r.forValueRules = r.forValueRules.removePropertiesByIDFromIncludes(ids)
+	r.forItemRules = r.forItemRules.removePropertiesByIDFromIncludes(ids)
+	return r
+}
+
 // plan constructs a validation plan for the property rules.
 func (r PropertyRulesForMap[M, K, V, P]) plan(builder planBuilder) {
 	builder = appendPredicatesToPlanBuilder(builder, r.predicates)
