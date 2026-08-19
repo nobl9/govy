@@ -4,12 +4,24 @@ import (
 	"fmt"
 	"math"
 	"reflect"
+	"slices"
 
 	"github.com/nobl9/govy/pkg/jsonpath"
 	"github.com/nobl9/govy/pkg/jsonschema"
 )
 
-type JSONSchemaBuilder func(schema *jsonschema.Schema) error
+// JSONSchemaBuilderContext describes the JSON Schema node selected for a builder.
+type JSONSchemaBuilderContext struct {
+	// Schema is the node selected by Segment.
+	Schema *jsonschema.Schema
+	// Parent is the node that contains Schema, or nil when Schema is the document root.
+	Parent *jsonschema.Schema
+	// Segment is the final path segment that selected Schema.
+	Segment jsonpath.Segment
+}
+
+// JSONSchemaBuilder modifies a selected JSON Schema node.
+type JSONSchemaBuilder func(ctx JSONSchemaBuilderContext) error
 
 const maxJSONSchemaPrefixItemsIndex = math.MaxInt - 1
 
@@ -35,7 +47,10 @@ func JSONSchema[T any](v Validator[T]) (*jsonschema.Document, error) {
 
 	for _, prop := range plan.Properties {
 		schemaSelector := schema
-		var segment jsonpath.Segment
+		var (
+			parentSchema *jsonschema.Schema
+			segment      jsonpath.Segment
+		)
 		for _, segment = range prop.Path.Segments() {
 			if segment.Kind() == jsonpath.SegmentIndex && segment.Index() > maxJSONSchemaPrefixItemsIndex {
 				return nil, fmt.Errorf(
@@ -45,6 +60,9 @@ func JSONSchema[T any](v Validator[T]) (*jsonschema.Document, error) {
 					maxJSONSchemaPrefixItemsIndex,
 				)
 			}
+			if segment.Kind() != jsonpath.SegmentRoot {
+				parentSchema = schemaSelector
+			}
 			schemaSelector = getJSONSchemaForSegment(schemaSelector, segment)
 		}
 		schemaSelector.Type, err = jsonSchemaTypeFromTypeInfo(prop.TypeInfo)
@@ -53,7 +71,11 @@ func JSONSchema[T any](v Validator[T]) (*jsonschema.Document, error) {
 		}
 		for _, rule := range prop.Rules {
 			for _, builder := range rule.jsonSchemaBuilders {
-				if err = builder(schemaSelector); err != nil {
+				if err = builder(JSONSchemaBuilderContext{
+					Schema:  schemaSelector,
+					Parent:  parentSchema,
+					Segment: segment,
+				}); err != nil {
 					return nil, fmt.Errorf(
 						"failed to build JSON Schema for %q property and %q rule: %w",
 						prop.Path,
@@ -66,7 +88,8 @@ func JSONSchema[T any](v Validator[T]) (*jsonschema.Document, error) {
 		switch segment.Kind() {
 		case jsonpath.SegmentName:
 		case jsonpath.SegmentRoot:
-		case jsonpath.SegmentUnknownIndex, jsonpath.SegmentIndex, jsonpath.SegmentValueWildcard:
+		case jsonpath.SegmentUnknownIndex, jsonpath.SegmentIndex, jsonpath.SegmentIndexWildcard,
+			jsonpath.SegmentValueWildcard:
 		case jsonpath.SegmentKeyWildcard:
 		}
 	}
@@ -129,7 +152,7 @@ func getJSONSchemaForSegment(schema *jsonschema.Schema, segment jsonpath.Segment
 		schema.Properties[segment.Name()] = newSchema
 		return newSchema
 	case jsonpath.SegmentRoot:
-		// Do nothing, schema is already initalized.
+		// Do nothing, schema is already initialized.
 	case jsonpath.SegmentIndex:
 		idx := int(segment.Index())
 		if idx < len(schema.PrefixItems) && schema.PrefixItems[idx] != nil {

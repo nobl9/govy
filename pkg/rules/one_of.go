@@ -16,7 +16,11 @@ import (
 // The values must be comparable.
 //
 // For reversed rule see [NotOneOf].
+// It panics if no values are provided.
 func OneOf[T comparable](values ...T) govy.Rule[T] {
+	if len(values) == 0 {
+		panic("values must not be empty")
+	}
 	tpl := messagetemplates.Get(messagetemplates.OneOfTemplate)
 
 	return govy.NewRule(func(v T) error {
@@ -34,7 +38,12 @@ func OneOf[T comparable](values ...T) govy.Rule[T] {
 			ComparisonValue: values,
 		})).
 		WithPlanModifiers(govy.RulePlanModifierValidValues(values...)).
-		WithJSONSchema(func(schema *jsonschema.Schema) error {
+		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) error {
+			converted, err := jsonSchemaValues(values)
+			if err != nil {
+				return err
+			}
+			addJSONSchemaEnum(ctx.Schema, converted)
 			return nil
 		})
 }
@@ -43,7 +52,11 @@ func OneOf[T comparable](values ...T) govy.Rule[T] {
 // The values must be comparable.
 //
 // For reversed rule see [OneOf].
+// It panics if no values are provided.
 func NotOneOf[T comparable](values ...T) govy.Rule[T] {
+	if len(values) == 0 {
+		panic("values must not be empty")
+	}
 	tpl := messagetemplates.Get(messagetemplates.NotOneOfTemplate)
 
 	return govy.NewRule(func(v T) error {
@@ -59,13 +72,26 @@ func NotOneOf[T comparable](values ...T) govy.Rule[T] {
 		WithMessageTemplate(tpl).
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: values,
-		}))
+		})).
+		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) error {
+			converted, err := jsonSchemaValues(values)
+			if err != nil {
+				return err
+			}
+			addJSONSchemaNot(ctx.Schema, &jsonschema.Schema{Enum: converted})
+			return nil
+		})
 }
 
 // OneOfProperties checks if at least one of the properties is set.
 // Property is considered set if its value is not empty (non-zero).
+// It panics if getters is empty.
 func OneOfProperties[T any](getters map[string]func(parent T) any) govy.Rule[T] {
+	if len(getters) == 0 {
+		panic("getters must not be empty")
+	}
 	tpl := messagetemplates.Get(messagetemplates.OneOfPropertiesTemplate)
+	sortedKeys := collections.SortedKeys(getters)
 
 	return govy.NewRule(func(parent T) error {
 		for _, getter := range getters {
@@ -82,8 +108,12 @@ func OneOfProperties[T any](getters map[string]func(parent T) any) govy.Rule[T] 
 		WithErrorCode(ErrorCodeOneOfProperties).
 		WithMessageTemplate(tpl).
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
-			ComparisonValue: collections.SortedKeys(getters),
-		}))
+			ComparisonValue: sortedKeys,
+		})).
+		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) error {
+			addJSONSchemaAnyOf(ctx.Schema, jsonSchemaRequiredAlternatives(sortedKeys))
+			return nil
+		})
 }
 
 type mutuallyExclusiveTemplateVars struct {
@@ -95,8 +125,13 @@ type mutuallyExclusiveTemplateVars struct {
 // This means, exactly one of the properties can be set.
 // Property is considered set if its value is not empty (non-zero).
 // If required is true, then a single non-empty property is required.
+// It panics if getters contains fewer than two properties.
 func MutuallyExclusive[T any](required bool, getters map[string]func(parent T) any) govy.Rule[T] {
+	if len(getters) < 2 {
+		panic("getters must contain at least two properties")
+	}
 	tpl := messagetemplates.Get(messagetemplates.MutuallyExclusiveTemplate)
+	sortedKeys := collections.SortedKeys(getters)
 
 	return govy.NewRule(func(parent T) error {
 		var nonEmpty []string
@@ -132,8 +167,24 @@ func MutuallyExclusive[T any](required bool, getters map[string]func(parent T) a
 		WithMessageTemplate(tpl).
 		WithDescription(func() string {
 			return fmt.Sprintf("properties are mutually exclusive: %s",
-				strings.Join(collections.SortedKeys(getters), ", "))
-		}())
+				strings.Join(sortedKeys, ", "))
+		}()).
+		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) error {
+			if required {
+				addJSONSchemaOneOf(ctx.Schema, jsonSchemaRequiredAlternatives(sortedKeys))
+				return nil
+			}
+			pairs := make([]*jsonschema.Schema, 0, len(sortedKeys)*(len(sortedKeys)-1)/2)
+			for i := range sortedKeys {
+				for j := i + 1; j < len(sortedKeys); j++ {
+					pairs = append(pairs, &jsonschema.Schema{
+						Required: []string{sortedKeys[i], sortedKeys[j]},
+					})
+				}
+			}
+			addJSONSchemaNot(ctx.Schema, &jsonschema.Schema{AnyOf: pairs})
+			return nil
+		})
 }
 
 type mutuallyDependentTemplateVars struct {
@@ -144,7 +195,11 @@ type mutuallyDependentTemplateVars struct {
 // MutuallyDependent checks if properties are mutually dependent.
 // This means, if any of the properties is set, the rest must be also set.
 // Property is considered set if its value is not empty (non-zero).
+// It panics if getters contains fewer than two properties.
 func MutuallyDependent[T any](getters map[string]func(parent T) any) govy.Rule[T] {
+	if len(getters) < 2 {
+		panic("getters must contain at least two properties")
+	}
 	tpl := messagetemplates.Get(messagetemplates.MutuallyDependentTemplate)
 	sortedKeys := collections.SortedKeys(getters)
 
@@ -185,5 +240,12 @@ func MutuallyDependent[T any](getters map[string]func(parent T) any) govy.Rule[T
 		WithMessageTemplate(tpl).
 		WithDescription(func() string {
 			return fmt.Sprintf("properties are mutually dependent: %s", strings.Join(sortedKeys, ", "))
-		}())
+		}()).
+		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) error {
+			addJSONSchemaAnyOf(ctx.Schema, []*jsonschema.Schema{
+				{Required: sortedKeys},
+				{Not: &jsonschema.Schema{AnyOf: jsonSchemaRequiredAlternatives(sortedKeys)}},
+			})
+			return nil
+		})
 }

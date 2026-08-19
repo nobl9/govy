@@ -73,6 +73,8 @@ type Schema struct {
 	// Pattern is an ECMA-262 regular expression that a string must match.
 	Pattern string `json:"pattern,omitempty"`
 
+	// MultipleOf requires a number to be a multiple of this value.
+	MultipleOf json.Number `json:"multipleOf,omitempty"`
 	// Minimum is the inclusive lower bound for a number.
 	Minimum json.Number `json:"minimum,omitempty"`
 	// Maximum is the inclusive upper bound for a number.

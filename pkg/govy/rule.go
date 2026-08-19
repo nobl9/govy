@@ -28,13 +28,14 @@ func RuleToPointer[T any](rule Rule[T]) Rule[*T] {
 			}
 			return rule.validate(*v)
 		},
-		errorCode:       rule.errorCode,
-		details:         rule.details,
-		message:         rule.message,
-		messageTemplate: rule.messageTemplate,
-		examples:        rule.examples,
-		description:     rule.description,
-		planModifiers:   rule.planModifiers,
+		errorCode:         rule.errorCode,
+		details:           rule.details,
+		message:           rule.message,
+		messageTemplate:   rule.messageTemplate,
+		examples:          rule.examples,
+		description:       rule.description,
+		planModifiers:     rule.planModifiers,
+		jsonSchemaBuilder: rule.jsonSchemaBuilder,
 	}
 }
 

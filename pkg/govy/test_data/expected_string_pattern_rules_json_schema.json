@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "StringPatternRules",
+  "type": "object",
+  "properties": {
+    "cve": {
+      "type": "string",
+      "pattern": "^CVE-[0-9]{4}-[0-9]{4,19}(?![\\s\\S])"
+    },
+    "dnsLabel": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 63,
+      "pattern": "^[0-9a-z](?:[\\-0-9a-z]*[0-9a-z])?(?![\\s\\S])"
+    },
+    "e164": {
+      "type": "string",
+      "pattern": "^\\+[1-9][0-9]{1,14}(?![\\s\\S])"
+    },
+    "hexadecimal": {
+      "type": "string",
+      "pattern": "^(?:0[Xx])?[0-9A-Fa-f]+(?![\\s\\S])"
+    },
+    "md5": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{32}(?![\\s\\S])"
+    },
+    "mongoObjectID": {
+      "type": "string",
+      "pattern": "^[0-9A-Fa-f]{24}(?![\\s\\S])"
+    },
+    "semver": {
+      "type": "string",
+      "pattern": "^(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)(?:-(?:(?:0|[1-9][0-9]*|[0-9]*[\\-A-Za-z][\\-0-9A-Za-z]*)(?:\\.(?:0|[1-9][0-9]*|[0-9]*[\\-A-Za-z][\\-0-9A-Za-z]*))*))?(?:\\+(?:[\\-0-9A-Za-z]+(?:\\.[\\-0-9A-Za-z]+)*))?(?![\\s\\S])"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+    },
+    "ulid": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{25}(?![\\s\\S])"
+    },
+    "uuid": {
+      "type": "string",
+      "pattern": "^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}(?![\\s\\S])"
+    },
+    "uuidV4": {
+      "type": "string",
+      "pattern": "^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-4[0-9A-Fa-f]{3}-[89ABab][0-9A-Fa-f]{3}-[0-9A-Fa-f]{12}(?![\\s\\S])"
+    }
+  }
+}

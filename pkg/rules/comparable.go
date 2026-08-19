@@ -2,6 +2,7 @@ package rules
 
 import (
 	"cmp"
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"strings"
@@ -10,6 +11,7 @@ import (
 	"github.com/nobl9/govy/internal/collections"
 	"github.com/nobl9/govy/internal/messagetemplates"
 	"github.com/nobl9/govy/pkg/govy"
+	"github.com/nobl9/govy/pkg/jsonschema"
 )
 
 // EQ ensures the property's value is equal to the compared value.
@@ -30,7 +32,15 @@ func EQ[T comparable](compared T) govy.Rule[T] {
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: compared,
 		})).
-		WithPlanModifiers(govy.RulePlanModifierValidValues(compared))
+		WithPlanModifiers(govy.RulePlanModifierValidValues(compared)).
+		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) error {
+			value, err := jsonSchemaValue(compared)
+			if err != nil {
+				return err
+			}
+			addJSONSchemaConst(ctx.Schema, value)
+			return nil
+		})
 }
 
 // NEQ ensures the property's value is not equal to the compared value.
@@ -50,7 +60,15 @@ func NEQ[T comparable](compared T) govy.Rule[T] {
 		WithMessageTemplate(tpl).
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: compared,
-		}))
+		})).
+		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) error {
+			value, err := jsonSchemaValue(compared)
+			if err != nil {
+				return err
+			}
+			addJSONSchemaNot(ctx.Schema, &jsonschema.Schema{Const: ptr(value)})
+			return nil
+		})
 }
 
 // GT ensures the property's value is greater than the compared value.
@@ -70,7 +88,22 @@ func GT[T cmp.Ordered](compared T) govy.Rule[T] {
 		WithMessageTemplate(tpl).
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: compared,
-		}))
+		})).
+		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) error {
+			if reflect.TypeOf(compared).Kind() == reflect.String {
+				return nil
+			}
+			value, err := jsonSchemaValue(compared)
+			if err != nil {
+				return err
+			}
+			number, ok := value.(json.Number)
+			if !ok {
+				return fmt.Errorf("value marshaled as %T instead of a JSON number", value)
+			}
+			addJSONSchemaExclusiveMinimum(ctx.Schema, number)
+			return nil
+		})
 }
 
 // GTE ensures the property's value is greater than or equal to the compared value.
@@ -90,7 +123,22 @@ func GTE[T cmp.Ordered](compared T) govy.Rule[T] {
 		WithMessageTemplate(tpl).
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: compared,
-		}))
+		})).
+		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) error {
+			if reflect.TypeOf(compared).Kind() == reflect.String {
+				return nil
+			}
+			value, err := jsonSchemaValue(compared)
+			if err != nil {
+				return err
+			}
+			number, ok := value.(json.Number)
+			if !ok {
+				return fmt.Errorf("value marshaled as %T instead of a JSON number", value)
+			}
+			addJSONSchemaMinimum(ctx.Schema, number)
+			return nil
+		})
 }
 
 // LT ensures the property's value is less than the compared value.
@@ -110,7 +158,22 @@ func LT[T cmp.Ordered](compared T) govy.Rule[T] {
 		WithMessageTemplate(tpl).
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: compared,
-		}))
+		})).
+		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) error {
+			if reflect.TypeOf(compared).Kind() == reflect.String {
+				return nil
+			}
+			value, err := jsonSchemaValue(compared)
+			if err != nil {
+				return err
+			}
+			number, ok := value.(json.Number)
+			if !ok {
+				return fmt.Errorf("value marshaled as %T instead of a JSON number", value)
+			}
+			addJSONSchemaExclusiveMaximum(ctx.Schema, number)
+			return nil
+		})
 }
 
 // LTE ensures the property's value is less than or equal to the compared value.
@@ -130,7 +193,22 @@ func LTE[T cmp.Ordered](compared T) govy.Rule[T] {
 		WithMessageTemplate(tpl).
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: compared,
-		}))
+		})).
+		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) error {
+			if reflect.TypeOf(compared).Kind() == reflect.String {
+				return nil
+			}
+			value, err := jsonSchemaValue(compared)
+			if err != nil {
+				return err
+			}
+			number, ok := value.(json.Number)
+			if !ok {
+				return fmt.Errorf("value marshaled as %T instead of a JSON number", value)
+			}
+			addJSONSchemaMaximum(ctx.Schema, number)
+			return nil
+		})
 }
 
 // ComparisonFunc defines a shape for a function that compares two values.

@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Builder Context",
+  "type": "object",
+  "properties": {
+    "custom": {
+      "type": "string",
+      "pattern": "custom"
+    },
+    "propertyRequired": {
+      "type": "string"
+    },
+    "ruleRequired": {
+      "type": "boolean",
+      "not": {
+        "const": false
+      }
+    }
+  },
+  "required": [
+    "custom",
+    "propertyRequired",
+    "ruleRequired"
+  ]
+}

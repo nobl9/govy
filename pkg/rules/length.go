@@ -6,7 +6,6 @@ import (
 
 	"github.com/nobl9/govy/internal/messagetemplates"
 	"github.com/nobl9/govy/pkg/govy"
-	"github.com/nobl9/govy/pkg/jsonschema"
 )
 
 // StringLength ensures the string's length is between min and max (closed interval).
@@ -35,9 +34,9 @@ func StringLength(minLen, maxLen int) govy.Rule[string] {
 			MinLength: minLen,
 			MaxLength: maxLen,
 		})).
-		WithJSONSchema(func(schema *jsonschema.Schema) error {
-			schema.MinLength = ptr(uint64(minLen))
-			schema.MaxLength = ptr(uint64(maxLen))
+		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) error {
+			ctx.Schema.MinLength = ptr(uint64(minLen))
+			ctx.Schema.MaxLength = ptr(uint64(maxLen))
 			return nil
 		})
 }
@@ -61,8 +60,8 @@ func StringMinLength(limit int) govy.Rule[string] {
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: limit,
 		})).
-		WithJSONSchema(func(schema *jsonschema.Schema) error {
-			schema.MinLength = ptr(uint64(limit))
+		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) error {
+			ctx.Schema.MinLength = ptr(uint64(limit))
 			return nil
 		})
 }
@@ -86,8 +85,8 @@ func StringMaxLength(limit int) govy.Rule[string] {
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: limit,
 		})).
-		WithJSONSchema(func(schema *jsonschema.Schema) error {
-			schema.MaxLength = ptr(uint64(limit))
+		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) error {
+			ctx.Schema.MaxLength = ptr(uint64(limit))
 			return nil
 		})
 }
@@ -118,9 +117,9 @@ func SliceLength[S ~[]E, E any](minLen, maxLen int) govy.Rule[S] {
 			MinLength: minLen,
 			MaxLength: maxLen,
 		})).
-		WithJSONSchema(func(schema *jsonschema.Schema) error {
-			schema.MinItems = ptr(uint64(minLen))
-			schema.MaxItems = ptr(uint64(maxLen))
+		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) error {
+			ctx.Schema.MinItems = ptr(uint64(minLen))
+			ctx.Schema.MaxItems = ptr(uint64(maxLen))
 			return nil
 		})
 }
@@ -144,8 +143,8 @@ func SliceMinLength[S ~[]E, E any](limit int) govy.Rule[S] {
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: limit,
 		})).
-		WithJSONSchema(func(schema *jsonschema.Schema) error {
-			schema.MinItems = ptr(uint64(limit))
+		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) error {
+			ctx.Schema.MinItems = ptr(uint64(limit))
 			return nil
 		})
 }
@@ -169,8 +168,8 @@ func SliceMaxLength[S ~[]E, E any](limit int) govy.Rule[S] {
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: limit,
 		})).
-		WithJSONSchema(func(schema *jsonschema.Schema) error {
-			schema.MaxItems = ptr(uint64(limit))
+		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) error {
+			ctx.Schema.MaxItems = ptr(uint64(limit))
 			return nil
 		})
 }
@@ -201,9 +200,9 @@ func MapLength[M ~map[K]V, K comparable, V any](minLen, maxLen int) govy.Rule[M]
 			MinLength: minLen,
 			MaxLength: maxLen,
 		})).
-		WithJSONSchema(func(schema *jsonschema.Schema) error {
-			schema.MinProperties = ptr(uint64(minLen))
-			schema.MaxProperties = ptr(uint64(maxLen))
+		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) error {
+			ctx.Schema.MinProperties = ptr(uint64(minLen))
+			ctx.Schema.MaxProperties = ptr(uint64(maxLen))
 			return nil
 		})
 }
@@ -227,8 +226,8 @@ func MapMinLength[M ~map[K]V, K comparable, V any](limit int) govy.Rule[M] {
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: limit,
 		})).
-		WithJSONSchema(func(schema *jsonschema.Schema) error {
-			schema.MinProperties = ptr(uint64(limit))
+		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) error {
+			ctx.Schema.MinProperties = ptr(uint64(limit))
 			return nil
 		})
 }
@@ -252,8 +251,8 @@ func MapMaxLength[M ~map[K]V, K comparable, V any](limit int) govy.Rule[M] {
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: limit,
 		})).
-		WithJSONSchema(func(schema *jsonschema.Schema) error {
-			schema.MaxProperties = ptr(uint64(limit))
+		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) error {
+			ctx.Schema.MaxProperties = ptr(uint64(limit))
 			return nil
 		})
 }

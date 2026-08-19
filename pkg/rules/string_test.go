@@ -3417,10 +3417,6 @@ var stringContainsTestCases = []*struct {
 	expectedError string
 }{
 	{
-		in:         "",
-		substrings: []string{""},
-	},
-	{
 		in:         "this",
 		substrings: []string{"his"},
 	},
@@ -3459,6 +3455,14 @@ func TestStringContains(t *testing.T) {
 			assert.NoError(t, err)
 		}
 	}
+	t.Run("panic if substrings are empty", func(t *testing.T) {
+		assert.Panic(t, func() { StringContains() }, "substrings must not be empty")
+	})
+	t.Run("panic if a substring is empty", func(t *testing.T) {
+		assert.Panic(t,
+			func() { StringContains("value", "") },
+			"substrings must not contain empty strings")
+	})
 }
 
 func BenchmarkStringContains(b *testing.B) {
@@ -3488,11 +3492,6 @@ var stringExcludesTestCases = []*struct {
 		substrings: []string{"that"},
 	},
 	{
-		in:            "",
-		substrings:    []string{""},
-		expectedError: "string must not contain any of the following substrings: ''",
-	},
-	{
 		in:            "this",
 		substrings:    []string{"his"},
 		expectedError: "string must not contain any of the following substrings: 'his'",
@@ -3519,6 +3518,14 @@ func TestStringExcludes(t *testing.T) {
 			assert.NoError(t, err)
 		}
 	}
+	t.Run("panic if substrings are empty", func(t *testing.T) {
+		assert.Panic(t, func() { StringExcludes() }, "substrings must not be empty")
+	})
+	t.Run("panic if a substring is empty", func(t *testing.T) {
+		assert.Panic(t,
+			func() { StringExcludes("value", "") },
+			"substrings must not contain empty strings")
+	})
 }
 
 func BenchmarkStringExcludes(b *testing.B) {
@@ -3565,6 +3572,14 @@ func TestStringStartsWith(t *testing.T) {
 			assert.NoError(t, err)
 		}
 	}
+	t.Run("panic if prefixes are empty", func(t *testing.T) {
+		assert.Panic(t, func() { StringStartsWith() }, "prefixes must not be empty")
+	})
+	t.Run("panic if a prefix is empty", func(t *testing.T) {
+		assert.Panic(t,
+			func() { StringStartsWith("prefix", "") },
+			"prefixes must not contain empty strings")
+	})
 }
 
 func BenchmarkStringStartsWith(b *testing.B) {
@@ -3611,6 +3626,14 @@ func TestStringEndsWith(t *testing.T) {
 			assert.NoError(t, err)
 		}
 	}
+	t.Run("panic if suffixes are empty", func(t *testing.T) {
+		assert.Panic(t, func() { StringEndsWith() }, "suffixes must not be empty")
+	})
+	t.Run("panic if a suffix is empty", func(t *testing.T) {
+		assert.Panic(t,
+			func() { StringEndsWith("suffix", "") },
+			"suffixes must not contain empty strings")
+	})
 }
 
 func BenchmarkStringEndsWith(b *testing.B) {

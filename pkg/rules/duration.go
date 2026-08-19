@@ -1,6 +1,8 @@
 package rules
 
 import (
+	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/nobl9/govy/internal/messagetemplates"
@@ -27,5 +29,17 @@ func DurationPrecision(precision time.Duration) govy.Rule[time.Duration] {
 		WithMessageTemplate(tpl).
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
 			PropertyValue: precision,
-		}))
+		})).
+		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) error {
+			value, err := jsonSchemaValue(precision)
+			if err != nil {
+				return err
+			}
+			number, ok := value.(json.Number)
+			if !ok {
+				return fmt.Errorf("value marshaled as %T instead of a JSON number", value)
+			}
+			addJSONSchemaMultipleOf(ctx.Schema, number)
+			return nil
+		})
 }

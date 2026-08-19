@@ -28,6 +28,9 @@ func TestOneOf(t *testing.T) {
 			assert.NoError(t, err)
 		}
 	}
+	t.Run("panic if values are empty", func(t *testing.T) {
+		assert.Panic(t, func() { OneOf[string]() }, "values must not be empty")
+	})
 }
 
 func BenchmarkOneOf(b *testing.B) {
@@ -59,6 +62,9 @@ func TestNotOneOf(t *testing.T) {
 			assert.NoError(t, err)
 		}
 	}
+	t.Run("panic if values are empty", func(t *testing.T) {
+		assert.Panic(t, func() { NotOneOf[string]() }, "values must not be empty")
+	})
 }
 
 func BenchmarkNotOneOf(b *testing.B) {
@@ -127,6 +133,11 @@ func TestOneOfProperties(t *testing.T) {
 			assert.NoError(t, err)
 		}
 	}
+	t.Run("panic if getters are empty", func(t *testing.T) {
+		assert.Panic(t,
+			func() { OneOfProperties(map[string]func(paymentMethod) any{}) },
+			"getters must not be empty")
+	})
 }
 
 func BenchmarkOneOfProperties(b *testing.B) {
@@ -216,6 +227,19 @@ func TestMutuallyExclusive(t *testing.T) {
 			assert.NoError(t, err)
 		}
 	}
+	invalidGetters := map[string]map[string]func(paymentMethod) any{
+		"no properties": {},
+		"one property": {
+			"Cash": func(p paymentMethod) any { return p.Cash },
+		},
+	}
+	for name, getters := range invalidGetters {
+		t.Run("panic if getters contain "+name, func(t *testing.T) {
+			assert.Panic(t,
+				func() { MutuallyExclusive(false, getters) },
+				"getters must contain at least two properties")
+		})
+	}
 }
 
 func BenchmarkMutuallyExclusive(b *testing.B) {
@@ -275,6 +299,15 @@ func TestMutuallyDependent(t *testing.T) {
 			assert.NoError(t, err)
 		}
 	}
+	t.Run("panic if getters contain fewer than two properties", func(t *testing.T) {
+		assert.Panic(t,
+			func() {
+				MutuallyDependent(map[string]func(paymentMethod) any{
+					"Cash": func(p paymentMethod) any { return p.Cash },
+				})
+			},
+			"getters must contain at least two properties")
+	})
 }
 
 func BenchmarkMutuallyDependent(b *testing.B) {

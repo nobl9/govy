@@ -1,0 +1,221 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Rules",
+  "type": "object",
+  "properties": {
+    "arrayLength": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 3
+    },
+    "atLeastOne": {
+      "type": "object",
+      "anyOf": [
+        {
+          "required": [
+            "a"
+          ]
+        },
+        {
+          "required": [
+            "b"
+          ]
+        },
+        {
+          "required": [
+            "c"
+          ]
+        }
+      ]
+    },
+    "atMostOne": {
+      "type": "object",
+      "not": {
+        "anyOf": [
+          {
+            "required": [
+              "a",
+              "b"
+            ]
+          },
+          {
+            "required": [
+              "a",
+              "c"
+            ]
+          },
+          {
+            "required": [
+              "b",
+              "c"
+            ]
+          }
+        ]
+      }
+    },
+    "bounds": {
+      "type": "integer",
+      "minimum": 2,
+      "maximum": 9,
+      "exclusiveMinimum": 1,
+      "exclusiveMaximum": 10
+    },
+    "const": {
+      "type": "array",
+      "const": [
+        1,
+        2
+      ]
+    },
+    "containsAll": {
+      "type": "string",
+      "allOf": [
+        {
+          "pattern": "omega"
+        }
+      ],
+      "pattern": "alpha"
+    },
+    "denyPattern": {
+      "type": "string",
+      "not": {
+        "pattern": "secret"
+      }
+    },
+    "dependent": {
+      "type": "object",
+      "anyOf": [
+        {
+          "required": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "a"
+                ]
+              },
+              {
+                "required": [
+                  "b"
+                ]
+              },
+              {
+                "required": [
+                  "c"
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "duration": {
+      "type": "integer",
+      "multipleOf": 250000000
+    },
+    "endsWith": {
+      "type": "string",
+      "pattern": "\\.json(?![\\s\\S])"
+    },
+    "enum": {
+      "type": "object",
+      "enum": [
+        {
+          "enabled": true,
+          "name": "first"
+        },
+        {
+          "enabled": false,
+          "name": "second"
+        }
+      ]
+    },
+    "exactlyOne": {
+      "type": "object",
+      "oneOf": [
+        {
+          "required": [
+            "a"
+          ]
+        },
+        {
+          "required": [
+            "b"
+          ]
+        },
+        {
+          "required": [
+            "c"
+          ]
+        }
+      ]
+    },
+    "excludes": {
+      "type": "string",
+      "not": {
+        "pattern": "secret"
+      }
+    },
+    "forbidden": {
+      "type": "integer",
+      "const": 0
+    },
+    "matchPattern": {
+      "type": "string",
+      "pattern": "[a-z]+"
+    },
+    "notConst": {
+      "type": "string",
+      "not": {
+        "const": "forbidden"
+      }
+    },
+    "notEmpty": {
+      "type": "string",
+      "pattern": "[^\\u0009-\\u000D\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028-\\u2029\\u202F\\u205F\\u3000]"
+    },
+    "notEnum": {
+      "type": "integer",
+      "not": {
+        "enum": [
+          1,
+          2
+        ]
+      }
+    },
+    "objectLength": {
+      "type": "object",
+      "minProperties": 1,
+      "maxProperties": 3
+    },
+    "ordered": {
+      "type": "string"
+    },
+    "pointer": {
+      "type": "string",
+      "enum": [
+        "first",
+        "second"
+      ]
+    },
+    "required": {
+      "type": "boolean",
+      "not": {
+        "const": false
+      }
+    },
+    "startsWith": {
+      "type": "string",
+      "pattern": "^prefix"
+    }
+  },
+  "required": [
+    "required"
+  ]
+}
