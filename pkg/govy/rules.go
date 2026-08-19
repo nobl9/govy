@@ -102,6 +102,7 @@ func (emptyErr) Error() string { return "" }
 // It is the middle-level building block of the validation process,
 // aggregated by [Validator] and aggregating [Rule].
 type PropertyRules[T, P any] struct {
+	id                string
 	path              jsonpath.Path
 	pathFunc          inferPathFunc
 	getter            internalPropertyGetter[T, P]
@@ -188,6 +189,14 @@ func (r PropertyRules[T, P]) WithName(name string) PropertyRules[T, P] {
 // or when you need explicit control over the path construction.
 func (r PropertyRules[T, P]) WithPath(path jsonpath.Path) PropertyRules[T, P] {
 	r.path = path
+	return r
+}
+
+// WithID sets an identifier for these property rules.
+// It can be used with [Validator.RemovePropertiesByID].
+// An empty identifier leaves the property without an identifier.
+func (r PropertyRules[T, P]) WithID(id string) PropertyRules[T, P] {
+	r.id = id
 	return r
 }
 
@@ -287,6 +296,26 @@ func (r PropertyRules[T, P]) inferPathModeInternal(mode InferPathMode) PropertyR
 		return r
 	}
 	return r.InferPath(mode)
+}
+
+func (r PropertyRules[T, P]) propertyID() string {
+	return r.id
+}
+
+func (r PropertyRules[T, P]) removePropertiesByID(ids []string) PropertyRulesInterface[P] {
+	return r.removePropertiesByIDFromIncludes(ids)
+}
+
+func (r PropertyRules[T, P]) removePropertiesByIDFromIncludes(ids []string) PropertyRules[T, P] {
+	rules := make([]validationInterface[T], 0, len(r.rules))
+	for _, rule := range r.rules {
+		if validator, ok := rule.(ValidatorInterface[T]); ok {
+			rule = validator.removePropertiesByID(ids)
+		}
+		rules = append(rules, rule)
+	}
+	r.rules = rules
+	return r
 }
 
 // plan constructs a validation plan for the property.

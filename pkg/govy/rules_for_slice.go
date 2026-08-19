@@ -78,6 +78,12 @@ func (r PropertyRulesForSlice[S, T, P]) WithPath(path jsonpath.Path) PropertyRul
 	return r
 }
 
+// WithID => refer to [PropertyRules.WithID] documentation.
+func (r PropertyRulesForSlice[S, T, P]) WithID(id string) PropertyRulesForSlice[S, T, P] {
+	r.sliceRules = r.sliceRules.WithID(id)
+	return r
+}
+
 // WithExamples => refer to [PropertyRules.WithExamples] documentation.
 func (r PropertyRulesForSlice[S, T, P]) WithExamples(examples ...string) PropertyRulesForSlice[S, T, P] {
 	r.sliceRules = r.sliceRules.WithExamples(examples...)
@@ -162,6 +168,16 @@ func (r PropertyRulesForSlice[S, T, P]) inferPathModeInternal(mode InferPathMode
 		return r
 	}
 	return r.InferPath(mode)
+}
+
+func (r PropertyRulesForSlice[S, T, P]) propertyID() string {
+	return r.sliceRules.propertyID()
+}
+
+func (r PropertyRulesForSlice[S, T, P]) removePropertiesByID(ids []string) PropertyRulesInterface[P] {
+	r.sliceRules = r.sliceRules.removePropertiesByIDFromIncludes(ids)
+	r.forEachRules = r.forEachRules.removePropertiesByIDFromIncludes(ids)
+	return r
 }
 
 // plan generates a validation plan for the property rules.

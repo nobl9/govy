@@ -1966,6 +1966,25 @@ func ExampleValidator_RemovePropertiesByPath() {
 	// Modified validator passed
 }
 
+// RemovePropertiesByID selects property rules by IDs set with [govy.PropertyRules.WithID].
+// It traverses included validators and leaves the original validator unchanged.
+func ExampleValidator_RemovePropertiesByID() {
+	ageProperty := govy.For(func(t Teacher) time.Duration { return t.Age }).
+		WithName("age").
+		WithID("age").
+		Rules(rules.GT(time.Duration(0)))
+	baseValidator := govy.New(ageProperty)
+	modifiedValidator := baseValidator.RemovePropertiesByID("age")
+	teacher := Teacher{Age: -1}
+
+	fmt.Println(baseValidator.Validate(teacher) != nil)
+	fmt.Println(modifiedValidator.Validate(teacher) != nil)
+
+	// Output:
+	// true
+	// false
+}
+
 // In the interactive tutorial for govy, we've been using
 // [govy.PropertyRules.WithName] to provide explicit path segments for our properties.
 //
@@ -2048,7 +2067,7 @@ func ExampleInferPathModeGenerate() {
 	govyconfig.SetInferredPath(govyconfig.InferredPath{
 		Path: jsonpath.New().Name("name"),
 		File: "pkg/govy/example_test.go",
-		Line: 2055,
+		Line: 2074,
 	})
 
 	v2 := govy.New(

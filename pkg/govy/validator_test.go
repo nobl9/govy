@@ -631,6 +631,110 @@ func TestValidatorInferPath(t *testing.T) {
 	})
 }
 
+func TestValidatorRemovePropertiesByID(t *testing.T) {
+	newProperty := func(path, id string) govy.PropertyRules[string, mockValidatorStruct] {
+		return govy.For(func(mockValidatorStruct) string { return path }).
+			WithName(path).
+			WithID(id).
+			Rules(govy.NewRule(func(string) error { return errors.New(path) }))
+	}
+	base := govy.New(
+		newProperty("first", "remove"),
+		newProperty("kept", "keep"),
+		newProperty("second", "remove"),
+		newProperty("other", "other"),
+		newProperty("unset", ""),
+	)
+
+	t.Run("removes every matching direct property", func(t *testing.T) {
+		filtered := base.RemovePropertiesByID("remove", "other", "")
+		filteredErr := mustValidatorError(t, filtered.Validate(mockValidatorStruct{}))
+		assert.Require(t, assert.Len(t, filteredErr.Errors, 2))
+		assert.Equal(t, jsonpath.Parse("kept"), filteredErr.Errors[0].PropertyPath)
+		assert.Equal(t, jsonpath.Parse("unset"), filteredErr.Errors[1].PropertyPath)
+
+		originalErr := mustValidatorError(t, base.Validate(mockValidatorStruct{}))
+		assert.Len(t, originalErr.Errors, 5)
+	})
+
+	t.Run("ignores empty and unknown IDs", func(t *testing.T) {
+		emptyIDErr := mustValidatorError(t, base.RemovePropertiesByID("", "missing").Validate(mockValidatorStruct{}))
+		assert.Len(t, emptyIDErr.Errors, 5)
+
+		noIDErr := mustValidatorError(t, base.RemovePropertiesByID().Validate(mockValidatorStruct{}))
+		assert.Len(t, noIDErr.Errors, 5)
+	})
+
+	t.Run("traverses included validators", func(t *testing.T) {
+		type leaf struct {
+			Value string
+		}
+		type child struct {
+			Leaf leaf
+		}
+		type parent struct {
+			Children map[string][]child
+		}
+
+		leafValidator := govy.New(
+			govy.For(func(value leaf) string { return value.Value }).
+				WithName("value").
+				WithID("inner").
+				Rules(rules.EQ("expected")),
+		)
+		childValidator := govy.New(
+			govy.For(func(value child) leaf { return value.Leaf }).
+				WithName("leaf").
+				Include(leafValidator),
+		)
+		sliceValidator := govy.New(
+			govy.ForSlice(govy.GetSelf[[]child]()).
+				IncludeForEach(childValidator),
+		)
+		parentValidator := govy.New(
+			govy.ForMap(func(value parent) map[string][]child { return value.Children }).
+				WithName("children").
+				IncludeForValues(sliceValidator),
+		)
+		value := parent{
+			Children: map[string][]child{
+				"first": {{Leaf: leaf{Value: "actual"}}},
+			},
+		}
+
+		filtered := parentValidator.RemovePropertiesByID("inner")
+		assert.Error(t, parentValidator.Validate(value))
+		assert.NoError(t, filtered.Validate(value))
+	})
+
+	t.Run("supports scalar, slice, and map properties", func(t *testing.T) {
+		type value struct {
+			Scalar string
+			Slice  []string
+			Map    map[string]string
+		}
+		validator := govy.New(
+			govy.For(func(value value) string { return value.Scalar }).
+				WithName("scalar").
+				WithID("scalar").
+				Rules(govy.NewRule(func(string) error { return errors.New("scalar") })),
+			govy.ForSlice(func(value value) []string { return value.Slice }).
+				WithName("slice").
+				WithID("slice").
+				Rules(govy.NewRule(func([]string) error { return errors.New("slice") })),
+			govy.ForMap(func(value value) map[string]string { return value.Map }).
+				WithName("map").
+				WithID("map").
+				Rules(govy.NewRule(func(map[string]string) error { return errors.New("map") })),
+		).
+			Cascade(govy.CascadeModeContinue).
+			InferPath(govy.InferPathModeDisable)
+
+		assert.Error(t, validator.Validate(value{}))
+		assert.NoError(t, validator.RemovePropertiesByID("scalar", "slice", "map").Validate(value{}))
+	})
+}
+
 func mustValidatorError(t *testing.T, err error) *govy.ValidatorError {
 	t.Helper()
 	return mustErrorType[*govy.ValidatorError](t, err)
