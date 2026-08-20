@@ -1,7 +1,9 @@
 package jsonschema_test
 
 import (
+	"bytes"
 	"encoding/json"
+	"os"
 	"testing"
 
 	"github.com/nobl9/govy/internal/assert"
@@ -38,33 +40,12 @@ func TestDocument_MarshalJSON(t *testing.T) {
 		},
 	}
 
-	actualJSON, err := json.Marshal(document)
+	expected, err := os.ReadFile("testdata/expected_document.json")
 	assert.Require(t, assert.NoError(t, err))
 
-	expectedJSON := []byte(`{
-		"$schema": "https://json-schema.org/draft/2020-12/schema",
-		"title": "Example",
-		"type": "object",
-		"properties": {
-			"value": {
-				"type": "string",
-				"minLength": 0
-			},
-			"nothing": {"const": null},
-			"pair": {
-				"type": "array",
-				"prefixItems": [
-					{"type": "string"},
-					{"type": "integer"}
-				]
-			}
-		},
-		"required": ["value"],
-		"allOf": [{"not": {"const": ""}}]
-	}`)
-
-	var expected, actual any
-	assert.Require(t, assert.NoError(t, json.Unmarshal(expectedJSON, &expected)))
-	assert.Require(t, assert.NoError(t, json.Unmarshal(actualJSON, &actual)))
-	assert.Equal(t, expected, actual)
+	var actual bytes.Buffer
+	encoder := json.NewEncoder(&actual)
+	encoder.SetIndent("", "  ")
+	assert.Require(t, assert.NoError(t, encoder.Encode(document)))
+	assert.Equal(t, string(expected), actual.String())
 }

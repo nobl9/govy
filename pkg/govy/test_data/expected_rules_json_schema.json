@@ -205,10 +205,7 @@
       ]
     },
     "required": {
-      "type": "boolean",
-      "not": {
-        "const": false
-      }
+      "type": "boolean"
     },
     "startsWith": {
       "type": "string",

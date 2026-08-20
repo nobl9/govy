@@ -24,10 +24,11 @@ func TestValidatorPlan_JSONSchema(t *testing.T) {
 	assert.Require(t, assert.NoError(t, err))
 
 	expected := readTestData(t, "expected_pod_json_schema.json")
-	actual, err := json.MarshalIndent(schema, "", "  ")
-	assert.Require(t, assert.NoError(t, err))
-
-	assert.Equal(t, expected, string(actual))
+	var actual bytes.Buffer
+	encoder := json.NewEncoder(&actual)
+	encoder.SetIndent("", "  ")
+	assert.Require(t, assert.NoError(t, encoder.Encode(schema)))
+	assert.Equal(t, expected, actual.String())
 }
 
 func TestJSONSchema_BuilderContext(t *testing.T) {

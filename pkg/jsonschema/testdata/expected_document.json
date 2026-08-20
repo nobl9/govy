@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Example",
+  "type": "object",
+  "allOf": [
+    {
+      "not": {
+        "const": ""
+      }
+    }
+  ],
+  "properties": {
+    "nothing": {
+      "const": null
+    },
+    "pair": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "integer"
+        }
+      ]
+    },
+    "value": {
+      "type": "string",
+      "minLength": 0
+    }
+  },
+  "required": [
+    "value"
+  ]
+}

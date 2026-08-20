@@ -105,9 +105,13 @@ func TestPlan_mapKeyRulesUseStandardWildcardPath(t *testing.T) {
 		t.Fatal("expected a property plan for $.labels.*")
 	}
 
-	assert.Equal(t, govy.TypeInfo{Name: "string", Kind: "string"}, keyPlan.TypeInfo)
+	assert.Equal(t, "string", keyPlan.TypeInfo.Name)
+	assert.Equal(t, "string", keyPlan.TypeInfo.Kind)
+	assert.Equal(t, "", keyPlan.TypeInfo.Package)
 	assert.Equal(t, []govy.RulePlan{{Description: "key rule"}}, keyPlan.Rules)
-	assert.Equal(t, govy.TypeInfo{Name: "string", Kind: "string"}, valuePlan.TypeInfo)
+	assert.Equal(t, "string", valuePlan.TypeInfo.Name)
+	assert.Equal(t, "string", valuePlan.TypeInfo.Kind)
+	assert.Equal(t, "", valuePlan.TypeInfo.Package)
 	assert.Equal(t, []govy.RulePlan{{Description: "value rule"}}, valuePlan.Rules)
 }
 

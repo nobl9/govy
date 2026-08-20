@@ -11,10 +11,7 @@
       "type": "string"
     },
     "ruleRequired": {
-      "type": "boolean",
-      "not": {
-        "const": false
-      }
+      "type": "boolean"
     }
   },
   "required": [
