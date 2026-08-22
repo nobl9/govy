@@ -20,6 +20,18 @@ const (
 	TypeInteger Type = "integer"
 )
 
+// Format is a JSON Schema semantic format name.
+type Format string
+
+// JSON Schema format names used by Govy.
+const (
+	FormatDateTime Format = "date-time"
+	FormatEmail    Format = "email"
+	FormatIPv4     Format = "ipv4"
+	FormatIPv6     Format = "ipv6"
+	FormatURI      Format = "uri"
+)
+
 // Schema represents the subset of a JSON Schema Draft 2020-12 schema object
 // required by Govy. Convert a root Schema to [Document] before marshaling it.
 type Schema struct {
@@ -76,6 +88,8 @@ type Schema struct {
 	MaxLength *uint64 `json:"maxLength,omitempty"`
 	// Pattern is an ECMA-262 regular expression that a string must match.
 	Pattern string `json:"pattern,omitempty"`
+	// Format identifies the semantic format of a value.
+	Format Format `json:"format,omitempty"`
 
 	// MultipleOf requires a number to be a multiple of this value.
 	MultipleOf json.Number `json:"multipleOf,omitempty"`

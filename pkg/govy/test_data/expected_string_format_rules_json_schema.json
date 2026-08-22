@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "StringFormatRules",
+  "type": "object",
+  "properties": {
+    "customDateTime": {
+      "type": "string"
+    },
+    "dateTime": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "dateTimeNano": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "email": {
+      "type": "string",
+      "format": "email"
+    },
+    "ip": {
+      "type": "string",
+      "anyOf": [
+        {
+          "format": "ipv4"
+        },
+        {
+          "format": "ipv6"
+        }
+      ]
+    },
+    "ipv4": {
+      "type": "string",
+      "format": "ipv4"
+    },
+    "ipv6": {
+      "type": "string",
+      "format": "ipv6"
+    },
+    "multiple": {
+      "type": "string",
+      "allOf": [
+        {
+          "format": "ipv6"
+        }
+      ],
+      "format": "ipv4"
+    },
+    "url": {
+      "type": "string",
+      "format": "uri"
+    }
+  }
+}

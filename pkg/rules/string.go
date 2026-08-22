@@ -145,7 +145,8 @@ func StringEmail() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringEmail).
 		WithMessageTemplate(tpl).
-		WithDescription("string must be a valid email address")
+		WithDescription("string must be a valid email address").
+		WithJSONSchema(jsonSchemaFormat(jsonschema.FormatEmail))
 }
 
 // StringURL ensures property's value is a valid URL as defined by [url.Parse] function.
@@ -171,7 +172,8 @@ func StringURL() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringURL).
 		WithMessageTemplate(tpl).
-		WithDescription(urlDescription)
+		WithDescription(urlDescription).
+		WithJSONSchema(jsonSchemaFormat(jsonschema.FormatURI))
 }
 
 // StringMAC ensures property's value is a valid MAC address.
@@ -206,7 +208,14 @@ func StringIP() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringIP).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{})).
+		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) error {
+			addJSONSchemaAnyOf(ctx.Schema, []*jsonschema.Schema{
+				{Format: jsonschema.FormatIPv4},
+				{Format: jsonschema.FormatIPv6},
+			})
+			return nil
+		})
 }
 
 // StringIPv4 ensures property's value is a valid IPv4 address.
@@ -223,7 +232,8 @@ func StringIPv4() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringIPv4).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{})).
+		WithJSONSchema(jsonSchemaFormat(jsonschema.FormatIPv4))
 }
 
 // StringIPv6 ensures property's value is a valid IPv6 address.
@@ -240,7 +250,8 @@ func StringIPv6() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringIPv6).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{})).
+		WithJSONSchema(jsonSchemaFormat(jsonschema.FormatIPv6))
 }
 
 // StringCIDR ensures property's value is a valid CIDR notation IP address.
@@ -1403,7 +1414,7 @@ func StringCrontab() govy.Rule[string] {
 func StringDateTime(layout string) govy.Rule[string] {
 	tpl := messagetemplates.Get(messagetemplates.StringDateTimeTemplate)
 
-	return govy.NewRule(func(s string) error {
+	rule := govy.NewRule(func(s string) error {
 		if _, err := time.Parse(layout, s); err != nil {
 			return govy.NewRuleErrorTemplate(govy.TemplateVars{
 				PropertyValue:   s,
@@ -1419,6 +1430,10 @@ func StringDateTime(layout string) govy.Rule[string] {
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: layout,
 		}))
+	if layout == time.RFC3339 || layout == time.RFC3339Nano {
+		return rule.WithJSONSchema(jsonSchemaFormat(jsonschema.FormatDateTime))
+	}
+	return rule
 }
 
 // StringTimeZone ensures the property's value is a valid time zone name which

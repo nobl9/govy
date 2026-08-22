@@ -116,6 +116,21 @@ func addJSONSchemaPattern(schema *jsonschema.Schema, pattern string) {
 	schema.AllOf = append(schema.AllOf, &jsonschema.Schema{Pattern: pattern})
 }
 
+func addJSONSchemaFormat(schema *jsonschema.Schema, format jsonschema.Format) {
+	if schema.Format == "" {
+		schema.Format = format
+		return
+	}
+	schema.AllOf = append(schema.AllOf, &jsonschema.Schema{Format: format})
+}
+
+func jsonSchemaFormat(format jsonschema.Format) govy.JSONSchemaBuilder {
+	return func(ctx govy.JSONSchemaBuilderContext) error {
+		addJSONSchemaFormat(ctx.Schema, format)
+		return nil
+	}
+}
+
 func jsonSchemaPattern(pattern string) govy.JSONSchemaBuilder {
 	return func(ctx govy.JSONSchemaBuilderContext) error {
 		translated, err := ecmaregex.Translate(pattern)

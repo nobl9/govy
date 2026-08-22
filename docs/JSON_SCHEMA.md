@@ -175,22 +175,37 @@ These rules should remain unsupported unless generation receives an explicit,
 portable representation. A fixed IANA time-zone snapshot could support
 `StringTimeZone`, but it would make the schema depend on that snapshot.
 
-### Standard annotation candidates
+### Format annotations
 
-Adding `format`, `contentEncoding`, `contentMediaType`, and `contentSchema` to
-the schema model would support useful annotations for these rules:
+Schema generation emits these Draft 2020-12 format annotations:
 
-- `StringEmail`
-- `StringURL`
-- `StringIP`, `StringIPv4`, and `StringIPv6`
-- `StringDateTime` for compatible layouts
+- `StringEmail`: `email`
+- `StringURL`: `uri`
+- `StringIP`: `anyOf` with `ipv4` and `ipv6`
+- `StringIPv4`: `ipv4`
+- `StringIPv6`: `ipv6`
+- `StringDateTime`: `date-time` for `time.RFC3339` and `time.RFC3339Nano`
+
+Other `StringDateTime` layouts remain unsupported because Go layouts can
+describe formats other than RFC 3339.
+
+These mappings are approximate. `StringEmail` uses Go's RFC 5322 address
+parser, while the JSON Schema `email` format refers to an RFC 5321 mailbox.
+`StringURL` uses Go's URL parser, while `uri` refers to RFC 3986. JSON Schema
+implementations can also differ in format validation. Draft 2020-12 treats
+`format` as an annotation unless the consumer enables format assertions.
+
+### Content annotation candidates
+
+Adding `contentEncoding`, `contentMediaType`, and `contentSchema` to the schema
+model would support useful annotations for these rules:
+
 - `StringBase64`
 - `StringJSON`
 - `StringJWT`
 
-Draft 2020-12 treats `format` as an annotation by default. Content keywords are
-also annotations and do not require a validator to decode or validate embedded
-content.
+Content keywords are annotations and do not require a validator to decode or
+validate embedded content.
 
 ### Pattern and enum candidates
 
@@ -245,7 +260,6 @@ Extend `jsonschema.Schema` only when a built-in rule needs the keyword. The
 first candidates are:
 
 - `uniqueItems`
-- `format`
 - `contentEncoding`
 - `contentMediaType`
 - `contentSchema`
@@ -279,7 +293,6 @@ Run `make check` before the completed feature is handed off.
 - Must the default schema be a conservative superset of Govy-valid JSON?
 - Should unsupported mappings be silent, reported, annotated, or errors?
 - Should nonportable Ajv or Govy vocabulary output be supported?
-- Which date-time layouts qualify for the standard `date-time` format?
 - Should large finite enums be emitted by default?
 
 ## References

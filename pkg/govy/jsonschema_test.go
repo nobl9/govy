@@ -419,6 +419,62 @@ func TestJSONSchema_StringPatternRules(t *testing.T) {
 	assert.Equal(t, expected, actual.String())
 }
 
+func TestJSONSchema_StringFormatRules(t *testing.T) {
+	t.Parallel()
+
+	type document struct {
+		CustomDateTime string
+		DateTime       string
+		DateTimeNano   string
+		Email          string
+		IP             string
+		IPv4           string
+		IPv6           string
+		Multiple       string
+		URL            string
+	}
+	validator := govy.New(
+		govy.For(func(v document) string { return v.CustomDateTime }).
+			WithName("customDateTime").
+			Rules(rules.StringDateTime("2006-01-02")),
+		govy.For(func(v document) string { return v.DateTime }).
+			WithName("dateTime").
+			Rules(rules.StringDateTime(time.RFC3339)),
+		govy.For(func(v document) string { return v.DateTimeNano }).
+			WithName("dateTimeNano").
+			Rules(rules.StringDateTime(time.RFC3339Nano)),
+		govy.For(func(v document) string { return v.Email }).
+			WithName("email").
+			Rules(rules.StringEmail()),
+		govy.For(func(v document) string { return v.IP }).
+			WithName("ip").
+			Rules(rules.StringIP()),
+		govy.For(func(v document) string { return v.IPv4 }).
+			WithName("ipv4").
+			Rules(rules.StringIPv4()),
+		govy.For(func(v document) string { return v.IPv6 }).
+			WithName("ipv6").
+			Rules(rules.StringIPv6()),
+		govy.For(func(v document) string { return v.Multiple }).
+			WithName("multiple").
+			Rules(rules.StringIPv4(), rules.StringIPv6()),
+		govy.For(func(v document) string { return v.URL }).
+			WithName("url").
+			Rules(rules.StringURL()),
+	).
+		WithName("StringFormatRules")
+
+	schema, err := govy.JSONSchema(validator)
+	assert.Require(t, assert.NoError(t, err))
+
+	expected := readTestData(t, "expected_string_format_rules_json_schema.json")
+	var actual bytes.Buffer
+	encoder := json.NewEncoder(&actual)
+	encoder.SetIndent("", "  ")
+	assert.Require(t, assert.NoError(t, encoder.Encode(schema)))
+	assert.Equal(t, expected, actual.String())
+}
+
 func TestJSONSchema_UnsupportedType(t *testing.T) {
 	t.Parallel()
 
