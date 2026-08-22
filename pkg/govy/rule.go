@@ -3,6 +3,7 @@ package govy
 import (
 	"bytes"
 	"fmt"
+	"slices"
 	"strings"
 	"text/template"
 
@@ -231,8 +232,17 @@ func (r Rule[T]) plan(builder planBuilder) {
 	for _, mod := range r.planModifiers {
 		rulePlan = mod(rulePlan)
 	}
-	if builder.options.recordJSONSchema && r.jsonSchemaBuilder != nil {
-		rulePlan.jsonSchemaBuilders = []JSONSchemaBuilder{r.jsonSchemaBuilder}
+	if builder.options.recordJSONSchema &&
+		r.jsonSchemaBuilder != nil &&
+		!slices.ContainsFunc(builder.jsonSchemaConditions, func(condition jsonSchemaCondition) bool {
+			return condition.builder == nil
+		}) {
+		rulePlan.jsonSchemaBuilders = []JSONSchemaBuilder{
+			newJSONSchemaPlanBuilder(
+				builder.jsonSchemaConditions,
+				r.jsonSchemaBuilder,
+			).Build,
+		}
 	}
 	builder.rulePlan = rulePlan
 	*builder.path = append(*builder.path, builder)

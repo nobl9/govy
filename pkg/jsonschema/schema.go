@@ -43,6 +43,10 @@ type Schema struct {
 	OneOf []*Schema `json:"oneOf,omitempty"`
 	// Not requires the child schema not to match.
 	Not *Schema `json:"not,omitempty"`
+	// If determines whether [Schema.Then] applies.
+	If *Schema `json:"if,omitempty"`
+	// Then applies when [Schema.If] matches.
+	Then *Schema `json:"then,omitempty"`
 
 	// Properties maps object property names to their schemas.
 	Properties map[string]*Schema `json:"properties,omitempty"`

@@ -159,7 +159,7 @@ func (v Validator[T]) getName(value T) string {
 
 // plan constructs a validation plan for all the properties of the [Validator].
 func (v Validator[T]) plan(builder planBuilder) {
-	builder = appendPredicatesToPlanBuilder(builder, v.predicates)
+	builder = appendPredicatesToPlanBuilder(builder, builder.propertyPath, v.predicates)
 	for _, rules := range v.props {
 		if p, ok := rules.(planner); ok {
 			p.plan(builder)

@@ -139,6 +139,31 @@ func TestPath_Segments(t *testing.T) {
 	})
 }
 
+func TestPath_Slice(t *testing.T) {
+	t.Parallel()
+
+	path := jsonpath.Parse("$.items[*].value")
+	tests := []struct {
+		name     string
+		start    int
+		end      int
+		expected string
+	}{
+		{name: "full path", start: 0, end: 4, expected: "$.items[*].value"},
+		{name: "rooted prefix", start: 0, end: 3, expected: "$.items[*]"},
+		{name: "relative middle", start: 1, end: 3, expected: "items[*]"},
+		{name: "relative suffix", start: 3, end: 4, expected: "value"},
+		{name: "empty range", start: 3, end: 3, expected: ""},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			assert.Equal(t, tc.expected, path.Slice(tc.start, tc.end).String())
+		})
+	}
+}
+
 func TestParsePath(t *testing.T) {
 	tests := map[string]struct {
 		input    string

@@ -256,7 +256,7 @@ func (r PropertyRulesForMap[M, K, V, P]) inferPathModeInternal(mode InferPathMod
 
 // plan constructs a validation plan for the property rules.
 func (r PropertyRulesForMap[M, K, V, P]) plan(builder planBuilder) {
-	builder = appendPredicatesToPlanBuilder(builder, r.predicates)
+	builder = appendPredicatesToPlanBuilder(builder, builder.propertyPath, r.predicates)
 	r.mapRules.plan(builder.setExamples(r.mapRules.examples...))
 	builder = builder.appendPath(r.mapRules.getPath())
 	if len(r.forKeyRules.rules) > 0 {

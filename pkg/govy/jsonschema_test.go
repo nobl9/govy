@@ -14,6 +14,7 @@ import (
 
 	"github.com/nobl9/govy/pkg/govy"
 	"github.com/nobl9/govy/pkg/jsonpath"
+	"github.com/nobl9/govy/pkg/jsonschema"
 	"github.com/nobl9/govy/pkg/rules"
 )
 
@@ -42,6 +43,12 @@ func TestJSONSchema_BuilderContext(t *testing.T) {
 	rootRule := govy.NewRule(func(document) error { return nil }).
 		WithDescription("customize root schema").
 		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) error {
+			if !ctx.Path.Equal(jsonpath.NewRoot()) {
+				return fmt.Errorf("expected root builder path, got %q", ctx.Path)
+			}
+			if ctx.Root != ctx.Schema {
+				return fmt.Errorf("expected root builder schema to be the document root")
+			}
 			if ctx.Parent != nil {
 				return fmt.Errorf("expected root builder parent to be nil")
 			}
@@ -54,6 +61,12 @@ func TestJSONSchema_BuilderContext(t *testing.T) {
 	customRule := govy.NewRule(func(string) error { return nil }).
 		WithDescription("customize property schema").
 		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) error {
+			if !ctx.Path.Equal(jsonpath.Parse("$.custom")) {
+				return fmt.Errorf("expected custom property path, got %q", ctx.Path)
+			}
+			if ctx.Root == nil || ctx.Root != ctx.Parent {
+				return fmt.Errorf("expected property builder document root")
+			}
 			if ctx.Parent == nil {
 				return fmt.Errorf("expected property builder parent")
 			}
@@ -82,6 +95,85 @@ func TestJSONSchema_BuilderContext(t *testing.T) {
 	assert.Require(t, assert.NoError(t, err))
 
 	expected := readTestData(t, "expected_builder_context_json_schema.json")
+	var actual bytes.Buffer
+	encoder := json.NewEncoder(&actual)
+	encoder.SetIndent("", "  ")
+	assert.Require(t, assert.NoError(t, encoder.Encode(schema)))
+	assert.Equal(t, expected, actual.String())
+}
+
+func TestJSONSchema_When(t *testing.T) {
+	t.Parallel()
+
+	type item struct {
+		Kind  string
+		Value string
+	}
+	type document struct {
+		Enabled bool
+		Ignored string
+		Items   []item
+	}
+	enabled := any(true)
+	kind := any("required")
+	itemValidator := govy.New(
+		govy.For(func(v item) string { return v.Value }).
+			WithName("value").
+			Required().
+			When(
+				func(v item) bool { return v.Kind == "required" },
+				govy.WhenJSONSchema(func(ctx govy.JSONSchemaBuilderContext) error {
+					if !ctx.Path.Equal(jsonpath.Parse("$.items[*]")) {
+						return fmt.Errorf("expected item condition path, got %q", ctx.Path)
+					}
+					if ctx.Root == nil || ctx.Root == ctx.Schema {
+						return fmt.Errorf("expected condition builder document root")
+					}
+					if ctx.Parent != nil || ctx.Segment.Kind() != jsonpath.SegmentRoot {
+						return fmt.Errorf("expected condition root builder context")
+					}
+					ctx.Schema.Properties = map[string]*jsonschema.Schema{
+						"kind": {Const: &kind},
+					}
+					ctx.Schema.Required = []string{"kind"}
+					return nil
+				}),
+			),
+	)
+	validator := govy.New(
+		govy.For(func(v document) string { return v.Ignored }).
+			WithName("ignored").
+			Required().
+			When(func(document) bool { return true }),
+		govy.ForSlice(func(v document) []item { return v.Items }).
+			WithName("items").
+			IncludeForEach(itemValidator),
+	).
+		WithName("Conditions").
+		When(
+			func(v document) bool { return v.Enabled },
+			govy.WhenJSONSchema(func(ctx govy.JSONSchemaBuilderContext) error {
+				if !ctx.Path.Equal(jsonpath.NewRoot()) {
+					return fmt.Errorf("expected root condition path, got %q", ctx.Path)
+				}
+				if ctx.Root == nil || ctx.Root == ctx.Schema {
+					return fmt.Errorf("expected condition builder document root")
+				}
+				if ctx.Parent != nil || ctx.Segment.Kind() != jsonpath.SegmentRoot {
+					return fmt.Errorf("expected condition root builder context")
+				}
+				ctx.Schema.Properties = map[string]*jsonschema.Schema{
+					"enabled": {Const: &enabled},
+				}
+				ctx.Schema.Required = []string{"enabled"}
+				return nil
+			}),
+		)
+
+	schema, err := govy.JSONSchema(validator)
+	assert.Require(t, assert.NoError(t, err))
+
+	expected := readTestData(t, "expected_when_json_schema.json")
 	var actual bytes.Buffer
 	encoder := json.NewEncoder(&actual)
 	encoder.SetIndent("", "  ")

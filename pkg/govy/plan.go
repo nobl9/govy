@@ -91,7 +91,7 @@ type RulePlan struct {
 	// values unlike [Examples] should list ALL valid values which meet this rule.
 	// It is not exported as it is only here to contribute to the [PropertyPlan.ValidValues].
 	values []string
-	// jsonSchemaBuilders records the JSON Schema builder passed to [Rule.WithJSONSchema].
+	// jsonSchemaBuilders contains the builders used to generate JSON Schema for this rule.
 	// It is only recorded if [Plan] was called with [planRecordJSONSchema] option.
 	jsonSchemaBuilders []JSONSchemaBuilder
 }
@@ -144,7 +144,7 @@ func PlanStrictMode() PlanOption {
 	}
 }
 
-// planRecordJSONSchema TODO
+// planRecordJSONSchema records the internal builders used by [JSONSchema].
 func planRecordJSONSchema() PlanOption {
 	return func(options planOptions) planOptions {
 		options.recordJSONSchema = true
@@ -276,22 +276,24 @@ type planner interface {
 }
 
 type planBuilder struct {
-	propertyPath        jsonpath.Path
-	rulePlan            RulePlan
-	propertyPlan        PropertyPlan
-	path                *[]planBuilder
-	missingDescriptions *[]predicateLocation
-	options             planOptions
+	propertyPath         jsonpath.Path
+	rulePlan             RulePlan
+	propertyPlan         PropertyPlan
+	path                 *[]planBuilder
+	missingDescriptions  *[]predicateLocation
+	jsonSchemaConditions []jsonSchemaCondition
+	options              planOptions
 }
 
 func (p planBuilder) appendPath(path jsonpath.Path) planBuilder {
 	builder := planBuilder{
-		path:                p.path,
-		missingDescriptions: p.missingDescriptions,
-		options:             p.options,
-		rulePlan:            p.rulePlan,
-		propertyPlan:        p.propertyPlan,
-		propertyPath:        p.propertyPath.Join(path),
+		path:                 p.path,
+		missingDescriptions:  p.missingDescriptions,
+		jsonSchemaConditions: p.jsonSchemaConditions,
+		options:              p.options,
+		rulePlan:             p.rulePlan,
+		propertyPlan:         p.propertyPlan,
+		propertyPath:         p.propertyPath.Join(path),
 	}
 	return builder
 }
@@ -308,21 +310,32 @@ func (p planBuilder) validate() error {
 	return nil
 }
 
-func appendPredicatesToPlanBuilder[T any](builder planBuilder, predicates []predicateContainer[T]) planBuilder {
+func appendPredicatesToPlanBuilder[T any](
+	builder planBuilder,
+	predicateScope jsonpath.Path,
+	predicates []predicateContainer[T],
+) planBuilder {
 	// Plan branches share inherited conditions, so clone before appending branch-specific predicates.
 	if len(predicates) > 0 {
 		builder.rulePlan.Conditions = slices.Clone(builder.rulePlan.Conditions)
+		builder.jsonSchemaConditions = slices.Clone(builder.jsonSchemaConditions)
 	}
 	for _, predicate := range predicates {
+		if builder.options.recordJSONSchema {
+			builder.jsonSchemaConditions = append(builder.jsonSchemaConditions, jsonSchemaCondition{
+				scope:   predicateScope,
+				builder: predicate.jsonSchemaBuilder,
+			})
+		}
 		if predicate.description == "" {
 			if builder.options.requirePredicateDescriptions && builder.missingDescriptions != nil {
 				*builder.missingDescriptions = append(*builder.missingDescriptions, predicateLocation{
 					propertyPath: builder.propertyPath,
 				})
 			}
-			continue
+		} else {
+			builder.rulePlan.Conditions = append(builder.rulePlan.Conditions, predicate.description)
 		}
-		builder.rulePlan.Conditions = append(builder.rulePlan.Conditions, predicate.description)
 	}
 	return builder
 }

@@ -2,8 +2,10 @@ package govy
 
 import (
 	"fmt"
+	"maps"
 	"math"
 	"reflect"
+	"slices"
 
 	"github.com/nobl9/govy/pkg/jsonpath"
 	"github.com/nobl9/govy/pkg/jsonschema"
@@ -11,9 +13,13 @@ import (
 
 // JSONSchemaBuilderContext describes the JSON Schema node selected for a builder.
 type JSONSchemaBuilderContext struct {
+	// Root is the document root.
+	Root *jsonschema.Schema
+	// Path is the absolute JSON path represented by Schema.
+	Path jsonpath.Path
 	// Schema is the node selected by Segment.
 	Schema *jsonschema.Schema
-	// Parent is the node that contains Schema, or nil when Schema is the document root.
+	// Parent is the node that contains jsonschema.Schema, or nil when Schema is the document root.
 	Parent *jsonschema.Schema
 	// Segment is the final path segment that selected Schema.
 	Segment jsonpath.Segment
@@ -21,6 +27,11 @@ type JSONSchemaBuilderContext struct {
 
 // JSONSchemaBuilder modifies a selected JSON Schema node.
 type JSONSchemaBuilder func(ctx JSONSchemaBuilderContext) error
+
+type jsonSchemaCondition struct {
+	scope   jsonpath.Path
+	builder JSONSchemaBuilder
+}
 
 const maxJSONSchemaPrefixItemsIndex = math.MaxInt - 1
 
@@ -30,7 +41,7 @@ const maxJSONSchemaPrefixItemsIndex = math.MaxInt - 1
 //
 // [Draft 2020-12]: https://json-schema.org/draft/2020-12/schema
 func JSONSchema[T any](v Validator[T]) (*jsonschema.Document, error) {
-	plan, err := Plan(v, PlanStrictMode(), planRecordJSONSchema())
+	plan, err := Plan(v, planRecordJSONSchema())
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate %T: %w", plan, err)
 	}
@@ -45,36 +56,17 @@ func JSONSchema[T any](v Validator[T]) (*jsonschema.Document, error) {
 	}
 
 	for _, prop := range plan.Properties {
-		schemaSelector := schema
-		var (
-			parentSchema *jsonschema.Schema
-			segment      jsonpath.Segment
-		)
-		for _, segment = range prop.Path.Segments() {
-			if segment.Kind() == jsonpath.SegmentIndex && segment.Index() > maxJSONSchemaPrefixItemsIndex {
-				return nil, fmt.Errorf(
-					"failed to generate JSON Schema for %q property: array index %d exceeds maximum supported index %d",
-					prop.Path,
-					segment.Index(),
-					maxJSONSchemaPrefixItemsIndex,
-				)
-			}
-			if segment.Kind() != jsonpath.SegmentRoot {
-				parentSchema = schemaSelector
-			}
-			schemaSelector = getJSONSchemaForSegment(schemaSelector, segment)
+		ctx, err := newJSONSchemaBuilderContext(schema, schema, prop.Path)
+		if err != nil {
+			return nil, fmt.Errorf("failed to generate JSON Schema for %q property: %w", prop.Path, err)
 		}
-		schemaSelector.Type, err = jsonSchemaTypeFromTypeInfo(prop.TypeInfo)
+		ctx.Schema.Type, err = jsonSchemaTypeFromTypeInfo(prop.TypeInfo)
 		if err != nil {
 			return nil, fmt.Errorf("failed to generate JSON Schema type info for %q property: %w", prop.Path, err)
 		}
 		for _, rule := range prop.Rules {
 			for _, builder := range rule.jsonSchemaBuilders {
-				if err = builder(JSONSchemaBuilderContext{
-					Schema:  schemaSelector,
-					Parent:  parentSchema,
-					Segment: segment,
-				}); err != nil {
+				if err = builder(ctx); err != nil {
 					return nil, fmt.Errorf(
 						"failed to build JSON Schema for %q property and %q rule: %w",
 						prop.Path,
@@ -84,23 +76,136 @@ func JSONSchema[T any](v Validator[T]) (*jsonschema.Document, error) {
 				}
 			}
 		}
-		switch segment.Kind() {
-		case jsonpath.SegmentName:
-		case jsonpath.SegmentRoot:
-		case jsonpath.SegmentUnknownIndex, jsonpath.SegmentIndex, jsonpath.SegmentIndexWildcard,
-			jsonpath.SegmentValueWildcard:
-		case jsonpath.SegmentKeyWildcard:
-		}
 	}
-	normalizeJSONSchemaWildcardApplicators(schema)
+	ensureWildcardApplicatorsApplyToAllChildren(schema)
 
 	document := jsonschema.Document(*schema)
 	return &document, nil
 }
 
-// normalizeJSONSchemaWildcardApplicators separates wildcard and specific applicators
-// so both apply to matching children.
-func normalizeJSONSchemaWildcardApplicators(schema *jsonschema.Schema) {
+type jsonSchemaPlanBuilder struct {
+	conditions  []jsonSchemaCondition
+	ruleBuilder JSONSchemaBuilder
+}
+
+func newJSONSchemaPlanBuilder(
+	conditions []jsonSchemaCondition,
+	ruleBuilder JSONSchemaBuilder,
+) *jsonSchemaPlanBuilder {
+	conditions = slices.Clone(conditions)
+	return &jsonSchemaPlanBuilder{
+		conditions:  conditions,
+		ruleBuilder: ruleBuilder,
+	}
+}
+
+func (b *jsonSchemaPlanBuilder) Build(ctx JSONSchemaBuilderContext) error {
+	propertyPath := ctx.Path
+	currentSchema := ctx.Root
+	rootScopeDepth := jsonpath.NewRoot().Len()
+	currentScopeDepth := rootScopeDepth
+	for _, condition := range b.conditions {
+		conditionScopeDepth := condition.scope.Len()
+		if conditionScopeDepth < currentScopeDepth ||
+			conditionScopeDepth > propertyPath.Len() {
+			return fmt.Errorf(
+				"JSON Schema path %q is not nested under condition scope %q",
+				propertyPath,
+				condition.scope,
+			)
+		}
+		expectedScope := propertyPath.Slice(0, conditionScopeDepth)
+		if !condition.scope.Equal(expectedScope) {
+			return fmt.Errorf(
+				"JSON Schema path %q is not nested under condition scope %q",
+				propertyPath,
+				condition.scope,
+			)
+		}
+		relativeScope := jsonpath.NewRoot().Join(
+			propertyPath.Slice(currentScopeDepth, conditionScopeDepth),
+		)
+		scopeContext, err := newJSONSchemaBuilderContext(ctx.Root, currentSchema, relativeScope)
+		if err != nil {
+			return fmt.Errorf("select JSON Schema condition scope %q: %w", condition.scope, err)
+		}
+		conditionSchema := new(jsonschema.Schema)
+		conditionContext, err := newJSONSchemaBuilderContext(
+			ctx.Root,
+			conditionSchema,
+			jsonpath.NewRoot(),
+		)
+		if err != nil {
+			return err
+		}
+		conditionContext.Path = condition.scope
+		if err = condition.builder(conditionContext); err != nil {
+			return fmt.Errorf("build JSON Schema condition at %q: %w", condition.scope, err)
+		}
+		conditionalSchema := &jsonschema.Schema{
+			If:   conditionSchema,
+			Then: new(jsonschema.Schema),
+		}
+		scopeContext.Schema.AllOf = append(scopeContext.Schema.AllOf, conditionalSchema)
+		currentSchema = conditionalSchema.Then
+		currentScopeDepth = conditionScopeDepth
+	}
+
+	relativeProperty := jsonpath.NewRoot().Join(
+		propertyPath.Slice(currentScopeDepth, propertyPath.Len()),
+	)
+	ruleContext, err := newJSONSchemaBuilderContext(ctx.Root, currentSchema, relativeProperty)
+	if err != nil {
+		return fmt.Errorf("select JSON Schema property %q: %w", propertyPath, err)
+	}
+	ruleContext.Path = propertyPath
+	return b.ruleBuilder(ruleContext)
+}
+
+func newJSONSchemaBuilderContext(
+	root *jsonschema.Schema,
+	schema *jsonschema.Schema,
+	path jsonpath.Path,
+) (JSONSchemaBuilderContext, error) {
+	ctx := JSONSchemaBuilderContext{Root: root, Path: path, Schema: schema}
+	for _, segment := range path.Segments() {
+		if segment.Kind() == jsonpath.SegmentIndex && segment.Index() > maxJSONSchemaPrefixItemsIndex {
+			return JSONSchemaBuilderContext{}, fmt.Errorf(
+				"array index %d exceeds maximum supported index %d",
+				segment.Index(),
+				maxJSONSchemaPrefixItemsIndex,
+			)
+		}
+		if segment.Kind() != jsonpath.SegmentRoot {
+			ctx.Parent = ctx.Schema
+		}
+		ctx.Schema = getJSONSchemaForSegment(ctx.Schema, segment)
+		ctx.Segment = segment
+	}
+	return ctx, nil
+}
+
+// ensureWildcardApplicatorsApplyToAllChildren rewrites mixed wildcard and
+// explicit child schemas so wildcard constraints also apply to explicit children.
+// For example:
+//
+//	prefixItems: [specific], items: wildcard
+//
+// becomes:
+//
+//	prefixItems: [specific], allOf: [{items: wildcard}]
+//
+// Likewise:
+//
+//	properties: {name: specific}, additionalProperties: wildcard
+//
+// becomes:
+//
+//	properties: {name: specific}, allOf: [{additionalProperties: wildcard}]
+//
+// The allOf schema has no properties keyword, so its additionalProperties
+// constraint applies to name and every other property.
+func ensureWildcardApplicatorsApplyToAllChildren(schema *jsonschema.Schema) {
 	if schema == nil {
 		return
 	}
@@ -117,25 +222,23 @@ func normalizeJSONSchemaWildcardApplicators(schema *jsonschema.Schema) {
 		})
 	}
 
-	for _, child := range schema.AllOf {
-		normalizeJSONSchemaWildcardApplicators(child)
+	applicators := []*jsonschema.Schema{
+		schema.Not,
+		schema.If,
+		schema.Then,
+		schema.Items,
+		schema.AdditionalProperties,
+		schema.PropertyNames,
 	}
-	for _, child := range schema.AnyOf {
-		normalizeJSONSchemaWildcardApplicators(child)
+	applicators = append(applicators, schema.AllOf...)
+	applicators = append(applicators, schema.AnyOf...)
+	applicators = append(applicators, schema.OneOf...)
+	applicators = append(applicators, schema.PrefixItems...)
+	applicators = slices.AppendSeq(applicators, maps.Values(schema.Properties))
+
+	for _, applicator := range applicators {
+		ensureWildcardApplicatorsApplyToAllChildren(applicator)
 	}
-	for _, child := range schema.OneOf {
-		normalizeJSONSchemaWildcardApplicators(child)
-	}
-	normalizeJSONSchemaWildcardApplicators(schema.Not)
-	for _, child := range schema.Properties {
-		normalizeJSONSchemaWildcardApplicators(child)
-	}
-	normalizeJSONSchemaWildcardApplicators(schema.AdditionalProperties)
-	normalizeJSONSchemaWildcardApplicators(schema.PropertyNames)
-	for _, child := range schema.PrefixItems {
-		normalizeJSONSchemaWildcardApplicators(child)
-	}
-	normalizeJSONSchemaWildcardApplicators(schema.Items)
 }
 
 func getJSONSchemaForSegment(schema *jsonschema.Schema, segment jsonpath.Segment) *jsonschema.Schema {

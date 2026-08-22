@@ -4,7 +4,8 @@ import "fmt"
 
 // whenOptions defines optional configuration options for the When conditions.
 type whenOptions struct {
-	description string
+	description       string
+	jsonSchemaBuilder JSONSchemaBuilder
 }
 
 func (w whenOptions) apply(opts []WhenOption) whenOptions {
@@ -29,6 +30,15 @@ func WhenDescription(description string) WhenOption {
 func WhenDescriptionf(format string, a ...any) WhenOption {
 	return func(options whenOptions) whenOptions {
 		options.description = fmt.Sprintf(format, a...)
+		return options
+	}
+}
+
+// WhenJSONSchema sets the JSON Schema condition equivalent to this [Predicate].
+// The builder receives the schema root for the value passed to the predicate.
+func WhenJSONSchema(builder JSONSchemaBuilder) WhenOption {
+	return func(options whenOptions) whenOptions {
+		options.jsonSchemaBuilder = builder
 		return options
 	}
 }

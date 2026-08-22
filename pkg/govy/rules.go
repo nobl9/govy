@@ -292,6 +292,7 @@ func (r PropertyRules[T, P]) inferPathModeInternal(mode InferPathMode) PropertyR
 
 // plan constructs a validation plan for the property.
 func (r PropertyRules[T, P]) plan(builder planBuilder) {
+	predicateScope := builder.propertyPath
 	vOpts := newValidationOptions(r.validationOptions...)
 	builder.propertyPlan.IsHidden = vOpts.hideValue
 	if r.originalType != nil {
@@ -300,7 +301,7 @@ func (r PropertyRules[T, P]) plan(builder planBuilder) {
 		builder.propertyPlan.TypeInfo = typeInfoFromInternal(typeinfo.Get[T]())
 	}
 	builder = builder.appendPath(r.getPath()).setExamples(r.examples...)
-	builder = appendPredicatesToPlanBuilder(builder, r.predicates)
+	builder = appendPredicatesToPlanBuilder(builder, predicateScope, r.predicates)
 	if r.required {
 		// Dummy rule to register the property as required.
 		NewRule(func(v T) error { return nil }).

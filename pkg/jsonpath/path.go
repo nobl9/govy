@@ -178,6 +178,13 @@ func (p Path) Segments() iter.Seq2[int, Segment] {
 	return slices.All(p.segments)
 }
 
+// Slice returns a copy of the segments in the half-open interval [start, end).
+// The result is rooted only if the selected segments include [SegmentRoot].
+// Slice panics unless `0 <= start <= end <= p.Len()`.
+func (p Path) Slice(start, end int) Path {
+	return Path{segments: slices.Clone(p.segments[start:end])}
+}
+
 // Len returns the number of [Segment] the path contains.
 func (p Path) Len() int {
 	return len(p.segments)

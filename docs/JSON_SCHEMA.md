@@ -64,13 +64,15 @@ can then merge validation constraints into that structural tree.
 
 ### Null values
 
-Schema generation does not model Go nil values. Pointers use their dereferenced
-JSON type, slices use `array`, and maps use `object`. The generated schema
-therefore rejects JSON `null`.
+When `encoding/json` decodes into a zero-valued Go struct, an absent pointer
+property remains `nil` and an explicit JSON `null` sets it to `nil`. Govy
+validates the resulting Go value and cannot recover which JSON representation
+was used.
 
-This is an intentional approximation. `RuleToPointer` and `ForPointer` can skip
-validation for nil pointers, and Govy can accept nil maps or slices, but the
-schema does not preserve that behavior.
+Generated schemas resolve this ambiguity by modeling optionality through
+`required`. A pointer property uses its dereferenced, non-null JSON type. The
+property can be absent unless required, but it cannot be an explicit `null`.
+Slices and maps likewise use `array` and `object` without accepting `null`.
 
 ### Required properties and zero values
 
@@ -89,14 +91,18 @@ presence.
 ### Conditional rules
 
 Govy conditions are arbitrary Go predicates. The plan records their
-descriptions, not executable JSON Schema conditions.
+descriptions, but schema generation cannot infer a condition from executable
+Go code.
 
-Schema generation currently runs builders for conditional rules without the
-condition. This can reject JSON values that Govy accepts.
+`WhenJSONSchema` lets the caller define the equivalent JSON Schema condition.
+Schema generation emits the condition through `if` and applies guarded rule
+builders through `then`. It preserves the validator or parent-property scope
+where Govy evaluates each predicate. Multiple predicates retain Govy's AND
+semantics, including predicates inherited from different nested scopes.
 
-The conservative short-term behavior should omit a conditional rule builder.
-A later API can accept an explicit JSON Schema condition and emit `if` and
-`then`.
+If any predicate guarding a rule has no JSON Schema builder, schema generation
+omits that rule's builders. `WhenDescription` remains independent and is not
+required for schema generation.
 
 ### Transformed properties
 
@@ -228,9 +234,6 @@ Decide how callers learn that a rule was omitted or approximated. The main
 options are generation diagnostics, a strict mode that returns an error, or
 schema annotations.
 
-Also define the condition policy. Until explicit JSON Schema conditions exist,
-conditional builders should not run unconditionally.
-
 ### 2. Complete structural generation
 
 Merge a complete JSON field tree into the validation plan when that metadata is
@@ -246,7 +249,6 @@ first candidates are:
 - `contentEncoding`
 - `contentMediaType`
 - `contentSchema`
-- `if` and `then`, after the condition API exists
 
 ### 4. Implement rule mappings by confidence
 

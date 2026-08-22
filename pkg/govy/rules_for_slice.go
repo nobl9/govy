@@ -166,7 +166,7 @@ func (r PropertyRulesForSlice[S, T, P]) inferPathModeInternal(mode InferPathMode
 
 // plan generates a validation plan for the property rules.
 func (r PropertyRulesForSlice[S, T, P]) plan(builder planBuilder) {
-	builder = appendPredicatesToPlanBuilder(builder, r.predicates)
+	builder = appendPredicatesToPlanBuilder(builder, builder.propertyPath, r.predicates)
 	r.sliceRules.plan(builder.setExamples(r.sliceRules.examples...))
 	builder = builder.appendPath(r.sliceRules.getPath())
 	if len(r.forEachRules.rules) > 0 {
