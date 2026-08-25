@@ -3,6 +3,18 @@
   "title": "StringPatternRules",
   "type": "object",
   "properties": {
+    "base64": {
+      "type": "string",
+      "pattern": "^(?:[+/-9A-Za-z]{4})*(?:[+/-9A-Za-z]{2}==|[+/-9A-Za-z]{3}=)?(?![\\s\\S])"
+    },
+    "base64RawURL": {
+      "type": "string",
+      "pattern": "^[\\-0-9A-Z_a-z]*(?![\\s\\S])"
+    },
+    "base64URL": {
+      "type": "string",
+      "pattern": "^(?:[\\-0-9A-Z_a-z]{4})*(?:[\\-0-9A-Z_a-z]{2}==|[\\-0-9A-Z_a-z]{3}=)?(?![\\s\\S])"
+    },
     "cve": {
       "type": "string",
       "pattern": "^CVE-[0-9]{4}-[0-9]{4,19}(?![\\s\\S])"

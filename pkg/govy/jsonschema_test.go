@@ -337,6 +337,9 @@ func TestJSONSchema_StringPatternRules(t *testing.T) {
 	t.Parallel()
 
 	type document struct {
+		Base64        string
+		Base64RawURL  string
+		Base64URL     string
 		CVE           string
 		DNSLabel      string
 		E164          string
@@ -352,6 +355,15 @@ func TestJSONSchema_StringPatternRules(t *testing.T) {
 		UUIDv4        string
 	}
 	validator := govy.New(
+		govy.For(func(v document) string { return v.Base64 }).
+			WithName("base64").
+			Rules(rules.StringBase64()),
+		govy.For(func(v document) string { return v.Base64RawURL }).
+			WithName("base64RawURL").
+			Rules(rules.StringBase64RawURL()),
+		govy.For(func(v document) string { return v.Base64URL }).
+			WithName("base64URL").
+			Rules(rules.StringBase64URL()),
 		govy.For(func(v document) string { return v.CVE }).
 			WithName("cve").
 			Rules(rules.StringCVE()),

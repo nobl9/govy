@@ -799,7 +799,8 @@ func StringBase64() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringBase64).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{})).
+		WithJSONSchema(jsonSchemaPattern(standardBase64Regexp().String()))
 }
 
 // StringBase64URL ensures the property's value is a URL-safe padded base64 string.
@@ -818,7 +819,8 @@ func StringBase64URL() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringBase64URL).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{})).
+		WithJSONSchema(jsonSchemaPattern(base64URLRegexp().String()))
 }
 
 // StringBase64RawURL ensures the property's value is a URL-safe base64 string without padding.
@@ -837,7 +839,8 @@ func StringBase64RawURL() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringBase64RawURL).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{})).
+		WithJSONSchema(jsonSchemaPattern(base64RawURLRegexp().String()))
 }
 
 // StringHexadecimal ensures the property's value is a hexadecimal string.
