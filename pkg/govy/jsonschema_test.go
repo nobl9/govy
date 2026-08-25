@@ -340,11 +340,13 @@ func TestJSONSchema_StringPatternRules(t *testing.T) {
 		CVE           string
 		DNSLabel      string
 		E164          string
+		EIN           string
 		Hexadecimal   string
 		MD5           string
 		MongoObjectID string
 		Semver        string
 		SHA256        string
+		SSN           string
 		ULID          string
 		UUID          string
 		UUIDv4        string
@@ -359,6 +361,9 @@ func TestJSONSchema_StringPatternRules(t *testing.T) {
 		govy.For(func(v document) string { return v.E164 }).
 			WithName("e164").
 			Rules(rules.StringE164()),
+		govy.For(func(v document) string { return v.EIN }).
+			WithName("ein").
+			Rules(rules.StringEIN()),
 		govy.For(func(v document) string { return v.Hexadecimal }).
 			WithName("hexadecimal").
 			Rules(rules.StringHexadecimal()),
@@ -374,6 +379,9 @@ func TestJSONSchema_StringPatternRules(t *testing.T) {
 		govy.For(func(v document) string { return v.SHA256 }).
 			WithName("sha256").
 			Rules(rules.StringSHA256()),
+		govy.For(func(v document) string { return v.SSN }).
+			WithName("ssn").
+			Rules(rules.StringSSN()),
 		govy.For(func(v document) string { return v.ULID }).
 			WithName("ulid").
 			Rules(rules.StringULID()),

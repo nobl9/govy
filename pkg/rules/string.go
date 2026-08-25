@@ -29,6 +29,8 @@ const (
 	ulidJSONSchemaPattern          = `^[0-7][0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{25}$`
 	mongoObjectIDJSONSchemaPattern = `^[0-9a-fA-F]{24}$`
 	hexadecimalJSONSchemaPattern   = `^(?:0[xX])?[0-9a-fA-F]+$`
+	einJSONSchemaPattern           = `^(?:0[1-6]|1[0-6]|2[0-7]|3[0-9]|4[0-8]|5[0-9]|6[0-8]|7[1-7]|8[0-8]|9[0-589])-[0-9]{7}(?![\s\S])`
+	ssnJSONSchemaPattern           = `^(?!(?:000|666|9[0-9]{2})-)[0-9]{3}-(?!00-)[0-9]{2}-(?!0000)[0-9]{4}(?![\s\S])`
 )
 
 // StringNotEmpty ensures the property's value is not empty.
@@ -328,7 +330,10 @@ func StringEIN() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringEIN).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{})).
+		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+			return &jsonschema.Schema{Pattern: einJSONSchemaPattern}, nil
+		})
 }
 
 func isValidEIN(s string) bool {
@@ -382,7 +387,10 @@ func StringSSN() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringSSN).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{})).
+		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+			return &jsonschema.Schema{Pattern: ssnJSONSchemaPattern}, nil
+		})
 }
 
 func isValidSSN(s string) bool {

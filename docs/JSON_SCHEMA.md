@@ -209,14 +209,15 @@ model would support useful annotations for these rules:
 Content keywords are annotations and do not require a validator to decode or
 validate embedded content.
 
-### Pattern and enum candidates
+### Pattern mappings and candidates
 
-The following rules can use patterns or finite enums without adding a custom
-vocabulary:
+`StringEIN` and `StringSSN` emit exact ECMA-262 patterns.
+
+The following rules can also use patterns or finite enums without adding a
+custom vocabulary:
 
 - `StringMAC`
 - `StringCIDR`, `StringCIDRv4`, and `StringCIDRv6`
-- `StringEIN` and `StringSSN`
 - `StringBIC` and `StringBICISO93622014`
 - the three Base64 rules
 - `StringLatitude` and `StringLongitude`
