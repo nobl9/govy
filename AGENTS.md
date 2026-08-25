@@ -43,7 +43,7 @@ Report the exact failing command and error if verification cannot be completed.
 Do not substitute raw `go test ./...` or `golangci-lint run ./...` for final
 verification when a Makefile target exists.
 The targets include extra packages, build tags, formatting, generated-file,
-spelling, Markdown, and vulnerability checks.
+spelling, and Markdown checks.
 
 ### Code Generation
 

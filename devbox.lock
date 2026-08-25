@@ -183,44 +183,6 @@
         }
       }
     },
-    "govulncheck@1.7.0": {
-      "last_modified": "2026-08-14T06:48:10Z",
-      "resolved": "github:NixOS/nixpkgs/f2b17eb1b90f6a359082035b4538d4c63017aec3#govulncheck",
-      "source": "devbox-search",
-      "version": "1.7.0",
-      "systems": {
-        "aarch64-darwin": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/5i4arpcylxk54qynfw8lpqlr1lis8669-govulncheck-1.7.0",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/5i4arpcylxk54qynfw8lpqlr1lis8669-govulncheck-1.7.0"
-        },
-        "aarch64-linux": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/ci5ky6aq7bqcvssgwv481hcijg2kwcad-govulncheck-1.7.0",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/ci5ky6aq7bqcvssgwv481hcijg2kwcad-govulncheck-1.7.0"
-        },
-        "x86_64-linux": {
-          "outputs": [
-            {
-              "name": "out",
-              "path": "/nix/store/2kk1wcd3qgvwybm1cqwxcxhy74k7d1d6-govulncheck-1.7.0",
-              "default": true
-            }
-          ],
-          "store_path": "/nix/store/2kk1wcd3qgvwybm1cqwxcxhy74k7d1d6-govulncheck-1.7.0"
-        }
-      }
-    },
     "markdownlint-cli@0.49.1": {
       "last_modified": "2026-07-15T11:37:32Z",
       "resolved": "github:NixOS/nixpkgs/35d3407a3816f3b341d8cf1d60abaf2b7b8166ac#markdownlint-cli",
