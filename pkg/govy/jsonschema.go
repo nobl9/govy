@@ -11,22 +11,26 @@ import (
 	"github.com/nobl9/govy/pkg/jsonschema"
 )
 
-// JSONSchemaBuilderContext describes the JSON Schema node selected for a builder.
+// JSONSchemaBuilderContext describes the value selected for a builder.
 type JSONSchemaBuilderContext struct {
-	// Root is the document root.
-	Root *jsonschema.Schema
-	// Path is the absolute JSON path represented by Schema.
+	// Path is the absolute JSON path of the selected value.
 	Path jsonpath.Path
-	// Schema is the node selected by Segment.
-	Schema *jsonschema.Schema
-	// Parent is the node that contains jsonschema.Schema, or nil when Schema is the document root.
-	Parent *jsonschema.Schema
-	// Segment is the final path segment that selected Schema.
-	Segment jsonpath.Segment
+	// Type is the JSON type of the selected value. It is empty when the
+	// validation plan has no type information for the selected path.
+	Type jsonschema.Type
 }
 
-// JSONSchemaBuilder modifies a selected JSON Schema node.
-type JSONSchemaBuilder func(ctx JSONSchemaBuilderContext) error
+// JSONSchemaBuilder returns a JSON Schema contribution for the selected value.
+// A nil schema contributes no constraint.
+type JSONSchemaBuilder func(ctx JSONSchemaBuilderContext) (*jsonschema.Schema, error)
+
+type jsonSchemaBuildContext struct {
+	JSONSchemaBuilderContext
+	root    *jsonschema.Schema
+	schema  *jsonschema.Schema
+	parent  *jsonschema.Schema
+	segment jsonpath.Segment
+}
 
 type jsonSchemaCondition struct {
 	scope   jsonpath.Path
@@ -56,17 +60,18 @@ func JSONSchema[T any](v Validator[T]) (*jsonschema.Document, error) {
 	}
 
 	for _, prop := range plan.Properties {
-		ctx, err := newJSONSchemaBuilderContext(schema, schema, prop.Path)
+		ctx, err := newJSONSchemaBuildContext(schema, schema, prop.Path)
 		if err != nil {
 			return nil, fmt.Errorf("failed to generate JSON Schema for %q property: %w", prop.Path, err)
 		}
-		ctx.Schema.Type, err = jsonSchemaTypeFromTypeInfo(prop.TypeInfo)
+		ctx.Type, err = jsonSchemaTypeFromTypeInfo(prop.TypeInfo)
 		if err != nil {
 			return nil, fmt.Errorf("failed to generate JSON Schema type info for %q property: %w", prop.Path, err)
 		}
+		ctx.schema.Type = ctx.Type
 		for _, rule := range prop.Rules {
 			for _, builder := range rule.jsonSchemaBuilders {
-				if err = builder(ctx); err != nil {
+				if err = builder.Build(ctx); err != nil {
 					return nil, fmt.Errorf(
 						"failed to build JSON Schema for %q property and %q rule: %w",
 						prop.Path,
@@ -86,22 +91,25 @@ func JSONSchema[T any](v Validator[T]) (*jsonschema.Document, error) {
 type jsonSchemaPlanBuilder struct {
 	conditions  []jsonSchemaCondition
 	ruleBuilder JSONSchemaBuilder
+	required    bool
 }
 
 func newJSONSchemaPlanBuilder(
 	conditions []jsonSchemaCondition,
 	ruleBuilder JSONSchemaBuilder,
+	required bool,
 ) *jsonSchemaPlanBuilder {
 	conditions = slices.Clone(conditions)
 	return &jsonSchemaPlanBuilder{
 		conditions:  conditions,
 		ruleBuilder: ruleBuilder,
+		required:    required,
 	}
 }
 
-func (b *jsonSchemaPlanBuilder) Build(ctx JSONSchemaBuilderContext) error {
+func (b *jsonSchemaPlanBuilder) Build(ctx jsonSchemaBuildContext) error {
 	propertyPath := ctx.Path
-	currentSchema := ctx.Root
+	currentSchema := ctx.root
 	rootScopeDepth := jsonpath.NewRoot().Len()
 	currentScopeDepth := rootScopeDepth
 	for _, condition := range b.conditions {
@@ -125,28 +133,25 @@ func (b *jsonSchemaPlanBuilder) Build(ctx JSONSchemaBuilderContext) error {
 		relativeScope := jsonpath.NewRoot().Join(
 			propertyPath.Slice(currentScopeDepth, conditionScopeDepth),
 		)
-		scopeContext, err := newJSONSchemaBuilderContext(ctx.Root, currentSchema, relativeScope)
+		scopeContext, err := newJSONSchemaBuildContext(ctx.root, currentSchema, relativeScope)
 		if err != nil {
 			return fmt.Errorf("select JSON Schema condition scope %q: %w", condition.scope, err)
 		}
-		conditionSchema := new(jsonschema.Schema)
-		conditionContext, err := newJSONSchemaBuilderContext(
-			ctx.Root,
-			conditionSchema,
-			jsonpath.NewRoot(),
-		)
+		conditionSchema, err := condition.builder(JSONSchemaBuilderContext{
+			Path: condition.scope,
+			Type: scopeContext.schema.Type,
+		})
 		if err != nil {
-			return err
-		}
-		conditionContext.Path = condition.scope
-		if err = condition.builder(conditionContext); err != nil {
 			return fmt.Errorf("build JSON Schema condition at %q: %w", condition.scope, err)
+		}
+		if conditionSchema == nil {
+			return nil
 		}
 		conditionalSchema := &jsonschema.Schema{
 			If:   conditionSchema,
 			Then: new(jsonschema.Schema),
 		}
-		scopeContext.Schema.AllOf = append(scopeContext.Schema.AllOf, conditionalSchema)
+		scopeContext.schema.AllOf = append(scopeContext.schema.AllOf, conditionalSchema)
 		currentSchema = conditionalSchema.Then
 		currentScopeDepth = conditionScopeDepth
 	}
@@ -154,35 +159,88 @@ func (b *jsonSchemaPlanBuilder) Build(ctx JSONSchemaBuilderContext) error {
 	relativeProperty := jsonpath.NewRoot().Join(
 		propertyPath.Slice(currentScopeDepth, propertyPath.Len()),
 	)
-	ruleContext, err := newJSONSchemaBuilderContext(ctx.Root, currentSchema, relativeProperty)
+	ruleContext, err := newJSONSchemaBuildContext(ctx.root, currentSchema, relativeProperty)
 	if err != nil {
 		return fmt.Errorf("select JSON Schema property %q: %w", propertyPath, err)
 	}
 	ruleContext.Path = propertyPath
-	return b.ruleBuilder(ruleContext)
+	ruleContext.Type = ctx.Type
+	contribution, err := b.ruleBuilder(ruleContext.JSONSchemaBuilderContext)
+	if err != nil {
+		return err
+	}
+	mergeJSONSchemaContribution(ruleContext.schema, contribution)
+	if b.required {
+		ruleContext.requireProperty()
+	}
+	return nil
 }
 
-func newJSONSchemaBuilderContext(
+func newJSONSchemaBuildContext(
 	root *jsonschema.Schema,
 	schema *jsonschema.Schema,
 	path jsonpath.Path,
-) (JSONSchemaBuilderContext, error) {
-	ctx := JSONSchemaBuilderContext{Root: root, Path: path, Schema: schema}
+) (jsonSchemaBuildContext, error) {
+	ctx := jsonSchemaBuildContext{
+		JSONSchemaBuilderContext: JSONSchemaBuilderContext{Path: path, Type: schema.Type},
+		root:                     root,
+		schema:                   schema,
+	}
 	for _, segment := range path.Segments() {
 		if segment.Kind() == jsonpath.SegmentIndex && segment.Index() > maxJSONSchemaPrefixItemsIndex {
-			return JSONSchemaBuilderContext{}, fmt.Errorf(
+			return jsonSchemaBuildContext{}, fmt.Errorf(
 				"array index %d exceeds maximum supported index %d",
 				segment.Index(),
 				maxJSONSchemaPrefixItemsIndex,
 			)
 		}
 		if segment.Kind() != jsonpath.SegmentRoot {
-			ctx.Parent = ctx.Schema
+			ctx.parent = ctx.schema
 		}
-		ctx.Schema = getJSONSchemaForSegment(ctx.Schema, segment)
-		ctx.Segment = segment
+		ctx.schema = getJSONSchemaForSegment(ctx.schema, segment)
+		ctx.segment = segment
 	}
+	ctx.Type = ctx.schema.Type
 	return ctx, nil
+}
+
+func (c jsonSchemaBuildContext) requireProperty() {
+	if c.parent == nil || c.segment.Kind() != jsonpath.SegmentName {
+		return
+	}
+	name := c.segment.Name()
+	if !slices.Contains(c.parent.Required, name) {
+		c.parent.Required = append(c.parent.Required, name)
+	}
+}
+
+func mergeJSONSchemaContribution(target, contribution *jsonschema.Schema) {
+	if contribution == nil || isEmptyJSONSchemaValue(reflect.ValueOf(*contribution)) {
+		return
+	}
+	targetValue := reflect.ValueOf(target).Elem()
+	contributionValue := reflect.ValueOf(contribution).Elem()
+	for i := range contributionValue.NumField() {
+		if !isEmptyJSONSchemaValue(targetValue.Field(i)) &&
+			!isEmptyJSONSchemaValue(contributionValue.Field(i)) {
+			target.AllOf = append(target.AllOf, contribution)
+			return
+		}
+	}
+	for i := range contributionValue.NumField() {
+		if !isEmptyJSONSchemaValue(contributionValue.Field(i)) {
+			targetValue.Field(i).Set(contributionValue.Field(i))
+		}
+	}
+}
+
+func isEmptyJSONSchemaValue(value reflect.Value) bool {
+	switch value.Kind() {
+	case reflect.Map, reflect.Slice:
+		return value.Len() == 0
+	default:
+		return value.IsZero()
+	}
 }
 
 // ensureWildcardApplicatorsApplyToAllChildren rewrites mixed wildcard and

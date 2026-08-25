@@ -15,7 +15,6 @@
     }
   },
   "required": [
-    "custom",
     "propertyRequired",
     "ruleRequired"
   ]

@@ -4,6 +4,7 @@ import (
 	"github.com/nobl9/govy/internal"
 	"github.com/nobl9/govy/internal/messagetemplates"
 	"github.com/nobl9/govy/pkg/govy"
+	"github.com/nobl9/govy/pkg/jsonschema"
 )
 
 // Required ensures the property's value is not empty (i.e. it's not its type's zero value).
@@ -21,8 +22,7 @@ func Required[T any]() govy.Rule[T] {
 		WithErrorCode(ErrorCodeRequired).
 		WithMessageTemplate(tpl).
 		WithDescription(internal.RequiredDescription).
-		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) error {
-			addRequiredJSONSchemaProperty(ctx)
-			return nil
+		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+			return nil, nil
 		})
 }

@@ -38,13 +38,12 @@ func OneOf[T comparable](values ...T) govy.Rule[T] {
 			ComparisonValue: values,
 		})).
 		WithPlanModifiers(govy.RulePlanModifierValidValues(values...)).
-		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) error {
+		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 			converted, err := jsonSchemaValues(values)
 			if err != nil {
-				return err
+				return nil, err
 			}
-			addJSONSchemaEnum(ctx.Schema, converted)
-			return nil
+			return &jsonschema.Schema{Enum: converted}, nil
 		})
 }
 
@@ -73,13 +72,14 @@ func NotOneOf[T comparable](values ...T) govy.Rule[T] {
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: values,
 		})).
-		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) error {
+		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 			converted, err := jsonSchemaValues(values)
 			if err != nil {
-				return err
+				return nil, err
 			}
-			addJSONSchemaNot(ctx.Schema, &jsonschema.Schema{Enum: converted})
-			return nil
+			return &jsonschema.Schema{
+				Not: &jsonschema.Schema{Enum: converted},
+			}, nil
 		})
 }
 
@@ -110,9 +110,10 @@ func OneOfProperties[T any](getters map[string]func(parent T) any) govy.Rule[T] 
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: sortedKeys,
 		})).
-		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) error {
-			addJSONSchemaAnyOf(ctx.Schema, jsonSchemaRequiredAlternatives(sortedKeys))
-			return nil
+		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+			return &jsonschema.Schema{
+				AnyOf: jsonSchemaRequiredAlternatives(sortedKeys),
+			}, nil
 		})
 }
 
@@ -169,10 +170,11 @@ func MutuallyExclusive[T any](required bool, getters map[string]func(parent T) a
 			return fmt.Sprintf("properties are mutually exclusive: %s",
 				strings.Join(sortedKeys, ", "))
 		}()).
-		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) error {
+		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 			if required {
-				addJSONSchemaOneOf(ctx.Schema, jsonSchemaRequiredAlternatives(sortedKeys))
-				return nil
+				return &jsonschema.Schema{
+					OneOf: jsonSchemaRequiredAlternatives(sortedKeys),
+				}, nil
 			}
 			pairs := make([]*jsonschema.Schema, 0, len(sortedKeys)*(len(sortedKeys)-1)/2)
 			for i := range sortedKeys {
@@ -182,8 +184,9 @@ func MutuallyExclusive[T any](required bool, getters map[string]func(parent T) a
 					})
 				}
 			}
-			addJSONSchemaNot(ctx.Schema, &jsonschema.Schema{AnyOf: pairs})
-			return nil
+			return &jsonschema.Schema{
+				Not: &jsonschema.Schema{AnyOf: pairs},
+			}, nil
 		})
 }
 
@@ -241,11 +244,12 @@ func MutuallyDependent[T any](getters map[string]func(parent T) any) govy.Rule[T
 		WithDescription(func() string {
 			return fmt.Sprintf("properties are mutually dependent: %s", strings.Join(sortedKeys, ", "))
 		}()).
-		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) error {
-			addJSONSchemaAnyOf(ctx.Schema, []*jsonschema.Schema{
-				{Required: sortedKeys},
-				{Not: &jsonschema.Schema{AnyOf: jsonSchemaRequiredAlternatives(sortedKeys)}},
-			})
-			return nil
+		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+			return &jsonschema.Schema{
+				AnyOf: []*jsonschema.Schema{
+					{Required: sortedKeys},
+					{Not: &jsonschema.Schema{AnyOf: jsonSchemaRequiredAlternatives(sortedKeys)}},
+				},
+			}, nil
 		})
 }

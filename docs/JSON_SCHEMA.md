@@ -20,8 +20,10 @@ The current implementation has these properties:
 - A rule without a JSON Schema builder does not contribute a constraint.
 - A builder error stops generation and identifies the property and rule.
 - Unsupported Go kinds stop generation.
-- Builders receive the selected schema node, its parent, and the final path
-  segment.
+- Builders receive the absolute path and JSON type of the selected value.
+  They return an independent schema contribution. Govy merges non-conflicting
+  keywords directly and uses `allOf` when a keyword is already set. A `nil`
+  contribution adds no constraint.
 - Named paths create `properties`, fixed indexes create `prefixItems`, array
   wildcards create `items`, and map wildcards create `propertyNames` or
   `additionalProperties`.

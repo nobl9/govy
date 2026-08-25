@@ -35,7 +35,9 @@ func WhenDescriptionf(format string, a ...any) WhenOption {
 }
 
 // WhenJSONSchema sets the JSON Schema condition equivalent to this [Predicate].
-// The builder receives the schema root for the value passed to the predicate.
+// The builder receives the path and JSON type of the value passed to the
+// predicate and returns the condition schema. A nil schema omits schema
+// generation for rules guarded by this predicate.
 func WhenJSONSchema(builder JSONSchemaBuilder) WhenOption {
 	return func(options whenOptions) whenOptions {
 		options.jsonSchemaBuilder = builder

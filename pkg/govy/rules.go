@@ -2,11 +2,11 @@ package govy
 
 import (
 	"errors"
-	"slices"
 
 	"github.com/nobl9/govy/internal"
 	"github.com/nobl9/govy/internal/typeinfo"
 	"github.com/nobl9/govy/pkg/jsonpath"
+	"github.com/nobl9/govy/pkg/jsonschema"
 )
 
 // For creates a new [PropertyRules] instance for the property
@@ -307,15 +307,8 @@ func (r PropertyRules[T, P]) plan(builder planBuilder) {
 		NewRule(func(v T) error { return nil }).
 			WithDescription(internal.RequiredDescription).
 			WithErrorCode(internal.RequiredErrorCode).
-			WithJSONSchema(func(ctx JSONSchemaBuilderContext) error {
-				if ctx.Parent == nil || ctx.Segment.Kind() != jsonpath.SegmentName {
-					return nil
-				}
-				name := ctx.Segment.Name()
-				if !slices.Contains(ctx.Parent.Required, name) {
-					ctx.Parent.Required = append(ctx.Parent.Required, name)
-				}
-				return nil
+			WithJSONSchema(func(JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+				return nil, nil
 			}).
 			plan(builder)
 	} else if r.omitEmpty || r.isPointer {

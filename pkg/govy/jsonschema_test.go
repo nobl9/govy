@@ -42,40 +42,25 @@ func TestJSONSchema_BuilderContext(t *testing.T) {
 	}
 	rootRule := govy.NewRule(func(document) error { return nil }).
 		WithDescription("customize root schema").
-		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) error {
+		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 			if !ctx.Path.Equal(jsonpath.NewRoot()) {
-				return fmt.Errorf("expected root builder path, got %q", ctx.Path)
+				return nil, fmt.Errorf("expected root builder path, got %q", ctx.Path)
 			}
-			if ctx.Root != ctx.Schema {
-				return fmt.Errorf("expected root builder schema to be the document root")
+			if ctx.Type != jsonschema.TypeObject {
+				return nil, fmt.Errorf("expected object type, got %q", ctx.Type)
 			}
-			if ctx.Parent != nil {
-				return fmt.Errorf("expected root builder parent to be nil")
-			}
-			if ctx.Segment.Kind() != jsonpath.SegmentRoot {
-				return fmt.Errorf("expected root segment, got %v", ctx.Segment.Kind())
-			}
-			ctx.Schema.Title = "Builder Context"
-			return nil
+			return &jsonschema.Schema{Title: "Builder Context"}, nil
 		})
 	customRule := govy.NewRule(func(string) error { return nil }).
 		WithDescription("customize property schema").
-		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) error {
+		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 			if !ctx.Path.Equal(jsonpath.Parse("$.custom")) {
-				return fmt.Errorf("expected custom property path, got %q", ctx.Path)
+				return nil, fmt.Errorf("expected custom property path, got %q", ctx.Path)
 			}
-			if ctx.Root == nil || ctx.Root != ctx.Parent {
-				return fmt.Errorf("expected property builder document root")
+			if ctx.Type != jsonschema.TypeString {
+				return nil, fmt.Errorf("expected string type, got %q", ctx.Type)
 			}
-			if ctx.Parent == nil {
-				return fmt.Errorf("expected property builder parent")
-			}
-			if ctx.Segment.Kind() != jsonpath.SegmentName || ctx.Segment.Name() != "custom" {
-				return fmt.Errorf("expected custom property segment")
-			}
-			ctx.Schema.Pattern = "custom"
-			ctx.Parent.Required = append(ctx.Parent.Required, ctx.Segment.Name())
-			return nil
+			return &jsonschema.Schema{Pattern: "custom"}, nil
 		})
 	validator := govy.New(
 		govy.For(govy.GetSelf[document]()).Rules(rootRule),
@@ -122,21 +107,16 @@ func TestJSONSchema_When(t *testing.T) {
 			Required().
 			When(
 				func(v item) bool { return v.Kind == "required" },
-				govy.WhenJSONSchema(func(ctx govy.JSONSchemaBuilderContext) error {
+				govy.WhenJSONSchema(func(ctx govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 					if !ctx.Path.Equal(jsonpath.Parse("$.items[*]")) {
-						return fmt.Errorf("expected item condition path, got %q", ctx.Path)
+						return nil, fmt.Errorf("expected item condition path, got %q", ctx.Path)
 					}
-					if ctx.Root == nil || ctx.Root == ctx.Schema {
-						return fmt.Errorf("expected condition builder document root")
-					}
-					if ctx.Parent != nil || ctx.Segment.Kind() != jsonpath.SegmentRoot {
-						return fmt.Errorf("expected condition root builder context")
-					}
-					ctx.Schema.Properties = map[string]*jsonschema.Schema{
-						"kind": {Const: &kind},
-					}
-					ctx.Schema.Required = []string{"kind"}
-					return nil
+					return &jsonschema.Schema{
+						Properties: map[string]*jsonschema.Schema{
+							"kind": {Const: &kind},
+						},
+						Required: []string{"kind"},
+					}, nil
 				}),
 			),
 	)
@@ -152,21 +132,19 @@ func TestJSONSchema_When(t *testing.T) {
 		WithName("Conditions").
 		When(
 			func(v document) bool { return v.Enabled },
-			govy.WhenJSONSchema(func(ctx govy.JSONSchemaBuilderContext) error {
+			govy.WhenJSONSchema(func(ctx govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 				if !ctx.Path.Equal(jsonpath.NewRoot()) {
-					return fmt.Errorf("expected root condition path, got %q", ctx.Path)
+					return nil, fmt.Errorf("expected root condition path, got %q", ctx.Path)
 				}
-				if ctx.Root == nil || ctx.Root == ctx.Schema {
-					return fmt.Errorf("expected condition builder document root")
+				if ctx.Type != jsonschema.TypeObject {
+					return nil, fmt.Errorf("expected object type, got %q", ctx.Type)
 				}
-				if ctx.Parent != nil || ctx.Segment.Kind() != jsonpath.SegmentRoot {
-					return fmt.Errorf("expected condition root builder context")
-				}
-				ctx.Schema.Properties = map[string]*jsonschema.Schema{
-					"enabled": {Const: &enabled},
-				}
-				ctx.Schema.Required = []string{"enabled"}
-				return nil
+				return &jsonschema.Schema{
+					Properties: map[string]*jsonschema.Schema{
+						"enabled": {Const: &enabled},
+					},
+					Required: []string{"enabled"},
+				}, nil
 			}),
 		)
 

@@ -47,9 +47,8 @@ func StringNotEmpty() govy.Rule[string] {
 		WithErrorCode(ErrorCodeStringNotEmpty).
 		WithMessageTemplate(tpl).
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{})).
-		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) error {
-			addJSONSchemaPattern(ctx.Schema, nonWhitespaceJSONSchemaPattern)
-			return nil
+		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+			return &jsonschema.Schema{Pattern: nonWhitespaceJSONSchemaPattern}, nil
 		})
 }
 
@@ -94,7 +93,15 @@ func StringDenyRegexp(re *regexp.Regexp) govy.Rule[string] {
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: re.String(),
 		})).
-		WithJSONSchema(jsonSchemaDeniedPattern(re.String()))
+		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+			pattern, err := ecmaregex.Translate(re.String())
+			if err != nil {
+				return nil, err
+			}
+			return &jsonschema.Schema{
+				Not: &jsonschema.Schema{Pattern: pattern},
+			}, nil
+		})
 }
 
 // StringDNSLabel ensures the property's value is a valid DNS label as defined by [RFC 1123].
@@ -209,12 +216,13 @@ func StringIP() govy.Rule[string] {
 		WithErrorCode(ErrorCodeStringIP).
 		WithMessageTemplate(tpl).
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{})).
-		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) error {
-			addJSONSchemaAnyOf(ctx.Schema, []*jsonschema.Schema{
-				{Format: jsonschema.FormatIPv4},
-				{Format: jsonschema.FormatIPv6},
-			})
-			return nil
+		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+			return &jsonschema.Schema{
+				AnyOf: []*jsonschema.Schema{
+					{Format: jsonschema.FormatIPv4},
+					{Format: jsonschema.FormatIPv6},
+				},
+			}, nil
 		})
 }
 
@@ -1003,15 +1011,20 @@ func StringContains(substrings ...string) govy.Rule[string] {
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: substrings,
 		})).
-		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) error {
-			for _, substring := range substrings {
+		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+			schema := new(jsonschema.Schema)
+			for i, substring := range substrings {
 				pattern, err := ecmaregex.Translate(regexp.QuoteMeta(substring))
 				if err != nil {
-					return err
+					return nil, err
 				}
-				addJSONSchemaPattern(ctx.Schema, pattern)
+				if i == 0 {
+					schema.Pattern = pattern
+				} else {
+					schema.AllOf = append(schema.AllOf, &jsonschema.Schema{Pattern: pattern})
+				}
 			}
-			return nil
+			return schema, nil
 		})
 }
 
@@ -1044,15 +1057,21 @@ func StringExcludes(substrings ...string) govy.Rule[string] {
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: substrings,
 		})).
-		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) error {
-			for _, substring := range substrings {
+		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+			schema := new(jsonschema.Schema)
+			for i, substring := range substrings {
 				pattern, err := ecmaregex.Translate(regexp.QuoteMeta(substring))
 				if err != nil {
-					return err
+					return nil, err
 				}
-				addJSONSchemaNot(ctx.Schema, &jsonschema.Schema{Pattern: pattern})
+				denied := &jsonschema.Schema{Pattern: pattern}
+				if i == 0 {
+					schema.Not = denied
+				} else {
+					schema.AllOf = append(schema.AllOf, &jsonschema.Schema{Not: denied})
+				}
 			}
-			return nil
+			return schema, nil
 		})
 }
 
@@ -1090,14 +1109,13 @@ func StringStartsWith(prefixes ...string) govy.Rule[string] {
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: prefixes,
 		})).
-		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) error {
+		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 			pattern := jsonSchemaAffixPattern(prefixes, "^", "")
 			translated, err := ecmaregex.Translate(pattern)
 			if err != nil {
-				return err
+				return nil, err
 			}
-			addJSONSchemaPattern(ctx.Schema, translated)
-			return nil
+			return &jsonschema.Schema{Pattern: translated}, nil
 		})
 }
 
@@ -1135,14 +1153,13 @@ func StringEndsWith(suffixes ...string) govy.Rule[string] {
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: suffixes,
 		})).
-		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) error {
+		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 			pattern := jsonSchemaAffixPattern(suffixes, "", `\z`)
 			translated, err := ecmaregex.Translate(pattern)
 			if err != nil {
-				return err
+				return nil, err
 			}
-			addJSONSchemaPattern(ctx.Schema, translated)
-			return nil
+			return &jsonschema.Schema{Pattern: translated}, nil
 		})
 }
 

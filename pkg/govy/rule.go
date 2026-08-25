@@ -202,7 +202,10 @@ func (r Rule[T]) WithDescription(description string) Rule[T] {
 }
 
 // WithJSONSchema adds JSON Schema generation support to this [Rule].
-// It is utilized by [JSONSchema].
+// The builder returns the constraints that the rule contributes for the
+// selected value. [JSONSchema] combines this contribution with the generated
+// schema and uses allOf when a keyword is already set. A nil schema contributes
+// no constraint.
 func (r Rule[T]) WithJSONSchema(builder JSONSchemaBuilder) Rule[T] {
 	r.jsonSchemaBuilder = builder
 	return r
@@ -237,11 +240,12 @@ func (r Rule[T]) plan(builder planBuilder) {
 		!slices.ContainsFunc(builder.jsonSchemaConditions, func(condition jsonSchemaCondition) bool {
 			return condition.builder == nil
 		}) {
-		rulePlan.jsonSchemaBuilders = []JSONSchemaBuilder{
+		rulePlan.jsonSchemaBuilders = []*jsonSchemaPlanBuilder{
 			newJSONSchemaPlanBuilder(
 				builder.jsonSchemaConditions,
 				r.jsonSchemaBuilder,
-			).Build,
+				r.errorCode == internal.RequiredErrorCode,
+			),
 		}
 	}
 	builder.rulePlan = rulePlan

@@ -33,13 +33,12 @@ func EQ[T comparable](compared T) govy.Rule[T] {
 			ComparisonValue: compared,
 		})).
 		WithPlanModifiers(govy.RulePlanModifierValidValues(compared)).
-		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) error {
+		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 			value, err := jsonSchemaValue(compared)
 			if err != nil {
-				return err
+				return nil, err
 			}
-			addJSONSchemaConst(ctx.Schema, value)
-			return nil
+			return &jsonschema.Schema{Const: ptr(value)}, nil
 		})
 }
 
@@ -61,13 +60,14 @@ func NEQ[T comparable](compared T) govy.Rule[T] {
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: compared,
 		})).
-		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) error {
+		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 			value, err := jsonSchemaValue(compared)
 			if err != nil {
-				return err
+				return nil, err
 			}
-			addJSONSchemaNot(ctx.Schema, &jsonschema.Schema{Const: ptr(value)})
-			return nil
+			return &jsonschema.Schema{
+				Not: &jsonschema.Schema{Const: ptr(value)},
+			}, nil
 		})
 }
 
@@ -89,20 +89,22 @@ func GT[T cmp.Ordered](compared T) govy.Rule[T] {
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: compared,
 		})).
-		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) error {
+		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 			if reflect.TypeOf(compared).Kind() == reflect.String {
-				return nil
+				return nil, nil
 			}
 			value, err := jsonSchemaValue(compared)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			number, ok := value.(json.Number)
 			if !ok {
-				return fmt.Errorf("value marshaled as %T instead of a JSON number", value)
+				return nil, fmt.Errorf(
+					"value marshaled as %T instead of a JSON number",
+					value,
+				)
 			}
-			addJSONSchemaExclusiveMinimum(ctx.Schema, number)
-			return nil
+			return &jsonschema.Schema{ExclusiveMinimum: number}, nil
 		})
 }
 
@@ -124,20 +126,22 @@ func GTE[T cmp.Ordered](compared T) govy.Rule[T] {
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: compared,
 		})).
-		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) error {
+		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 			if reflect.TypeOf(compared).Kind() == reflect.String {
-				return nil
+				return nil, nil
 			}
 			value, err := jsonSchemaValue(compared)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			number, ok := value.(json.Number)
 			if !ok {
-				return fmt.Errorf("value marshaled as %T instead of a JSON number", value)
+				return nil, fmt.Errorf(
+					"value marshaled as %T instead of a JSON number",
+					value,
+				)
 			}
-			addJSONSchemaMinimum(ctx.Schema, number)
-			return nil
+			return &jsonschema.Schema{Minimum: number}, nil
 		})
 }
 
@@ -159,20 +163,22 @@ func LT[T cmp.Ordered](compared T) govy.Rule[T] {
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: compared,
 		})).
-		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) error {
+		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 			if reflect.TypeOf(compared).Kind() == reflect.String {
-				return nil
+				return nil, nil
 			}
 			value, err := jsonSchemaValue(compared)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			number, ok := value.(json.Number)
 			if !ok {
-				return fmt.Errorf("value marshaled as %T instead of a JSON number", value)
+				return nil, fmt.Errorf(
+					"value marshaled as %T instead of a JSON number",
+					value,
+				)
 			}
-			addJSONSchemaExclusiveMaximum(ctx.Schema, number)
-			return nil
+			return &jsonschema.Schema{ExclusiveMaximum: number}, nil
 		})
 }
 
@@ -194,20 +200,22 @@ func LTE[T cmp.Ordered](compared T) govy.Rule[T] {
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: compared,
 		})).
-		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) error {
+		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 			if reflect.TypeOf(compared).Kind() == reflect.String {
-				return nil
+				return nil, nil
 			}
 			value, err := jsonSchemaValue(compared)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			number, ok := value.(json.Number)
 			if !ok {
-				return fmt.Errorf("value marshaled as %T instead of a JSON number", value)
+				return nil, fmt.Errorf(
+					"value marshaled as %T instead of a JSON number",
+					value,
+				)
 			}
-			addJSONSchemaMaximum(ctx.Schema, number)
-			return nil
+			return &jsonschema.Schema{Maximum: number}, nil
 		})
 }
 

@@ -93,7 +93,7 @@ type RulePlan struct {
 	values []string
 	// jsonSchemaBuilders contains the builders used to generate JSON Schema for this rule.
 	// It is only recorded if [Plan] was called with [planRecordJSONSchema] option.
-	jsonSchemaBuilders []JSONSchemaBuilder
+	jsonSchemaBuilders []*jsonSchemaPlanBuilder
 }
 
 func (r RulePlan) isEmpty(recordJSONSchema bool) bool {
