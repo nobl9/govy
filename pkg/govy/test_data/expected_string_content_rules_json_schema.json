@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "StringContentRules",
+  "type": "object",
+  "properties": {
+    "json": {
+      "type": "string",
+      "contentMediaType": "application/json"
+    },
+    "jwt": {
+      "type": "string",
+      "contentMediaType": "application/jwt"
+    }
+  }
+}

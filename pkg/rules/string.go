@@ -726,7 +726,10 @@ func StringJSON() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringJSON).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{})).
+		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+			return &jsonschema.Schema{ContentMediaType: jsonschema.MediaTypeApplicationJSON}, nil
+		})
 }
 
 // StringE164 ensures the property's value is a valid E.164 phone number.
@@ -803,7 +806,16 @@ func StringBase64() govy.Rule[string] {
 		WithErrorCode(ErrorCodeStringBase64).
 		WithMessageTemplate(tpl).
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{})).
-		WithJSONSchema(jsonSchemaPattern(standardBase64Regexp().String()))
+		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+			pattern, err := ecmaregex.Translate(standardBase64Regexp().String())
+			if err != nil {
+				return nil, err
+			}
+			return &jsonschema.Schema{
+				Pattern:         pattern,
+				ContentEncoding: jsonschema.ContentEncodingBase64,
+			}, nil
+		})
 }
 
 // StringBase64URL ensures the property's value is a URL-safe padded base64 string.
@@ -988,7 +1000,10 @@ func StringJWT() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringJWT).
 		WithMessageTemplate(tpl).
-		WithDescription("string must be a JSON Web Token (JWT) using JWS Compact Serialization")
+		WithDescription("string must be a JSON Web Token (JWT) using JWS Compact Serialization").
+		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+			return &jsonschema.Schema{ContentMediaType: jsonschema.MediaTypeApplicationJWT}, nil
+		})
 }
 
 // StringContains ensures the property's value contains all the provided substrings.

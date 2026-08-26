@@ -197,17 +197,20 @@ parser, while the JSON Schema `email` format refers to an RFC 5321 mailbox.
 implementations can also differ in format validation. Draft 2020-12 treats
 `format` as an annotation unless the consumer enables format assertions.
 
-### Content annotation candidates
+### Content annotations
 
-Adding `contentEncoding`, `contentMediaType`, and `contentSchema` to the schema
-model would support useful annotations for these rules:
+Schema generation emits these content annotations:
 
-- `StringBase64`
-- `StringJSON`
-- `StringJWT`
+- `StringBase64`: `contentEncoding: base64`
+- `StringJSON`: `contentMediaType: application/json`
+- `StringJWT`: `contentMediaType: application/jwt`
 
 Content keywords are annotations and do not require a validator to decode or
 validate embedded content.
+The URL-safe Base64 rules have no `contentEncoding` annotation because there is
+no portable `base64url` content encoding value. The schema model does not yet
+include `contentSchema` because no built-in rule supplies a decoded-content
+schema.
 
 ### Pattern mappings and candidates
 

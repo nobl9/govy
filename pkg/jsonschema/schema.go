@@ -32,6 +32,23 @@ const (
 	FormatURI      Format = "uri"
 )
 
+// ContentEncoding is a JSON Schema content encoding name.
+type ContentEncoding string
+
+// JSON Schema content encodings used by Govy.
+const (
+	ContentEncodingBase64 ContentEncoding = "base64"
+)
+
+// MediaType is an Internet media type used by the contentMediaType keyword.
+type MediaType string
+
+// Media types used by Govy.
+const (
+	MediaTypeApplicationJSON MediaType = "application/json"
+	MediaTypeApplicationJWT  MediaType = "application/jwt"
+)
+
 // Schema represents the subset of a JSON Schema Draft 2020-12 schema object
 // required by Govy. Convert a root Schema to [Document] before marshaling it.
 type Schema struct {
@@ -90,6 +107,10 @@ type Schema struct {
 	Pattern string `json:"pattern,omitempty"`
 	// Format identifies the semantic format of a value.
 	Format Format `json:"format,omitempty"`
+	// ContentEncoding describes how string content is encoded.
+	ContentEncoding ContentEncoding `json:"contentEncoding,omitempty"`
+	// ContentMediaType describes the media type of string content.
+	ContentMediaType MediaType `json:"contentMediaType,omitempty"`
 
 	// MultipleOf requires a number to be a multiple of this value.
 	MultipleOf json.Number `json:"multipleOf,omitempty"`

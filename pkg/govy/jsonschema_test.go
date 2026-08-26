@@ -481,6 +481,34 @@ func TestJSONSchema_StringFormatRules(t *testing.T) {
 	assert.Equal(t, expected, actual.String())
 }
 
+func TestJSONSchema_StringContentRules(t *testing.T) {
+	t.Parallel()
+
+	type document struct {
+		JSON string
+		JWT  string
+	}
+	validator := govy.New(
+		govy.For(func(v document) string { return v.JSON }).
+			WithName("json").
+			Rules(rules.StringJSON()),
+		govy.For(func(v document) string { return v.JWT }).
+			WithName("jwt").
+			Rules(rules.StringJWT()),
+	).
+		WithName("StringContentRules")
+
+	schema, err := govy.JSONSchema(validator)
+	assert.Require(t, assert.NoError(t, err))
+
+	expected := readTestData(t, "expected_string_content_rules_json_schema.json")
+	var actual bytes.Buffer
+	encoder := json.NewEncoder(&actual)
+	encoder.SetIndent("", "  ")
+	assert.Require(t, assert.NoError(t, encoder.Encode(schema)))
+	assert.Equal(t, expected, actual.String())
+}
+
 func TestJSONSchema_UnsupportedType(t *testing.T) {
 	t.Parallel()
 

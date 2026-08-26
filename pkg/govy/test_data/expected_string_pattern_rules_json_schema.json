@@ -5,7 +5,8 @@
   "properties": {
     "base64": {
       "type": "string",
-      "pattern": "^(?:[+/-9A-Za-z]{4})*(?:[+/-9A-Za-z]{2}==|[+/-9A-Za-z]{3}=)?(?![\\s\\S])"
+      "pattern": "^(?:[+/-9A-Za-z]{4})*(?:[+/-9A-Za-z]{2}==|[+/-9A-Za-z]{3}=)?(?![\\s\\S])",
+      "contentEncoding": "base64"
     },
     "base64RawURL": {
       "type": "string",
