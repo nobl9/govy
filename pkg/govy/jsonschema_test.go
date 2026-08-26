@@ -347,6 +347,8 @@ func TestJSONSchema_StringPatternRules(t *testing.T) {
 		E164           string
 		EIN            string
 		Hexadecimal    string
+		Latitude       string
+		Longitude      string
 		MD5            string
 		MongoObjectID  string
 		Semver         string
@@ -387,6 +389,12 @@ func TestJSONSchema_StringPatternRules(t *testing.T) {
 		govy.For(func(v document) string { return v.Hexadecimal }).
 			WithName("hexadecimal").
 			Rules(rules.StringHexadecimal()),
+		govy.For(func(v document) string { return v.Latitude }).
+			WithName("latitude").
+			Rules(rules.StringLatitude()),
+		govy.For(func(v document) string { return v.Longitude }).
+			WithName("longitude").
+			Rules(rules.StringLongitude()),
 		govy.For(func(v document) string { return v.MD5 }).
 			WithName("md5").
 			Rules(rules.StringMD5()),

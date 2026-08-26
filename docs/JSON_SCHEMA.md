@@ -220,13 +220,15 @@ and padding shape. They do not validate trailing bits or invalid unpadded
 lengths as strictly as the Go decoders.
 `StringBIC` and `StringBICISO93622014` emit the same approximate structural
 pattern. It does not enforce Govy's country-code allowlist.
+`StringLatitude` and `StringLongitude` emit the same approximate decimal
+coordinate pattern. It does not enforce the latitude range of -90 to 90 or the
+longitude range of -180 to 180.
 
 The following rules can also use patterns or finite enums without adding a
 custom vocabulary:
 
 - `StringMAC`
 - `StringCIDR`, `StringCIDRv4`, and `StringCIDRv6`
-- `StringLatitude` and `StringLongitude`
 - the non-length part of `StringKubernetesQualifiedName`
 - the ISO 3166 and ISO 4217 rules
 

@@ -46,6 +46,14 @@
       "type": "string",
       "pattern": "^(?:0[Xx])?[0-9A-Fa-f]+(?![\\s\\S])"
     },
+    "latitude": {
+      "type": "string",
+      "pattern": "^[+\\-]?(?:[0-9]+(?:\\.[0-9]+)?|\\.[0-9]+)(?![\\s\\S])"
+    },
+    "longitude": {
+      "type": "string",
+      "pattern": "^[+\\-]?(?:[0-9]+(?:\\.[0-9]+)?|\\.[0-9]+)(?![\\s\\S])"
+    },
     "md5": {
       "type": "string",
       "pattern": "^[0-9a-f]{32}(?![\\s\\S])"

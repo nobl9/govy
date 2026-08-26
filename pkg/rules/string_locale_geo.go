@@ -14,6 +14,8 @@ import (
 	"github.com/nobl9/govy/pkg/govy"
 )
 
+const coordinateJSONSchemaPattern = `^[+-]?([0-9]+(\.[0-9]+)?|\.[0-9]+)$`
+
 // These BCP 47 compatibility tables are derived from every applicable record
 // in the IANA Language Subtag Registry dated 2026-06-14. The source SHA-256 is
 // be1fad86a99e3a932d07b80c9b3c271ec2381a5909ce22420144e5077ab0a43a.
@@ -456,7 +458,8 @@ func StringLatitude() govy.Rule[string] {
 		WithErrorCode(ErrorCodeStringLatitude).
 		WithMessageTemplate(tpl).
 		WithExamples("0", "-45.25", "90").
-		WithDescription("string must be a decimal latitude coordinate between -90 and 90 degrees")
+		WithDescription("string must be a decimal latitude coordinate between -90 and 90 degrees").
+		WithJSONSchema(jsonSchemaPattern(coordinateJSONSchemaPattern))
 }
 
 // StringLongitude ensures the property's value is a decimal longitude coordinate between -180 and 180 degrees.
@@ -474,7 +477,8 @@ func StringLongitude() govy.Rule[string] {
 		WithErrorCode(ErrorCodeStringLongitude).
 		WithMessageTemplate(tpl).
 		WithExamples("0", "-122.4194", "180").
-		WithDescription("string must be a decimal longitude coordinate between -180 and 180 degrees")
+		WithDescription("string must be a decimal longitude coordinate between -180 and 180 degrees").
+		WithJSONSchema(jsonSchemaPattern(coordinateJSONSchemaPattern))
 }
 
 func isBCP47LanguageTag(s string) bool {
