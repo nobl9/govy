@@ -40,6 +40,11 @@ const macJSONSchemaPattern = `^(?:` +
 	`[0-9a-fA-F]{4}(?:(?:\.[0-9a-fA-F]{4}){2}|(?:\.[0-9a-fA-F]{4}){3}|(?:\.[0-9a-fA-F]{4}){9})|` +
 	`[0-9a-fA-F]{12}|[0-9a-fA-F]{16}|[0-9a-fA-F]{40})$`
 
+const (
+	cidrIPv4JSONSchemaPatternBody = `(?:[0-9]{1,3}\.){3}[0-9]{1,3}/[0-9]+`
+	cidrIPv6JSONSchemaPatternBody = `[0-9a-fA-F.]*:[0-9a-fA-F:.]+/[0-9]+`
+)
+
 // StringNotEmpty ensures the property's value is not empty.
 // The string is considered empty if it contains only whitespace characters.
 func StringNotEmpty() govy.Rule[string] {
@@ -286,7 +291,10 @@ func StringCIDR() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringCIDR).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{})).
+		WithJSONSchema(jsonSchemaPattern(
+			"^(?:" + cidrIPv4JSONSchemaPatternBody + "|" + cidrIPv6JSONSchemaPatternBody + ")$",
+		))
 }
 
 // StringCIDRv4 ensures property's value is a valid CIDR notation IPv4 address.
@@ -303,7 +311,8 @@ func StringCIDRv4() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringCIDRv4).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{})).
+		WithJSONSchema(jsonSchemaPattern("^" + cidrIPv4JSONSchemaPatternBody + "$"))
 }
 
 // StringCIDRv6 ensures property's value is a valid CIDR notation IPv6 address.
@@ -320,7 +329,8 @@ func StringCIDRv6() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringCIDRv6).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{})).
+		WithJSONSchema(jsonSchemaPattern("^" + cidrIPv6JSONSchemaPatternBody + "$"))
 }
 
 // StringEIN ensures the property's value is a United States Employer Identification Number (EIN)

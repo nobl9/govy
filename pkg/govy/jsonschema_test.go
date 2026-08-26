@@ -342,6 +342,9 @@ func TestJSONSchema_StringPatternRules(t *testing.T) {
 		Base64URL      string
 		BIC            string
 		BICISO93622014 string
+		CIDR           string
+		CIDRv4         string
+		CIDRv6         string
 		CVE            string
 		DNSLabel       string
 		E164           string
@@ -375,6 +378,15 @@ func TestJSONSchema_StringPatternRules(t *testing.T) {
 		govy.For(func(v document) string { return v.BICISO93622014 }).
 			WithName("bicISO93622014").
 			Rules(rules.StringBICISO93622014()),
+		govy.For(func(v document) string { return v.CIDR }).
+			WithName("cidr").
+			Rules(rules.StringCIDR()),
+		govy.For(func(v document) string { return v.CIDRv4 }).
+			WithName("cidrV4").
+			Rules(rules.StringCIDRv4()),
+		govy.For(func(v document) string { return v.CIDRv6 }).
+			WithName("cidrV6").
+			Rules(rules.StringCIDRv6()),
 		govy.For(func(v document) string { return v.CVE }).
 			WithName("cve").
 			Rules(rules.StringCVE()),

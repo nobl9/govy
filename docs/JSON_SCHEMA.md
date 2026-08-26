@@ -226,11 +226,13 @@ longitude range of -180 to 180.
 `StringMAC` emits an exact pattern for the forms accepted by `net.ParseMAC`.
 It covers 6-, 8-, and 20-octet hexadecimal addresses with colons, hyphens,
 dots, or no separators.
+`StringCIDR`, `StringCIDRv4`, and `StringCIDRv6` emit approximate structural
+patterns. They do not validate address components, prefix ranges, or the
+network-alignment check in `StringCIDRv4`.
 
 The following rules can also use patterns or finite enums without adding a
 custom vocabulary:
 
-- `StringCIDR`, `StringCIDRv4`, and `StringCIDRv6`
 - the non-length part of `StringKubernetesQualifiedName`
 - the ISO 3166 and ISO 4217 rules
 
