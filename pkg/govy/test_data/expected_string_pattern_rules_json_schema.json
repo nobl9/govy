@@ -58,6 +58,12 @@
       "type": "string",
       "pattern": "^(?:0[Xx])?[0-9A-Fa-f]+(?![\\s\\S])"
     },
+    "kubernetesQualifiedName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 317,
+      "pattern": "^(?:[0-9a-z](?:[\\-0-9a-z]*[0-9a-z])?(?:\\.[0-9a-z](?:[\\-0-9a-z]*[0-9a-z])?)*/)?(?:[0-9A-Za-z][\\-.0-9A-Z_a-z]*)?[0-9A-Za-z](?![\\s\\S])"
+    },
     "latitude": {
       "type": "string",
       "pattern": "^[+\\-]?(?:[0-9]+(?:\\.[0-9]+)?|\\.[0-9]+)(?![\\s\\S])"

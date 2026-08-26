@@ -229,16 +229,12 @@ dots, or no separators.
 `StringCIDR`, `StringCIDRv4`, and `StringCIDRv6` emit approximate structural
 patterns. They do not validate address components, prefix ranges, or the
 network-alignment check in `StringCIDRv4`.
+`StringKubernetesQualifiedName` emits its global length bounds and a pattern
+for the prefix and name structure. It does not enforce the separate
+253-character prefix and 63-character name limits.
 
-The following rules can also use patterns or finite enums without adding a
-custom vocabulary:
-
-- the non-length part of `StringKubernetesQualifiedName`
-- the ISO 3166 and ISO 4217 rules
-
-The ISO rules can produce exact enums, but the resulting schemas can be large.
-The other rules need tests that define whether their patterns are exact or
-approximate.
+The ISO 3166 and ISO 4217 rules can produce exact enums without a custom
+vocabulary, but the resulting schemas can be large.
 
 ### Algorithmic string rules
 

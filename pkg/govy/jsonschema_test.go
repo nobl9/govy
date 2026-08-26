@@ -350,6 +350,7 @@ func TestJSONSchema_StringPatternRules(t *testing.T) {
 		E164           string
 		EIN            string
 		Hexadecimal    string
+		KubernetesName string
 		Latitude       string
 		Longitude      string
 		MAC            string
@@ -402,6 +403,9 @@ func TestJSONSchema_StringPatternRules(t *testing.T) {
 		govy.For(func(v document) string { return v.Hexadecimal }).
 			WithName("hexadecimal").
 			Rules(rules.StringHexadecimal()),
+		govy.For(func(v document) string { return v.KubernetesName }).
+			WithName("kubernetesQualifiedName").
+			Rules(rules.StringKubernetesQualifiedName()),
 		govy.For(func(v document) string { return v.Latitude }).
 			WithName("latitude").
 			Rules(rules.StringLatitude()),

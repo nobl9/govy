@@ -1578,6 +1578,10 @@ const (
 	maxK8sQualifiedNamePartLength   = 63
 )
 
+const k8sQualifiedNameJSONSchemaPattern = `^(?:` +
+	`[a-z0-9](?:[-a-z0-9]*[a-z0-9])?(?:\.[a-z0-9](?:[-a-z0-9]*[a-z0-9])?)*/)?` +
+	`(?:[A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9]$`
+
 // StringKubernetesQualifiedName ensures the property's value is a valid "qualified name"
 // as defined by [Kubernetes validation].
 // The qualified name is used in various parts of the Kubernetes system, examples:
@@ -1658,7 +1662,8 @@ func stringKubernetesQualifiedNameRule() govy.Rule[string] {
 		WithDetails("Kubernetes Qualified Name must consist of alphanumeric characters, '-', '_' or '.', "+
 			"and must start and end with an alphanumeric character with an optional DNS subdomain prefix and '/'").
 		WithExamples("my.domain/MyName", "MyName", "my.name", "123-abc").
-		WithDescription("string must be a Kubernetes Qualified Name")
+		WithDescription("string must be a Kubernetes Qualified Name").
+		WithJSONSchema(jsonSchemaPattern(k8sQualifiedNameJSONSchemaPattern))
 }
 
 func isValidCreditCard(s string) bool {
