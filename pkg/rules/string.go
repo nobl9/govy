@@ -29,6 +29,7 @@ const (
 	ulidJSONSchemaPattern          = `^[0-7][0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{25}$`
 	mongoObjectIDJSONSchemaPattern = `^[0-9a-fA-F]{24}$`
 	hexadecimalJSONSchemaPattern   = `^(?:0[xX])?[0-9a-fA-F]+$`
+	bicJSONSchemaPattern           = `^[A-Z0-9]{4}[A-Z]{2}[A-Z0-9]{2}(?:[A-Z0-9]{3})?$`
 	einJSONSchemaPattern           = `^(?:0[1-6]|1[0-6]|2[0-7]|3[0-9]|4[0-8]|5[0-9]|6[0-8]|7[1-7]|8[0-8]|9[0-589])-[0-9]{7}(?![\s\S])`
 	ssnJSONSchemaPattern           = `^(?!(?:000|666|9[0-9]{2})-)[0-9]{3}-(?!00-)[0-9]{2}-(?!0000)[0-9]{4}(?![\s\S])`
 )
@@ -683,7 +684,8 @@ func StringBIC() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringBIC).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{})).
+		WithJSONSchema(jsonSchemaPattern(bicJSONSchemaPattern))
 }
 
 // StringBICISO93622014 ensures the property's value matches the ISO 9362:2014
@@ -701,7 +703,8 @@ func StringBICISO93622014() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringBICISO93622014).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{})).
+		WithJSONSchema(jsonSchemaPattern(bicJSONSchemaPattern))
 }
 
 // StringASCII ensures property's value contains only ASCII characters.

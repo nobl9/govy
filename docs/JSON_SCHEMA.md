@@ -215,13 +215,14 @@ validate embedded content.
 The three Base64 rules emit approximate patterns that constrain the alphabet
 and padding shape. They do not validate trailing bits or invalid unpadded
 lengths as strictly as the Go decoders.
+`StringBIC` and `StringBICISO93622014` emit the same approximate structural
+pattern. It does not enforce Govy's country-code allowlist.
 
 The following rules can also use patterns or finite enums without adding a
 custom vocabulary:
 
 - `StringMAC`
 - `StringCIDR`, `StringCIDRv4`, and `StringCIDRv6`
-- `StringBIC` and `StringBICISO93622014`
 - `StringLatitude` and `StringLongitude`
 - the non-length part of `StringKubernetesQualifiedName`
 - the ISO 3166 and ISO 4217 rules
