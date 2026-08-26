@@ -223,11 +223,13 @@ pattern. It does not enforce Govy's country-code allowlist.
 `StringLatitude` and `StringLongitude` emit the same approximate decimal
 coordinate pattern. It does not enforce the latitude range of -90 to 90 or the
 longitude range of -180 to 180.
+`StringMAC` emits an exact pattern for the forms accepted by `net.ParseMAC`.
+It covers 6-, 8-, and 20-octet hexadecimal addresses with colons, hyphens,
+dots, or no separators.
 
 The following rules can also use patterns or finite enums without adding a
 custom vocabulary:
 
-- `StringMAC`
 - `StringCIDR`, `StringCIDRv4`, and `StringCIDRv6`
 - the non-length part of `StringKubernetesQualifiedName`
 - the ISO 3166 and ISO 4217 rules

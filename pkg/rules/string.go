@@ -34,6 +34,12 @@ const (
 	ssnJSONSchemaPattern           = `^(?!(?:000|666|9[0-9]{2})-)[0-9]{3}-(?!00-)[0-9]{2}-(?!0000)[0-9]{4}(?![\s\S])`
 )
 
+const macJSONSchemaPattern = `^(?:` +
+	`[0-9a-fA-F]{2}(?:(?::[0-9a-fA-F]{2}){5}|(?::[0-9a-fA-F]{2}){7}|(?::[0-9a-fA-F]{2}){19})|` +
+	`[0-9a-fA-F]{2}(?:(?:-[0-9a-fA-F]{2}){5}|(?:-[0-9a-fA-F]{2}){7}|(?:-[0-9a-fA-F]{2}){19})|` +
+	`[0-9a-fA-F]{4}(?:(?:\.[0-9a-fA-F]{4}){2}|(?:\.[0-9a-fA-F]{4}){3}|(?:\.[0-9a-fA-F]{4}){9})|` +
+	`[0-9a-fA-F]{12}|[0-9a-fA-F]{16}|[0-9a-fA-F]{40})$`
+
 // StringNotEmpty ensures the property's value is not empty.
 // The string is considered empty if it contains only whitespace characters.
 func StringNotEmpty() govy.Rule[string] {
@@ -201,7 +207,8 @@ func StringMAC() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringMAC).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{})).
+		WithJSONSchema(jsonSchemaPattern(macJSONSchemaPattern))
 }
 
 // StringIP ensures property's value is a valid IP address.
