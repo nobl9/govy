@@ -460,6 +460,7 @@ func TestJSONSchema_StringEnumRules(t *testing.T) {
 		ISO3166Alpha2  string
 		ISO3166Alpha3  string
 		ISO3166Numeric string
+		ISO4217        string
 	}
 	validator := govy.New(
 		govy.For(func(v document) string { return v.ISO3166Alpha2 }).
@@ -471,6 +472,9 @@ func TestJSONSchema_StringEnumRules(t *testing.T) {
 		govy.For(func(v document) string { return v.ISO3166Numeric }).
 			WithName("iso3166Numeric").
 			Rules(rules.StringISO3166Numeric()),
+		govy.For(func(v document) string { return v.ISO4217 }).
+			WithName("iso4217").
+			Rules(rules.StringISO4217()),
 	).
 		WithName("StringEnumRules")
 

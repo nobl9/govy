@@ -234,9 +234,9 @@ for the prefix and name structure. It does not enforce the separate
 253-character prefix and 63-character name limits.
 
 `StringISO3166Alpha2`, `StringISO3166Alpha3`, and `StringISO3166Numeric` emit
-exact enums of accepted country codes. The other ISO 3166 and ISO 4217 rules
-can also produce exact enums without a custom vocabulary, but the resulting
-schemas can be large.
+exact enums of accepted country codes. `StringISO4217` emits an exact enum of
+accepted currency codes. `StringISO31662` can also produce an exact enum
+without a custom vocabulary, but the resulting schema would be large.
 
 ### Algorithmic string rules
 

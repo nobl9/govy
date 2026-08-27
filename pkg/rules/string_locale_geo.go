@@ -460,7 +460,8 @@ func StringISO4217() govy.Rule[string] {
 		WithErrorCode(ErrorCodeStringISO4217).
 		WithMessageTemplate(tpl).
 		WithExamples("USD", "EUR", "JPY").
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{})).
+		WithJSONSchema(jsonSchemaStringEnum(iso4217Codes))
 }
 
 // StringLatitude ensures the property's value is a decimal latitude coordinate between -90 and 90 degrees.
