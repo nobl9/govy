@@ -453,6 +453,30 @@ func TestJSONSchema_StringPatternRules(t *testing.T) {
 	assert.Equal(t, expected, actual.String())
 }
 
+func TestJSONSchema_StringEnumRules(t *testing.T) {
+	t.Parallel()
+
+	type document struct {
+		ISO3166Alpha2 string
+	}
+	validator := govy.New(
+		govy.For(func(v document) string { return v.ISO3166Alpha2 }).
+			WithName("iso3166Alpha2").
+			Rules(rules.StringISO3166Alpha2()),
+	).
+		WithName("StringEnumRules")
+
+	schema, err := govy.JSONSchema(validator)
+	assert.Require(t, assert.NoError(t, err))
+
+	expected := readTestData(t, "expected_string_enum_rules_json_schema.json")
+	var actual bytes.Buffer
+	encoder := json.NewEncoder(&actual)
+	encoder.SetIndent("", "  ")
+	assert.Require(t, assert.NoError(t, encoder.Encode(schema)))
+	assert.Equal(t, expected, actual.String())
+}
+
 func TestJSONSchema_StringFormatRules(t *testing.T) {
 	t.Parallel()
 

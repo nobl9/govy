@@ -10,8 +10,10 @@ import (
 	textcurrency "golang.org/x/text/currency"
 	"golang.org/x/text/language"
 
+	"github.com/nobl9/govy/internal/collections"
 	"github.com/nobl9/govy/internal/messagetemplates"
 	"github.com/nobl9/govy/pkg/govy"
+	"github.com/nobl9/govy/pkg/jsonschema"
 )
 
 const coordinateJSONSchemaPattern = `^[+-]?([0-9]+(\.[0-9]+)?|\.[0-9]+)$`
@@ -368,7 +370,15 @@ func StringISO3166Alpha2() govy.Rule[string] {
 		WithErrorCode(ErrorCodeStringISO3166Alpha2).
 		WithMessageTemplate(tpl).
 		WithExamples("US", "PL", "JP").
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{})).
+		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+			codes := collections.SortedKeys(iso3166Alpha2Codes())
+			values := make([]any, len(codes))
+			for i, code := range codes {
+				values[i] = code
+			}
+			return &jsonschema.Schema{Enum: values}, nil
+		})
 }
 
 // StringISO3166Alpha3 ensures the property's value is a valid ISO 3166-1 alpha-3 country code.
