@@ -10,10 +10,8 @@ import (
 	textcurrency "golang.org/x/text/currency"
 	"golang.org/x/text/language"
 
-	"github.com/nobl9/govy/internal/collections"
 	"github.com/nobl9/govy/internal/messagetemplates"
 	"github.com/nobl9/govy/pkg/govy"
-	"github.com/nobl9/govy/pkg/jsonschema"
 )
 
 const coordinateJSONSchemaPattern = `^[+-]?([0-9]+(\.[0-9]+)?|\.[0-9]+)$`
@@ -315,6 +313,14 @@ var iso3166Alpha2Codes = lazyLookupMap(func() map[string]struct{} {
 	}
 })
 
+var iso3166Alpha3Codes = lazyLookupMap(func() map[string]struct{} {
+	lookup := make(map[string]struct{}, len(iso3166Alpha2Codes()))
+	for code := range iso3166Alpha2Codes() {
+		lookup[language.MustParseRegion(code).ISO3()] = struct{}{}
+	}
+	return lookup
+})
+
 // iso4217Codes returns current tender and non-tender ISO 4217 code elements.
 // ParseISO also recognizes withdrawn codes.
 var iso4217Codes = lazyLookupMap(buildISO4217Codes)
@@ -371,14 +377,7 @@ func StringISO3166Alpha2() govy.Rule[string] {
 		WithMessageTemplate(tpl).
 		WithExamples("US", "PL", "JP").
 		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{})).
-		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
-			codes := collections.SortedKeys(iso3166Alpha2Codes())
-			values := make([]any, len(codes))
-			for i, code := range codes {
-				values[i] = code
-			}
-			return &jsonschema.Schema{Enum: values}, nil
-		})
+		WithJSONSchema(jsonSchemaStringEnum(iso3166Alpha2Codes))
 }
 
 // StringISO3166Alpha3 ensures the property's value is a valid ISO 3166-1 alpha-3 country code.
@@ -396,7 +395,8 @@ func StringISO3166Alpha3() govy.Rule[string] {
 		WithErrorCode(ErrorCodeStringISO3166Alpha3).
 		WithMessageTemplate(tpl).
 		WithExamples("USA", "POL", "JPN").
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{})).
+		WithJSONSchema(jsonSchemaStringEnum(iso3166Alpha3Codes))
 }
 
 // StringISO3166Numeric ensures the property's value is a valid ISO 3166-1 numeric-3 country code.

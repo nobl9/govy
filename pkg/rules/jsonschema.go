@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/nobl9/govy/internal/collections"
 	"github.com/nobl9/govy/internal/ecmaregex"
 	"github.com/nobl9/govy/pkg/govy"
 	"github.com/nobl9/govy/pkg/jsonschema"
@@ -54,6 +55,17 @@ func jsonSchemaRequiredAlternatives(names []string) []*jsonschema.Schema {
 		alternatives = append(alternatives, &jsonschema.Schema{Required: []string{name}})
 	}
 	return alternatives
+}
+
+func jsonSchemaStringEnum(lookup func() map[string]struct{}) govy.JSONSchemaBuilder {
+	return func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+		codes := collections.SortedKeys(lookup())
+		values := make([]any, len(codes))
+		for i, code := range codes {
+			values[i] = code
+		}
+		return &jsonschema.Schema{Enum: values}, nil
+	}
 }
 
 func jsonSchemaFormat(format jsonschema.Format) govy.JSONSchemaBuilder {
