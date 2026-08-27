@@ -235,8 +235,8 @@ for the prefix and name structure. It does not enforce the separate
 
 `StringISO3166Alpha2`, `StringISO3166Alpha3`, and `StringISO3166Numeric` emit
 exact enums of accepted country codes. `StringISO4217` emits an exact enum of
-accepted currency codes. `StringISO31662` can also produce an exact enum
-without a custom vocabulary, but the resulting schema would be large.
+accepted currency codes. `StringISO31662` emits an exact 5,213-value enum of
+accepted subdivision codes, which makes schemas that use it large.
 
 ### Algorithmic string rules
 

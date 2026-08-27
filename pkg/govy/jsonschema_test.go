@@ -489,6 +489,30 @@ func TestJSONSchema_StringEnumRules(t *testing.T) {
 	assert.Equal(t, expected, actual.String())
 }
 
+func TestJSONSchema_StringISO31662(t *testing.T) {
+	t.Parallel()
+
+	type document struct {
+		Subdivision string
+	}
+	validator := govy.New(
+		govy.For(func(v document) string { return v.Subdivision }).
+			WithName("subdivision").
+			Rules(rules.StringISO31662()),
+	).
+		WithName("StringISO31662")
+
+	schema, err := govy.JSONSchema(validator)
+	assert.Require(t, assert.NoError(t, err))
+
+	expected := readTestData(t, "expected_string_iso3166_2_json_schema.json")
+	var actual bytes.Buffer
+	encoder := json.NewEncoder(&actual)
+	encoder.SetIndent("", "  ")
+	assert.Require(t, assert.NoError(t, encoder.Encode(schema)))
+	assert.Equal(t, expected, actual.String())
+}
+
 func TestJSONSchema_StringFormatRules(t *testing.T) {
 	t.Parallel()
 

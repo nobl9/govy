@@ -442,7 +442,8 @@ func StringISO31662() govy.Rule[string] {
 		WithErrorCode(ErrorCodeStringISO31662).
 		WithMessageTemplate(tpl).
 		WithExamples("US-CA", "GB-ENG", "PL-14").
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{})).
+		WithJSONSchema(jsonSchemaStringEnum(iso31662Codes))
 }
 
 // StringISO4217 ensures the property's value is a valid ISO 4217 three-letter alphabetic currency code.
