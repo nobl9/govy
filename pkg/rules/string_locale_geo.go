@@ -3,6 +3,7 @@ package rules
 // cspell:ignore guoyu lojban mingo xiang
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"sync"
@@ -321,6 +322,14 @@ var iso3166Alpha3Codes = lazyLookupMap(func() map[string]struct{} {
 	return lookup
 })
 
+var iso3166NumericCodes = lazyLookupMap(func() map[string]struct{} {
+	lookup := make(map[string]struct{}, len(iso3166Alpha2Codes()))
+	for code := range iso3166Alpha2Codes() {
+		lookup[fmt.Sprintf("%03d", language.MustParseRegion(code).M49())] = struct{}{}
+	}
+	return lookup
+})
+
 // iso4217Codes returns current tender and non-tender ISO 4217 code elements.
 // ParseISO also recognizes withdrawn codes.
 var iso4217Codes = lazyLookupMap(buildISO4217Codes)
@@ -414,7 +423,8 @@ func StringISO3166Numeric() govy.Rule[string] {
 		WithErrorCode(ErrorCodeStringISO3166Numeric).
 		WithMessageTemplate(tpl).
 		WithExamples("840", "616", "392").
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{})).
+		WithJSONSchema(jsonSchemaStringEnum(iso3166NumericCodes))
 }
 
 // StringISO31662 ensures the property's value is a valid ISO 3166-2 country subdivision code.
