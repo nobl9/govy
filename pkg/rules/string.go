@@ -665,7 +665,8 @@ func StringCreditCard() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringCreditCard).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{})).
+		WithJSONSchema(jsonSchemaPattern(`^[0-9]{13,19}$`))
 }
 
 // StringLuhnChecksum ensures the property's value is a digit-only string that
@@ -683,7 +684,8 @@ func StringLuhnChecksum() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringLuhnChecksum).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{})).
+		WithJSONSchema(jsonSchemaPattern(`^[0-9]+$`))
 }
 
 // StringBIC ensures the property's value matches the current Business
@@ -1905,9 +1907,11 @@ func isLowerHexadecimal(s string, length int) bool {
 }
 
 const (
-	isbn10Length = 10
-	isbn13Length = 13
-	issnLength   = 9
+	isbn10Length                = 10
+	isbn13Length                = 13
+	issnLength                  = 9
+	isbn10JSONSchemaPatternBody = `[0-9](?:[ -]?[0-9]){8}[ -]?[0-9Xx]`
+	isbn13JSONSchemaPatternBody = `9[ -]?7[ -]?[89](?:[ -]?[0-9]){10}`
 )
 
 // StringISBN ensures the property's value is a valid International Standard
@@ -1927,7 +1931,10 @@ func StringISBN() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringISBN).
 		WithMessageTemplate(tpl).
-		WithDescription("string must be a valid International Standard Book Number (ISBN) in ISBN-10 or ISBN-13 format")
+		WithDescription("string must be a valid International Standard Book Number (ISBN) in ISBN-10 or ISBN-13 format").
+		WithJSONSchema(jsonSchemaPattern(
+			`^(?:` + isbn10JSONSchemaPatternBody + `|` + isbn13JSONSchemaPatternBody + `)$`,
+		))
 }
 
 // StringISBN10 ensures the property's value is a valid International Standard
@@ -1947,7 +1954,8 @@ func StringISBN10() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringISBN10).
 		WithMessageTemplate(tpl).
-		WithDescription("string must be a valid International Standard Book Number (ISBN) in ISBN-10 format")
+		WithDescription("string must be a valid International Standard Book Number (ISBN) in ISBN-10 format").
+		WithJSONSchema(jsonSchemaPattern(`^` + isbn10JSONSchemaPatternBody + `$`))
 }
 
 // StringISBN13 ensures the property's value is a valid International Standard
@@ -1967,7 +1975,8 @@ func StringISBN13() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringISBN13).
 		WithMessageTemplate(tpl).
-		WithDescription("string must be a valid International Standard Book Number (ISBN) in ISBN-13 format")
+		WithDescription("string must be a valid International Standard Book Number (ISBN) in ISBN-13 format").
+		WithJSONSchema(jsonSchemaPattern(`^` + isbn13JSONSchemaPatternBody + `$`))
 }
 
 // StringISSN ensures the property's value is a valid International Standard
@@ -1986,7 +1995,8 @@ func StringISSN() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringISSN).
 		WithMessageTemplate(tpl).
-		WithDescription("string must be a valid hyphenated International Standard Serial Number (ISSN)")
+		WithDescription("string must be a valid hyphenated International Standard Serial Number (ISSN)").
+		WithJSONSchema(jsonSchemaPattern(`^[0-9]{4}-[0-9]{3}[0-9Xx]$`))
 }
 
 func isISBN(s string) bool {

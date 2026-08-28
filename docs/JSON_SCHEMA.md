@@ -240,10 +240,18 @@ accepted subdivision codes, which makes schemas that use it large.
 
 ### Algorithmic string rules
 
-The following rules validate checksums, decoded content, or complex parsers:
+The checksum rules emit approximate patterns for their outer syntax:
 
 - `StringCreditCard` and `StringLuhnChecksum`
 - `StringISBN`, `StringISBN10`, `StringISBN13`, and `StringISSN`
+
+These patterns do not validate checksums. The payment-card pattern also does
+not reject values in which every digit is the same. The ISBN patterns enforce
+the supported digit counts, separators, check-character positions, and ISBN-13
+prefixes. The ISSN pattern enforces its fixed hyphenated form.
+
+The following rules validate decoded content or use complex parsers:
+
 - both BCP 47 rules
 - `StringGitRef`
 - `StringCrontab`

@@ -453,6 +453,50 @@ func TestJSONSchema_StringPatternRules(t *testing.T) {
 	assert.Equal(t, expected, actual.String())
 }
 
+func TestJSONSchema_StringChecksumRules(t *testing.T) {
+	t.Parallel()
+
+	type document struct {
+		CreditCard   string
+		ISBN         string
+		ISBN10       string
+		ISBN13       string
+		ISSN         string
+		LuhnChecksum string
+	}
+	validator := govy.New(
+		govy.For(func(v document) string { return v.CreditCard }).
+			WithName("creditCard").
+			Rules(rules.StringCreditCard()),
+		govy.For(func(v document) string { return v.ISBN }).
+			WithName("isbn").
+			Rules(rules.StringISBN()),
+		govy.For(func(v document) string { return v.ISBN10 }).
+			WithName("isbn10").
+			Rules(rules.StringISBN10()),
+		govy.For(func(v document) string { return v.ISBN13 }).
+			WithName("isbn13").
+			Rules(rules.StringISBN13()),
+		govy.For(func(v document) string { return v.ISSN }).
+			WithName("issn").
+			Rules(rules.StringISSN()),
+		govy.For(func(v document) string { return v.LuhnChecksum }).
+			WithName("luhnChecksum").
+			Rules(rules.StringLuhnChecksum()),
+	).
+		WithName("StringChecksumRules")
+
+	schema, err := govy.JSONSchema(validator)
+	assert.Require(t, assert.NoError(t, err))
+
+	expected := readTestData(t, "expected_string_checksum_rules_json_schema.json")
+	var actual bytes.Buffer
+	encoder := json.NewEncoder(&actual)
+	encoder.SetIndent("", "  ")
+	assert.Require(t, assert.NoError(t, encoder.Encode(schema)))
+	assert.Equal(t, expected, actual.String())
+}
+
 func TestJSONSchema_StringEnumRules(t *testing.T) {
 	t.Parallel()
 
