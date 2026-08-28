@@ -4,7 +4,7 @@
     "gotools@0.44.0",
     "markdownlint-cli@0.49.1",
     "cspell@9.7.0",
-    "golangci-lint@2.12.2",
+    "golangci-lint@2.13.1",
     "go@1.26.5"
   ],
   "shell": {
