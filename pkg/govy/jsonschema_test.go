@@ -337,33 +337,60 @@ func TestJSONSchema_StringPatternRules(t *testing.T) {
 	t.Parallel()
 
 	type document struct {
-		Base64         string
-		Base64RawURL   string
-		Base64URL      string
-		BIC            string
-		BICISO93622014 string
-		CIDR           string
-		CIDRv4         string
-		CIDRv6         string
-		CVE            string
-		DNSLabel       string
-		E164           string
-		EIN            string
-		Hexadecimal    string
-		KubernetesName string
-		Latitude       string
-		Longitude      string
-		MAC            string
-		MD5            string
-		MongoObjectID  string
-		Semver         string
-		SHA256         string
-		SSN            string
-		ULID           string
-		UUID           string
-		UUIDv4         string
+		Alpha               string
+		AlphaUnicode        string
+		Alphanumeric        string
+		AlphanumericUnicode string
+		ASCII               string
+		Base64              string
+		Base64RawURL        string
+		Base64URL           string
+		BIC                 string
+		BICISO93622014      string
+		CIDR                string
+		CIDRv4              string
+		CIDRv6              string
+		CVE                 string
+		DNSLabel            string
+		DNSSubdomain        string
+		E164                string
+		EIN                 string
+		FQDN                string
+		Hexadecimal         string
+		KubernetesName      string
+		Latitude            string
+		Longitude           string
+		MAC                 string
+		MD5                 string
+		MongoObjectID       string
+		Semver              string
+		SHA256              string
+		SHA384              string
+		SHA512              string
+		SSN                 string
+		ULID                string
+		UUID                string
+		UUIDRFC4122         string
+		UUIDv3              string
+		UUIDv4              string
+		UUIDv5              string
 	}
 	validator := govy.New(
+		govy.For(func(v document) string { return v.Alpha }).
+			WithName("alpha").
+			Rules(rules.StringAlpha()),
+		govy.For(func(v document) string { return v.AlphaUnicode }).
+			WithName("alphaUnicode").
+			Rules(rules.StringAlphaUnicode()),
+		govy.For(func(v document) string { return v.Alphanumeric }).
+			WithName("alphanumeric").
+			Rules(rules.StringAlphanumeric()),
+		govy.For(func(v document) string { return v.AlphanumericUnicode }).
+			WithName("alphanumericUnicode").
+			Rules(rules.StringAlphanumericUnicode()),
+		govy.For(func(v document) string { return v.ASCII }).
+			WithName("ascii").
+			Rules(rules.StringASCII()),
 		govy.For(func(v document) string { return v.Base64 }).
 			WithName("base64").
 			Rules(rules.StringBase64()),
@@ -394,12 +421,18 @@ func TestJSONSchema_StringPatternRules(t *testing.T) {
 		govy.For(func(v document) string { return v.DNSLabel }).
 			WithName("dnsLabel").
 			Rules(rules.StringDNSLabel()),
+		govy.For(func(v document) string { return v.DNSSubdomain }).
+			WithName("dnsSubdomain").
+			Rules(rules.StringDNSSubdomain()),
 		govy.For(func(v document) string { return v.E164 }).
 			WithName("e164").
 			Rules(rules.StringE164()),
 		govy.For(func(v document) string { return v.EIN }).
 			WithName("ein").
 			Rules(rules.StringEIN()),
+		govy.For(func(v document) string { return v.FQDN }).
+			WithName("fqdn").
+			Rules(rules.StringFQDN()),
 		govy.For(func(v document) string { return v.Hexadecimal }).
 			WithName("hexadecimal").
 			Rules(rules.StringHexadecimal()),
@@ -427,6 +460,12 @@ func TestJSONSchema_StringPatternRules(t *testing.T) {
 		govy.For(func(v document) string { return v.SHA256 }).
 			WithName("sha256").
 			Rules(rules.StringSHA256()),
+		govy.For(func(v document) string { return v.SHA384 }).
+			WithName("sha384").
+			Rules(rules.StringSHA384()),
+		govy.For(func(v document) string { return v.SHA512 }).
+			WithName("sha512").
+			Rules(rules.StringSHA512()),
 		govy.For(func(v document) string { return v.SSN }).
 			WithName("ssn").
 			Rules(rules.StringSSN()),
@@ -436,9 +475,18 @@ func TestJSONSchema_StringPatternRules(t *testing.T) {
 		govy.For(func(v document) string { return v.UUID }).
 			WithName("uuid").
 			Rules(rules.StringUUID()),
+		govy.For(func(v document) string { return v.UUIDRFC4122 }).
+			WithName("uuidRFC4122").
+			Rules(rules.StringUUIDRFC4122()),
+		govy.For(func(v document) string { return v.UUIDv3 }).
+			WithName("uuidV3").
+			Rules(rules.StringUUIDv3()),
 		govy.For(func(v document) string { return v.UUIDv4 }).
 			WithName("uuidV4").
 			Rules(rules.StringUUIDv4()),
+		govy.For(func(v document) string { return v.UUIDv5 }).
+			WithName("uuidV5").
+			Rules(rules.StringUUIDv5()),
 	).
 		WithName("StringPatternRules")
 

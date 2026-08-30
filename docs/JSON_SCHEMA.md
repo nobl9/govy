@@ -215,6 +215,15 @@ schema.
 ### Pattern mappings and candidates
 
 `StringEIN` and `StringSSN` emit exact ECMA-262 patterns.
+`StringASCII`, `StringAlpha`, and `StringAlphanumeric` emit exact translated
+patterns. `StringAlphaUnicode` and `StringAlphanumericUnicode` also emit exact
+patterns, but they expand their Unicode classes according to the Go toolchain's
+Unicode tables at generation time.
+`StringDNSLabel` and `StringDNSSubdomain` emit their length bounds and exact
+translated patterns. `StringFQDN` emits its exact translated pattern.
+The UUID family emits exact structural patterns for each supported version and
+variant. `StringMD5`, `StringSHA256`, `StringSHA384`, and `StringSHA512` emit
+exact lowercase hexadecimal length patterns.
 The three Base64 rules emit approximate patterns that constrain the alphabet
 and padding shape. They do not validate trailing bits or invalid unpadded
 lengths as strictly as the Go decoders.

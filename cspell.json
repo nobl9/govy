@@ -27,6 +27,7 @@
     "CODEOWNERS",
     "docs/assets/**",
     "**/testdata/**",
+    "pkg/govy/test_data/expected_string_pattern_rules_json_schema.json",
     "pkg/rules/string_test.go",
     "context7.json"
   ],
