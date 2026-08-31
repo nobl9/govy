@@ -49,7 +49,8 @@ func Example_basicUsage() {
 			Required().
 			Rules(
 				rules.StringNotEmpty(),
-				rules.OneOf("Jake", "George")),
+				rules.OneOf("Jake", "George"),
+			),
 		govy.ForPointer(func(t Teacher) *string { return t.MiddleName }).
 			WithName("middleName").
 			Rules(rules.StringTitle()),
@@ -57,7 +58,8 @@ func Example_basicUsage() {
 			WithName("students").
 			Rules(
 				rules.SliceMaxLength[[]Student](2),
-				rules.SliceUnique(func(v Student) string { return v.Index })).
+				rules.SliceUnique(func(v Student) string { return v.Index }),
+			).
 			IncludeForEach(studentValidator),
 		govy.For(func(t Teacher) University { return t.University }).
 			WithName("university").
