@@ -29,7 +29,8 @@ type inferPathTemplateData struct {
 var inferredPathsTemplateStr string
 
 var inferredPathsTemplate = template.Must(
-	template.New("inferred_paths").Parse(inferredPathsTemplateStr))
+	template.New("inferred_paths").Parse(inferredPathsTemplateStr),
+)
 
 func newInferPathCommand() *inferPathCommand {
 	fset := flag.NewFlagSet(inferPathCmdName, flag.ExitOnError)

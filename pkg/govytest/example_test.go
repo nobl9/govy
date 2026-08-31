@@ -29,7 +29,8 @@ func ExampleAssertNoError() {
 			Required().
 			Rules(
 				rules.StringNotEmpty(),
-				rules.OneOf("Jake", "George")),
+				rules.OneOf("Jake", "George"),
+			),
 		govy.For(func(t Teacher) University { return t.University }).
 			WithName("university").
 			Include(govy.New(
@@ -100,7 +101,8 @@ func ExampleAssertError() {
 			Required().
 			Rules(
 				rules.StringNotEmpty(),
-				rules.OneOf("Jake", "George")),
+				rules.OneOf("Jake", "George"),
+			),
 		govy.For(func(t Teacher) University { return t.University }).
 			WithName("university").
 			Include(govy.New(
@@ -191,7 +193,8 @@ func ExampleAssertError_validatorErrors() {
 			Required().
 			Rules(
 				rules.StringNotEmpty(),
-				rules.OneOf("Eve", "George")),
+				rules.OneOf("Eve", "George"),
+			),
 		govy.For(func(t Teacher) University { return t.University }).
 			WithName("university").
 			Include(govy.New(
@@ -275,7 +278,8 @@ func ExampleAssertErrorContains() {
 			Required().
 			Rules(
 				rules.StringNotEmpty(),
-				rules.OneOf("Jake", "George")),
+				rules.OneOf("Jake", "George"),
+			),
 		govy.For(func(t Teacher) University { return t.University }).
 			WithName("university").
 			Include(govy.New(
