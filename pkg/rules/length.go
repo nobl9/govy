@@ -30,10 +30,10 @@ func StringLength(minLen, maxLen int) govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringLength).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			MinLength: minLen,
 			MaxLength: maxLen,
-		}))
+		})
 }
 
 // StringMinLength ensures the string's length is greater than or equal to the limit.
@@ -52,9 +52,9 @@ func StringMinLength(limit int) govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringMinLength).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: limit,
-		}))
+		})
 }
 
 // StringMaxLength ensures the string's length is less than or equal to the limit.
@@ -73,9 +73,9 @@ func StringMaxLength(limit int) govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringMaxLength).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: limit,
-		}))
+		})
 }
 
 // SliceLength ensures the slice's length is between min and max (closed interval).
@@ -100,10 +100,10 @@ func SliceLength[S ~[]E, E any](minLen, maxLen int) govy.Rule[S] {
 	}).
 		WithErrorCode(ErrorCodeSliceLength).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			MinLength: minLen,
 			MaxLength: maxLen,
-		}))
+		})
 }
 
 // SliceMinLength ensures the slice's length is greater than or equal to the limit.
@@ -122,9 +122,9 @@ func SliceMinLength[S ~[]E, E any](limit int) govy.Rule[S] {
 	}).
 		WithErrorCode(ErrorCodeSliceMinLength).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: limit,
-		}))
+		})
 }
 
 // SliceMaxLength ensures the slice's length is less than or equal to the limit.
@@ -143,9 +143,9 @@ func SliceMaxLength[S ~[]E, E any](limit int) govy.Rule[S] {
 	}).
 		WithErrorCode(ErrorCodeSliceMaxLength).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: limit,
-		}))
+		})
 }
 
 // MapLength ensures the map's length is between min and max (closed interval).
@@ -170,10 +170,10 @@ func MapLength[M ~map[K]V, K comparable, V any](minLen, maxLen int) govy.Rule[M]
 	}).
 		WithErrorCode(ErrorCodeMapLength).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			MinLength: minLen,
 			MaxLength: maxLen,
-		}))
+		})
 }
 
 // MapMinLength ensures the map's length is greater than or equal to the limit.
@@ -192,9 +192,9 @@ func MapMinLength[M ~map[K]V, K comparable, V any](limit int) govy.Rule[M] {
 	}).
 		WithErrorCode(ErrorCodeMapMinLength).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: limit,
-		}))
+		})
 }
 
 // MapMaxLength ensures the map's length is less than or equal to the limit.
@@ -213,9 +213,9 @@ func MapMaxLength[M ~map[K]V, K comparable, V any](limit int) govy.Rule[M] {
 	}).
 		WithErrorCode(ErrorCodeMapMaxLength).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: limit,
-		}))
+		})
 }
 
 func enforceMinMaxLength(minLen, maxLen int) {

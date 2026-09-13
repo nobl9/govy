@@ -29,9 +29,9 @@ func OneOf[T comparable](values ...T) govy.Rule[T] {
 	}).
 		WithErrorCode(ErrorCodeOneOf).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: values,
-		})).
+		}).
 		WithPlanModifiers(govy.RulePlanModifierValidValues(values...))
 }
 
@@ -53,15 +53,16 @@ func NotOneOf[T comparable](values ...T) govy.Rule[T] {
 	}).
 		WithErrorCode(ErrorCodeNotOneOf).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: values,
-		}))
+		})
 }
 
 // OneOfProperties checks if at least one of the properties is set.
 // Property is considered set if its value is not empty (non-zero).
 func OneOfProperties[T any](getters map[string]func(parent T) any) govy.Rule[T] {
 	tpl := messagetemplates.Get(messagetemplates.OneOfPropertiesTemplate)
+	descriptionKeys := collections.SortedKeys(getters)
 
 	return govy.NewRule(func(parent T) error {
 		for _, getter := range getters {
@@ -77,9 +78,9 @@ func OneOfProperties[T any](getters map[string]func(parent T) any) govy.Rule[T] 
 	}).
 		WithErrorCode(ErrorCodeOneOfProperties).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
-			ComparisonValue: collections.SortedKeys(getters),
-		}))
+		WithDescriptionTemplate(tpl, govy.TemplateVars{
+			ComparisonValue: descriptionKeys,
+		})
 }
 
 type mutuallyExclusiveTemplateVars struct {

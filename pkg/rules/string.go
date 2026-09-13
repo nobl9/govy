@@ -36,7 +36,7 @@ func StringNotEmpty() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringNotEmpty).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescriptionTemplate(tpl, govy.TemplateVars{})
 }
 
 // StringMatchRegexp ensures the property's value matches the regular expression.
@@ -55,9 +55,9 @@ func StringMatchRegexp(re *regexp.Regexp) govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringMatchRegexp).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: re.String(),
-		}))
+		})
 }
 
 // StringDenyRegexp ensures the property's value does not match the regular expression.
@@ -76,9 +76,9 @@ func StringDenyRegexp(re *regexp.Regexp) govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringDenyRegexp).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: re.String(),
-		}))
+		})
 }
 
 // StringDNSLabel ensures the property's value is a valid DNS label as defined by [RFC 1123].
@@ -173,7 +173,7 @@ func StringMAC() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringMAC).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescriptionTemplate(tpl, govy.TemplateVars{})
 }
 
 // StringIP ensures property's value is a valid IP address.
@@ -190,7 +190,7 @@ func StringIP() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringIP).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescriptionTemplate(tpl, govy.TemplateVars{})
 }
 
 // StringIPv4 ensures property's value is a valid IPv4 address.
@@ -207,7 +207,7 @@ func StringIPv4() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringIPv4).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescriptionTemplate(tpl, govy.TemplateVars{})
 }
 
 // StringIPv6 ensures property's value is a valid IPv6 address.
@@ -224,7 +224,7 @@ func StringIPv6() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringIPv6).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescriptionTemplate(tpl, govy.TemplateVars{})
 }
 
 // StringCIDR ensures property's value is a valid CIDR notation IP address.
@@ -241,7 +241,7 @@ func StringCIDR() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringCIDR).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescriptionTemplate(tpl, govy.TemplateVars{})
 }
 
 // StringCIDRv4 ensures property's value is a valid CIDR notation IPv4 address.
@@ -258,7 +258,7 @@ func StringCIDRv4() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringCIDRv4).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescriptionTemplate(tpl, govy.TemplateVars{})
 }
 
 // StringCIDRv6 ensures property's value is a valid CIDR notation IPv6 address.
@@ -275,7 +275,7 @@ func StringCIDRv6() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringCIDRv6).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescriptionTemplate(tpl, govy.TemplateVars{})
 }
 
 // StringEIN ensures the property's value is a United States Employer Identification Number (EIN)
@@ -293,7 +293,7 @@ func StringEIN() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringEIN).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescriptionTemplate(tpl, govy.TemplateVars{})
 }
 
 func isValidEIN(s string) bool {
@@ -347,7 +347,7 @@ func StringSSN() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringSSN).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescriptionTemplate(tpl, govy.TemplateVars{})
 }
 
 func isValidSSN(s string) bool {
@@ -389,9 +389,9 @@ func StringUUID() govy.Rule[string] {
 		return nil
 	}).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: uuidPattern,
-		})).
+		}).
 		WithDetails("expected RFC-4122 compliant UUID string").
 		WithExamples(
 			"00000000-0000-0000-0000-000000000000",
@@ -417,7 +417,7 @@ func StringUUIDRFC4122() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringUUIDRFC4122).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescriptionTemplate(tpl, govy.TemplateVars{})
 }
 
 // StringUUIDv3 ensures the property's value is a version 3 Universally Unique Identifier (UUID)
@@ -435,7 +435,7 @@ func StringUUIDv3() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringUUIDv3).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescriptionTemplate(tpl, govy.TemplateVars{})
 }
 
 // StringUUIDv4 ensures the property's value is a version 4 Universally Unique Identifier (UUID)
@@ -453,7 +453,7 @@ func StringUUIDv4() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringUUIDv4).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescriptionTemplate(tpl, govy.TemplateVars{})
 }
 
 // StringUUIDv5 ensures the property's value is a version 5 Universally Unique Identifier (UUID)
@@ -471,7 +471,7 @@ func StringUUIDv5() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringUUIDv5).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescriptionTemplate(tpl, govy.TemplateVars{})
 }
 
 func isValidUUID(s string) bool {
@@ -529,7 +529,7 @@ func StringULID() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringULID).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescriptionTemplate(tpl, govy.TemplateVars{})
 }
 
 func isValidULID(s string) bool {
@@ -571,7 +571,7 @@ func StringMongoDBObjectID() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringMongoDBObjectID).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescriptionTemplate(tpl, govy.TemplateVars{})
 }
 
 // StringCreditCard ensures the property's value is a plausible digit-only
@@ -590,7 +590,7 @@ func StringCreditCard() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringCreditCard).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescriptionTemplate(tpl, govy.TemplateVars{})
 }
 
 // StringLuhnChecksum ensures the property's value is a digit-only string that
@@ -608,7 +608,7 @@ func StringLuhnChecksum() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringLuhnChecksum).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescriptionTemplate(tpl, govy.TemplateVars{})
 }
 
 // StringBIC ensures the property's value matches the current Business
@@ -626,7 +626,7 @@ func StringBIC() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringBIC).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescriptionTemplate(tpl, govy.TemplateVars{})
 }
 
 // StringBICISO93622014 ensures the property's value matches the ISO 9362:2014
@@ -644,7 +644,7 @@ func StringBICISO93622014() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringBICISO93622014).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescriptionTemplate(tpl, govy.TemplateVars{})
 }
 
 // StringASCII ensures property's value contains only ASCII characters.
@@ -666,7 +666,7 @@ func StringJSON() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringJSON).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescriptionTemplate(tpl, govy.TemplateVars{})
 }
 
 // StringE164 ensures the property's value is a valid E.164 phone number.
@@ -683,7 +683,7 @@ func StringE164() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringE164).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescriptionTemplate(tpl, govy.TemplateVars{})
 }
 
 // StringSemver ensures the property's value is a valid Semantic Versioning 2.0.0 version.
@@ -739,7 +739,7 @@ func StringBase64() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringBase64).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescriptionTemplate(tpl, govy.TemplateVars{})
 }
 
 // StringBase64URL ensures the property's value is a URL-safe padded base64 string.
@@ -758,7 +758,7 @@ func StringBase64URL() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringBase64URL).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescriptionTemplate(tpl, govy.TemplateVars{})
 }
 
 // StringBase64RawURL ensures the property's value is a URL-safe base64 string without padding.
@@ -777,7 +777,7 @@ func StringBase64RawURL() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringBase64RawURL).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescriptionTemplate(tpl, govy.TemplateVars{})
 }
 
 // StringHexadecimal ensures the property's value is a hexadecimal string.
@@ -795,7 +795,7 @@ func StringHexadecimal() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringHexadecimal).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescriptionTemplate(tpl, govy.TemplateVars{})
 }
 
 func decodesBase64(encoding *base64.Encoding, s string) bool {
@@ -836,7 +836,7 @@ func StringMD5() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringMD5).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescriptionTemplate(tpl, govy.TemplateVars{})
 }
 
 // StringSHA256 ensures the property's value is a lowercase hexadecimal SHA-256 digest.
@@ -853,7 +853,7 @@ func StringSHA256() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringSHA256).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescriptionTemplate(tpl, govy.TemplateVars{})
 }
 
 // StringSHA384 ensures the property's value is a lowercase hexadecimal SHA-384 digest.
@@ -870,7 +870,7 @@ func StringSHA384() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringSHA384).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescriptionTemplate(tpl, govy.TemplateVars{})
 }
 
 // StringSHA512 ensures the property's value is a lowercase hexadecimal SHA-512 digest.
@@ -887,7 +887,7 @@ func StringSHA512() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringSHA512).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescriptionTemplate(tpl, govy.TemplateVars{})
 }
 
 // StringJWT ensures the property's value is a JSON Web Token (JWT) represented
@@ -938,9 +938,9 @@ func StringContains(substrings ...string) govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringContains).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: substrings,
-		}))
+		})
 }
 
 // StringExcludes ensures the property's value does not contain any of the provided substrings.
@@ -960,9 +960,9 @@ func StringExcludes(substrings ...string) govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringExcludes).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: substrings,
-		}))
+		})
 }
 
 // StringStartsWith ensures the property's value starts with one of the provided prefixes.
@@ -987,9 +987,9 @@ func StringStartsWith(prefixes ...string) govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringStartsWith).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: prefixes,
-		}))
+		})
 }
 
 // StringEndsWith ensures the property's value ends with one of the provided suffixes.
@@ -1014,9 +1014,9 @@ func StringEndsWith(suffixes ...string) govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringEndsWith).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: suffixes,
-		}))
+		})
 }
 
 // StringTitle ensures each word in a string starts with a capital letter.
@@ -1044,7 +1044,7 @@ func StringTitle() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringTitle).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescriptionTemplate(tpl, govy.TemplateVars{})
 }
 
 type stringGitRefTemplateVars struct {
@@ -1156,7 +1156,7 @@ func StringFileSystemPath() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringFileSystemPath).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescriptionTemplate(tpl, govy.TemplateVars{})
 }
 
 // StringFilePath ensures the property's value is a file system path pointing to an existing file.
@@ -1178,7 +1178,7 @@ func StringFilePath() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringFilePath).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescriptionTemplate(tpl, govy.TemplateVars{})
 }
 
 // StringDirPath ensures the property's value is a file system path pointing to an existing directory.
@@ -1200,7 +1200,7 @@ func StringDirPath() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringDirPath).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescriptionTemplate(tpl, govy.TemplateVars{})
 }
 
 // StringMatchFileSystemPath ensures the property's value matches the provided file path pattern.
@@ -1229,9 +1229,9 @@ func StringMatchFileSystemPath(pattern string) govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringMatchFileSystemPath).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: pattern,
-		}))
+		})
 }
 
 // StringRegexp ensures the property's value is a valid regular expression.
@@ -1255,7 +1255,7 @@ func StringRegexp() govy.Rule[string] {
 		WithErrorCode(ErrorCodeStringRegexp).
 		WithMessageTemplate(tpl).
 		WithDetails(`the regular expression syntax must comply to RE2, it is described at https://golang.org/s/re2syntax, except for \C; for an overview of the syntax, see https://pkg.go.dev/regexp/syntax`).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescriptionTemplate(tpl, govy.TemplateVars{})
 }
 
 // StringCrontab ensures the property's value is a valid crontab schedule expression.
@@ -1277,7 +1277,7 @@ func StringCrontab() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringCrontab).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescriptionTemplate(tpl, govy.TemplateVars{})
 }
 
 // StringDateTime ensures the property's value is a valid date and time in the specified layout.
@@ -1300,9 +1300,9 @@ func StringDateTime(layout string) govy.Rule[string] {
 		WithErrorCode(ErrorCodeStringDateTime).
 		WithMessageTemplate(tpl).
 		WithDetails("date and time format follows Go's time layout, see https://pkg.go.dev/time#Layout for more details").
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: layout,
-		}))
+		})
 }
 
 // StringTimeZone ensures the property's value is a valid time zone name which
@@ -1336,7 +1336,7 @@ func StringTimeZone() govy.Rule[string] {
 		WithErrorCode(ErrorCodeStringTimeZone).
 		WithMessageTemplate(tpl).
 		WithExamples("UTC", "America/New_York", "Europe/Warsaw").
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescriptionTemplate(tpl, govy.TemplateVars{})
 }
 
 // StringAlpha ensures the property's value consists only of ASCII letters.

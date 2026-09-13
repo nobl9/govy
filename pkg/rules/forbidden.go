@@ -20,5 +20,5 @@ func Forbidden[T any]() govy.Rule[T] {
 	}).
 		WithErrorCode(ErrorCodeForbidden).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescriptionTemplate(tpl, govy.TemplateVars{})
 }
