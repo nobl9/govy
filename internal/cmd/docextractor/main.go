@@ -7,6 +7,7 @@ import (
 	"go/format"
 	"go/parser"
 	"go/printer"
+	"go/scanner"
 	"go/token"
 	"io/fs"
 	"log/slog"
@@ -275,12 +276,12 @@ func replaceGeneratedDocs(root, markdown, markdownPath string) string {
 			logFatal(nil, "Malformed docs directive %q in %q", directive, markdownPath)
 		}
 		docsRef := strings.TrimSuffix(strings.TrimPrefix(directive, docsPrefix), docsSuffix)
-		docs := renderGeneratedDocs(root, docsRef)
-
 		endStart := strings.Index(markdown[lineEnd:], docsEnd)
-		if endStart < 0 {
+		nextStart := strings.Index(markdown[lineEnd:], docsPrefix)
+		if endStart < 0 || (nextStart >= 0 && nextStart < endStart) {
 			logFatal(nil, "Docs directive %q in %q is missing %q", docsRef, markdownPath, docsEnd)
 		}
+		docs := renderGeneratedDocs(root, docsRef)
 		endStart += lineEnd
 		endLineEnd := strings.IndexByte(markdown[endStart:], '\n')
 		if endLineEnd < 0 {
@@ -792,10 +793,31 @@ func removeGoFileComments(path string, source []byte) string {
 }
 
 func removeBlankLinesBeforeClosingBraces(source string) string {
-	for strings.Contains(source, "\n\n}") {
-		source = strings.ReplaceAll(source, "\n\n}", "\n}")
+	// Scan tokens to preserve whitespace inside string literals.
+	file := token.NewFileSet().AddFile("", -1, len(source))
+	var scan scanner.Scanner
+	scan.Init(file, []byte(source), nil, 0)
+
+	var builder strings.Builder
+	cursor := 0
+	for {
+		position, kind, _ := scan.Scan()
+		if kind == token.EOF {
+			break
+		}
+		if kind != token.RBRACE {
+			continue
+		}
+		offset := file.Offset(position)
+		prefix := source[cursor:offset]
+		builder.WriteString(strings.TrimRight(prefix, "\n"))
+		if strings.HasSuffix(prefix, "\n") {
+			builder.WriteByte('\n')
+		}
+		cursor = offset
 	}
-	return source
+	builder.WriteString(source[cursor:])
+	return builder.String()
 }
 
 func logFatal(err error, msg string, a ...any) {

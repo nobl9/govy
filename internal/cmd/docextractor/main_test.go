@@ -585,6 +585,106 @@ func TestDocextractorCLI(t *testing.T) {
 		assert.Equal(t, expected, readTestFile(t, messageTemplatesPath))
 	})
 
+	t.Run("embed preserves content between docs regions", func(t *testing.T) {
+		tests := []struct {
+			name      string
+			firstEnd  string
+			wantError bool
+		}{
+			{
+				name:      "missing first end marker",
+				wantError: true,
+			},
+			{
+				name:     "separate complete regions",
+				firstEnd: "[//]: # (end-docs)\n\n",
+			},
+		}
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				root := t.TempDir()
+				writeTestFile(t, filepath.Join(root, "go.mod"), "module example.com/fixture\n\ngo 1.25.5\n", 0o644)
+				source := "package fixture\n\n// Alpha returns alpha.\nfunc Alpha() string { return \"alpha\" }\n"
+				writeTestFile(t, filepath.Join(root, "docs.go"), source, 0o644)
+				markdownPath := filepath.Join(root, "document.md")
+				input := "# Document\n\n" +
+					markdownWithEmbeddedBody("docs.go#Alpha", "stale example") +
+					"\n[//]: # (docs: docs.go)\n\nstale docs\n\n" +
+					test.firstEnd +
+					"Keep this paragraph.\n\n## Second region\n\n" +
+					"[//]: # (docs: docs.go)\n\nstale docs\n\n[//]: # (end-docs)\n"
+				writeTestFile(t, markdownPath, input, 0o644)
+
+				stdout, stderr, err := runCommand(t, binaryPath, root, "embed", markdownPath)
+				assert.Equal(t, "Running docextractor...\n", stdout)
+				if test.wantError {
+					assert.Equal(t, input, readTestFile(t, markdownPath))
+					assertExitCode(t, err)
+					entry := decodeFatalLog(t, stderr)
+					assert.Equal(
+						t,
+						"Docs directive \"docs.go\" in \""+markdownPath+"\" is missing \"[//]: # (end-docs)\"",
+						entry.Message,
+					)
+					return
+				}
+				assert.Require(t, assert.NoError(t, err))
+				assert.Equal(t, "", stderr)
+				expected := strings.ReplaceAll(input, "stale docs", "- `Alpha` - Alpha returns alpha.")
+				expected = strings.ReplaceAll(
+					expected,
+					"stale example",
+					"// Alpha returns alpha.\nfunc Alpha() string { return \"alpha\" }",
+				)
+				assert.Equal(t, expected, readTestFile(t, markdownPath))
+
+				stdout, stderr, err = runCommand(t, binaryPath, root, "embed", markdownPath)
+				assert.Require(t, assert.NoError(t, err))
+				assert.Equal(t, "Running docextractor...\n", stdout)
+				assert.Equal(t, "", stderr)
+				assert.Equal(t, expected, readTestFile(t, markdownPath))
+			})
+		}
+	})
+
+	t.Run("embed removes comments without changing raw strings", func(t *testing.T) {
+		literal := "`first\n\n}\n\n\n}\n// literal comment\n/* literal comment */`"
+		function := "func ExampleLiteral() string {\n\treturn " + literal + "\n}"
+		source := "package fixture\n\n// ExampleLiteral returns a raw string.\n" +
+			"func ExampleLiteral() string {\n\treturn " + literal + "\n\t// This comment is outside the literal.\n}\n"
+		tests := []struct {
+			name     string
+			ref      string
+			expected string
+		}{
+			{
+				name:     "whole file",
+				ref:      "source.go?comments=false",
+				expected: "package fixture\n\n" + function,
+			},
+			{
+				name:     "named function",
+				ref:      "source.go#ExampleLiteral?comments=false",
+				expected: function,
+			},
+		}
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				root := t.TempDir()
+				writeTestFile(t, filepath.Join(root, "go.mod"), "module example.com/fixture\n\ngo 1.25.5\n", 0o644)
+				writeTestFile(t, filepath.Join(root, "source.go"), source, 0o644)
+				markdownPath := filepath.Join(root, "document.md")
+				writeTestFile(t, markdownPath, markdownWithEmbeddedBody(test.ref, "stale"), 0o644)
+
+				stdout, stderr, err := runCommand(t, binaryPath, root, "embed", markdownPath)
+				assert.Require(t, assert.NoError(t, err))
+				assert.Equal(t, "Running docextractor...\n", stdout)
+				assert.Equal(t, "", stderr)
+				assert.Equal(t, markdownWithEmbeddedBody(test.ref, test.expected), readTestFile(t, markdownPath))
+			})
+		}
+	})
+
 	t.Run("embed requires paths", func(t *testing.T) {
 		stdout, stderr, err := runCommand(t, binaryPath, repoRoot, "embed")
 		assertExitCode(t, err)
