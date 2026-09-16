@@ -1,6 +1,7 @@
 # Predefined Rules
 
-Examples that show selected predefined rules in use. For the generated catalog of all existing predefined rule constructors, see [Existing Rules](existing-rules.md).
+Examples that show selected predefined rules in use.
+For available constructors, read [Existing Rules](existing-rules.md).
 
 ## Topics
 
@@ -16,13 +17,11 @@ Examples that show selected predefined rules in use. For the generated catalog o
 
 ## Collection constraints
 
-Use collection rules when the validation decision depends on all values, not a single property value.
+Use collection rules for constraints that depend on the collection's values.
 
-<a id="require-values-in-a-slice-to-be-unique"></a>
+### Require values in a slice to be unique
 
-**Require values in a slice to be unique.**
-
-[//]: # (embed: ExampleSliceUnique)
+[//]: # (embed: ExampleSliceUnique?comments=false)
 
 ```go
 func ExampleSliceUnique() {
@@ -35,32 +34,25 @@ func ExampleSliceUnique() {
 	teacher := Teacher{
 		Students: []Student{
 			{Index: "foo"},
-			{Index: "bar"}, // 2nd element
+			{Index: "bar"},
 			{Index: "baz"},
-			{Index: "bar"}, // 4th element
+			{Index: "bar"},
 		},
 	}
 	err := v.Validate(teacher)
 	if err != nil {
 		fmt.Println(err)
 	}
-
-	// Output:
-	// Validation has failed for the following properties:
-	//   - 'students' with value '[{"index":"foo"},{"index":"bar"},{"index":"baz"},{"index":"bar"}]':
-	//     - elements are not unique, 2nd and 4th elements collide based on constraints: each student must have unique index
 }
 ```
 
 ## Property relationship rules
 
-Use property relationship rules when one field controls whether another field may or must be set.
+Use relationship rules when one field controls another field's presence.
 
-<a id="require-exactly-one-value-across-mutually-exclusive-properties"></a>
+### Require exactly one value across mutually exclusive properties
 
-**Require exactly one value across mutually exclusive properties.**
-
-[//]: # (embed: ExampleMutuallyExclusive)
+[//]: # (embed: ExampleMutuallyExclusive?comments=false)
 
 ```go
 func ExampleMutuallyExclusive() {
@@ -84,21 +76,12 @@ func ExampleMutuallyExclusive() {
 	if err != nil {
 		fmt.Println(err)
 	}
-
-	// Output:
-	// Validation has failed for the following properties:
-	//   - 'students[1]' with value '{"index":"bar","name":"John"}':
-	//     - [index, name] properties are mutually exclusive, provide only one of them
-	//   - 'students[3]':
-	//     - one of [index, name] properties must be set, none was provided
 }
 ```
 
-<a id="require-one-populated-value-from-a-set-of-properties"></a>
+### Require one populated value from a set of properties
 
-**Require one populated value from a set of properties.**
-
-[//]: # (embed: ExampleOneOfProperties)
+[//]: # (embed: ExampleOneOfProperties?comments=false)
 
 ```go
 func ExampleOneOfProperties() {
@@ -122,23 +105,17 @@ func ExampleOneOfProperties() {
 	if err != nil {
 		fmt.Println(err)
 	}
-
-	// Output:
-	// Validation has failed for the following properties:
-	//   - 'students[1]':
-	//     - one of [index, name] properties must be set, none was provided
 }
 ```
 
 ## Property comparison rules
 
-Use comparison rules when multiple properties must preserve ordering or equality. Pick comparable variants for types such as time.Time that define their own ordering contract.
+Use comparison rules when multiple properties must preserve ordering or equality.
+Use comparable variants for types with custom ordering, such as `time.Time`.
 
-<a id="compare-two-properties-for-equality"></a>
+### Compare two properties for equality
 
-**Compare two properties for equality.**
-
-[//]: # (embed: ExampleEqualProperties)
+[//]: # (embed: ExampleEqualProperties?comments=false)
 
 ```go
 func ExampleEqualProperties() {
@@ -155,28 +132,19 @@ func ExampleEqualProperties() {
 			{Index: "foo", IndexCopy: "foo"},
 			{Index: "bar"},
 			{IndexCopy: "foo"},
-			{}, // Both index and indexCopy are empty strings, and thus equal.
+			{},
 		},
 	}
 	err := v.Validate(teacher)
 	if err != nil {
 		fmt.Println(err)
 	}
-
-	// Output:
-	// Validation has failed for the following properties:
-	//   - 'students[1]' with value '{"index":"bar"}':
-	//     - all of [index, indexCopy] properties must be equal, but 'index' is not equal to 'indexCopy'
-	//   - 'students[2]' with value '{"indexCopy":"foo"}':
-	//     - all of [index, indexCopy] properties must be equal, but 'index' is not equal to 'indexCopy'
 }
 ```
 
-<a id="compare-ordered-primitive-properties"></a>
+### Compare ordered primitive properties
 
-**Compare ordered primitive properties.**
-
-[//]: # (embed: ExampleLTProperties)
+[//]: # (embed: ExampleLTProperties?comments=false)
 
 ```go
 func ExampleLTProperties() {
@@ -195,32 +163,21 @@ func ExampleLTProperties() {
 			),
 	)
 
-	// Valid case: min < max
 	err := v.Validate(IntRange{Min: 1, Max: 10})
 	fmt.Println("Valid:", err == nil)
 
-	// Invalid case: min >= max
 	err = v.Validate(IntRange{Min: 10, Max: 1})
 	if err != nil {
 		fmt.Println(err)
 	}
-
-	// Output:
-	// Valid: true
-	// Validation has failed:
-	//   - 'min' must be less than 'max'
 }
 ```
 
-<a id="compare-custom-comparable-properties"></a>
+### Compare custom comparable properties
 
-**Compare custom comparable properties.**
-
-[//]: # (embed: ExampleLTComparableProperties)
+[//]: # (embed: ExampleLTComparableProperties?comments=false)
 
 ```go
-// LTComparableProperties and other *ComparableProperties functions work with types
-// that implement [rules.Comparable] interface, such as [time.Time].
 func ExampleLTComparableProperties() {
 	type TimeRange struct {
 		StartTime time.Time `json:"startTime"`
@@ -237,14 +194,12 @@ func ExampleLTComparableProperties() {
 			),
 	)
 
-	// Valid case: start is before end
 	err := v.Validate(TimeRange{
 		StartTime: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 		EndTime:   time.Date(2024, 1, 2, 0, 0, 0, 0, time.UTC),
 	})
 	fmt.Println("Valid:", err == nil)
 
-	// Invalid case: start is after end
 	err = v.Validate(TimeRange{
 		StartTime: time.Date(2024, 1, 2, 0, 0, 0, 0, time.UTC),
 		EndTime:   time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
@@ -252,10 +207,5 @@ func ExampleLTComparableProperties() {
 	if err != nil {
 		fmt.Println(err)
 	}
-
-	// Output:
-	// Valid: true
-	// Validation has failed:
-	//   - 'startTime' must be before 'endTime'
 }
 ```

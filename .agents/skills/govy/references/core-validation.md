@@ -1,7 +1,5 @@
 # Core Validation
 
-Validator construction, naming, conditions, slice validation, cascade behavior, and validator composition patterns.
-
 ## Topics
 
 - [Construct reusable validators](#construct-reusable-validators)
@@ -21,18 +19,14 @@ Validator construction, naming, conditions, slice validation, cascade behavior, 
 
 ## Construct reusable validators
 
-Define validators once and reuse them. Name validators when the resulting error should identify the validated entity.
+Define validators once and reuse them.
+Name validators when the resulting error should identify the validated entity.
 
-<a id="create-a-validator-from-property-rules"></a>
+### Create a validator from property rules
 
-**Create a validator from property rules.**
-
-[//]: # (embed: ExampleNew)
+[//]: # (embed: ExampleNew?comments=false)
 
 ```go
-// In order to create a new [govy.Validator] use [govy.New] constructor.
-// Let's define simple [govy.PropertyRules] for [Teacher.Name].
-// For now, it will be always failing.
 func ExampleNew() {
 	v := govy.New(
 		govy.For(func(t Teacher) string { return t.Name }).
@@ -43,22 +37,14 @@ func ExampleNew() {
 	if err != nil {
 		fmt.Println(err)
 	}
-
-	// Output:
-	// Validation has failed:
-	//   - always fails
 }
 ```
 
-<a id="attach-a-static-validator-name"></a>
+### Attach a static validator name
 
-**Attach a static validator name.**
-
-[//]: # (embed: ExampleValidator_WithName)
+[//]: # (embed: ExampleValidator_WithName?comments=false)
 
 ```go
-// To associate [govy.Validator] with an entity name use [govy.Validator.WithName] function.
-// When any of the rules fails, the error will contain the entity name you've provided.
 func ExampleValidator_WithName() {
 	v := govy.New(
 		govy.For(func(t Teacher) string { return t.Name }).
@@ -69,23 +55,14 @@ func ExampleValidator_WithName() {
 	if err != nil {
 		fmt.Println(err)
 	}
-
-	// Output:
-	// Validation for Teacher has failed:
-	//   - always fails
 }
 ```
 
-<a id="compute-the-validator-name-from-the-validated-value"></a>
+### Compute the validator name from the validated value
 
-**Compute the validator name from the validated value.**
-
-[//]: # (embed: ExampleValidator_WithNameFunc)
+[//]: # (embed: ExampleValidator_WithNameFunc?comments=false)
 
 ```go
-// If statically defined name through [govy.Validator.WithName] is not enough,
-// you can use [govy.Validator.WithNameFunc].
-// The function receives the entity's instance you're validating and returns a string name.
 func ExampleValidator_WithNameFunc() {
 	v := govy.New(
 		govy.For(func(t Teacher) string { return t.Name }).
@@ -96,28 +73,19 @@ func ExampleValidator_WithNameFunc() {
 	if err != nil {
 		fmt.Println(err)
 	}
-
-	// Output:
-	// Validation for Teacher John has failed:
-	//   - always fails
 }
 ```
 
 ## Control when validators run
 
-Use validator-level conditions for whole-object gates. Use property-level conditions when only one property branch should be skipped.
+Use validator-level conditions for whole-object gates.
+Use property-level conditions when only one property branch should be skipped.
 
-<a id="run-a-validator-only-when-a-predicate-matches"></a>
+### Run a validator only when a predicate matches
 
-**Run a validator only when a predicate matches.**
-
-[//]: # (embed: ExampleValidator_When)
+[//]: # (embed: ExampleValidator_When?comments=false)
 
 ```go
-// [govy.Validator] rules can be evaluated on condition, to specify the predicate use [govy.Validator.When] function.
-//
-// In this example, validation for [Teacher] instance will only be evaluated
-// if the [Teacher.Age] property is less than 50 years.
 func ExampleValidator_When() {
 	v := govy.New(
 		govy.For(func(t Teacher) string { return t.Name }).
@@ -125,7 +93,6 @@ func ExampleValidator_When() {
 	).
 		When(func(t Teacher) bool { return t.Age < (50 * year) })
 
-	// Prepare teachers.
 	teacherTom := Teacher{
 		Name: "Tom",
 		Age:  51 * year,
@@ -135,7 +102,6 @@ func ExampleValidator_When() {
 		Age:  30 * year,
 	}
 
-	// Run validation.
 	err := v.Validate(teacherTom)
 	if err != nil {
 		fmt.Println(err.(*govy.ValidatorError).WithName("Tom"))
@@ -144,28 +110,14 @@ func ExampleValidator_When() {
 	if err != nil {
 		fmt.Println(err.(*govy.ValidatorError).WithName("Jerry"))
 	}
-
-	// Output:
-	// Validation for Jerry has failed:
-	//   - always fails
 }
 ```
 
-<a id="branch-validation-by-including-different-validators-under-property-conditions"></a>
+### Branch validation by including different validators under property conditions
 
-**Branch validation by including different validators under property conditions.**
-
-[//]: # (embed: ExampleValidator_branchingPattern)
+[//]: # (embed: ExampleValidator_branchingPattern?comments=false)
 
 ```go
-// When dealing with properties that should only be validated if a certain other
-// property has specific value, it's recommended to use [govy.PropertyRules.When] and [govy.PropertyRules.Include]
-// to separate validation paths into non-overlapping branches.
-//
-// Notice how in the below example [File.Format] is the common,
-// shared property between [CSV] and [JSON] files.
-// We define separate [govy.Validator] for [CSV] and [JSON] and use [govy.PropertyRules.When] to only validate
-// their included [govy.Validator] if the correct [File.Format] is provided.
 func ExampleValidator_branchingPattern() {
 	type (
 		CSV struct {
@@ -220,28 +172,19 @@ func ExampleValidator_branchingPattern() {
 	if err != nil {
 		fmt.Println(err)
 	}
-
-	// Output:
-	// Validation for File has failed for the following properties:
-	//   - 'indent' with value 'invalid':
-	//     - string must match regular expression: '^\s*$'
 }
 ```
 
 ## Validate slices
 
-Use ForSlice when the slice itself has rules or the path should include indexes. Use ValidateSlice when each value can be validated independently.
+Use ForSlice when the slice itself has rules or the path should include indexes.
+Use ValidateSlice when each value can be validated independently.
 
-<a id="validate-a-slice-while-preserving-indexed-property-paths"></a>
+### Validate a slice while preserving indexed property paths
 
-**Validate a slice while preserving indexed property paths.**
-
-[//]: # (embed: ExampleValidator_Validate_slice)
+[//]: # (embed: ExampleValidator_Validate_slice?comments=false)
 
 ```go
-// If you want to validate a slice of entities, you can combine [govy.New] with [govy.ForSlice].
-// The produced errors will contain information about the failing entity's index
-// in their [govy.PropertyError.PropertyPath].
 func ExampleValidator_Validate_slice() {
 	teacherValidator := govy.New(
 		govy.For(func(t Teacher) string { return t.Name }).
@@ -260,35 +203,14 @@ func ExampleValidator_Validate_slice() {
 	if err != nil {
 		fmt.Println(err)
 	}
-
-	// Output:
-	// Validation has failed for the following properties:
-	//   - '[0].name' with value 'John':
-	//     - always fails
-	//   - '[1].name' with value 'Jake':
-	//     - always fails
 }
 ```
 
-<a id="validate-each-element-directly-with-validateslice"></a>
+### Validate each element directly with ValidateSlice
 
-**Validate each element directly with ValidateSlice.**
-
-[//]: # (embed: ExampleValidator_ValidateSlice)
+[//]: # (embed: ExampleValidator_ValidateSlice?comments=false)
 
 ```go
-// If combining [govy.New] with [govy.ForSlice] is not verbose enough for you,
-// you can use [govy.Validator.ValidateSlice] function.
-// It will validate each element according to the rules defined by [govy.Validator].
-// It returns [govy.ValidatorErrors].
-//
-// Note: If you need to perform additional validation on the whole slice,
-// you should rather use [govy.New] with [govy.ForSlice] and [govy.GetSelf].
-// [govy.Validator.ValidateSlice] is designed to be used for processing independent values.
-//
-// Note: Since each element is validated in isolation,
-// the reported property paths will not start with the slice index,
-// they will instead start at the element's root.
 func ExampleValidator_ValidateSlice() {
 	v := govy.New(
 		govy.For(func(t Teacher) string { return t.Name }).
@@ -303,36 +225,20 @@ func ExampleValidator_ValidateSlice() {
 	if err != nil {
 		fmt.Println(err)
 	}
-
-	// Output:
-	// Validation for Teacher at index 0 has failed for the following properties:
-	//   - 'name' with value 'John':
-	//     - always fails
-	// Validation for Teacher at index 1 has failed for the following properties:
-	//   - 'name' with value 'Jake':
-	//     - always fails
 }
 ```
 
 ## Control error aggregation
 
-Cascade settings decide whether validation continues after failures. Validator cascade applies across properties unless a property-level cascade overrides it.
+Validator cascade controls whether validation continues to later properties.
+Property cascade controls the rules within that property.
+A property override does not make later properties run after a validator-level stop.
 
-<a id="stop-evaluating-later-properties-after-a-validator-failure"></a>
+### Stop evaluating later properties after a validator failure
 
-**Stop evaluating later properties after a validator failure.**
-
-[//]: # (embed: ExampleValidator_Cascade)
+[//]: # (embed: ExampleValidator_Cascade?comments=false)
 
 ```go
-// Unlike [govy.PropertyRules.Cascade] which works on [govy.PropertyRules] level,
-// [govy.Validator.Cascade] propagates to all the properties of [govy.Validator] and
-// furthermore, will stop evaluating the next property if any preceding property fails.
-//
-// If [govy.PropertyRules.Cascade] is set, the setting will take precedence over
-// [govy.Validator] cascade mode.
-//
-// See [ExamplePropertyRules_Cascade] for more details on [govy.PropertyRules.Cascade].
 func ExampleValidator_Cascade() {
 	v := govy.New(
 		govy.For(func(t Teacher) string { return t.Name }).
@@ -361,30 +267,18 @@ func ExampleValidator_Cascade() {
 			fmt.Println(err)
 		}
 	}
-
-	// Output:
-	// Validation for Tom has failed for the following properties:
-	//   - 'age' with value '148920h0m0s':
-	//     - must be greater than '157680h0m0s'
-	// Validation for Jerry has failed for the following properties:
-	//   - 'name' with value 'Jerry':
-	//     - must not be equal to 'Jerry'
-	//     - must be equal to 'Tom'
 }
 ```
 
 ## Compose a complete validator
 
-Use the complete example as a reference shape for idiomatic validator declarations with named properties, builtin rules, and nested composition.
+This example combines named properties, predefined rules, and nested validators.
 
-<a id="build-a-full-teacher-validator"></a>
+### Build a full Teacher validator
 
-**Build a full Teacher validator.**
-
-[//]: # (embed: ExampleValidator)
+[//]: # (embed: ExampleValidator?comments=false)
 
 ```go
-// Bringing it all (mostly) together, let's create a fully fledged [govy.Validator] for [Teacher].
 func ExampleValidator() {
 	universityValidation := govy.New(
 		govy.For(func(u University) string { return u.Address }).
@@ -431,17 +325,5 @@ func ExampleValidator() {
 	if err != nil {
 		fmt.Println(err)
 	}
-
-	// Output:
-	// Validation for John has failed for the following properties:
-	//   - 'name' with value 'John':
-	//     - must be one of: Jake, George
-	//   - 'students' with value '[{"index":"918230014"},{"index":"9182300123"},{"index":"918230014"}]':
-	//     - length must be less than or equal to 2
-	//     - elements are not unique, 1st and 3rd elements collide
-	//   - 'students[1].index' with value '9182300123':
-	//     - length must be between 9 and 9
-	//   - 'university.address':
-	//     - property is required but was empty
 }
 ```

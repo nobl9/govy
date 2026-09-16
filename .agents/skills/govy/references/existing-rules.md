@@ -3,6 +3,9 @@
 Generated reference of exported predefined rule constructors from `pkg/rules`.
 Use this when choosing an existing rule before writing a custom one.
 
+<!-- Generated summaries retain the source documentation line layout. -->
+<!-- markdownlint-disable MD013 -->
+
 [//]: # (docs: pkg/rules?kind=func&returns=govy.Rule,govy.RuleSet)
 
 - `DurationPrecision` - DurationPrecision ensures the duration is defined with the specified precision.

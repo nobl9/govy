@@ -309,6 +309,11 @@ type documentedFunction struct {
 	description string
 }
 
+type embeddedExampleConfig struct {
+	ref             string
+	includeComments bool
+}
+
 func renderGeneratedDocs(root, docsRef string) string {
 	config := parseGeneratedDocsConfig(docsRef)
 	if config.kind != "func" {
@@ -530,6 +535,28 @@ func findCodeFenceEnd(markdown string) int {
 	return strings.Index(markdown, "```")
 }
 
+func parseEmbeddedExampleConfig(exampleRef string) embeddedExampleConfig {
+	ref, query, _ := strings.Cut(exampleRef, "?")
+	config := embeddedExampleConfig{ref: ref, includeComments: true}
+	for part := range strings.SplitSeq(query, "&") {
+		key, value, ok := strings.Cut(part, "=")
+		if !ok {
+			continue
+		}
+		switch key {
+		case "comments":
+			includeComments, err := strconv.ParseBool(value)
+			if err != nil {
+				logFatal(err, "Failed to parse comments option %q in embed directive %q", value, exampleRef)
+			}
+			config.includeComments = includeComments
+		default:
+			logFatal(nil, "Unsupported embed query parameter %q", key)
+		}
+	}
+	return config
+}
+
 type embeddedExampleResolver struct {
 	root                string
 	files               map[string]*embeddedExampleFile
@@ -563,6 +590,26 @@ func readEmbeddedExample(root, exampleRef string) string {
 }
 
 func (r *embeddedExampleResolver) read(exampleRef string) string {
+	config := parseEmbeddedExampleConfig(exampleRef)
+	example := r.readReference(config.ref)
+	if config.includeComments {
+		return example
+	}
+
+	isFunction := strings.Contains(config.ref, "#") || strings.HasPrefix(config.ref, "Example")
+	const filePrefix = "package embedded\n\n"
+	if isFunction {
+		// Wrap function excerpts in a file so the same parser can remove comments.
+		example = filePrefix + example
+	}
+	example = removeGoFileComments(config.ref, []byte(example))
+	if isFunction {
+		return strings.TrimSpace(strings.TrimPrefix(example, filePrefix))
+	}
+	return example
+}
+
+func (r *embeddedExampleResolver) readReference(exampleRef string) string {
 	sourcePath, functionName, hasFunctionName := strings.Cut(exampleRef, "#")
 	if hasFunctionName {
 		return r.readFunction(sourcePath, functionName)
@@ -728,6 +775,27 @@ func skipExampleSearchDir(root, path string) bool {
 	default:
 		return false
 	}
+}
+
+func removeGoFileComments(path string, source []byte) string {
+	fset := token.NewFileSet()
+	astFile, err := parser.ParseFile(fset, path, source, parser.SkipObjectResolution)
+	if err != nil {
+		logFatal(err, "Failed to parse embedded example source %q", path)
+	}
+	astFile.Comments = nil
+	var builder strings.Builder
+	if err = format.Node(&builder, fset, astFile); err != nil {
+		logFatal(err, "Failed to format embedded example source %q", path)
+	}
+	return removeBlankLinesBeforeClosingBraces(builder.String())
+}
+
+func removeBlankLinesBeforeClosingBraces(source string) string {
+	for strings.Contains(source, "\n\n}") {
+		source = strings.ReplaceAll(source, "\n\n}", "\n}")
+	}
+	return source
 }
 
 func logFatal(err error, msg string, a ...any) {

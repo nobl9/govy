@@ -69,6 +69,63 @@ We use the following tools to do that:
 We're using our own validation library to write validation for all objects.
 Refer to this [README.md](../internal/validation/README.md) for more information.
 
+## Predefined rules
+
+Predefined rules live in [`pkg/rules`](../pkg/rules/).
+Add a new rule there only when the validation is generally useful to govy users.
+If the rule exists only for one consumer, prefer a consumer-owned
+[`govy.NewRule`](../pkg/govy/rule.go) instead.
+
+Most rule constructors follow the same shape:
+
+1. Define an exported constructor in the matching `pkg/rules/*.go` file.
+   Constructors return `govy.Rule[T]` for one validation decision
+   or `govy.RuleSet[T]` when the public rule is composed from existing rules.
+2. Add a stable `ErrorCode...` constant in
+   [`pkg/rules/error_codes.go`](../pkg/rules/error_codes.go).
+   Tests and integrations use these codes, so do not change existing values
+   unless the change is intentionally breaking.
+3. Add a message template in
+   [`internal/messagetemplates/templates.go`](../internal/messagetemplates/templates.go)
+   when no existing template describes the failure.
+   Return `govy.NewRuleErrorTemplate(govy.TemplateVars{...})`
+   from the rule body so message rendering receives the failed value,
+   comparison value, parse error, or custom fields it needs.
+4. Attach metadata to the returned rule:
+   `WithErrorCode`, `WithMessageTemplate`, and `WithDescription`
+   are expected for predefined rules.
+   Use `mustExecuteTemplate` for descriptions derived from the same template.
+5. Add details, examples, cascade mode, and plan modifiers only when they are
+   part of the rule contract.
+   For example, composed DNS rules use `Cascade(govy.CascadeModeStop)`,
+   and finite-value rules such as `OneOf` add
+   `govy.RulePlanModifierValidValues`.
+
+Rule names should describe the validated value and the predicate.
+Existing examples include `StringEmail`, `StringKubernetesQualifiedName`,
+`SliceUnique`, `MapMinLength`, and `GTProperties`.
+Use generics when the rule applies to a family of types;
+for example, length rules support strings, slices, and maps,
+while comparison rules use `comparable` or `cmp.Ordered` constraints.
+
+Every exported predefined rule must have unit tests and benchmarks.
+[`pkg/rules/rules_test.go`](../pkg/rules/rules_test.go)
+parses the package and fails if an exported rule constructor is missing a
+matching `Test...` or `Benchmark...` function.
+Keep test cases table-driven where that matches the surrounding file,
+assert the stable error code with `govy.HasErrorCode`,
+and assert the exact message when the rule has a specific rendered message.
+
+When adding a new rule, run at least:
+
+```sh
+make test
+make check/markdown
+```
+
+Run the full `make check` before opening a pull request if the change touches
+templates, generated references, spelling-sensitive text, or public API.
+
 ## Dependencies
 
 Renovate is configured to automatically merge minor and patch updates.

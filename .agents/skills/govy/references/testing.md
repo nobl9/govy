@@ -1,6 +1,22 @@
 # Testing
 
-Core govy error helpers and structured error flows useful when writing tests without the govytest package.
+When callers validate whole objects, test through that public entrypoint.
+Reuse the consumer's test helpers before introducing direct govytest assertions.
+Start with a valid object and change one property per case.
+Include a case with independent failures to check error aggregation.
+
+Assert complete property paths, stable error codes, and the expected error count.
+For assertion APIs and examples, read [govytest](govytest.md).
+Use `govytest.AssertError` for an exact set of failures.
+Use `AssertErrorContains` when the test contract allows additional failures.
+Assert message text when the message itself is under test.
+
+Test pointer fields with `nil`, a pointer to zero, and a pointer to a valid value.
+For ranges and collection limits, test both boundaries and values just outside them.
+When callers consume plans, inspect their paths, descriptions, and conditions.
+Also test runtime errors.
+
+The examples below inspect structured errors without the govytest package.
 
 ## Topics
 
@@ -10,21 +26,13 @@ Core govy error helpers and structured error flows useful when writing tests wit
 
 ## Inspect validation errors
 
-Use these helpers when tests need to match structured govy errors without depending on entire formatted error strings.
+Use these helpers to inspect structured errors without matching full messages.
 
-<a id="check-whether-any-nested-rule-error-carries-an-error-code"></a>
+### Check whether any nested rule error carries an error code
 
-**Check whether any nested rule error carries an error code.**
-
-[//]: # (embed: ExampleHasErrorCode)
+[//]: # (embed: ExampleHasErrorCode?comments=false)
 
 ```go
-// To inspect if an error contains a given [govy.ErrorCode], use [govy.HasErrorCode] function.
-// This function will also return true if the expected [govy.ErrorCode]
-// is part of a chain of wrapped error codes.
-// In this example we're dealing with two error code chains:
-//   - 'teacher_name:string_length'
-//   - 'teacher_name:string_match_regexp'
 func ExampleHasErrorCode() {
 	teacherNameRule := govy.NewRuleSet(
 		rules.StringLength(1, 5),
@@ -55,23 +63,14 @@ func ExampleHasErrorCode() {
 			}
 		}
 	}
-
-	// Output:
-	// Has error code: teacher_name
-	// Has error code: string_length
-	// Has error code: string_match_regexp
 }
 ```
 
-<a id="match-validator-errors-returned-from-slice-validation"></a>
+### Match validator errors returned from slice validation
 
-**Match validator errors returned from slice validation.**
-
-[//]: # (embed: ExampleValidatorErrors)
+[//]: # (embed: ExampleValidatorErrors?comments=false)
 
 ```go
-// [govy.Validator.ValidateSlice] outputs [govy.ValidatorErrors] which is a slice of [govy.ValidatorError].
-// Each [govy.ValidatorError] has an additional property set: SliceIndex, which is a 0-based slice element index.
 func ExampleValidatorErrors() {
 	v := govy.New(
 		govy.For(func(t Teacher) string { return t.Name }).
@@ -96,39 +95,5 @@ func ExampleValidatorErrors() {
 			fmt.Printf("error encoding: %v\n", err)
 		}
 	}
-
-	// Output:
-	// [
-	//   {
-	//     "errors": [
-	//       {
-	//         "propertyPath": "name",
-	//         "propertyValue": "John",
-	//         "errors": [
-	//           {
-	//             "error": "fails for John and Jake"
-	//           }
-	//         ]
-	//       }
-	//     ],
-	//     "name": "Teacher",
-	//     "sliceIndex": 0
-	//   },
-	//   {
-	//     "errors": [
-	//       {
-	//         "propertyPath": "name",
-	//         "propertyValue": "Jake",
-	//         "errors": [
-	//           {
-	//             "error": "fails for John and Jake"
-	//           }
-	//         ]
-	//       }
-	//     ],
-	//     "name": "Teacher",
-	//     "sliceIndex": 2
-	//   }
-	// ]
 }
 ```

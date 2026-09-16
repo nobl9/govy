@@ -206,6 +206,29 @@ func TestReadEmbeddedExample(t *testing.T) {
 				"\tprintln(\"unique\")\n" +
 				"}",
 		},
+		{
+			name:       "named function without comments",
+			exampleRef: "examples/named.go#ExampleNamed?comments=false",
+			expected:   "func ExampleNamed() {\n\tprintln(\"named\")\n}",
+		},
+		{
+			name:       "unique bare function without comments",
+			exampleRef: "ExampleUnique?comments=false",
+			expected:   "func ExampleUnique() {\n\tprintln(\"unique\")\n}",
+		},
+		{
+			name:       "full file without comments",
+			exampleRef: "examples/named.go?comments=false",
+			expected: "package examples\n\n" +
+				"func ExampleNamed() {\n\tprintln(\"named\")\n}\n\n" +
+				"func ignored() {}\n",
+		},
+		{
+			name:       "explicit comments",
+			exampleRef: "examples/named.go#ExampleNamed?comments=true",
+			expected: "// ExampleNamed demonstrates named extraction.\n" +
+				"func ExampleNamed() {\n\tprintln(\"named\")\n}",
+		},
 	}
 
 	for _, test := range tests {
@@ -290,18 +313,40 @@ func TestReadEmbeddedExamplePrunesNonSourceDirectories(t *testing.T) {
 }
 
 func TestEmbeddedExampleResolverCachesParsedFiles(t *testing.T) {
-	root := t.TempDir()
-	path := filepath.Join(root, "cached", "example_test.go")
-	expected := "// ExampleCached demonstrates resolver caching.\n" +
+	withComments := "// ExampleCached demonstrates resolver caching.\n" +
 		"func ExampleCached() {\n" +
 		"\tprintln(\"cached\")\n" +
 		"}"
-	writeTestFile(t, path, "package cached\n\n"+expected+"\n", 0o644)
+	withoutComments := "func ExampleCached() {\n\tprintln(\"cached\")\n}"
+	tests := []struct {
+		name       string
+		firstQuery string
+		firstWant  string
+	}{
+		{name: "comments first", firstWant: withComments},
+		{name: "comments removed first", firstQuery: "?comments=false", firstWant: withoutComments},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			root := t.TempDir()
+			path := filepath.Join(root, "cached", "example_test.go")
+			writeTestFile(t, path, "package cached\n\n"+withComments+"\n", 0o644)
+			resolver := newEmbeddedExampleResolver(root)
+			assert.Equal(t, test.firstWant, resolver.read("ExampleCached"+test.firstQuery))
+			writeTestFile(t, path, "package cached\n\nfunc ExampleCached(", 0o644)
 
-	resolver := newEmbeddedExampleResolver(root)
-	assert.Equal(t, expected, resolver.read("ExampleCached"))
-	writeTestFile(t, path, "package cached\n\nfunc ExampleCached(", 0o644)
-	assert.Equal(t, expected, resolver.read("cached/example_test.go#ExampleCached"))
+			assert.Equal(t, withComments, resolver.read("cached/example_test.go#ExampleCached"))
+			assert.Equal(t, withoutComments, resolver.read("cached/example_test.go#ExampleCached?comments=false"))
+			assert.Equal(t, withComments, resolver.read("ExampleCached?comments=true"))
+			assert.Equal(t, withoutComments, resolver.read("ExampleCached?comments=false"))
+			assert.Equal(t, "package cached\n\n"+withComments+"\n", resolver.read("cached/example_test.go"))
+			assert.Equal(
+				t,
+				"package cached\n\n"+withoutComments+"\n",
+				resolver.read("cached/example_test.go?comments=false"),
+			)
+		})
+	}
 }
 
 func TestEmbedExamples(t *testing.T) {
