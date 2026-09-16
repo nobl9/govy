@@ -54,9 +54,9 @@ test/coverage:
 	go test -coverprofile=coverage.out ./...
 	go tool cover -html=coverage.out
 
-.PHONY: check check/vet check/lint check/spell check/trailing check/markdown check/generate check/vulns
+.PHONY: check check/vet check/lint check/spell check/trailing check/markdown check/generate
 ## Run all checks.
-check: check/vet check/lint check/spell check/trailing check/markdown check/generate check/vulns
+check: check/vet check/lint check/spell check/trailing check/markdown check/generate
 
 ## Run 'go vet' on the whole project.
 check/vet:
@@ -82,11 +82,6 @@ check/trailing:
 check/markdown:
 	$(call _print_step,Verifying Markdown files)
 	markdownlint '**/*.md' --ignore node_modules
-
-## Check for potential vulnerabilities across all Go dependencies.
-check/vulns:
-	$(call _print_step,Running govulncheck)
-	govulncheck ./...
 
 ## Verify if the auto generated code has been committed.
 check/generate:

@@ -49,48 +49,67 @@ var newLineReplacer = strings.NewReplacer("\n", "\\n", "\r", "\\r")
 //
 // If a value is a struct of type [time.Time] it will be formatted using [time.RFC3339] layout.
 func PropertyValueString(v any) string {
+	return propertyValueString(v, 100)
+}
+
+// PropertyValueStringForRedaction returns the untruncated string representation
+// used to remove sensitive property values from messages.
+func PropertyValueStringForRedaction(v any) string {
+	return propertyValueString(v, 0)
+}
+
+func propertyValueString(v any, maxLength int) string {
 	if v == nil {
 		return ""
 	}
-	rv := reflect.ValueOf(v)
-	ft := reflect.Indirect(rv)
+
+	// Fast, reflection-free path.
 	var s string
-	switch ft.Kind() {
-	case reflect.Interface, reflect.Map, reflect.Slice:
-		if rv.IsZero() {
-			break
-		}
-		raw, _ := json.Marshal(v)
-		s = string(raw)
-	case reflect.Struct:
-		// If the struct is empty and it has.
-		if rv.IsZero() && rv.NumField() != 0 {
-			break
-		}
-		if timeDate, ok := v.(time.Time); ok {
-			s = timeDate.Format(time.RFC3339)
-			break
-		}
-		if stringer, ok := v.(fmt.Stringer); ok && !hasJSONTags(v, rv.Kind() == reflect.Pointer) {
-			s = stringer.String()
-			break
-		}
-		raw, _ := json.Marshal(v)
-		s = string(raw)
-	case reflect.Pointer:
-		if rv.IsNil() {
-			return ""
-		}
-		deref := rv.Elem().Interface()
-		return PropertyValueString(deref)
-	case reflect.Func:
-		return "func"
-	case reflect.Invalid:
-		return ""
+	switch v := v.(type) {
+	case string:
+		s = v
 	default:
-		s = fmt.Sprint(ft.Interface())
+		rv := reflect.ValueOf(v)
+		ft := reflect.Indirect(rv)
+		switch ft.Kind() {
+		case reflect.Interface, reflect.Map, reflect.Slice:
+			if rv.IsZero() {
+				break
+			}
+			raw, _ := json.Marshal(v)
+			s = string(raw)
+		case reflect.Struct:
+			// If the struct is empty and it has.
+			if rv.IsZero() && rv.NumField() != 0 {
+				break
+			}
+			if timeDate, ok := v.(time.Time); ok {
+				s = timeDate.Format(time.RFC3339)
+				break
+			}
+			if stringer, ok := v.(fmt.Stringer); ok && !hasJSONTags(v, rv.Kind() == reflect.Pointer) {
+				s = stringer.String()
+				break
+			}
+			raw, _ := json.Marshal(v)
+			s = string(raw)
+		case reflect.Pointer:
+			if rv.IsNil() {
+				return ""
+			}
+			deref := rv.Elem().Interface()
+			return propertyValueString(deref, maxLength)
+		case reflect.Func:
+			return "func"
+		case reflect.Invalid:
+			return ""
+		default:
+			s = fmt.Sprint(ft.Interface())
+		}
 	}
-	s = limitString(s, 100)
+	if maxLength > 0 {
+		s = limitString(s, maxLength)
+	}
 	s = strings.TrimSpace(s)
 	s = newLineReplacer.Replace(s)
 	return s

@@ -7,7 +7,14 @@ type whenOptions struct {
 	description string
 }
 
-// WhenOption applies selected option to [whenConfig].
+func (w whenOptions) apply(opts []WhenOption) whenOptions {
+	for _, opt := range opts {
+		w = opt(w)
+	}
+	return w
+}
+
+// WhenOption applies selected option to [whenOptions].
 type WhenOption func(options whenOptions) whenOptions
 
 // WhenDescription sets the description for the When condition.
@@ -41,9 +48,7 @@ type predicateMatcher[T any] struct {
 // when adds a [Predicate] to the [predicateMatcher] and applies all provided [WhenOption].
 func (p predicateMatcher[T]) when(predicate Predicate[T], opts ...WhenOption) predicateMatcher[T] {
 	container := predicateContainer[T]{predicate: predicate}
-	for _, opt := range opts {
-		container.whenOptions = opt(container.whenOptions)
-	}
+	container.whenOptions = container.apply(opts)
 	p.predicates = append(p.predicates, container)
 	return p
 }

@@ -1,7 +1,6 @@
 # govy
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/nobl9/govy.svg)](https://pkg.go.dev/github.com/nobl9/govy)
-[![Go Report Card](https://goreportcard.com/badge/github.com/nobl9/govy)](https://goreportcard.com/report/github.com/nobl9/govy)
 [![Go Coverage](https://github.com/nobl9/govy/wiki/coverage.svg)](https://raw.githack.com/wiki/nobl9/govy/coverage.html)
 
 Validation library for Go that uses a functional interface for building
@@ -123,7 +122,8 @@ func Example_basicUsage() {
 			Required().
 			Rules(
 				rules.StringNotEmpty(),
-				rules.OneOf("Jake", "George")),
+				rules.OneOf("Jake", "George"),
+			),
 		govy.ForPointer(func(t Teacher) *string { return t.MiddleName }).
 			WithName("middleName").
 			Rules(rules.StringTitle()),
@@ -131,7 +131,8 @@ func Example_basicUsage() {
 			WithName("students").
 			Rules(
 				rules.SliceMaxLength[[]Student](2),
-				rules.SliceUnique(func(v Student) string { return v.Index })).
+				rules.SliceUnique(func(v Student) string { return v.Index }),
+			).
 			IncludeForEach(studentValidator),
 		govy.For(func(t Teacher) University { return t.University }).
 			WithName("university").
@@ -449,7 +450,8 @@ func Example_customRules() {
 			Required().
 			Rules(
 				customRule,
-				rules.StringStartsWith("J")),
+				rules.StringStartsWith("J"),
+			),
 	).WithNameFunc(govy.NameFuncFromTypeName[Teacher]())
 
 	teacher := Teacher{Name: "George"}
@@ -530,7 +532,8 @@ func Example_validationPlan() {
 			WithName("name").
 			Rules(
 				rules.StringNotEmpty(),
-				rules.OneOf("Jake", "George")),
+				rules.OneOf("Jake", "George"),
+			),
 		govy.ForPointer(func(t Teacher) *string { return t.MiddleName }).
 			WithName("middleName").
 			Rules(rules.StringTitle()),
@@ -538,7 +541,8 @@ func Example_validationPlan() {
 			WithName("students").
 			Rules(
 				rules.SliceMaxLength[[]Student](2),
-				rules.SliceUnique(func(v Student) string { return v.Index })).
+				rules.SliceUnique(func(v Student) string { return v.Index }),
+			).
 			IncludeForEach(studentValidator),
 		govy.For(func(t Teacher) University { return t.University }).
 			WithName("university").
@@ -559,6 +563,11 @@ func Example_validationPlan() {
 	// Output:
 	// {
 	//   "name": "Teacher",
+	//   "typeInfo": {
+	//     "name": "Teacher",
+	//     "kind": "struct",
+	//     "package": "github.com/nobl9/govy/internal/examples"
+	//   },
 	//   "properties": [
 	//     {
 	//       "path": "$.middleName",

@@ -29,10 +29,10 @@ type RuleSet[T any] struct {
 // except each aggregated rule is validated individually.
 // The errors are aggregated and returned as a single [RuleSetError]
 // which serves as a container for them.
-func (r RuleSet[T]) Validate(v T) error {
+func (r RuleSet[T]) Validate(v T, opts ...ValidationOption) error {
 	var errs RuleSetError
 	for i := range r.rules {
-		err := r.rules[i].Validate(v)
+		err := r.rules[i].Validate(v, opts...)
 		if err == nil {
 			continue
 		}

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/nobl9/govy/internal/collections"
+	"github.com/nobl9/govy/internal/typeinfo"
 	"github.com/nobl9/govy/pkg/jsonpath"
 )
 
@@ -14,6 +15,8 @@ import (
 type ValidatorPlan struct {
 	// Name is the value provided to [Validator.WithName].
 	Name string `json:"name,omitempty"`
+	// TypeInfo contains the type information of the validator.
+	TypeInfo TypeInfo `json:"typeInfo"`
 	// Properties which this [Validator] defines.
 	Properties []*PropertyPlan `json:"properties"`
 }
@@ -52,7 +55,7 @@ func (p *PropertyPlan) Compare(other *PropertyPlan) int {
 	return strings.Compare(p.TypeInfo.Kind, other.TypeInfo.Kind)
 }
 
-// TypeInfo contains the type information of a property.
+// TypeInfo contains the type information of a validator or property.
 type TypeInfo struct {
 	// Name is a Go type name.
 	// Example: "Pod", "string", "int", "bool", etc.
@@ -103,6 +106,13 @@ type planOptions struct {
 	requirePredicateDescriptions bool
 }
 
+func (p planOptions) apply(opts []PlanOption) planOptions {
+	for _, opt := range opts {
+		p = opt(p)
+	}
+	return p
+}
+
 type PlanOption func(options planOptions) planOptions
 
 // PlanRequirePredicateDescription returns a [PlanOption] that will cause [Plan] to return an error
@@ -135,9 +145,7 @@ func Plan[T any](v Validator[T], opts ...PlanOption) (*ValidatorPlan, error) {
 		propertyPath:        jsonpath.NewRoot(),
 		path:                &builders,
 		missingDescriptions: ptr(make([]predicateLocation, 0)),
-	}
-	for _, opt := range opts {
-		rootBuilder.options = opt(rootBuilder.options)
+		options:             planOptions{}.apply(opts),
 	}
 	v.plan(rootBuilder)
 
@@ -159,6 +167,7 @@ func Plan[T any](v Validator[T], opts ...PlanOption) (*ValidatorPlan, error) {
 	return &ValidatorPlan{
 		Name:       name,
 		Properties: properties,
+		TypeInfo:   TypeInfo(typeinfo.Get[T]()),
 	}, nil
 }
 
@@ -277,6 +286,10 @@ func (p planBuilder) validate() error {
 }
 
 func appendPredicatesToPlanBuilder[T any](builder planBuilder, predicates []predicateContainer[T]) planBuilder {
+	// Plan branches share inherited conditions, so clone before appending branch-specific predicates.
+	if len(predicates) > 0 {
+		builder.rulePlan.Conditions = slices.Clone(builder.rulePlan.Conditions)
+	}
 	for _, predicate := range predicates {
 		if predicate.description == "" {
 			if builder.options.requirePredicateDescriptions && builder.missingDescriptions != nil {

@@ -235,7 +235,8 @@ my-table WHERE value = "abc"
 			err := govy.NewPropertyError(
 				jsonpath.Parse("name"),
 				tc.InputValue,
-				&govy.RuleError{Message: "msg"})
+				&govy.RuleError{Message: "msg"},
+			)
 			assert.Equal(t, &govy.PropertyError{
 				PropertyPath:  jsonpath.Parse("name"),
 				PropertyValue: tc.ExpectedValue,

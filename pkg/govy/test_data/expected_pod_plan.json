@@ -1,5 +1,10 @@
 {
   "name": "Pod",
+  "typeInfo": {
+    "name": "Pod",
+    "kind": "struct",
+    "package": "github.com/nobl9/govy/pkg/govy_test"
+  },
   "properties": [
     {
       "path": "$.apiVersion",
