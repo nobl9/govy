@@ -3,6 +3,7 @@ package rules_test
 import (
 	"fmt"
 	"net/url"
+	"path/filepath"
 	"time"
 
 	"github.com/nobl9/govy/pkg/govy"
@@ -46,6 +47,21 @@ func ExampleURL_withOptions() {
 	// valid URL must have a host
 	// valid URL must not contain user information
 	// valid URL must use one of the following hostnames: 'api.example.com'
+}
+
+func ExampleStringAbsoluteFilePath() {
+	rule := rules.StringAbsoluteFilePath()
+	absolutePath, err := filepath.Abs("config.yaml")
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(rule.Validate(absolutePath))
+	fmt.Println(rule.Validate("config.yaml"))
+
+	// Output:
+	// <nil>
+	// string must be an absolute file system path
 }
 
 func ExampleSliceUnique() {
