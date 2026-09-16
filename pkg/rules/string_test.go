@@ -3935,71 +3935,77 @@ func BenchmarkStringDirPath(b *testing.B) {
 	}
 }
 
-// The source cases include all isabstests and winisabstests inputs from Go 1.26.5:
-// https://github.com/golang/go/blob/go1.26.5/src/path/filepath/path_test.go#L1062-L1090.
-// The expected result depends on the host operating system.
-var stringAbsoluteFilePathTestCases = []struct {
+type stringAbsoluteFilePathTestCase struct {
 	in           string
 	isAbs        bool
 	isAbsWindows bool
-}{
-	// Go's isabstests.
-	{"", false, false},
-	{"/", true, false},
-	{"/usr/bin/gcc", true, false},
-	{"..", false, false},
-	{"/a/../bb", true, false},
-	{".", false, false},
-	{"./", false, false},
-	{"lala", false, false},
-	// Go's winisabstests.
-	{`C:\`, false, true},
-	{`c\`, false, false},
-	{`c::`, false, false},
-	{`c:`, false, false},
-	{`/`, true, false},
-	{`\`, false, false},
-	{`\Windows`, false, false},
-	{`c:a\b`, false, false},
-	{`c:\a\b`, false, true},
-	{`c:/a/b`, false, true},
-	{`\\host\share`, false, true},
-	{`\\host\share\`, false, true},
-	{`\\host\share\foo`, false, true},
-	{`//host/share/foo/bar`, true, true},
-	{`\\?\a\b\c`, false, true},
-	{`\??\a\b\c`, false, true},
-	// Go's TestIsAbs also prefixes each isabstests input with "c:".
-	{"c:", false, false},
-	{"c:/", false, true},
-	{"c:/usr/bin/gcc", false, true},
-	{"c:..", false, false},
-	{"c:/a/../bb", false, true},
-	{"c:.", false, false},
-	{"c:./", false, false},
-	{"c:lala", false, false},
-	// Additional relative paths, whitespace, and paths that need no normalization.
-	{"config.yaml", false, false},
-	{"dir/config.yaml", false, false},
-	{"./config.yaml", false, false},
-	{"../config.yaml", false, false},
-	{"~/config.yaml", false, false},
-	{"$HOME/config.yaml", false, false},
-	{"%USERPROFILE%\\config.yaml", false, false},
-	{" ", false, false},
-	{"\t", false, false},
-	{" /config.yaml", false, false},
-	{"/dir/./config.yaml", true, false},
-	{"/dir//config.yaml", true, false},
-	{"/dir with spaces/config.yaml", true, false},
-	{"/dir/", true, false},
-	{`C:\dir\..\config.yaml`, false, true},
-	{`C:\dir with spaces\config.yaml`, false, true},
+}
+
+// The source cases include all isabstests and winisabstests inputs from Go 1.26.5:
+// https://github.com/golang/go/blob/go1.26.5/src/path/filepath/path_test.go#L1062-L1090.
+// The expected result depends on the host operating system.
+func getStringAbsoluteFilePathTestCases(root string) []stringAbsoluteFilePathTestCase {
+	return []stringAbsoluteFilePathTestCase{
+		// Go's isabstests.
+		{"", false, false},
+		{"/", true, false},
+		{"/usr/bin/gcc", true, false},
+		{"..", false, false},
+		{"/a/../bb", true, false},
+		{".", false, false},
+		{"./", false, false},
+		{"lala", false, false},
+		// Go's winisabstests.
+		{`C:\`, false, true},
+		{`c\`, false, false},
+		{`c::`, false, false},
+		{`c:`, false, false},
+		{`/`, true, false},
+		{`\`, false, false},
+		{`\Windows`, false, false},
+		{`c:a\b`, false, false},
+		{`c:\a\b`, false, true},
+		{`c:/a/b`, false, true},
+		{`\\host\share`, false, true},
+		{`\\host\share\`, false, true},
+		{`\\host\share\foo`, false, true},
+		{`//host/share/foo/bar`, true, true},
+		{`\\?\a\b\c`, false, true},
+		{`\??\a\b\c`, false, true},
+		// Go's TestIsAbs also prefixes each isabstests input with "c:".
+		{"c:", false, false},
+		{"c:/", false, true},
+		{"c:/usr/bin/gcc", false, true},
+		{"c:..", false, false},
+		{"c:/a/../bb", false, true},
+		{"c:.", false, false},
+		{"c:./", false, false},
+		{"c:lala", false, false},
+		// Additional relative paths, whitespace, and paths that need no normalization.
+		{"config.yaml", false, false},
+		{"dir/config.yaml", false, false},
+		{"./config.yaml", false, false},
+		{"../config.yaml", false, false},
+		{"~/config.yaml", false, false},
+		{"$HOME/config.yaml", false, false},
+		{"%USERPROFILE%\\config.yaml", false, false},
+		{" ", false, false},
+		{"\t", false, false},
+		{" /config.yaml", false, false},
+		{"/dir/./config.yaml", true, false},
+		{"/dir//config.yaml", true, false},
+		{"/dir with spaces/config.yaml", true, false},
+		{"/dir/", true, false},
+		{`C:\dir\..\config.yaml`, false, true},
+		{`C:\dir with spaces\config.yaml`, false, true},
+		{filepath.Join(root, "missing", "config.yaml"), true, true},
+	}
 }
 
 func TestStringAbsoluteFilePath(t *testing.T) {
 	rule := StringAbsoluteFilePath()
-	for _, tc := range stringAbsoluteFilePathTestCases {
+	customRule := rule.WithMessageTemplateString("absolute path required: '{{ .PropertyValue }}'")
+	for _, tc := range getStringAbsoluteFilePathTestCases(t.TempDir()) {
 		t.Run(fmt.Sprintf("%q", tc.in), func(t *testing.T) {
 			isAbs := tc.isAbs
 			if runtime.GOOS == "windows" {
@@ -4011,27 +4017,19 @@ func TestStringAbsoluteFilePath(t *testing.T) {
 			} else {
 				assert.EqualError(t, err, "string must be an absolute file system path")
 				assert.True(t, govy.HasErrorCode(err, ErrorCodeStringAbsoluteFilePath))
+				err = customRule.Validate(tc.in)
+				assert.EqualError(t, err, fmt.Sprintf("absolute path required: '%s'", tc.in))
+				assert.True(t, govy.HasErrorCode(err, ErrorCodeStringAbsoluteFilePath))
 			}
 		})
 	}
 }
 
-func TestStringAbsoluteFilePath_NonexistentPath(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "missing", "config.yaml")
-	assert.NoError(t, StringAbsoluteFilePath().Validate(path))
-}
-
-func TestStringAbsoluteFilePath_MessageTemplate(t *testing.T) {
-	rule := StringAbsoluteFilePath().WithMessageTemplateString("absolute path required: '{{ .PropertyValue }}'")
-	err := rule.Validate("config.yaml")
-	assert.EqualError(t, err, "absolute path required: 'config.yaml'")
-	assert.True(t, govy.HasErrorCode(err, ErrorCodeStringAbsoluteFilePath))
-}
-
 func BenchmarkStringAbsoluteFilePath(b *testing.B) {
 	rule := StringAbsoluteFilePath()
+	testCases := getStringAbsoluteFilePathTestCases(b.TempDir())
 	for b.Loop() {
-		for _, tc := range stringAbsoluteFilePathTestCases {
+		for _, tc := range testCases {
 			_ = rule.Validate(tc.in)
 		}
 	}
