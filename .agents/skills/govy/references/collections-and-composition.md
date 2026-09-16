@@ -73,7 +73,8 @@ func ExampleForSlice() {
 			WithName("students").
 			Rules(
 				rules.SliceMaxLength[[]Student](2),
-				rules.SliceUnique(func(v Student) string { return v.Index })).
+				rules.SliceUnique(func(v Student) string { return v.Index }),
+			).
 			IncludeForEach(studentValidator),
 	).When(func(t Teacher) bool { return t.Age < 50 })
 

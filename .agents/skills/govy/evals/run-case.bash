@@ -7,9 +7,9 @@ if (($# != 3)); then
 fi
 
 case "$1" in
-[1-6]) ;;
+[1-8]) ;;
 *)
-	printf 'Invalid case ID: %s (expected 1-6)\n' "$1" >&2
+	printf 'Invalid case ID: %s (expected 1-8)\n' "$1" >&2
 	exit 2
 	;;
 esac

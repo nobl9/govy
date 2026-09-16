@@ -6,6 +6,7 @@
   - [Create a validator from property rules.](#create-a-validator-from-property-rules)
   - [Attach a static validator name.](#attach-a-static-validator-name)
   - [Compute the validator name from the validated value.](#compute-the-validator-name-from-the-validated-value)
+- [Pass validation callbacks](#pass-validation-callbacks)
 - [Control when validators run](#control-when-validators-run)
   - [Run a validator only when a predicate matches.](#run-a-validator-only-when-a-predicate-matches)
   - [Branch validation by including different validators under property conditions.](#branch-validation-by-including-different-validators-under-property-conditions)
@@ -75,6 +76,15 @@ func ExampleValidator_WithNameFunc() {
 	}
 }
 ```
+
+## Pass validation callbacks
+
+The `Validate` methods take `...govy.ValidationOption`.
+Direct `Validate(value)` calls still work.
+To pass validation as `func(T) error`, wrap the call in a function.
+Custom validation interfaces must include the variadic option parameter.
+Use builders to configure validation.
+There are no exported validation option constructors.
 
 ## Control when validators run
 
@@ -233,6 +243,7 @@ func ExampleValidator_ValidateSlice() {
 Validator cascade controls whether validation continues to later properties.
 Property cascade controls the rules within that property.
 A property override does not make later properties run after a validator-level stop.
+Included validators retain their own cascade modes.
 
 ### Stop evaluating later properties after a validator failure
 
@@ -296,12 +307,14 @@ func ExampleValidator() {
 			Required().
 			Rules(
 				rules.StringNotEmpty(),
-				rules.OneOf("Jake", "George")),
+				rules.OneOf("Jake", "George"),
+			),
 		govy.ForSlice(func(t Teacher) []Student { return t.Students }).
 			WithName("students").
 			Rules(
 				rules.SliceMaxLength[[]Student](2),
-				rules.SliceUnique(func(v Student) string { return v.Index })).
+				rules.SliceUnique(func(v Student) string { return v.Index }),
+			).
 			IncludeForEach(studentValidator),
 		govy.For(func(t Teacher) University { return t.University }).
 			WithName("university").

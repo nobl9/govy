@@ -13,6 +13,10 @@ Validation plan generation and strict validation of plan metadata.
 Use validation plans when validation rules also need to describe an API contract.
 Add examples, descriptions, and predicate descriptions before generating the plan.
 
+`ValidatorPlan.TypeInfo` describes the root Go type with `Name`, `Kind`, and `Package`.
+It is separate from the display name set by `WithName`.
+Serialized plans include this metadata as the root `typeInfo` field.
+
 ### Generate a plan from a validator
 
 [//]: # (embed: ExamplePlan?comments=false)

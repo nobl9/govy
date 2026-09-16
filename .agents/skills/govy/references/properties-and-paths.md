@@ -175,7 +175,7 @@ func ExampleTransform() {
 
 Use `Required` to stop on empty values.
 Use `OmitEmpty` to skip optional direct values.
-Use `HideValue` when errors must not expose the original input.
+For value hiding and its limits, read [Errors](errors.md#hide-property-values).
 
 ### Require a non-empty value before normal rules run
 

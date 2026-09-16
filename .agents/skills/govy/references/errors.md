@@ -5,6 +5,7 @@
 - [Work with validator errors](#work-with-validator-errors)
   - [Set or overwrite a validator name on returned errors.](#set-or-overwrite-a-validator-name-on-returned-errors)
   - [Inspect and serialize validator error output.](#inspect-and-serialize-validator-error-output)
+- [Hide property values](#hide-property-values)
 - [Create property-scoped errors](#create-property-scoped-errors)
   - [Construct a property error with one or more rule errors.](#construct-a-property-error-with-one-or-more-rule-errors)
 
@@ -57,6 +58,22 @@ func ExampleValidatorError() {
 }
 ```
 
+## Hide property values
+
+Configure `PropertyRules.HideValue()` before validation.
+It applies to nested rules, included validators, and collection checks.
+It clears `PropertyError.PropertyValue`
+and redacts value text from ordinary rule errors.
+Message templates receive `[hidden]` as `.PropertyValue` and a redacted `.Error`.
+
+Template rendering does not redact details, examples, custom fields,
+comparison values, or literal text.
+Keep secrets out of those inputs.
+Property paths stay visible, including map keys.
+
+For migrations, replace error-level `HideValue` calls with property configuration.
+`PropertyErrors`, `PropertyError`, and `RuleError` no longer expose those methods.
+
 ## Create property-scoped errors
 
 Return property errors from custom rules to identify failures at nested paths.
@@ -75,7 +92,8 @@ func ExampleNewPropertyError() {
 						jsonpath.Parse("name"),
 						t.Name,
 						govy.NewRuleError("name cannot be Jake", "error_code_jake"),
-						govy.NewRuleError("you can pass me too!"))
+						govy.NewRuleError("you can pass me too!"),
+					)
 				}
 				return nil
 			})),

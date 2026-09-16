@@ -78,6 +78,32 @@
         "PlanStrictMode succeeds; plan rules have nonempty descriptions and address conditions are present."
       ],
       "files": []
+    },
+    {
+      "id": 7,
+      "name": "hidden-values-and-plan-types",
+      "prompt": "Create package validation with `type Credential struct { Token string }` and `type Account struct { Name string; Credentials []Credential }`. Export a reusable govy.Validator[Account] named AccountValidator, with display name account. Also export ValidateAccount as a func(Account) error callback. Name is required and has at most 8 bytes. Each credential token is required and has at least 16 bytes. Use a custom token-length rule with code token_length, a useful description, and a failure message formatted as `invalid token %q` with the actual rejected token. Configure value hiding on the Credentials property and compose a reusable credential validator. Token values must be absent from structured errors, rendered errors, and JSON output. Keep paths such as credentials[0].token and independent Name failures visible. Include tests for callback compatibility, valid boundaries, hidden nested failures, and the root Go type information in govy.Plan. Explain HideValue's limits in at most 150 words. Save compilable .go files and explanation.md.",
+      "expected_output": "Reusable nested validation with working unary callback adaptation, propagated hiding, complete structured errors, and root plan type metadata distinct from the display name.",
+      "expectations": [
+        "The output compiles and its tests pass against the pinned govy checkout, including assignment of ValidateAccount to func(Account) error.",
+        "The contract tests verify name and token boundaries, required values, nested paths, and independent failures.",
+        "Nested token errors have empty PropertyValue and redacted messages; rendered and JSON errors exclude rejected tokens while Name values remain visible.",
+        "The plan identifies root Go type Account and kind struct independently of display name account; the explanation identifies template metadata and property paths as hiding limits."
+      ],
+      "files": []
+    },
+    {
+      "id": 8,
+      "name": "strict-format-selection",
+      "prompt": "Create package validation with `type ImportRecord struct { ID string; Language string; Payload string; OutputPath string }` and a reusable govy.Validator[ImportRecord] named ImportRecordValidator. All fields are required. ID must be an RFC 4122 version 4 UUID, including the correct variant. Language must already be a canonical BCP 47 tag with preferred forms, without normalization. Payload must use unpadded URL-safe base64 with valid trailing bits and no whitespace. OutputPath must be absolute on the current platform; the path need not exist. Choose existing govy rules. Use lower-camel property paths and include tests for nearby invalid formats and independent errors. Save compilable .go files and a brief explanation.",
+      "expected_output": "Correct selection of predefined format variants, with required-value handling and complete property-specific failures.",
+      "expectations": [
+        "The output compiles and its tests pass against the pinned govy checkout.",
+        "The contract tests distinguish UUID version and variant, canonical language tags and aliases, and required versus optional values.",
+        "The contract tests reject padded or standard-alphabet payloads, whitespace, and nonzero trailing bits while accepting valid unpadded URL-safe input.",
+        "The validator uses existing govy format rules and accepts absolute paths without requiring file-system existence; independent errors retain complete lower-camel paths."
+      ],
+      "files": []
     }
   ]
 }
