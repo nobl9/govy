@@ -71,6 +71,7 @@ const (
 	ErrorCodeStringMatchFileSystemPath     govy.ErrorCode = "string_match_file_system_path"
 	ErrorCodeStringFilePath                govy.ErrorCode = "string_file_path"
 	ErrorCodeStringDirPath                 govy.ErrorCode = "string_dir_path"
+	ErrorCodeStringAbsoluteFilePath        govy.ErrorCode = "string_absolute_file_path"
 	ErrorCodeStringRegexp                  govy.ErrorCode = "string_regexp"
 	ErrorCodeStringCrontab                 govy.ErrorCode = "string_crontab"
 	ErrorCodeStringDateTime                govy.ErrorCode = "string_date_time"

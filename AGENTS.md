@@ -88,7 +88,8 @@ When adding a rule in `pkg/rules`:
 - Assign an exported error code from `pkg/rules/error_codes.go`.
 - Always use message templates from `internal/messagetemplates`.
 - Set a useful description with `WithDescription` so validation plans remain informative.
-- Add examples or details when they materially improve user-facing errors.
+- Use `WithExamples` or `WithDetails` when they materially improve
+  validation errors.
 - Add tests for success, failure message, and error-code behavior.
 
 When changing core validation behavior in `pkg/govy`, preserve the public error
@@ -109,12 +110,21 @@ Keep derived boundary cases in addition to, not instead of, the source corpus.
 If a source vector is intentionally excluded,
 enumerate the literal and explain why it falls outside the documented contract.
 
-For rules, keep table data close to the rule test and cover both passing and
-failing inputs.
+For each rule, default to one table-driven unit test and one benchmark.
+Keep table data close to the rule test and cover both passing and failing inputs.
+Use a shared case helper when inputs need setup.
+Reserve separate test functions for cases whose setup or assertions
+cannot fit clearly in the table.
 When expected output includes validation messages, assert the exact message
 unless the existing package uses a looser helper for that case.
 
-For user-facing examples, prefer Go testable examples.
+Add Go `Example...` functions for rules only when a complex rule needs extra
+usage guidance.
+The example must explain configuration, composition, or property interactions
+that the doc comment and test table do not make clear.
+For simple rules, use doc comments and table cases without an `Example...`
+function.
+Prefer Go testable examples for other user-facing documentation.
 Examples in `internal/examples` are embedded into `README.md`, so changes there
 must still pass `make test` and `make generate/readme`.
 
