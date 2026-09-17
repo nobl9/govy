@@ -152,7 +152,6 @@ regenerating embedded blocks.
 
 Always update the [Govy skill](.agents/skills/govy/SKILL.md)
 when changing public APIs, validation behavior, or usage guidance.
-Apply this rule to changes merged or rebased from `main` as well.
 
 - Update affected references, examples, and evaluations in the same change.
 - Regenerate embedded content with `make generate/readme`.
