@@ -1,0 +1,109 @@
+{
+  "skill_name": "govy",
+  "evals": [
+    {
+      "id": 1,
+      "name": "field-boundaries",
+      "prompt": "Create package validation with `type AlertPolicyDraft struct { Name string; Description *string; Severity string; Labels []string }` and a reusable govy.Validator[AlertPolicyDraft] named AlertPolicyValidator. Use lower-camel JSON property paths. Name is required and has 3-63 ASCII characters. Description is optional; a present value may be empty and has at most 200 ASCII characters. Severity is one of low, medium, high, critical. Labels has at most 10 values, with no duplicates. Include table tests using govytest that exercise valid values, boundaries, nil pointers, and independent failures. Save compilable .go files and a brief explanation.",
+      "expected_output": "Reusable validation and passing tests for all field constraints, with exact structured paths and no extra errors.",
+      "expectations": [
+        "The output compiles and its tests pass against the pinned govy checkout.",
+        "The contract tests pass for required names, lengths 2/3/63/64, description nil/empty/200/201, every severity, and label count 10/11 and duplicates.",
+        "Independent invalid properties produce separate failures with the complete lower-camel paths and the expected error count.",
+        "Uses reusable govy validators and existing rules, with structured assertions instead of only rendered-error comparisons."
+      ],
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "custom-rule-metadata",
+      "prompt": "Create package validation with `type Contact struct { Email string }` and a reusable govy.Validator[Contact] named ContactValidator. Email is required. Add a custom rule accepting only the exact example.com domain, case-insensitively; subdomains and suffix lookalikes are invalid. Give this rule error code email_domain, a useful plan description, and a valid example. A rejected address must appear in its runtime message. Required on the property owns the empty-value failure. Include govytest tests and verify the generated plan. Save compilable .go files and a brief explanation.",
+      "expected_output": "A custom domain rule with correct runtime errors, required-value handling, and observable plan metadata.",
+      "expectations": [
+        "The output compiles and its tests pass against the pinned govy checkout.",
+        "The contract tests accept example.com and EXAMPLE.COM, reject different domains and lookalikes, and report only required for an empty email.",
+        "The email_domain failure includes the actual rejected address, not a function value or a construction-time placeholder.",
+        "The generated email plan contains a nonempty description, a valid example, and error code email_domain."
+      ],
+      "files": []
+    },
+    {
+      "id": 3,
+      "name": "nested-collections",
+      "prompt": "Create package validation with `type Environment struct { Projects []Project }`, `type Project struct { Name string; SLOs []SLO }`, and `type SLO struct { Objective float64 }`. Export a reusable govy.Validator[Environment] named EnvironmentValidator. Project names are required. Objectives are in the inclusive range [0, 100]. Allow at most 20 projects and at most 100 SLOs per project. Compose reusable validators and preserve paths such as projects[0].slos[1].objective. Include tests for valid boundaries, each limit, required project names, and independent errors. Save compilable .go files and a brief explanation.",
+      "expected_output": "Composed validators whose actual errors and acceptance boundaries match the full object contract.",
+      "expectations": [
+        "The output compiles and its tests pass against the pinned govy checkout.",
+        "The contract tests accept objectives 0/100, reject -1/101, accept 20 projects and 100 SLOs, and reject 21 projects and 101 SLOs.",
+        "An empty project name fails at projects[0].name; an invalid nested objective fails at projects[0].slos[1].objective.",
+        "Independent project failures remain visible, with no errors added for valid neighboring fields."
+      ],
+      "files": []
+    },
+    {
+      "id": 4,
+      "name": "paths-and-optional-data",
+      "prompt": "Explain WithName, WithPath, and path inference in govy in at most 250 words. Also create compilable package validation with `type Details struct { Name string }` and `type Profile struct { Code string; Details *Details }`. Export a govy.Validator[Profile] named ProfileValidator. A blank Code must fail at the synthetic path settings.code (two path segments). Details is optional; when present, its Name is required and must fail at details.name. Use explicit paths for this new validator. Include tests for nil Details and both failing paths. Save the .go files and explanation.md.",
+      "expected_output": "A concise, correct path explanation plus executable synthetic-path and optional-nested-object examples.",
+      "expectations": [
+        "The output compiles and its tests pass against the pinned govy checkout.",
+        "The contract tests distinguish settings.code from a single property named settings.code, and verify details.name and nil skipping.",
+        "The explanation correctly distinguishes one segment, multiple segments, and inferred paths.",
+        "The explanation stays within 250 words and the examples use real govy APIs."
+      ],
+      "files": []
+    },
+    {
+      "id": 5,
+      "name": "pointer-presence",
+      "prompt": "Create package validation with `type Sample struct { Enabled *bool; Target *float64; Note *string }` and a reusable govy.Validator[Sample] named SampleValidator. Enabled and Target must be present. Both false and true are valid for Enabled. Target is in the inclusive range [0, 100], including a present zero. Note is optional, but a present empty string is invalid. Paths are enabled, target, and note. Include table tests separating nil, zero, boundary, and invalid values. Save compilable .go files and a brief explanation.",
+      "expected_output": "Presence-aware rules that keep valid false/zero values and still reject missing required values or present empty notes.",
+      "expectations": [
+        "The output compiles and its tests pass against the pinned govy checkout.",
+        "The contract tests accept false and target zero, reject nil required pointers, and check target boundaries.",
+        "A nil Note is accepted and a present empty Note fails at note.",
+        "Tests distinguish missing values from invalid contents and assert the complete error set."
+      ],
+      "files": []
+    },
+    {
+      "id": 6,
+      "name": "conditions-transforms-and-plans",
+      "prompt": "Create package validation with `type Endpoint struct { Name string; Mode string; Address string; Timeout string }` and a reusable govy.Validator[Endpoint] named EndpointValidator. Name is required. Mode is local or remote. For remote mode only, Address is required and must parse as an HTTPS URL with a nonempty host; local mode ignores Address. A nonempty Timeout must parse with time.ParseDuration and be strictly positive; empty Timeout is omitted. Report only one Address error for an invalid remote address, while retaining an independent Name failure. Use govy composition and built-in rules where applicable. The validator must support govy.PlanStrictMode, with nonempty descriptions for its custom rules and descriptions for its conditions. Include tests, including timeout 0s, and save compilable .go files and a brief explanation.",
+      "expected_output": "Conditional validation with precise cascade scope, positive transformed durations, and usable plan metadata.",
+      "expectations": [
+        "The output compiles and its tests pass against the pinned govy checkout.",
+        "The contract tests check branch applicability, remote URL validity, one Address error after a prerequisite failure, and independent Name errors.",
+        "Timeout accepts empty/1s, rejects malformed durations, 0s, 0ms, and negative durations.",
+        "PlanStrictMode succeeds; plan rules have nonempty descriptions and address conditions are present."
+      ],
+      "files": []
+    },
+    {
+      "id": 7,
+      "name": "hidden-values-and-plan-types",
+      "prompt": "Create package validation with `type Credential struct { Token string }` and `type Account struct { Name string; Credentials []Credential }`. Export a reusable govy.Validator[Account] named AccountValidator, with display name account. Also export ValidateAccount as a func(Account) error callback. Name is required and has at most 8 bytes. Each credential token is required and has at least 16 bytes. Use a custom token-length rule with code token_length, a useful description, and a failure message formatted as `invalid token %q` with the actual rejected token. Configure value hiding on the Credentials property and compose a reusable credential validator. Token values must be absent from structured errors, rendered errors, and JSON output. Keep paths such as credentials[0].token and independent Name failures visible. Include tests for callback compatibility, valid boundaries, hidden nested failures, and the root Go type information in govy.Plan. Explain HideValue's limits in at most 150 words. Save compilable .go files and explanation.md.",
+      "expected_output": "Reusable nested validation with working unary callback adaptation, propagated hiding, complete structured errors, and root plan type metadata distinct from the display name.",
+      "expectations": [
+        "The output compiles and its tests pass against the pinned govy checkout, including assignment of ValidateAccount to func(Account) error.",
+        "The contract tests verify name and token boundaries, required values, nested paths, and independent failures.",
+        "Nested token errors have empty PropertyValue and redacted messages; rendered and JSON errors exclude rejected tokens while Name values remain visible.",
+        "The plan identifies root Go type Account and kind struct independently of display name account; the explanation identifies template metadata and property paths as hiding limits."
+      ],
+      "files": []
+    },
+    {
+      "id": 8,
+      "name": "strict-format-selection",
+      "prompt": "Create package validation with `type ImportRecord struct { ID string; Language string; Payload string; OutputPath string }` and a reusable govy.Validator[ImportRecord] named ImportRecordValidator. All fields are required. ID must be an RFC 4122 version 4 UUID, including the correct variant. Language must already be a canonical BCP 47 tag with preferred forms, without normalization. Payload must use unpadded URL-safe base64 with valid trailing bits and no whitespace. OutputPath must be absolute on the current platform; the path need not exist. Choose existing govy rules. Use lower-camel property paths and include tests for nearby invalid formats and independent errors. Save compilable .go files and a brief explanation.",
+      "expected_output": "Correct selection of predefined format variants, with required-value handling and complete property-specific failures.",
+      "expectations": [
+        "The output compiles and its tests pass against the pinned govy checkout.",
+        "The contract tests distinguish UUID version and variant, canonical language tags and aliases, and required versus optional values.",
+        "The contract tests reject padded or standard-alphabet payloads, whitespace, and nonzero trailing bits while accepting valid unpadded URL-safe input.",
+        "The validator uses existing govy format rules and accepts absolute paths without requiring file-system existence; independent errors retain complete lower-camel paths."
+      ],
+      "files": []
+    }
+  ]
+}

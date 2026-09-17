@@ -148,6 +148,16 @@ in new docs.
 When editing `README.md`, prefer changing tested source examples and
 regenerating embedded blocks.
 
+### Govy Skill
+
+Always update the [Govy skill](.agents/skills/govy/SKILL.md)
+when changing public APIs, validation behavior, or usage guidance.
+
+- Update affected references, examples, and evaluations in the same change.
+- Regenerate embedded content with `make generate/readme`.
+- Run affected [skill evaluations](.agents/skills/govy/evals/README.md).
+- Keep `SKILL.md` concise. Put detailed guidance in linked references.
+
 ## Pull Requests
 
 PR titles must match the rules defined in `.github/workflows/pr-title.yml`
