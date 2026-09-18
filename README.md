@@ -192,8 +192,6 @@ Install it in your project with the [skills CLI](https://skills.sh/docs/cli):
 npx skills add nobl9/govy --skill govy
 ```
 
-When prompted, select your coding agent.
-
 ### Use cases
 
 1. [Nobl9 Go SDK](https://github.com/nobl9/nobl9-go) \
