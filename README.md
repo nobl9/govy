@@ -22,8 +22,9 @@ for upcoming, planned features.
 ## Legend
 
 1. [Getting started](#getting-started)
-    1. [Use cases](#use-cases)
-    2. [Comparison with other libraries](#comparison-with-other-libraries)
+    1. [Agent skill](#agent-skill)
+    2. [Use cases](#use-cases)
+    3. [Comparison with other libraries](#comparison-with-other-libraries)
 2. [Building blocks](#building-blocks)
     1. [Errors](#errors)
 3. [Features](#features)
@@ -180,6 +181,18 @@ func Example_basicUsage() {
 	//     - string must match regular expression: '[\w\s.]+, \d{2}-\d{3} \w+' (e.g. '5 M. Skłodowska-Curie Square, 60-965 Poznan'); Polish address format must consist of the main address and zip code
 }
 ```
+
+### Agent skill
+
+The [Govy skill](.agents/skills/govy/SKILL.md) helps coding agents write,
+review, and test validators.
+Install it in your project with the [skills CLI](https://skills.sh/docs/cli):
+
+```shell
+npx skills add nobl9/govy --skill govy
+```
+
+When prompted, select your coding agent.
 
 ### Use cases
 
