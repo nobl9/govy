@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1789663317029,
+  "lastUpdate": 1789727004906,
   "repoUrl": "https://github.com/nobl9/govy",
   "entries": {
     "Govy Go Benchmark": [
@@ -385260,6 +385260,4224 @@ window.BENCHMARK_DATA = {
             "value": 108,
             "unit": "allocs/op",
             "extra": "46038 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "48822818+nieomylnieja@users.noreply.github.com",
+            "name": "Mateusz Hawrus",
+            "username": "nieomylnieja"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "398e753d25333891013c6b511d74e62ab1b60be5",
+          "message": "doc: add govy skill installation to README (#296)\n\n## Motivation\n\nMake the Govy agent skill easy to find and install from the README.\n\n## Summary\n\nAdded an Agent skill section under Getting started and linked it from\nthe contents. The section explains its purpose and includes `npx skills\nadd nobl9/govy --skill govy`.\n\n## Testing\n\nVerified that the skills CLI finds `govy` in `nobl9/govy` with `--list`.\nConfirmed README generation preserves the new section and all six\nembedded examples remain unchanged.",
+          "timestamp": "2026-09-18T12:18:49+02:00",
+          "tree_id": "6df19f579e670f18a1baf34c3226818893ff8143",
+          "url": "https://github.com/nobl9/govy/commit/398e753d25333891013c6b511d74e62ab1b60be5"
+        },
+        "date": 1789727001213,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkEmbedExamples (github.com/nobl9/govy/internal/cmd/docextractor)",
+            "value": 12883946,
+            "unit": "ns/op\t        69.00 directives/op\t         5.000 example-files/op\t    107125 markdown-bytes/op\t        16.00 markdown-files/op\t 4485440 B/op\t   84245 allocs/op",
+            "extra": "79 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkEmbedExamples (github.com/nobl9/govy/internal/cmd/docextractor) - ns/op",
+            "value": 12883946,
+            "unit": "ns/op",
+            "extra": "79 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkEmbedExamples (github.com/nobl9/govy/internal/cmd/docextractor) - directives/op",
+            "value": 69,
+            "unit": "directives/op",
+            "extra": "79 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkEmbedExamples (github.com/nobl9/govy/internal/cmd/docextractor) - example-files/op",
+            "value": 5,
+            "unit": "example-files/op",
+            "extra": "79 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkEmbedExamples (github.com/nobl9/govy/internal/cmd/docextractor) - markdown-bytes/op",
+            "value": 107125,
+            "unit": "markdown-bytes/op",
+            "extra": "79 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkEmbedExamples (github.com/nobl9/govy/internal/cmd/docextractor) - markdown-files/op",
+            "value": 16,
+            "unit": "markdown-files/op",
+            "extra": "79 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkEmbedExamples (github.com/nobl9/govy/internal/cmd/docextractor) - B/op",
+            "value": 4485440,
+            "unit": "B/op",
+            "extra": "79 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkEmbedExamples (github.com/nobl9/govy/internal/cmd/docextractor) - allocs/op",
+            "value": 84245,
+            "unit": "allocs/op",
+            "extra": "79 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFor (github.com/nobl9/govy/pkg/govy)",
+            "value": 393.4,
+            "unit": "ns/op\t     136 B/op\t       5 allocs/op",
+            "extra": "3035695 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFor (github.com/nobl9/govy/pkg/govy) - ns/op",
+            "value": 393.4,
+            "unit": "ns/op",
+            "extra": "3035695 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFor (github.com/nobl9/govy/pkg/govy) - B/op",
+            "value": 136,
+            "unit": "B/op",
+            "extra": "3035695 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkFor (github.com/nobl9/govy/pkg/govy) - allocs/op",
+            "value": 5,
+            "unit": "allocs/op",
+            "extra": "3035695 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkEQ (github.com/nobl9/govy/pkg/rules)",
+            "value": 1207,
+            "unit": "ns/op\t     568 B/op\t       8 allocs/op",
+            "extra": "961170 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkEQ (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 1207,
+            "unit": "ns/op",
+            "extra": "961170 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkEQ (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 568,
+            "unit": "B/op",
+            "extra": "961170 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkEQ (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 8,
+            "unit": "allocs/op",
+            "extra": "961170 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNEQ (github.com/nobl9/govy/pkg/rules)",
+            "value": 1188,
+            "unit": "ns/op\t     576 B/op\t       8 allocs/op",
+            "extra": "964827 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNEQ (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 1188,
+            "unit": "ns/op",
+            "extra": "964827 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNEQ (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 576,
+            "unit": "B/op",
+            "extra": "964827 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNEQ (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 8,
+            "unit": "allocs/op",
+            "extra": "964827 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGT (github.com/nobl9/govy/pkg/rules)",
+            "value": 2134,
+            "unit": "ns/op\t    1136 B/op\t      16 allocs/op",
+            "extra": "542757 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGT (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 2134,
+            "unit": "ns/op",
+            "extra": "542757 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGT (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 1136,
+            "unit": "B/op",
+            "extra": "542757 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGT (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 16,
+            "unit": "allocs/op",
+            "extra": "542757 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGTE (github.com/nobl9/govy/pkg/rules)",
+            "value": 1086,
+            "unit": "ns/op\t     592 B/op\t       8 allocs/op",
+            "extra": "1000000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGTE (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 1086,
+            "unit": "ns/op",
+            "extra": "1000000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGTE (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 592,
+            "unit": "B/op",
+            "extra": "1000000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGTE (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 8,
+            "unit": "allocs/op",
+            "extra": "1000000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkLT (github.com/nobl9/govy/pkg/rules)",
+            "value": 2160,
+            "unit": "ns/op\t    1136 B/op\t      16 allocs/op",
+            "extra": "554676 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkLT (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 2160,
+            "unit": "ns/op",
+            "extra": "554676 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkLT (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 1136,
+            "unit": "B/op",
+            "extra": "554676 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkLT (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 16,
+            "unit": "allocs/op",
+            "extra": "554676 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkLTE (github.com/nobl9/govy/pkg/rules)",
+            "value": 1142,
+            "unit": "ns/op\t     592 B/op\t       8 allocs/op",
+            "extra": "1000000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkLTE (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 1142,
+            "unit": "ns/op",
+            "extra": "1000000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkLTE (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 592,
+            "unit": "B/op",
+            "extra": "1000000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkLTE (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 8,
+            "unit": "allocs/op",
+            "extra": "1000000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkEqualProperties (github.com/nobl9/govy/pkg/rules)",
+            "value": 1.564,
+            "unit": "ns/op\t       0 B/op\t       0 allocs/op",
+            "extra": "768445004 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkEqualProperties (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 1.564,
+            "unit": "ns/op",
+            "extra": "768445004 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkEqualProperties (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "768445004 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkEqualProperties (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "768445004 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkLTProperties (github.com/nobl9/govy/pkg/rules)",
+            "value": 3071,
+            "unit": "ns/op\t    1280 B/op\t      20 allocs/op",
+            "extra": "382449 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkLTProperties (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 3071,
+            "unit": "ns/op",
+            "extra": "382449 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkLTProperties (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 1280,
+            "unit": "B/op",
+            "extra": "382449 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkLTProperties (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 20,
+            "unit": "allocs/op",
+            "extra": "382449 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkLTComparableProperties (github.com/nobl9/govy/pkg/rules)",
+            "value": 3708,
+            "unit": "ns/op\t    1376 B/op\t      20 allocs/op",
+            "extra": "319077 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkLTComparableProperties (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 3708,
+            "unit": "ns/op",
+            "extra": "319077 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkLTComparableProperties (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 1376,
+            "unit": "B/op",
+            "extra": "319077 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkLTComparableProperties (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 20,
+            "unit": "allocs/op",
+            "extra": "319077 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGTProperties (github.com/nobl9/govy/pkg/rules)",
+            "value": 3129,
+            "unit": "ns/op\t    1280 B/op\t      20 allocs/op",
+            "extra": "352557 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGTProperties (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 3129,
+            "unit": "ns/op",
+            "extra": "352557 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGTProperties (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 1280,
+            "unit": "B/op",
+            "extra": "352557 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGTProperties (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 20,
+            "unit": "allocs/op",
+            "extra": "352557 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGTComparableProperties (github.com/nobl9/govy/pkg/rules)",
+            "value": 3701,
+            "unit": "ns/op\t    1376 B/op\t      20 allocs/op",
+            "extra": "323967 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGTComparableProperties (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 3701,
+            "unit": "ns/op",
+            "extra": "323967 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGTComparableProperties (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 1376,
+            "unit": "B/op",
+            "extra": "323967 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGTComparableProperties (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 20,
+            "unit": "allocs/op",
+            "extra": "323967 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkLTEProperties (github.com/nobl9/govy/pkg/rules)",
+            "value": 1568,
+            "unit": "ns/op\t     656 B/op\t      10 allocs/op",
+            "extra": "745664 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkLTEProperties (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 1568,
+            "unit": "ns/op",
+            "extra": "745664 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkLTEProperties (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 656,
+            "unit": "B/op",
+            "extra": "745664 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkLTEProperties (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 10,
+            "unit": "allocs/op",
+            "extra": "745664 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkLTEComparableProperties (github.com/nobl9/govy/pkg/rules)",
+            "value": 1880,
+            "unit": "ns/op\t     688 B/op\t      10 allocs/op",
+            "extra": "631224 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkLTEComparableProperties (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 1880,
+            "unit": "ns/op",
+            "extra": "631224 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkLTEComparableProperties (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 688,
+            "unit": "B/op",
+            "extra": "631224 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkLTEComparableProperties (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 10,
+            "unit": "allocs/op",
+            "extra": "631224 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGTEProperties (github.com/nobl9/govy/pkg/rules)",
+            "value": 1573,
+            "unit": "ns/op\t     656 B/op\t      10 allocs/op",
+            "extra": "748131 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGTEProperties (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 1573,
+            "unit": "ns/op",
+            "extra": "748131 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGTEProperties (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 656,
+            "unit": "B/op",
+            "extra": "748131 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGTEProperties (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 10,
+            "unit": "allocs/op",
+            "extra": "748131 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGTEComparableProperties (github.com/nobl9/govy/pkg/rules)",
+            "value": 1878,
+            "unit": "ns/op\t     688 B/op\t      10 allocs/op",
+            "extra": "643551 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGTEComparableProperties (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 1878,
+            "unit": "ns/op",
+            "extra": "643551 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGTEComparableProperties (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 688,
+            "unit": "B/op",
+            "extra": "643551 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGTEComparableProperties (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 10,
+            "unit": "allocs/op",
+            "extra": "643551 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkDurationPrecision (github.com/nobl9/govy/pkg/rules)",
+            "value": 3002,
+            "unit": "ns/op\t    1220 B/op\t      21 allocs/op",
+            "extra": "400299 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkDurationPrecision (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 3002,
+            "unit": "ns/op",
+            "extra": "400299 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkDurationPrecision (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 1220,
+            "unit": "B/op",
+            "extra": "400299 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkDurationPrecision (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 21,
+            "unit": "allocs/op",
+            "extra": "400299 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkForbidden (github.com/nobl9/govy/pkg/rules)",
+            "value": 837.9,
+            "unit": "ns/op\t     600 B/op\t      10 allocs/op",
+            "extra": "1433090 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkForbidden (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 837.9,
+            "unit": "ns/op",
+            "extra": "1433090 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkForbidden (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 600,
+            "unit": "B/op",
+            "extra": "1433090 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkForbidden (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 10,
+            "unit": "allocs/op",
+            "extra": "1433090 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringLength (github.com/nobl9/govy/pkg/rules)",
+            "value": 2760,
+            "unit": "ns/op\t    1216 B/op\t      20 allocs/op",
+            "extra": "432709 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringLength (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 2760,
+            "unit": "ns/op",
+            "extra": "432709 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringLength (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 1216,
+            "unit": "B/op",
+            "extra": "432709 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringLength (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 20,
+            "unit": "allocs/op",
+            "extra": "432709 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMinLength (github.com/nobl9/govy/pkg/rules)",
+            "value": 2250,
+            "unit": "ns/op\t    1248 B/op\t      20 allocs/op",
+            "extra": "536078 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMinLength (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 2250,
+            "unit": "ns/op",
+            "extra": "536078 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMinLength (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 1248,
+            "unit": "B/op",
+            "extra": "536078 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMinLength (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 20,
+            "unit": "allocs/op",
+            "extra": "536078 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMaxLength (github.com/nobl9/govy/pkg/rules)",
+            "value": 2268,
+            "unit": "ns/op\t    1248 B/op\t      20 allocs/op",
+            "extra": "528763 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMaxLength (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 2268,
+            "unit": "ns/op",
+            "extra": "528763 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMaxLength (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 1248,
+            "unit": "B/op",
+            "extra": "528763 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMaxLength (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 20,
+            "unit": "allocs/op",
+            "extra": "528763 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSliceLength (github.com/nobl9/govy/pkg/rules)",
+            "value": 2735,
+            "unit": "ns/op\t    1248 B/op\t      20 allocs/op",
+            "extra": "430755 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSliceLength (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 2735,
+            "unit": "ns/op",
+            "extra": "430755 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSliceLength (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 1248,
+            "unit": "B/op",
+            "extra": "430755 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSliceLength (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 20,
+            "unit": "allocs/op",
+            "extra": "430755 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSliceMinLength (github.com/nobl9/govy/pkg/rules)",
+            "value": 2268,
+            "unit": "ns/op\t    1280 B/op\t      20 allocs/op",
+            "extra": "510802 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSliceMinLength (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 2268,
+            "unit": "ns/op",
+            "extra": "510802 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSliceMinLength (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 1280,
+            "unit": "B/op",
+            "extra": "510802 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSliceMinLength (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 20,
+            "unit": "allocs/op",
+            "extra": "510802 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSliceMaxLength (github.com/nobl9/govy/pkg/rules)",
+            "value": 2273,
+            "unit": "ns/op\t    1280 B/op\t      20 allocs/op",
+            "extra": "535188 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSliceMaxLength (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 2273,
+            "unit": "ns/op",
+            "extra": "535188 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSliceMaxLength (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 1280,
+            "unit": "B/op",
+            "extra": "535188 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSliceMaxLength (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 20,
+            "unit": "allocs/op",
+            "extra": "535188 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkMapLength (github.com/nobl9/govy/pkg/rules)",
+            "value": 2572,
+            "unit": "ns/op\t    1152 B/op\t      16 allocs/op",
+            "extra": "466468 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkMapLength (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 2572,
+            "unit": "ns/op",
+            "extra": "466468 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkMapLength (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 1152,
+            "unit": "B/op",
+            "extra": "466468 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkMapLength (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 16,
+            "unit": "allocs/op",
+            "extra": "466468 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkMapMinLength (github.com/nobl9/govy/pkg/rules)",
+            "value": 2114,
+            "unit": "ns/op\t    1184 B/op\t      16 allocs/op",
+            "extra": "540434 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkMapMinLength (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 2114,
+            "unit": "ns/op",
+            "extra": "540434 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkMapMinLength (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 1184,
+            "unit": "B/op",
+            "extra": "540434 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkMapMinLength (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 16,
+            "unit": "allocs/op",
+            "extra": "540434 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkMapMaxLength (github.com/nobl9/govy/pkg/rules)",
+            "value": 2109,
+            "unit": "ns/op\t    1184 B/op\t      16 allocs/op",
+            "extra": "565462 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkMapMaxLength (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 2109,
+            "unit": "ns/op",
+            "extra": "565462 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkMapMaxLength (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 1184,
+            "unit": "B/op",
+            "extra": "565462 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkMapMaxLength (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 16,
+            "unit": "allocs/op",
+            "extra": "565462 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkOneOf (github.com/nobl9/govy/pkg/rules)",
+            "value": 2217,
+            "unit": "ns/op\t     824 B/op\t      20 allocs/op",
+            "extra": "531768 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkOneOf (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 2217,
+            "unit": "ns/op",
+            "extra": "531768 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkOneOf (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 824,
+            "unit": "B/op",
+            "extra": "531768 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkOneOf (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 20,
+            "unit": "allocs/op",
+            "extra": "531768 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNotOneOf (github.com/nobl9/govy/pkg/rules)",
+            "value": 2214,
+            "unit": "ns/op\t     824 B/op\t      20 allocs/op",
+            "extra": "527630 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNotOneOf (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 2214,
+            "unit": "ns/op",
+            "extra": "527630 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNotOneOf (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 824,
+            "unit": "B/op",
+            "extra": "527630 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNotOneOf (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 20,
+            "unit": "allocs/op",
+            "extra": "527630 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkOneOfProperties (github.com/nobl9/govy/pkg/rules)",
+            "value": 3301,
+            "unit": "ns/op\t    1288 B/op\t      30 allocs/op",
+            "extra": "361146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkOneOfProperties (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 3301,
+            "unit": "ns/op",
+            "extra": "361146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkOneOfProperties (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 1288,
+            "unit": "B/op",
+            "extra": "361146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkOneOfProperties (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 30,
+            "unit": "allocs/op",
+            "extra": "361146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkMutuallyExclusive (github.com/nobl9/govy/pkg/rules)",
+            "value": 15950,
+            "unit": "ns/op\t    5914 B/op\t     131 allocs/op",
+            "extra": "75159 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkMutuallyExclusive (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 15950,
+            "unit": "ns/op",
+            "extra": "75159 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkMutuallyExclusive (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 5914,
+            "unit": "B/op",
+            "extra": "75159 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkMutuallyExclusive (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 131,
+            "unit": "allocs/op",
+            "extra": "75159 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkMutuallyDependent (github.com/nobl9/govy/pkg/rules)",
+            "value": 17070,
+            "unit": "ns/op\t    4401 B/op\t     128 allocs/op",
+            "extra": "69879 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkMutuallyDependent (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 17070,
+            "unit": "ns/op",
+            "extra": "69879 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkMutuallyDependent (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 4401,
+            "unit": "B/op",
+            "extra": "69879 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkMutuallyDependent (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 128,
+            "unit": "allocs/op",
+            "extra": "69879 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRequired (github.com/nobl9/govy/pkg/rules)",
+            "value": 4680,
+            "unit": "ns/op\t    3552 B/op\t      48 allocs/op",
+            "extra": "259450 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRequired (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 4680,
+            "unit": "ns/op",
+            "extra": "259450 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRequired (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 3552,
+            "unit": "B/op",
+            "extra": "259450 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRequired (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 48,
+            "unit": "allocs/op",
+            "extra": "259450 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringBCP47LanguageTag (github.com/nobl9/govy/pkg/rules)",
+            "value": 47420,
+            "unit": "ns/op\t   18016 B/op\t     360 allocs/op",
+            "extra": "25306 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringBCP47LanguageTag (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 47420,
+            "unit": "ns/op",
+            "extra": "25306 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringBCP47LanguageTag (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 18016,
+            "unit": "B/op",
+            "extra": "25306 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringBCP47LanguageTag (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 360,
+            "unit": "allocs/op",
+            "extra": "25306 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringBCP47StrictLanguageTag (github.com/nobl9/govy/pkg/rules)",
+            "value": 77768,
+            "unit": "ns/op\t   28573 B/op\t     582 allocs/op",
+            "extra": "15351 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringBCP47StrictLanguageTag (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 77768,
+            "unit": "ns/op",
+            "extra": "15351 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringBCP47StrictLanguageTag (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 28573,
+            "unit": "B/op",
+            "extra": "15351 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringBCP47StrictLanguageTag (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 582,
+            "unit": "allocs/op",
+            "extra": "15351 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringISO3166Alpha2 (github.com/nobl9/govy/pkg/rules)",
+            "value": 32746,
+            "unit": "ns/op\t   13109 B/op\t     266 allocs/op",
+            "extra": "36531 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringISO3166Alpha2 (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 32746,
+            "unit": "ns/op",
+            "extra": "36531 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringISO3166Alpha2 (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 13109,
+            "unit": "B/op",
+            "extra": "36531 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringISO3166Alpha2 (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 266,
+            "unit": "allocs/op",
+            "extra": "36531 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringISO3166Alpha3 (github.com/nobl9/govy/pkg/rules)",
+            "value": 35025,
+            "unit": "ns/op\t   14006 B/op\t     280 allocs/op",
+            "extra": "34740 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringISO3166Alpha3 (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 35025,
+            "unit": "ns/op",
+            "extra": "34740 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringISO3166Alpha3 (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 14006,
+            "unit": "B/op",
+            "extra": "34740 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringISO3166Alpha3 (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 280,
+            "unit": "allocs/op",
+            "extra": "34740 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringISO3166Numeric (github.com/nobl9/govy/pkg/rules)",
+            "value": 29011,
+            "unit": "ns/op\t   12005 B/op\t     240 allocs/op",
+            "extra": "39232 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringISO3166Numeric (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 29011,
+            "unit": "ns/op",
+            "extra": "39232 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringISO3166Numeric (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 12005,
+            "unit": "B/op",
+            "extra": "39232 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringISO3166Numeric (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 240,
+            "unit": "allocs/op",
+            "extra": "39232 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringISO31662 (github.com/nobl9/govy/pkg/rules)",
+            "value": 37273,
+            "unit": "ns/op\t   16007 B/op\t     320 allocs/op",
+            "extra": "32419 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringISO31662 (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 37273,
+            "unit": "ns/op",
+            "extra": "32419 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringISO31662 (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 16007,
+            "unit": "B/op",
+            "extra": "32419 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringISO31662 (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 320,
+            "unit": "allocs/op",
+            "extra": "32419 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildISO31662Codes (github.com/nobl9/govy/pkg/rules)",
+            "value": 215293,
+            "unit": "ns/op\t  218480 B/op\t      18 allocs/op",
+            "extra": "5232 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildISO31662Codes (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 215293,
+            "unit": "ns/op",
+            "extra": "5232 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildISO31662Codes (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 218480,
+            "unit": "B/op",
+            "extra": "5232 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkBuildISO31662Codes (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 18,
+            "unit": "allocs/op",
+            "extra": "5232 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringISO4217 (github.com/nobl9/govy/pkg/rules)",
+            "value": 50076,
+            "unit": "ns/op\t   22017 B/op\t     420 allocs/op",
+            "extra": "23985 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringISO4217 (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 50076,
+            "unit": "ns/op",
+            "extra": "23985 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringISO4217 (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 22017,
+            "unit": "B/op",
+            "extra": "23985 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringISO4217 (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 420,
+            "unit": "allocs/op",
+            "extra": "23985 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringLatitude (github.com/nobl9/govy/pkg/rules)",
+            "value": 32076,
+            "unit": "ns/op\t   13750 B/op\t     278 allocs/op",
+            "extra": "37707 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringLatitude (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 32076,
+            "unit": "ns/op",
+            "extra": "37707 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringLatitude (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 13750,
+            "unit": "B/op",
+            "extra": "37707 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringLatitude (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 278,
+            "unit": "allocs/op",
+            "extra": "37707 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringLongitude (github.com/nobl9/govy/pkg/rules)",
+            "value": 32218,
+            "unit": "ns/op\t   13750 B/op\t     278 allocs/op",
+            "extra": "37197 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringLongitude (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 32218,
+            "unit": "ns/op",
+            "extra": "37197 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringLongitude (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 13750,
+            "unit": "B/op",
+            "extra": "37197 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringLongitude (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 278,
+            "unit": "allocs/op",
+            "extra": "37197 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringNotEmpty (github.com/nobl9/govy/pkg/rules)",
+            "value": 842.2,
+            "unit": "ns/op\t     600 B/op\t      10 allocs/op",
+            "extra": "1411324 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringNotEmpty (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 842.2,
+            "unit": "ns/op",
+            "extra": "1411324 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringNotEmpty (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 600,
+            "unit": "B/op",
+            "extra": "1411324 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringNotEmpty (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 10,
+            "unit": "allocs/op",
+            "extra": "1411324 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMatchRegexp (github.com/nobl9/govy/pkg/rules)",
+            "value": 1334,
+            "unit": "ns/op\t     650 B/op\t      11 allocs/op",
+            "extra": "882032 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMatchRegexp (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 1334,
+            "unit": "ns/op",
+            "extra": "882032 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMatchRegexp (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 650,
+            "unit": "B/op",
+            "extra": "882032 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMatchRegexp (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 11,
+            "unit": "allocs/op",
+            "extra": "882032 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringDenyRegexp (github.com/nobl9/govy/pkg/rules)",
+            "value": 1346,
+            "unit": "ns/op\t     666 B/op\t      11 allocs/op",
+            "extra": "885470 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringDenyRegexp (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 1346,
+            "unit": "ns/op",
+            "extra": "885470 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringDenyRegexp (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 666,
+            "unit": "B/op",
+            "extra": "885470 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringDenyRegexp (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 11,
+            "unit": "allocs/op",
+            "extra": "885470 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringDNSLabel (github.com/nobl9/govy/pkg/rules)",
+            "value": 21869,
+            "unit": "ns/op\t    8548 B/op\t     137 allocs/op",
+            "extra": "54928 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringDNSLabel (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 21869,
+            "unit": "ns/op",
+            "extra": "54928 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringDNSLabel (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 8548,
+            "unit": "B/op",
+            "extra": "54928 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringDNSLabel (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 137,
+            "unit": "allocs/op",
+            "extra": "54928 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringDNSSubdomain (github.com/nobl9/govy/pkg/rules)",
+            "value": 61916,
+            "unit": "ns/op\t   24985 B/op\t     358 allocs/op",
+            "extra": "19150 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringDNSSubdomain (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 61916,
+            "unit": "ns/op",
+            "extra": "19150 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringDNSSubdomain (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 24985,
+            "unit": "B/op",
+            "extra": "19150 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringDNSSubdomain (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 358,
+            "unit": "allocs/op",
+            "extra": "19150 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringUUID/valid (github.com/nobl9/govy/pkg/rules)",
+            "value": 379.6,
+            "unit": "ns/op\t        10.00 validations/op\t       0 B/op\t       0 allocs/op",
+            "extra": "3169786 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringUUID/valid (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 379.6,
+            "unit": "ns/op",
+            "extra": "3169786 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringUUID/valid (github.com/nobl9/govy/pkg/rules) - validations/op",
+            "value": 10,
+            "unit": "validations/op",
+            "extra": "3169786 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringUUID/valid (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "3169786 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringUUID/valid (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "3169786 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringUUID/mixed (github.com/nobl9/govy/pkg/rules)",
+            "value": 36735,
+            "unit": "ns/op\t        20.00 validations/op\t   22459 B/op\t     238 allocs/op",
+            "extra": "33115 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringUUID/mixed (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 36735,
+            "unit": "ns/op",
+            "extra": "33115 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringUUID/mixed (github.com/nobl9/govy/pkg/rules) - validations/op",
+            "value": 20,
+            "unit": "validations/op",
+            "extra": "33115 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringUUID/mixed (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 22459,
+            "unit": "B/op",
+            "extra": "33115 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringUUID/mixed (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 238,
+            "unit": "allocs/op",
+            "extra": "33115 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUUIDPredicate/valid (github.com/nobl9/govy/pkg/rules)",
+            "value": 296.2,
+            "unit": "ns/op\t        10.00 validations/op\t       0 B/op\t       0 allocs/op",
+            "extra": "4033129 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUUIDPredicate/valid (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 296.2,
+            "unit": "ns/op",
+            "extra": "4033129 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUUIDPredicate/valid (github.com/nobl9/govy/pkg/rules) - validations/op",
+            "value": 10,
+            "unit": "validations/op",
+            "extra": "4033129 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUUIDPredicate/valid (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "4033129 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUUIDPredicate/valid (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "4033129 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUUIDPredicate/mixed (github.com/nobl9/govy/pkg/rules)",
+            "value": 325.2,
+            "unit": "ns/op\t        20.00 validations/op\t       0 B/op\t       0 allocs/op",
+            "extra": "3703669 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUUIDPredicate/mixed (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 325.2,
+            "unit": "ns/op",
+            "extra": "3703669 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUUIDPredicate/mixed (github.com/nobl9/govy/pkg/rules) - validations/op",
+            "value": 20,
+            "unit": "validations/op",
+            "extra": "3703669 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUUIDPredicate/mixed (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "3703669 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUUIDPredicate/mixed (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "3703669 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringUUIDRFC4122/valid (github.com/nobl9/govy/pkg/rules)",
+            "value": 374.5,
+            "unit": "ns/op\t         9.000 validations/op\t       0 B/op\t       0 allocs/op",
+            "extra": "3212359 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringUUIDRFC4122/valid (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 374.5,
+            "unit": "ns/op",
+            "extra": "3212359 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringUUIDRFC4122/valid (github.com/nobl9/govy/pkg/rules) - validations/op",
+            "value": 9,
+            "unit": "validations/op",
+            "extra": "3212359 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringUUIDRFC4122/valid (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "3212359 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringUUIDRFC4122/valid (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "3212359 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringUUIDRFC4122/mixed (github.com/nobl9/govy/pkg/rules)",
+            "value": 19859,
+            "unit": "ns/op\t        31.00 validations/op\t   15456 B/op\t     218 allocs/op",
+            "extra": "60111 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringUUIDRFC4122/mixed (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 19859,
+            "unit": "ns/op",
+            "extra": "60111 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringUUIDRFC4122/mixed (github.com/nobl9/govy/pkg/rules) - validations/op",
+            "value": 31,
+            "unit": "validations/op",
+            "extra": "60111 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringUUIDRFC4122/mixed (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 15456,
+            "unit": "B/op",
+            "extra": "60111 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringUUIDRFC4122/mixed (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 218,
+            "unit": "allocs/op",
+            "extra": "60111 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUUIDRFC4122Predicate/valid (github.com/nobl9/govy/pkg/rules)",
+            "value": 283.5,
+            "unit": "ns/op\t         9.000 validations/op\t       0 B/op\t       0 allocs/op",
+            "extra": "4222038 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUUIDRFC4122Predicate/valid (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 283.5,
+            "unit": "ns/op",
+            "extra": "4222038 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUUIDRFC4122Predicate/valid (github.com/nobl9/govy/pkg/rules) - validations/op",
+            "value": 9,
+            "unit": "validations/op",
+            "extra": "4222038 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUUIDRFC4122Predicate/valid (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "4222038 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUUIDRFC4122Predicate/valid (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "4222038 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUUIDRFC4122Predicate/mixed (github.com/nobl9/govy/pkg/rules)",
+            "value": 372.3,
+            "unit": "ns/op\t        31.00 validations/op\t       0 B/op\t       0 allocs/op",
+            "extra": "3247551 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUUIDRFC4122Predicate/mixed (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 372.3,
+            "unit": "ns/op",
+            "extra": "3247551 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUUIDRFC4122Predicate/mixed (github.com/nobl9/govy/pkg/rules) - validations/op",
+            "value": 31,
+            "unit": "validations/op",
+            "extra": "3247551 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUUIDRFC4122Predicate/mixed (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "3247551 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUUIDRFC4122Predicate/mixed (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "3247551 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringUUIDv3/valid (github.com/nobl9/govy/pkg/rules)",
+            "value": 149.2,
+            "unit": "ns/op\t         4.000 validations/op\t       0 B/op\t       0 allocs/op",
+            "extra": "8013697 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringUUIDv3/valid (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 149.2,
+            "unit": "ns/op",
+            "extra": "8013697 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringUUIDv3/valid (github.com/nobl9/govy/pkg/rules) - validations/op",
+            "value": 4,
+            "unit": "validations/op",
+            "extra": "8013697 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringUUIDv3/valid (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "8013697 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringUUIDv3/valid (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "8013697 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringUUIDv3/mixed (github.com/nobl9/govy/pkg/rules)",
+            "value": 12609,
+            "unit": "ns/op\t        18.00 validations/op\t    9824 B/op\t     138 allocs/op",
+            "extra": "94927 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringUUIDv3/mixed (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 12609,
+            "unit": "ns/op",
+            "extra": "94927 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringUUIDv3/mixed (github.com/nobl9/govy/pkg/rules) - validations/op",
+            "value": 18,
+            "unit": "validations/op",
+            "extra": "94927 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringUUIDv3/mixed (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 9824,
+            "unit": "B/op",
+            "extra": "94927 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringUUIDv3/mixed (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 138,
+            "unit": "allocs/op",
+            "extra": "94927 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUUIDv3Predicate/valid (github.com/nobl9/govy/pkg/rules)",
+            "value": 124.2,
+            "unit": "ns/op\t         4.000 validations/op\t       0 B/op\t       0 allocs/op",
+            "extra": "9633116 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUUIDv3Predicate/valid (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 124.2,
+            "unit": "ns/op",
+            "extra": "9633116 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUUIDv3Predicate/valid (github.com/nobl9/govy/pkg/rules) - validations/op",
+            "value": 4,
+            "unit": "validations/op",
+            "extra": "9633116 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUUIDv3Predicate/valid (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "9633116 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUUIDv3Predicate/valid (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "9633116 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUUIDv3Predicate/mixed (github.com/nobl9/govy/pkg/rules)",
+            "value": 203.6,
+            "unit": "ns/op\t        18.00 validations/op\t       0 B/op\t       0 allocs/op",
+            "extra": "5875149 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUUIDv3Predicate/mixed (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 203.6,
+            "unit": "ns/op",
+            "extra": "5875149 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUUIDv3Predicate/mixed (github.com/nobl9/govy/pkg/rules) - validations/op",
+            "value": 18,
+            "unit": "validations/op",
+            "extra": "5875149 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUUIDv3Predicate/mixed (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "5875149 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUUIDv3Predicate/mixed (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "5875149 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringUUIDv4/valid (github.com/nobl9/govy/pkg/rules)",
+            "value": 181.7,
+            "unit": "ns/op\t         5.000 validations/op\t       0 B/op\t       0 allocs/op",
+            "extra": "6680463 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringUUIDv4/valid (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 181.7,
+            "unit": "ns/op",
+            "extra": "6680463 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringUUIDv4/valid (github.com/nobl9/govy/pkg/rules) - validations/op",
+            "value": 5,
+            "unit": "validations/op",
+            "extra": "6680463 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringUUIDv4/valid (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "6680463 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringUUIDv4/valid (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "6680463 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringUUIDv4/mixed (github.com/nobl9/govy/pkg/rules)",
+            "value": 12573,
+            "unit": "ns/op\t        19.00 validations/op\t    9824 B/op\t     138 allocs/op",
+            "extra": "95257 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringUUIDv4/mixed (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 12573,
+            "unit": "ns/op",
+            "extra": "95257 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringUUIDv4/mixed (github.com/nobl9/govy/pkg/rules) - validations/op",
+            "value": 19,
+            "unit": "validations/op",
+            "extra": "95257 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringUUIDv4/mixed (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 9824,
+            "unit": "B/op",
+            "extra": "95257 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringUUIDv4/mixed (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 138,
+            "unit": "allocs/op",
+            "extra": "95257 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUUIDv4Predicate/valid (github.com/nobl9/govy/pkg/rules)",
+            "value": 157.6,
+            "unit": "ns/op\t         5.000 validations/op\t       0 B/op\t       0 allocs/op",
+            "extra": "7700665 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUUIDv4Predicate/valid (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 157.6,
+            "unit": "ns/op",
+            "extra": "7700665 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUUIDv4Predicate/valid (github.com/nobl9/govy/pkg/rules) - validations/op",
+            "value": 5,
+            "unit": "validations/op",
+            "extra": "7700665 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUUIDv4Predicate/valid (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "7700665 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUUIDv4Predicate/valid (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "7700665 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUUIDv4Predicate/mixed (github.com/nobl9/govy/pkg/rules)",
+            "value": 231.5,
+            "unit": "ns/op\t        19.00 validations/op\t       0 B/op\t       0 allocs/op",
+            "extra": "5230860 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUUIDv4Predicate/mixed (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 231.5,
+            "unit": "ns/op",
+            "extra": "5230860 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUUIDv4Predicate/mixed (github.com/nobl9/govy/pkg/rules) - validations/op",
+            "value": 19,
+            "unit": "validations/op",
+            "extra": "5230860 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUUIDv4Predicate/mixed (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "5230860 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUUIDv4Predicate/mixed (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "5230860 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringUUIDv5/valid (github.com/nobl9/govy/pkg/rules)",
+            "value": 202.3,
+            "unit": "ns/op\t         5.000 validations/op\t       0 B/op\t       0 allocs/op",
+            "extra": "5860952 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringUUIDv5/valid (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 202.3,
+            "unit": "ns/op",
+            "extra": "5860952 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringUUIDv5/valid (github.com/nobl9/govy/pkg/rules) - validations/op",
+            "value": 5,
+            "unit": "validations/op",
+            "extra": "5860952 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringUUIDv5/valid (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "5860952 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringUUIDv5/valid (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "5860952 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringUUIDv5/mixed (github.com/nobl9/govy/pkg/rules)",
+            "value": 12647,
+            "unit": "ns/op\t        19.00 validations/op\t    9824 B/op\t     138 allocs/op",
+            "extra": "93558 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringUUIDv5/mixed (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 12647,
+            "unit": "ns/op",
+            "extra": "93558 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringUUIDv5/mixed (github.com/nobl9/govy/pkg/rules) - validations/op",
+            "value": 19,
+            "unit": "validations/op",
+            "extra": "93558 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringUUIDv5/mixed (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 9824,
+            "unit": "B/op",
+            "extra": "93558 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringUUIDv5/mixed (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 138,
+            "unit": "allocs/op",
+            "extra": "93558 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUUIDv5Predicate/valid (github.com/nobl9/govy/pkg/rules)",
+            "value": 168.4,
+            "unit": "ns/op\t         5.000 validations/op\t       0 B/op\t       0 allocs/op",
+            "extra": "7198436 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUUIDv5Predicate/valid (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 168.4,
+            "unit": "ns/op",
+            "extra": "7198436 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUUIDv5Predicate/valid (github.com/nobl9/govy/pkg/rules) - validations/op",
+            "value": 5,
+            "unit": "validations/op",
+            "extra": "7198436 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUUIDv5Predicate/valid (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "7198436 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUUIDv5Predicate/valid (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "7198436 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUUIDv5Predicate/mixed (github.com/nobl9/govy/pkg/rules)",
+            "value": 235.8,
+            "unit": "ns/op\t        19.00 validations/op\t       0 B/op\t       0 allocs/op",
+            "extra": "5145008 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUUIDv5Predicate/mixed (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 235.8,
+            "unit": "ns/op",
+            "extra": "5145008 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUUIDv5Predicate/mixed (github.com/nobl9/govy/pkg/rules) - validations/op",
+            "value": 19,
+            "unit": "validations/op",
+            "extra": "5145008 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUUIDv5Predicate/mixed (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "5145008 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUUIDv5Predicate/mixed (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "5145008 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringULID/valid (github.com/nobl9/govy/pkg/rules)",
+            "value": 625.4,
+            "unit": "ns/op\t        19.00 validations/op\t       0 B/op\t       0 allocs/op",
+            "extra": "1919648 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringULID/valid (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 625.4,
+            "unit": "ns/op",
+            "extra": "1919648 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringULID/valid (github.com/nobl9/govy/pkg/rules) - validations/op",
+            "value": 19,
+            "unit": "validations/op",
+            "extra": "1919648 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringULID/valid (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "1919648 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringULID/valid (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "1919648 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringULID/mixed (github.com/nobl9/govy/pkg/rules)",
+            "value": 18692,
+            "unit": "ns/op\t        39.00 validations/op\t   14048 B/op\t     198 allocs/op",
+            "extra": "63730 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringULID/mixed (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 18692,
+            "unit": "ns/op",
+            "extra": "63730 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringULID/mixed (github.com/nobl9/govy/pkg/rules) - validations/op",
+            "value": 39,
+            "unit": "validations/op",
+            "extra": "63730 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringULID/mixed (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 14048,
+            "unit": "B/op",
+            "extra": "63730 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringULID/mixed (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 198,
+            "unit": "allocs/op",
+            "extra": "63730 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkULIDPredicate/valid (github.com/nobl9/govy/pkg/rules)",
+            "value": 524.3,
+            "unit": "ns/op\t        19.00 validations/op\t       0 B/op\t       0 allocs/op",
+            "extra": "2327973 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkULIDPredicate/valid (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 524.3,
+            "unit": "ns/op",
+            "extra": "2327973 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkULIDPredicate/valid (github.com/nobl9/govy/pkg/rules) - validations/op",
+            "value": 19,
+            "unit": "validations/op",
+            "extra": "2327973 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkULIDPredicate/valid (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "2327973 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkULIDPredicate/valid (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "2327973 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkULIDPredicate/mixed (github.com/nobl9/govy/pkg/rules)",
+            "value": 1225,
+            "unit": "ns/op\t        39.00 validations/op\t       0 B/op\t       0 allocs/op",
+            "extra": "979308 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkULIDPredicate/mixed (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 1225,
+            "unit": "ns/op",
+            "extra": "979308 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkULIDPredicate/mixed (github.com/nobl9/govy/pkg/rules) - validations/op",
+            "value": 39,
+            "unit": "validations/op",
+            "extra": "979308 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkULIDPredicate/mixed (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "979308 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkULIDPredicate/mixed (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "979308 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringASCII (github.com/nobl9/govy/pkg/rules)",
+            "value": 6212,
+            "unit": "ns/op\t    2625 B/op\t      44 allocs/op",
+            "extra": "191623 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringASCII (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 6212,
+            "unit": "ns/op",
+            "extra": "191623 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringASCII (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 2625,
+            "unit": "B/op",
+            "extra": "191623 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringASCII (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 44,
+            "unit": "allocs/op",
+            "extra": "191623 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringCreditCard (github.com/nobl9/govy/pkg/rules)",
+            "value": 11821,
+            "unit": "ns/op\t    8080 B/op\t     128 allocs/op",
+            "extra": "100598 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringCreditCard (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 11821,
+            "unit": "ns/op",
+            "extra": "100598 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringCreditCard (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 8080,
+            "unit": "B/op",
+            "extra": "100598 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringCreditCard (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 128,
+            "unit": "allocs/op",
+            "extra": "100598 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringLuhnChecksum (github.com/nobl9/govy/pkg/rules)",
+            "value": 8172,
+            "unit": "ns/op\t    5584 B/op\t      88 allocs/op",
+            "extra": "147877 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringLuhnChecksum (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 8172,
+            "unit": "ns/op",
+            "extra": "147877 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringLuhnChecksum (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 5584,
+            "unit": "B/op",
+            "extra": "147877 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringLuhnChecksum (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 88,
+            "unit": "allocs/op",
+            "extra": "147877 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringBIC (github.com/nobl9/govy/pkg/rules)",
+            "value": 17290,
+            "unit": "ns/op\t   12128 B/op\t     188 allocs/op",
+            "extra": "68355 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringBIC (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 17290,
+            "unit": "ns/op",
+            "extra": "68355 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringBIC (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 12128,
+            "unit": "B/op",
+            "extra": "68355 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringBIC (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 188,
+            "unit": "allocs/op",
+            "extra": "68355 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringBICISO93622014 (github.com/nobl9/govy/pkg/rules)",
+            "value": 17880,
+            "unit": "ns/op\t   12736 B/op\t     188 allocs/op",
+            "extra": "66642 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringBICISO93622014 (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 17880,
+            "unit": "ns/op",
+            "extra": "66642 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringBICISO93622014 (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 12736,
+            "unit": "B/op",
+            "extra": "66642 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringBICISO93622014 (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 188,
+            "unit": "allocs/op",
+            "extra": "66642 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/BSON_corpus_all_ones (github.com/nobl9/govy/pkg/rules)",
+            "value": 22.47,
+            "unit": "ns/op\t       0 B/op\t       0 allocs/op",
+            "extra": "53481936 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/BSON_corpus_all_ones (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 22.47,
+            "unit": "ns/op",
+            "extra": "53481936 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/BSON_corpus_all_ones (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "53481936 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/BSON_corpus_all_ones (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "53481936 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/BSON_corpus_random (github.com/nobl9/govy/pkg/rules)",
+            "value": 23.74,
+            "unit": "ns/op\t       0 B/op\t       0 allocs/op",
+            "extra": "50450588 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/BSON_corpus_random (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 23.74,
+            "unit": "ns/op",
+            "extra": "50450588 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/BSON_corpus_random (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "50450588 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/BSON_corpus_random (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "50450588 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/Go_driver_timestamp_sign_bit (github.com/nobl9/govy/pkg/rules)",
+            "value": 22.54,
+            "unit": "ns/op\t       0 B/op\t       0 allocs/op",
+            "extra": "52249934 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/Go_driver_timestamp_sign_bit (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 22.54,
+            "unit": "ns/op",
+            "extra": "52249934 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/Go_driver_timestamp_sign_bit (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "52249934 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/Go_driver_timestamp_sign_bit (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "52249934 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/mixed_case (github.com/nobl9/govy/pkg/rules)",
+            "value": 25.71,
+            "unit": "ns/op\t       0 B/op\t       0 allocs/op",
+            "extra": "47037880 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/mixed_case (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 25.71,
+            "unit": "ns/op",
+            "extra": "47037880 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/mixed_case (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "47037880 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/mixed_case (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "47037880 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/25_characters (github.com/nobl9/govy/pkg/rules)",
+            "value": 819.2,
+            "unit": "ns/op\t     640 B/op\t      10 allocs/op",
+            "extra": "1468250 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/25_characters (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 819.2,
+            "unit": "ns/op",
+            "extra": "1468250 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/25_characters (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 640,
+            "unit": "B/op",
+            "extra": "1468250 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/25_characters (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 10,
+            "unit": "allocs/op",
+            "extra": "1468250 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/lowercase_non-hex_digit (github.com/nobl9/govy/pkg/rules)",
+            "value": 875.3,
+            "unit": "ns/op\t     640 B/op\t      10 allocs/op",
+            "extra": "1434546 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/lowercase_non-hex_digit (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 875.3,
+            "unit": "ns/op",
+            "extra": "1434546 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/lowercase_non-hex_digit (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 640,
+            "unit": "B/op",
+            "extra": "1434546 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/lowercase_non-hex_digit (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 10,
+            "unit": "allocs/op",
+            "extra": "1434546 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/0x_prefix (github.com/nobl9/govy/pkg/rules)",
+            "value": 822.1,
+            "unit": "ns/op\t     640 B/op\t      10 allocs/op",
+            "extra": "1459982 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/0x_prefix (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 822.1,
+            "unit": "ns/op",
+            "extra": "1459982 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/0x_prefix (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 640,
+            "unit": "B/op",
+            "extra": "1459982 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/0x_prefix (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 10,
+            "unit": "allocs/op",
+            "extra": "1459982 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/Cyrillic_a (github.com/nobl9/govy/pkg/rules)",
+            "value": 838.6,
+            "unit": "ns/op\t     640 B/op\t      10 allocs/op",
+            "extra": "1426615 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/Cyrillic_a (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 838.6,
+            "unit": "ns/op",
+            "extra": "1426615 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/Cyrillic_a (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 640,
+            "unit": "B/op",
+            "extra": "1426615 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/Cyrillic_a (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 10,
+            "unit": "allocs/op",
+            "extra": "1426615 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/BSON_corpus_all_zeroes (github.com/nobl9/govy/pkg/rules)",
+            "value": 22.98,
+            "unit": "ns/op\t       0 B/op\t       0 allocs/op",
+            "extra": "53352494 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/BSON_corpus_all_zeroes (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 22.98,
+            "unit": "ns/op",
+            "extra": "53352494 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/BSON_corpus_all_zeroes (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "53352494 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/BSON_corpus_all_zeroes (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "53352494 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/Go_driver_Unix_epoch_timestamp (github.com/nobl9/govy/pkg/rules)",
+            "value": 23.04,
+            "unit": "ns/op\t       0 B/op\t       0 allocs/op",
+            "extra": "52802852 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/Go_driver_Unix_epoch_timestamp (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 23.04,
+            "unit": "ns/op",
+            "extra": "52802852 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/Go_driver_Unix_epoch_timestamp (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "52802852 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/Go_driver_Unix_epoch_timestamp (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "52802852 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/Go_driver_signed_timestamp_limit (github.com/nobl9/govy/pkg/rules)",
+            "value": 24.74,
+            "unit": "ns/op\t       0 B/op\t       0 allocs/op",
+            "extra": "47130344 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/Go_driver_signed_timestamp_limit (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 24.74,
+            "unit": "ns/op",
+            "extra": "47130344 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/Go_driver_signed_timestamp_limit (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "47130344 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/Go_driver_signed_timestamp_limit (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "47130344 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/Go_driver_wrong_length (github.com/nobl9/govy/pkg/rules)",
+            "value": 836.1,
+            "unit": "ns/op\t     640 B/op\t      10 allocs/op",
+            "extra": "1438364 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/Go_driver_wrong_length (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 836.1,
+            "unit": "ns/op",
+            "extra": "1438364 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/Go_driver_wrong_length (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 640,
+            "unit": "B/op",
+            "extra": "1438364 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/Go_driver_wrong_length (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 10,
+            "unit": "allocs/op",
+            "extra": "1438364 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/uppercase_non-hex_digit (github.com/nobl9/govy/pkg/rules)",
+            "value": 851.1,
+            "unit": "ns/op\t     640 B/op\t      10 allocs/op",
+            "extra": "1407189 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/uppercase_non-hex_digit (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 851.1,
+            "unit": "ns/op",
+            "extra": "1407189 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/uppercase_non-hex_digit (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 640,
+            "unit": "B/op",
+            "extra": "1407189 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/uppercase_non-hex_digit (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 10,
+            "unit": "allocs/op",
+            "extra": "1407189 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/trailing_hyphen (github.com/nobl9/govy/pkg/rules)",
+            "value": 851.5,
+            "unit": "ns/op\t     640 B/op\t      10 allocs/op",
+            "extra": "1410212 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/trailing_hyphen (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 851.5,
+            "unit": "ns/op",
+            "extra": "1410212 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/trailing_hyphen (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 640,
+            "unit": "B/op",
+            "extra": "1410212 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/trailing_hyphen (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 10,
+            "unit": "allocs/op",
+            "extra": "1410212 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/leading_space (github.com/nobl9/govy/pkg/rules)",
+            "value": 829.8,
+            "unit": "ns/op\t     640 B/op\t      10 allocs/op",
+            "extra": "1448706 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/leading_space (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 829.8,
+            "unit": "ns/op",
+            "extra": "1448706 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/leading_space (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 640,
+            "unit": "B/op",
+            "extra": "1448706 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/leading_space (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 10,
+            "unit": "allocs/op",
+            "extra": "1448706 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/trailing_space (github.com/nobl9/govy/pkg/rules)",
+            "value": 825.3,
+            "unit": "ns/op\t     640 B/op\t      10 allocs/op",
+            "extra": "1449442 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/trailing_space (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 825.3,
+            "unit": "ns/op",
+            "extra": "1449442 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/trailing_space (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 640,
+            "unit": "B/op",
+            "extra": "1449442 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/trailing_space (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 10,
+            "unit": "allocs/op",
+            "extra": "1449442 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/standard_lowercase (github.com/nobl9/govy/pkg/rules)",
+            "value": 23.74,
+            "unit": "ns/op\t       0 B/op\t       0 allocs/op",
+            "extra": "48698371 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/standard_lowercase (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 23.74,
+            "unit": "ns/op",
+            "extra": "48698371 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/standard_lowercase (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "48698371 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/standard_lowercase (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "48698371 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/Go_driver_uint32_timestamp_limit (github.com/nobl9/govy/pkg/rules)",
+            "value": 24.71,
+            "unit": "ns/op\t       0 B/op\t       0 allocs/op",
+            "extra": "48541041 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/Go_driver_uint32_timestamp_limit (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 24.71,
+            "unit": "ns/op",
+            "extra": "48541041 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/Go_driver_uint32_timestamp_limit (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "48541041 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/Go_driver_uint32_timestamp_limit (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "48541041 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/empty (github.com/nobl9/govy/pkg/rules)",
+            "value": 766.4,
+            "unit": "ns/op\t     608 B/op\t       8 allocs/op",
+            "extra": "1569819 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/empty (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 766.4,
+            "unit": "ns/op",
+            "extra": "1569819 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/empty (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 608,
+            "unit": "B/op",
+            "extra": "1569819 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/empty (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 8,
+            "unit": "allocs/op",
+            "extra": "1569819 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/23_characters (github.com/nobl9/govy/pkg/rules)",
+            "value": 834.2,
+            "unit": "ns/op\t     640 B/op\t      10 allocs/op",
+            "extra": "1433250 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/23_characters (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 834.2,
+            "unit": "ns/op",
+            "extra": "1433250 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/23_characters (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 640,
+            "unit": "B/op",
+            "extra": "1433250 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/23_characters (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 10,
+            "unit": "allocs/op",
+            "extra": "1433250 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/trailing_colon (github.com/nobl9/govy/pkg/rules)",
+            "value": 843.7,
+            "unit": "ns/op\t     640 B/op\t      10 allocs/op",
+            "extra": "1427106 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/trailing_colon (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 843.7,
+            "unit": "ns/op",
+            "extra": "1427106 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/trailing_colon (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 640,
+            "unit": "B/op",
+            "extra": "1427106 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/trailing_colon (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 10,
+            "unit": "allocs/op",
+            "extra": "1427106 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/trailing_newline (github.com/nobl9/govy/pkg/rules)",
+            "value": 831.1,
+            "unit": "ns/op\t     640 B/op\t      10 allocs/op",
+            "extra": "1443956 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/trailing_newline (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 831.1,
+            "unit": "ns/op",
+            "extra": "1443956 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/trailing_newline (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 640,
+            "unit": "B/op",
+            "extra": "1443956 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/trailing_newline (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 10,
+            "unit": "allocs/op",
+            "extra": "1443956 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/embedded_newline (github.com/nobl9/govy/pkg/rules)",
+            "value": 833.6,
+            "unit": "ns/op\t     640 B/op\t      10 allocs/op",
+            "extra": "1438248 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/embedded_newline (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 833.6,
+            "unit": "ns/op",
+            "extra": "1438248 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/embedded_newline (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 640,
+            "unit": "B/op",
+            "extra": "1438248 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/embedded_newline (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 10,
+            "unit": "allocs/op",
+            "extra": "1438248 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/ObjectId_wrapper (github.com/nobl9/govy/pkg/rules)",
+            "value": 827.6,
+            "unit": "ns/op\t     640 B/op\t      10 allocs/op",
+            "extra": "1453256 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/ObjectId_wrapper (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 827.6,
+            "unit": "ns/op",
+            "extra": "1453256 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/ObjectId_wrapper (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 640,
+            "unit": "B/op",
+            "extra": "1453256 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/ObjectId_wrapper (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 10,
+            "unit": "allocs/op",
+            "extra": "1453256 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/Go_driver_invalid_hex (github.com/nobl9/govy/pkg/rules)",
+            "value": 824.6,
+            "unit": "ns/op\t     640 B/op\t      10 allocs/op",
+            "extra": "1451976 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/Go_driver_invalid_hex (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 824.6,
+            "unit": "ns/op",
+            "extra": "1451976 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/Go_driver_invalid_hex (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 640,
+            "unit": "B/op",
+            "extra": "1451976 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/Go_driver_invalid_hex (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 10,
+            "unit": "allocs/op",
+            "extra": "1451976 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/full-width_zero (github.com/nobl9/govy/pkg/rules)",
+            "value": 820.8,
+            "unit": "ns/op\t     640 B/op\t      10 allocs/op",
+            "extra": "1463365 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/full-width_zero (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 820.8,
+            "unit": "ns/op",
+            "extra": "1463365 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/full-width_zero (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 640,
+            "unit": "B/op",
+            "extra": "1463365 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/full-width_zero (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 10,
+            "unit": "allocs/op",
+            "extra": "1463365 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/Extended_JSON_wrapper (github.com/nobl9/govy/pkg/rules)",
+            "value": 822.5,
+            "unit": "ns/op\t     640 B/op\t      10 allocs/op",
+            "extra": "1463293 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/Extended_JSON_wrapper (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 822.5,
+            "unit": "ns/op",
+            "extra": "1463293 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/Extended_JSON_wrapper (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 640,
+            "unit": "B/op",
+            "extra": "1463293 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMongoDBObjectID/Extended_JSON_wrapper (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 10,
+            "unit": "allocs/op",
+            "extra": "1463293 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringEmail (github.com/nobl9/govy/pkg/rules)",
+            "value": 13309,
+            "unit": "ns/op\t    6378 B/op\t     158 allocs/op",
+            "extra": "87122 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringEmail (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 13309,
+            "unit": "ns/op",
+            "extra": "87122 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringEmail (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 6378,
+            "unit": "B/op",
+            "extra": "87122 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringEmail (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 158,
+            "unit": "allocs/op",
+            "extra": "87122 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringURL (github.com/nobl9/govy/pkg/rules)",
+            "value": 19025,
+            "unit": "ns/op\t   10386 B/op\t     124 allocs/op",
+            "extra": "62565 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringURL (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 19025,
+            "unit": "ns/op",
+            "extra": "62565 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringURL (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 10386,
+            "unit": "B/op",
+            "extra": "62565 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringURL (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 124,
+            "unit": "allocs/op",
+            "extra": "62565 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMAC (github.com/nobl9/govy/pkg/rules)",
+            "value": 4859,
+            "unit": "ns/op\t    3448 B/op\t      60 allocs/op",
+            "extra": "247812 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMAC (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 4859,
+            "unit": "ns/op",
+            "extra": "247812 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMAC (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 3448,
+            "unit": "B/op",
+            "extra": "247812 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMAC (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 60,
+            "unit": "allocs/op",
+            "extra": "247812 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringIP (github.com/nobl9/govy/pkg/rules)",
+            "value": 3049,
+            "unit": "ns/op\t    1984 B/op\t      31 allocs/op",
+            "extra": "386762 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringIP (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 3049,
+            "unit": "ns/op",
+            "extra": "386762 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringIP (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 1984,
+            "unit": "B/op",
+            "extra": "386762 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringIP (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 31,
+            "unit": "allocs/op",
+            "extra": "386762 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringIPv4 (github.com/nobl9/govy/pkg/rules)",
+            "value": 4770,
+            "unit": "ns/op\t    3216 B/op\t      52 allocs/op",
+            "extra": "250740 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringIPv4 (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 4770,
+            "unit": "ns/op",
+            "extra": "250740 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringIPv4 (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 3216,
+            "unit": "B/op",
+            "extra": "250740 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringIPv4 (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 52,
+            "unit": "allocs/op",
+            "extra": "250740 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringIPv6 (github.com/nobl9/govy/pkg/rules)",
+            "value": 6456,
+            "unit": "ns/op\t    4464 B/op\t      72 allocs/op",
+            "extra": "183409 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringIPv6 (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 6456,
+            "unit": "ns/op",
+            "extra": "183409 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringIPv6 (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 4464,
+            "unit": "B/op",
+            "extra": "183409 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringIPv6 (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 72,
+            "unit": "allocs/op",
+            "extra": "183409 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringCIDR (github.com/nobl9/govy/pkg/rules)",
+            "value": 5449,
+            "unit": "ns/op\t    3440 B/op\t      82 allocs/op",
+            "extra": "216678 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringCIDR (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 5449,
+            "unit": "ns/op",
+            "extra": "216678 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringCIDR (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 3440,
+            "unit": "B/op",
+            "extra": "216678 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringCIDR (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 82,
+            "unit": "allocs/op",
+            "extra": "216678 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringCIDRv4 (github.com/nobl9/govy/pkg/rules)",
+            "value": 15653,
+            "unit": "ns/op\t   10408 B/op\t     210 allocs/op",
+            "extra": "76556 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringCIDRv4 (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 15653,
+            "unit": "ns/op",
+            "extra": "76556 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringCIDRv4 (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 10408,
+            "unit": "B/op",
+            "extra": "76556 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringCIDRv4 (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 210,
+            "unit": "allocs/op",
+            "extra": "76556 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringCIDRv6 (github.com/nobl9/govy/pkg/rules)",
+            "value": 11037,
+            "unit": "ns/op\t    7344 B/op\t     142 allocs/op",
+            "extra": "111134 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringCIDRv6 (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 11037,
+            "unit": "ns/op",
+            "extra": "111134 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringCIDRv6 (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 7344,
+            "unit": "B/op",
+            "extra": "111134 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringCIDRv6 (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 142,
+            "unit": "allocs/op",
+            "extra": "111134 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringJSON (github.com/nobl9/govy/pkg/rules)",
+            "value": 3341,
+            "unit": "ns/op\t    2024 B/op\t      37 allocs/op",
+            "extra": "371258 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringJSON (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 3341,
+            "unit": "ns/op",
+            "extra": "371258 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringJSON (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 2024,
+            "unit": "B/op",
+            "extra": "371258 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringJSON (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 37,
+            "unit": "allocs/op",
+            "extra": "371258 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringSemver (github.com/nobl9/govy/pkg/rules)",
+            "value": 647.8,
+            "unit": "ns/op\t       0 B/op\t       0 allocs/op",
+            "extra": "1849030 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringSemver (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 647.8,
+            "unit": "ns/op",
+            "extra": "1849030 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringSemver (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "1849030 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringSemver (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "1849030 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringE164/valid (github.com/nobl9/govy/pkg/rules)",
+            "value": 210.9,
+            "unit": "ns/op\t       0 B/op\t       0 allocs/op",
+            "extra": "5767932 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringE164/valid (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 210.9,
+            "unit": "ns/op",
+            "extra": "5767932 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringE164/valid (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "5767932 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringE164/valid (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "5767932 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringE164/invalid (github.com/nobl9/govy/pkg/rules)",
+            "value": 950,
+            "unit": "ns/op\t     624 B/op\t      10 allocs/op",
+            "extra": "1260652 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringE164/invalid (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 950,
+            "unit": "ns/op",
+            "extra": "1260652 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringE164/invalid (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 624,
+            "unit": "B/op",
+            "extra": "1260652 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringE164/invalid (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 10,
+            "unit": "allocs/op",
+            "extra": "1260652 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringCVE (github.com/nobl9/govy/pkg/rules)",
+            "value": 147.9,
+            "unit": "ns/op\t       0 B/op\t       0 allocs/op",
+            "extra": "8150752 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringCVE (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 147.9,
+            "unit": "ns/op",
+            "extra": "8150752 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringCVE (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "8150752 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringCVE (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "8150752 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringBase64/valid (github.com/nobl9/govy/pkg/rules)",
+            "value": 5631,
+            "unit": "ns/op\t        22.00 validations/op\t     141 B/op\t      21 allocs/op",
+            "extra": "213421 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringBase64/valid (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 5631,
+            "unit": "ns/op",
+            "extra": "213421 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringBase64/valid (github.com/nobl9/govy/pkg/rules) - validations/op",
+            "value": 22,
+            "unit": "validations/op",
+            "extra": "213421 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringBase64/valid (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 141,
+            "unit": "B/op",
+            "extra": "213421 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringBase64/valid (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 21,
+            "unit": "allocs/op",
+            "extra": "213421 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringBase64/invalid (github.com/nobl9/govy/pkg/rules)",
+            "value": 57724,
+            "unit": "ns/op\t        49.00 validations/op\t   33524 B/op\t     493 allocs/op",
+            "extra": "20868 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringBase64/invalid (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 57724,
+            "unit": "ns/op",
+            "extra": "20868 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringBase64/invalid (github.com/nobl9/govy/pkg/rules) - validations/op",
+            "value": 49,
+            "unit": "validations/op",
+            "extra": "20868 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringBase64/invalid (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 33524,
+            "unit": "B/op",
+            "extra": "20868 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringBase64/invalid (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 493,
+            "unit": "allocs/op",
+            "extra": "20868 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringBase64URL/valid (github.com/nobl9/govy/pkg/rules)",
+            "value": 6223,
+            "unit": "ns/op\t        24.00 validations/op\t     158 B/op\t      23 allocs/op",
+            "extra": "195018 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringBase64URL/valid (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 6223,
+            "unit": "ns/op",
+            "extra": "195018 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringBase64URL/valid (github.com/nobl9/govy/pkg/rules) - validations/op",
+            "value": 24,
+            "unit": "validations/op",
+            "extra": "195018 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringBase64URL/valid (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 158,
+            "unit": "B/op",
+            "extra": "195018 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringBase64URL/valid (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 23,
+            "unit": "allocs/op",
+            "extra": "195018 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringBase64URL/invalid (github.com/nobl9/govy/pkg/rules)",
+            "value": 55248,
+            "unit": "ns/op\t        49.00 validations/op\t   31964 B/op\t     493 allocs/op",
+            "extra": "21782 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringBase64URL/invalid (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 55248,
+            "unit": "ns/op",
+            "extra": "21782 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringBase64URL/invalid (github.com/nobl9/govy/pkg/rules) - validations/op",
+            "value": 49,
+            "unit": "validations/op",
+            "extra": "21782 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringBase64URL/invalid (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 31964,
+            "unit": "B/op",
+            "extra": "21782 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringBase64URL/invalid (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 493,
+            "unit": "allocs/op",
+            "extra": "21782 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringBase64RawURL/valid (github.com/nobl9/govy/pkg/rules)",
+            "value": 5640,
+            "unit": "ns/op\t        24.00 validations/op\t     113 B/op\t      23 allocs/op",
+            "extra": "223083 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringBase64RawURL/valid (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 5640,
+            "unit": "ns/op",
+            "extra": "223083 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringBase64RawURL/valid (github.com/nobl9/govy/pkg/rules) - validations/op",
+            "value": 24,
+            "unit": "validations/op",
+            "extra": "223083 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringBase64RawURL/valid (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 113,
+            "unit": "B/op",
+            "extra": "223083 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringBase64RawURL/valid (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 23,
+            "unit": "allocs/op",
+            "extra": "223083 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringBase64RawURL/invalid (github.com/nobl9/govy/pkg/rules)",
+            "value": 52710,
+            "unit": "ns/op\t        50.00 validations/op\t   32034 B/op\t     504 allocs/op",
+            "extra": "22813 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringBase64RawURL/invalid (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 52710,
+            "unit": "ns/op",
+            "extra": "22813 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringBase64RawURL/invalid (github.com/nobl9/govy/pkg/rules) - validations/op",
+            "value": 50,
+            "unit": "validations/op",
+            "extra": "22813 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringBase64RawURL/invalid (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 32034,
+            "unit": "B/op",
+            "extra": "22813 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringBase64RawURL/invalid (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 504,
+            "unit": "allocs/op",
+            "extra": "22813 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringHexadecimal/valid (github.com/nobl9/govy/pkg/rules)",
+            "value": 560.4,
+            "unit": "ns/op\t        26.00 validations/op\t       0 B/op\t       0 allocs/op",
+            "extra": "2139151 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringHexadecimal/valid (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 560.4,
+            "unit": "ns/op",
+            "extra": "2139151 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringHexadecimal/valid (github.com/nobl9/govy/pkg/rules) - validations/op",
+            "value": 26,
+            "unit": "validations/op",
+            "extra": "2139151 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringHexadecimal/valid (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "2139151 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringHexadecimal/valid (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "2139151 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringHexadecimal/invalid (github.com/nobl9/govy/pkg/rules)",
+            "value": 27139,
+            "unit": "ns/op\t        31.00 validations/op\t   19312 B/op\t     308 allocs/op",
+            "extra": "44006 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringHexadecimal/invalid (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 27139,
+            "unit": "ns/op",
+            "extra": "44006 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringHexadecimal/invalid (github.com/nobl9/govy/pkg/rules) - validations/op",
+            "value": 31,
+            "unit": "validations/op",
+            "extra": "44006 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringHexadecimal/invalid (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 19312,
+            "unit": "B/op",
+            "extra": "44006 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringHexadecimal/invalid (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 308,
+            "unit": "allocs/op",
+            "extra": "44006 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringEIN (github.com/nobl9/govy/pkg/rules)",
+            "value": 29560,
+            "unit": "ns/op\t   21088 B/op\t     328 allocs/op",
+            "extra": "40809 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringEIN (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 29560,
+            "unit": "ns/op",
+            "extra": "40809 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringEIN (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 21088,
+            "unit": "B/op",
+            "extra": "40809 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringEIN (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 328,
+            "unit": "allocs/op",
+            "extra": "40809 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringSSN (github.com/nobl9/govy/pkg/rules)",
+            "value": 234904,
+            "unit": "ns/op\t   83808 B/op\t    1308 allocs/op",
+            "extra": "4982 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringSSN (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 234904,
+            "unit": "ns/op",
+            "extra": "4982 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringSSN (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 83808,
+            "unit": "B/op",
+            "extra": "4982 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringSSN (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 1308,
+            "unit": "allocs/op",
+            "extra": "4982 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMD5 (github.com/nobl9/govy/pkg/rules)",
+            "value": 10856,
+            "unit": "ns/op\t    7648 B/op\t     118 allocs/op",
+            "extra": "111826 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMD5 (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 10856,
+            "unit": "ns/op",
+            "extra": "111826 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMD5 (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 7648,
+            "unit": "B/op",
+            "extra": "111826 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMD5 (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 118,
+            "unit": "allocs/op",
+            "extra": "111826 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringSHA256 (github.com/nobl9/govy/pkg/rules)",
+            "value": 10690,
+            "unit": "ns/op\t    7648 B/op\t     118 allocs/op",
+            "extra": "110586 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringSHA256 (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 10690,
+            "unit": "ns/op",
+            "extra": "110586 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringSHA256 (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 7648,
+            "unit": "B/op",
+            "extra": "110586 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringSHA256 (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 118,
+            "unit": "allocs/op",
+            "extra": "110586 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringSHA384 (github.com/nobl9/govy/pkg/rules)",
+            "value": 10834,
+            "unit": "ns/op\t    7648 B/op\t     118 allocs/op",
+            "extra": "110245 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringSHA384 (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 10834,
+            "unit": "ns/op",
+            "extra": "110245 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringSHA384 (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 7648,
+            "unit": "B/op",
+            "extra": "110245 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringSHA384 (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 118,
+            "unit": "allocs/op",
+            "extra": "110245 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringSHA512 (github.com/nobl9/govy/pkg/rules)",
+            "value": 10859,
+            "unit": "ns/op\t    7648 B/op\t     118 allocs/op",
+            "extra": "111722 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringSHA512 (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 10859,
+            "unit": "ns/op",
+            "extra": "111722 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringSHA512 (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 7648,
+            "unit": "B/op",
+            "extra": "111722 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringSHA512 (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 118,
+            "unit": "allocs/op",
+            "extra": "111722 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringJWT (github.com/nobl9/govy/pkg/rules)",
+            "value": 202179,
+            "unit": "ns/op\t        59.00 validations/op\t   89774 B/op\t    1502 allocs/op",
+            "extra": "5908 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringJWT (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 202179,
+            "unit": "ns/op",
+            "extra": "5908 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringJWT (github.com/nobl9/govy/pkg/rules) - validations/op",
+            "value": 59,
+            "unit": "validations/op",
+            "extra": "5908 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringJWT (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 89774,
+            "unit": "B/op",
+            "extra": "5908 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringJWT (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 1502,
+            "unit": "allocs/op",
+            "extra": "5908 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringContains (github.com/nobl9/govy/pkg/rules)",
+            "value": 6493,
+            "unit": "ns/op\t    2505 B/op\t      56 allocs/op",
+            "extra": "188832 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringContains (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 6493,
+            "unit": "ns/op",
+            "extra": "188832 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringContains (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 2505,
+            "unit": "B/op",
+            "extra": "188832 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringContains (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 56,
+            "unit": "allocs/op",
+            "extra": "188832 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringExcludes (github.com/nobl9/govy/pkg/rules)",
+            "value": 8523,
+            "unit": "ns/op\t    3441 B/op\t      73 allocs/op",
+            "extra": "139878 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringExcludes (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 8523,
+            "unit": "ns/op",
+            "extra": "139878 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringExcludes (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 3441,
+            "unit": "B/op",
+            "extra": "139878 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringExcludes (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 73,
+            "unit": "allocs/op",
+            "extra": "139878 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringStartsWith (github.com/nobl9/govy/pkg/rules)",
+            "value": 7949,
+            "unit": "ns/op\t    2521 B/op\t      67 allocs/op",
+            "extra": "150783 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringStartsWith (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 7949,
+            "unit": "ns/op",
+            "extra": "150783 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringStartsWith (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 2521,
+            "unit": "B/op",
+            "extra": "150783 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringStartsWith (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 67,
+            "unit": "allocs/op",
+            "extra": "150783 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringEndsWith (github.com/nobl9/govy/pkg/rules)",
+            "value": 8004,
+            "unit": "ns/op\t    2505 B/op\t      67 allocs/op",
+            "extra": "146864 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringEndsWith (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 8004,
+            "unit": "ns/op",
+            "extra": "146864 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringEndsWith (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 2505,
+            "unit": "B/op",
+            "extra": "146864 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringEndsWith (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 67,
+            "unit": "allocs/op",
+            "extra": "146864 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringTitle (github.com/nobl9/govy/pkg/rules)",
+            "value": 7094,
+            "unit": "ns/op\t    5088 B/op\t      78 allocs/op",
+            "extra": "169294 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringTitle (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 7094,
+            "unit": "ns/op",
+            "extra": "169294 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringTitle (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 5088,
+            "unit": "B/op",
+            "extra": "169294 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringTitle (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 78,
+            "unit": "allocs/op",
+            "extra": "169294 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringGitRef (github.com/nobl9/govy/pkg/rules)",
+            "value": 255332,
+            "unit": "ns/op\t   74168 B/op\t    1903 allocs/op",
+            "extra": "4650 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringGitRef (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 255332,
+            "unit": "ns/op",
+            "extra": "4650 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringGitRef (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 74168,
+            "unit": "B/op",
+            "extra": "4650 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringGitRef (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 1903,
+            "unit": "allocs/op",
+            "extra": "4650 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringFileSystemPath (github.com/nobl9/govy/pkg/rules)",
+            "value": 41394,
+            "unit": "ns/op\t    9866 B/op\t     117 allocs/op",
+            "extra": "28767 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringFileSystemPath (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 41394,
+            "unit": "ns/op",
+            "extra": "28767 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringFileSystemPath (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 9866,
+            "unit": "B/op",
+            "extra": "28767 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringFileSystemPath (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 117,
+            "unit": "allocs/op",
+            "extra": "28767 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringFilePath (github.com/nobl9/govy/pkg/rules)",
+            "value": 42534,
+            "unit": "ns/op\t   10378 B/op\t     129 allocs/op",
+            "extra": "28122 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringFilePath (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 42534,
+            "unit": "ns/op",
+            "extra": "28122 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringFilePath (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 10378,
+            "unit": "B/op",
+            "extra": "28122 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringFilePath (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 129,
+            "unit": "allocs/op",
+            "extra": "28122 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringDirPath (github.com/nobl9/govy/pkg/rules)",
+            "value": 42085,
+            "unit": "ns/op\t   10170 B/op\t     124 allocs/op",
+            "extra": "28446 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringDirPath (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 42085,
+            "unit": "ns/op",
+            "extra": "28446 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringDirPath (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 10170,
+            "unit": "B/op",
+            "extra": "28446 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringDirPath (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 124,
+            "unit": "allocs/op",
+            "extra": "28446 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringAbsoluteFilePath (github.com/nobl9/govy/pkg/rules)",
+            "value": 32597,
+            "unit": "ns/op\t   24304 B/op\t     388 allocs/op",
+            "extra": "36693 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringAbsoluteFilePath (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 32597,
+            "unit": "ns/op",
+            "extra": "36693 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringAbsoluteFilePath (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 24304,
+            "unit": "B/op",
+            "extra": "36693 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringAbsoluteFilePath (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 388,
+            "unit": "allocs/op",
+            "extra": "36693 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMatchFileSystemPath (github.com/nobl9/govy/pkg/rules)",
+            "value": 52689,
+            "unit": "ns/op\t   23899 B/op\t     380 allocs/op",
+            "extra": "23086 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMatchFileSystemPath (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 52689,
+            "unit": "ns/op",
+            "extra": "23086 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMatchFileSystemPath (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 23899,
+            "unit": "B/op",
+            "extra": "23086 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringMatchFileSystemPath (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 380,
+            "unit": "allocs/op",
+            "extra": "23086 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringRegexp (github.com/nobl9/govy/pkg/rules)",
+            "value": 169011107,
+            "unit": "ns/op\t334133738 B/op\t  280676 allocs/op",
+            "extra": "7 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringRegexp (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 169011107,
+            "unit": "ns/op",
+            "extra": "7 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringRegexp (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 334133738,
+            "unit": "B/op",
+            "extra": "7 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringRegexp (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 280676,
+            "unit": "allocs/op",
+            "extra": "7 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringCrontab (github.com/nobl9/govy/pkg/rules)",
+            "value": 447661,
+            "unit": "ns/op\t  205003 B/op\t    3596 allocs/op",
+            "extra": "2497 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringCrontab (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 447661,
+            "unit": "ns/op",
+            "extra": "2497 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringCrontab (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 205003,
+            "unit": "B/op",
+            "extra": "2497 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringCrontab (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 3596,
+            "unit": "allocs/op",
+            "extra": "2497 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringDateTime (github.com/nobl9/govy/pkg/rules)",
+            "value": 9510,
+            "unit": "ns/op\t    5546 B/op\t      64 allocs/op",
+            "extra": "127221 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringDateTime (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 9510,
+            "unit": "ns/op",
+            "extra": "127221 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringDateTime (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 5546,
+            "unit": "B/op",
+            "extra": "127221 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringDateTime (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 64,
+            "unit": "allocs/op",
+            "extra": "127221 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringTimeZone (github.com/nobl9/govy/pkg/rules)",
+            "value": 255167,
+            "unit": "ns/op\t  343960 B/op\t     288 allocs/op",
+            "extra": "4375 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringTimeZone (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 255167,
+            "unit": "ns/op",
+            "extra": "4375 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringTimeZone (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 343960,
+            "unit": "B/op",
+            "extra": "4375 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringTimeZone (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 288,
+            "unit": "allocs/op",
+            "extra": "4375 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringAlpha (github.com/nobl9/govy/pkg/rules)",
+            "value": 8175,
+            "unit": "ns/op\t    3939 B/op\t      66 allocs/op",
+            "extra": "143966 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringAlpha (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 8175,
+            "unit": "ns/op",
+            "extra": "143966 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringAlpha (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 3939,
+            "unit": "B/op",
+            "extra": "143966 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringAlpha (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 66,
+            "unit": "allocs/op",
+            "extra": "143966 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringAlphanumeric (github.com/nobl9/govy/pkg/rules)",
+            "value": 10982,
+            "unit": "ns/op\t    5252 B/op\t      88 allocs/op",
+            "extra": "109742 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringAlphanumeric (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 10982,
+            "unit": "ns/op",
+            "extra": "109742 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringAlphanumeric (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 5252,
+            "unit": "B/op",
+            "extra": "109742 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringAlphanumeric (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 88,
+            "unit": "allocs/op",
+            "extra": "109742 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringAlphaUnicode (github.com/nobl9/govy/pkg/rules)",
+            "value": 10593,
+            "unit": "ns/op\t    4595 B/op\t      77 allocs/op",
+            "extra": "113600 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringAlphaUnicode (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 10593,
+            "unit": "ns/op",
+            "extra": "113600 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringAlphaUnicode (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 4595,
+            "unit": "B/op",
+            "extra": "113600 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringAlphaUnicode (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 77,
+            "unit": "allocs/op",
+            "extra": "113600 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringAlphanumericUnicode (github.com/nobl9/govy/pkg/rules)",
+            "value": 12157,
+            "unit": "ns/op\t    5252 B/op\t      88 allocs/op",
+            "extra": "100148 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringAlphanumericUnicode (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 12157,
+            "unit": "ns/op",
+            "extra": "100148 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringAlphanumericUnicode (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 5252,
+            "unit": "B/op",
+            "extra": "100148 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringAlphanumericUnicode (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 88,
+            "unit": "allocs/op",
+            "extra": "100148 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringFQDN (github.com/nobl9/govy/pkg/rules)",
+            "value": 21939,
+            "unit": "ns/op\t    7391 B/op\t      94 allocs/op",
+            "extra": "54675 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringFQDN (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 21939,
+            "unit": "ns/op",
+            "extra": "54675 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringFQDN (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 7391,
+            "unit": "B/op",
+            "extra": "54675 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringFQDN (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 94,
+            "unit": "allocs/op",
+            "extra": "54675 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringKubernetesQualifiedName (github.com/nobl9/govy/pkg/rules)",
+            "value": 141398,
+            "unit": "ns/op\t   43072 B/op\t     903 allocs/op",
+            "extra": "8324 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringKubernetesQualifiedName (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 141398,
+            "unit": "ns/op",
+            "extra": "8324 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringKubernetesQualifiedName (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 43072,
+            "unit": "B/op",
+            "extra": "8324 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringKubernetesQualifiedName (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 903,
+            "unit": "allocs/op",
+            "extra": "8324 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringISBN (github.com/nobl9/govy/pkg/rules)",
+            "value": 17771,
+            "unit": "ns/op\t        38.00 validations/op\t   11936 B/op\t     168 allocs/op",
+            "extra": "66932 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringISBN (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 17771,
+            "unit": "ns/op",
+            "extra": "66932 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringISBN (github.com/nobl9/govy/pkg/rules) - validations/op",
+            "value": 38,
+            "unit": "validations/op",
+            "extra": "66932 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringISBN (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 11936,
+            "unit": "B/op",
+            "extra": "66932 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringISBN (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 168,
+            "unit": "allocs/op",
+            "extra": "66932 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringISBNVeryLargeInvalid (github.com/nobl9/govy/pkg/rules)",
+            "value": 816.4,
+            "unit": "ns/op\t         1.000 validations/op\t     704 B/op\t      10 allocs/op",
+            "extra": "1469538 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringISBNVeryLargeInvalid (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 816.4,
+            "unit": "ns/op",
+            "extra": "1469538 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringISBNVeryLargeInvalid (github.com/nobl9/govy/pkg/rules) - validations/op",
+            "value": 1,
+            "unit": "validations/op",
+            "extra": "1469538 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringISBNVeryLargeInvalid (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 704,
+            "unit": "B/op",
+            "extra": "1469538 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringISBNVeryLargeInvalid (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 10,
+            "unit": "allocs/op",
+            "extra": "1469538 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringISBN10 (github.com/nobl9/govy/pkg/rules)",
+            "value": 10136,
+            "unit": "ns/op\t        18.00 validations/op\t    7008 B/op\t      98 allocs/op",
+            "extra": "119130 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringISBN10 (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 10136,
+            "unit": "ns/op",
+            "extra": "119130 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringISBN10 (github.com/nobl9/govy/pkg/rules) - validations/op",
+            "value": 18,
+            "unit": "validations/op",
+            "extra": "119130 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringISBN10 (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 7008,
+            "unit": "B/op",
+            "extra": "119130 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringISBN10 (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 98,
+            "unit": "allocs/op",
+            "extra": "119130 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringISBN13 (github.com/nobl9/govy/pkg/rules)",
+            "value": 12655,
+            "unit": "ns/op\t        25.00 validations/op\t    8416 B/op\t     118 allocs/op",
+            "extra": "94328 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringISBN13 (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 12655,
+            "unit": "ns/op",
+            "extra": "94328 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringISBN13 (github.com/nobl9/govy/pkg/rules) - validations/op",
+            "value": 25,
+            "unit": "validations/op",
+            "extra": "94328 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringISBN13 (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 8416,
+            "unit": "B/op",
+            "extra": "94328 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringISBN13 (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 118,
+            "unit": "allocs/op",
+            "extra": "94328 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringISSN (github.com/nobl9/govy/pkg/rules)",
+            "value": 15315,
+            "unit": "ns/op\t        26.00 validations/op\t   10720 B/op\t     158 allocs/op",
+            "extra": "79628 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringISSN (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 15315,
+            "unit": "ns/op",
+            "extra": "79628 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringISSN (github.com/nobl9/govy/pkg/rules) - validations/op",
+            "value": 26,
+            "unit": "validations/op",
+            "extra": "79628 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringISSN (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 10720,
+            "unit": "B/op",
+            "extra": "79628 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkStringISSN (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 158,
+            "unit": "allocs/op",
+            "extra": "79628 times\n4 procs"
+          },
+          {
+            "name": "Benchmark_isISSN (github.com/nobl9/govy/pkg/rules)",
+            "value": 490.8,
+            "unit": "ns/op\t        26.00 validations/op\t       0 B/op\t       0 allocs/op",
+            "extra": "2453276 times\n4 procs"
+          },
+          {
+            "name": "Benchmark_isISSN (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 490.8,
+            "unit": "ns/op",
+            "extra": "2453276 times\n4 procs"
+          },
+          {
+            "name": "Benchmark_isISSN (github.com/nobl9/govy/pkg/rules) - validations/op",
+            "value": 26,
+            "unit": "validations/op",
+            "extra": "2453276 times\n4 procs"
+          },
+          {
+            "name": "Benchmark_isISSN (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "2453276 times\n4 procs"
+          },
+          {
+            "name": "Benchmark_isISSN (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "2453276 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSliceUnique (github.com/nobl9/govy/pkg/rules)",
+            "value": 24555,
+            "unit": "ns/op\t    6714 B/op\t     160 allocs/op",
+            "extra": "49035 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSliceUnique (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 24555,
+            "unit": "ns/op",
+            "extra": "49035 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSliceUnique (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 6714,
+            "unit": "B/op",
+            "extra": "49035 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkSliceUnique (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 160,
+            "unit": "allocs/op",
+            "extra": "49035 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUniqueProperties (github.com/nobl9/govy/pkg/rules)",
+            "value": 44035,
+            "unit": "ns/op\t   12894 B/op\t     308 allocs/op",
+            "extra": "27031 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUniqueProperties (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 44035,
+            "unit": "ns/op",
+            "extra": "27031 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUniqueProperties (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 12894,
+            "unit": "B/op",
+            "extra": "27031 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUniqueProperties (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 308,
+            "unit": "allocs/op",
+            "extra": "27031 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkURL (github.com/nobl9/govy/pkg/rules)",
+            "value": 25651,
+            "unit": "ns/op\t    6050 B/op\t     108 allocs/op",
+            "extra": "46485 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkURL (github.com/nobl9/govy/pkg/rules) - ns/op",
+            "value": 25651,
+            "unit": "ns/op",
+            "extra": "46485 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkURL (github.com/nobl9/govy/pkg/rules) - B/op",
+            "value": 6050,
+            "unit": "B/op",
+            "extra": "46485 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkURL (github.com/nobl9/govy/pkg/rules) - allocs/op",
+            "value": 108,
+            "unit": "allocs/op",
+            "extra": "46485 times\n4 procs"
           }
         ]
       }
