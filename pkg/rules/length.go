@@ -10,12 +10,13 @@ import (
 )
 
 // StringLength ensures the string's length is between min and max (closed interval).
+// It panics if either bound is negative or minLen is greater than maxLen.
 //
 // The following, additional template variables are supported:
 //   - [govy.TemplateVars.MinLength]
 //   - [govy.TemplateVars.MaxLength]
 func StringLength(minLen, maxLen int) govy.Rule[string] {
-	enforceMinMaxLength(minLen, maxLen)
+	schemaMinLen, schemaMaxLen := enforceMinMaxLength(minLen, maxLen)
 	tpl := messagetemplates.Get(messagetemplates.LengthTemplate)
 
 	return govy.NewRule(func(v string) error {
@@ -37,14 +38,16 @@ func StringLength(minLen, maxLen int) govy.Rule[string] {
 		})).
 		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 			return &jsonschema.Schema{
-				MinLength: ptr(uint64(minLen)),
-				MaxLength: ptr(uint64(maxLen)),
+				MinLength: ptr(schemaMinLen),
+				MaxLength: ptr(schemaMaxLen),
 			}, nil
 		})
 }
 
 // StringMinLength ensures the string's length is greater than or equal to the limit.
+// It panics if limit is negative.
 func StringMinLength(limit int) govy.Rule[string] {
+	schemaLimit := enforceLength(limit)
 	tpl := messagetemplates.Get(messagetemplates.MinLengthTemplate)
 
 	return govy.NewRule(func(v string) error {
@@ -63,12 +66,14 @@ func StringMinLength(limit int) govy.Rule[string] {
 			ComparisonValue: limit,
 		})).
 		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
-			return &jsonschema.Schema{MinLength: ptr(uint64(limit))}, nil
+			return &jsonschema.Schema{MinLength: ptr(schemaLimit)}, nil
 		})
 }
 
 // StringMaxLength ensures the string's length is less than or equal to the limit.
+// It panics if limit is negative.
 func StringMaxLength(limit int) govy.Rule[string] {
+	schemaLimit := enforceLength(limit)
 	tpl := messagetemplates.Get(messagetemplates.MaxLengthTemplate)
 
 	return govy.NewRule(func(v string) error {
@@ -87,17 +92,18 @@ func StringMaxLength(limit int) govy.Rule[string] {
 			ComparisonValue: limit,
 		})).
 		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
-			return &jsonschema.Schema{MaxLength: ptr(uint64(limit))}, nil
+			return &jsonschema.Schema{MaxLength: ptr(schemaLimit)}, nil
 		})
 }
 
 // SliceLength ensures the slice's length is between min and max (closed interval).
+// It panics if either bound is negative or minLen is greater than maxLen.
 //
 // The following, additional template variables are supported:
 //   - [govy.TemplateVars.MinLength]
 //   - [govy.TemplateVars.MaxLength]
 func SliceLength[S ~[]E, E any](minLen, maxLen int) govy.Rule[S] {
-	enforceMinMaxLength(minLen, maxLen)
+	schemaMinLen, schemaMaxLen := enforceMinMaxLength(minLen, maxLen)
 	tpl := messagetemplates.Get(messagetemplates.LengthTemplate)
 
 	return govy.NewRule(func(v S) error {
@@ -119,14 +125,16 @@ func SliceLength[S ~[]E, E any](minLen, maxLen int) govy.Rule[S] {
 		})).
 		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 			return &jsonschema.Schema{
-				MinItems: ptr(uint64(minLen)),
-				MaxItems: ptr(uint64(maxLen)),
+				MinItems: ptr(schemaMinLen),
+				MaxItems: ptr(schemaMaxLen),
 			}, nil
 		})
 }
 
 // SliceMinLength ensures the slice's length is greater than or equal to the limit.
+// It panics if limit is negative.
 func SliceMinLength[S ~[]E, E any](limit int) govy.Rule[S] {
+	schemaLimit := enforceLength(limit)
 	tpl := messagetemplates.Get(messagetemplates.MinLengthTemplate)
 
 	return govy.NewRule(func(v S) error {
@@ -145,12 +153,14 @@ func SliceMinLength[S ~[]E, E any](limit int) govy.Rule[S] {
 			ComparisonValue: limit,
 		})).
 		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
-			return &jsonschema.Schema{MinItems: ptr(uint64(limit))}, nil
+			return &jsonschema.Schema{MinItems: ptr(schemaLimit)}, nil
 		})
 }
 
 // SliceMaxLength ensures the slice's length is less than or equal to the limit.
+// It panics if limit is negative.
 func SliceMaxLength[S ~[]E, E any](limit int) govy.Rule[S] {
+	schemaLimit := enforceLength(limit)
 	tpl := messagetemplates.Get(messagetemplates.MaxLengthTemplate)
 
 	return govy.NewRule(func(v S) error {
@@ -169,17 +179,18 @@ func SliceMaxLength[S ~[]E, E any](limit int) govy.Rule[S] {
 			ComparisonValue: limit,
 		})).
 		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
-			return &jsonschema.Schema{MaxItems: ptr(uint64(limit))}, nil
+			return &jsonschema.Schema{MaxItems: ptr(schemaLimit)}, nil
 		})
 }
 
 // MapLength ensures the map's length is between min and max (closed interval).
+// It panics if either bound is negative or minLen is greater than maxLen.
 //
 // The following, additional template variables are supported:
 //   - [govy.TemplateVars.MinLength]
 //   - [govy.TemplateVars.MaxLength]
 func MapLength[M ~map[K]V, K comparable, V any](minLen, maxLen int) govy.Rule[M] {
-	enforceMinMaxLength(minLen, maxLen)
+	schemaMinLen, schemaMaxLen := enforceMinMaxLength(minLen, maxLen)
 	tpl := messagetemplates.Get(messagetemplates.LengthTemplate)
 
 	return govy.NewRule(func(v M) error {
@@ -201,14 +212,16 @@ func MapLength[M ~map[K]V, K comparable, V any](minLen, maxLen int) govy.Rule[M]
 		})).
 		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 			return &jsonschema.Schema{
-				MinProperties: ptr(uint64(minLen)),
-				MaxProperties: ptr(uint64(maxLen)),
+				MinProperties: ptr(schemaMinLen),
+				MaxProperties: ptr(schemaMaxLen),
 			}, nil
 		})
 }
 
 // MapMinLength ensures the map's length is greater than or equal to the limit.
+// It panics if limit is negative.
 func MapMinLength[M ~map[K]V, K comparable, V any](limit int) govy.Rule[M] {
+	schemaLimit := enforceLength(limit)
 	tpl := messagetemplates.Get(messagetemplates.MinLengthTemplate)
 
 	return govy.NewRule(func(v M) error {
@@ -227,12 +240,14 @@ func MapMinLength[M ~map[K]V, K comparable, V any](limit int) govy.Rule[M] {
 			ComparisonValue: limit,
 		})).
 		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
-			return &jsonschema.Schema{MinProperties: ptr(uint64(limit))}, nil
+			return &jsonschema.Schema{MinProperties: ptr(schemaLimit)}, nil
 		})
 }
 
 // MapMaxLength ensures the map's length is less than or equal to the limit.
+// It panics if limit is negative.
 func MapMaxLength[M ~map[K]V, K comparable, V any](limit int) govy.Rule[M] {
+	schemaLimit := enforceLength(limit)
 	tpl := messagetemplates.Get(messagetemplates.MaxLengthTemplate)
 
 	return govy.NewRule(func(v M) error {
@@ -251,14 +266,22 @@ func MapMaxLength[M ~map[K]V, K comparable, V any](limit int) govy.Rule[M] {
 			ComparisonValue: limit,
 		})).
 		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
-			return &jsonschema.Schema{MaxProperties: ptr(uint64(limit))}, nil
+			return &jsonschema.Schema{MaxProperties: ptr(schemaLimit)}, nil
 		})
 }
 
-func enforceMinMaxLength(minLen, maxLen int) {
+func enforceMinMaxLength(minLen, maxLen int) (minLength, maxLength uint64) {
 	if minLen > maxLen {
 		panic(fmt.Sprintf("minLen '%d' is greater than maxLen '%d'", minLen, maxLen))
 	}
+	return enforceLength(minLen), enforceLength(maxLen)
+}
+
+func enforceLength(limit int) uint64 {
+	if limit < 0 {
+		panic(fmt.Sprintf("length limit '%d' is less than 0", limit))
+	}
+	return uint64(limit)
 }
 
 func ptr[T any](v T) *T { return &v }

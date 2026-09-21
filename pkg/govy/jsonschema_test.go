@@ -288,6 +288,41 @@ func TestJSONSchema_Rules(t *testing.T) {
 	assert.Equal(t, expected, actual.String())
 }
 
+func TestJSONSchema_ZeroLengthLimits(t *testing.T) {
+	t.Parallel()
+
+	type document struct {
+		String string
+		Slice  []string
+		Map    map[string]string
+	}
+	validator := govy.New(
+		govy.For(func(v document) string { return v.String }).
+			WithName("string").
+			Rules(rules.StringLength(0, 0), rules.StringMinLength(0), rules.StringMaxLength(0)),
+		govy.For(func(v document) []string { return v.Slice }).
+			WithName("slice").
+			Rules(rules.SliceLength[[]string](0, 0), rules.SliceMinLength[[]string](0), rules.SliceMaxLength[[]string](0)),
+		govy.For(func(v document) map[string]string { return v.Map }).
+			WithName("map").
+			Rules(
+				rules.MapLength[map[string]string](0, 0),
+				rules.MapMinLength[map[string]string](0),
+				rules.MapMaxLength[map[string]string](0),
+			),
+	)
+
+	schema, err := govy.JSONSchema(validator)
+	assert.Require(t, assert.NoError(t, err))
+
+	expected := readTestData(t, "expected_zero_length_limits_json_schema.json")
+	var actual bytes.Buffer
+	encoder := json.NewEncoder(&actual)
+	encoder.SetIndent("", "  ")
+	assert.Require(t, assert.NoError(t, encoder.Encode(schema)))
+	assert.Equal(t, expected, actual.String())
+}
+
 func TestJSONSchema_RuleBuilderError(t *testing.T) {
 	t.Parallel()
 
@@ -722,23 +757,23 @@ func TestJSONSchema_UnsupportedType(t *testing.T) {
 	}{
 		"channel": {
 			run:           runJSONSchema[chan struct{}],
-			expectedError: `failed to generate JSON Schema: unsupported Go kind "chan"`,
+			expectedError: `failed to generate JSON Schema type info for validator: unsupported Go kind "chan"`,
 		},
 		"complex64": {
 			run:           runJSONSchema[complex64],
-			expectedError: `failed to generate JSON Schema: unsupported Go kind "complex64"`,
+			expectedError: `failed to generate JSON Schema type info for validator: unsupported Go kind "complex64"`,
 		},
 		"complex128": {
 			run:           runJSONSchema[complex128],
-			expectedError: `failed to generate JSON Schema: unsupported Go kind "complex128"`,
+			expectedError: `failed to generate JSON Schema type info for validator: unsupported Go kind "complex128"`,
 		},
 		"function": {
 			run:           runJSONSchema[func()],
-			expectedError: `failed to generate JSON Schema: unsupported Go kind "func"`,
+			expectedError: `failed to generate JSON Schema type info for validator: unsupported Go kind "func"`,
 		},
 		"unsafe pointer": {
 			run:           runJSONSchema[unsafe.Pointer],
-			expectedError: `failed to generate JSON Schema: unsupported Go kind "unsafe.Pointer"`,
+			expectedError: `failed to generate JSON Schema type info for validator: unsupported Go kind "unsafe.Pointer"`,
 		},
 	}
 	for name, tc := range tests {

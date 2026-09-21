@@ -295,8 +295,6 @@ Extend `jsonschema.Schema` only when a built-in rule needs the keyword. The
 first candidates are:
 
 - `uniqueItems`
-- `contentEncoding`
-- `contentMediaType`
 - `contentSchema`
 
 ### 4. Implement rule mappings by confidence

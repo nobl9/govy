@@ -357,3 +357,25 @@ func BenchmarkMapMaxLength(b *testing.B) {
 		}
 	}
 }
+
+func TestLengthRules_NegativeLimits(t *testing.T) {
+	tests := []struct {
+		name    string
+		newRule func()
+	}{
+		{name: "StringLength", newRule: func() { StringLength(-1, 0) }},
+		{name: "StringMinLength", newRule: func() { StringMinLength(-1) }},
+		{name: "StringMaxLength", newRule: func() { StringMaxLength(-1) }},
+		{name: "SliceLength", newRule: func() { SliceLength[[]string](-1, 0) }},
+		{name: "SliceMinLength", newRule: func() { SliceMinLength[[]string](-1) }},
+		{name: "SliceMaxLength", newRule: func() { SliceMaxLength[[]string](-1) }},
+		{name: "MapLength", newRule: func() { MapLength[map[string]string](-1, 0) }},
+		{name: "MapMinLength", newRule: func() { MapMinLength[map[string]string](-1) }},
+		{name: "MapMaxLength", newRule: func() { MapMaxLength[map[string]string](-1) }},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Panic(t, tc.newRule, "length limit '-1' is less than 0")
+		})
+	}
+}

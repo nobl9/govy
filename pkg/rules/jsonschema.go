@@ -78,7 +78,7 @@ func jsonSchemaPattern(pattern string) govy.JSONSchemaBuilder {
 	return func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 		translated, err := ecmaregex.Translate(pattern)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("translate Go regular expression %q: %w", pattern, err)
 		}
 		return &jsonschema.Schema{Pattern: translated}, nil
 	}
