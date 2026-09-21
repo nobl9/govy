@@ -4,6 +4,7 @@
 The cases cover field boundaries, custom metadata, nested paths, optional data,
 pointer presence, conditions, transformed values, validation plans,
 hidden nested values, callback compatibility, and strict format selection.
+The custom-rule task also checks the readability of builder chains and metadata.
 
 ## Run a comparison
 
@@ -39,6 +40,9 @@ Output filenames beginning with `govy_eval_` are reserved for contract checks.
 
 A passing contract suite is necessary, but some expectations need review.
 Check explanations, use of existing helpers, rule reuse, and plan descriptions.
+For the custom-rule task, inspect source layout as well as test results.
+Check that indentation distinguishes property methods from rule metadata.
+Assess readability directly, without requiring exact whitespace or helper names.
 An answer that names the expected APIs can still implement the wrong behavior.
 
 Record the entrypoint size and references read for each task.

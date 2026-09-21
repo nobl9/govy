@@ -24,6 +24,43 @@ Use `OmitEmpty()` only when zero means absent.
   Check paths, codes, and error counts.
 Assert rendered messages when their wording is part of the contract.
 
+## Readable rule layout
+
+Make the validator, property, and rule levels easy to distinguish.
+Use the following layout for new validation code.
+When editing existing code, preserve its local style where it remains clear.
+
+- Give each property its own block in `govy.New(...)`.
+  Keep a simple getter inline, such as `func(u User) string { return u.Name }`.
+  Put chained property methods on separate lines,
+  with the dot on the preceding line.
+  Place `WithName` or `WithPath` near the getter so the property path is visible.
+- Keep a short single-rule call compact, such as `Rules(rules.StringNotEmpty())`.
+  For multiple rules, expand `Rules(...)` or `govy.NewRuleSet(...)`
+  with one rule per line and a trailing comma.
+  Also expand a single-rule call when its configuration makes the nesting
+  hard to follow.
+- Indent rule metadata, such as `WithDetails` and `WithErrorCode`,
+  beneath the rule constructor.
+  Keep property methods aligned at the property level
+  and validator methods at the validator level.
+  This makes the scope of `When` and `Cascade` visible.
+- Keep getters focused on value access.
+  Extract a custom rule or predicate when its callback body obscures
+  the property list.
+  Name the rule or predicate after its purpose.
+  Keep short, clear expressions inline.
+- Preserve rule order and the scope of conditions, transforms,
+  and cascade settings during formatting.
+  Moving a setting between a rule, property, and validator can change
+  validation behavior.
+- Run the consumer's Go formatter after choosing the layout.
+
+The [rule set example](rules-and-messages.md#group-multiple-rules-into-a-reusable-set)
+shows a multiline rule list, rule metadata, and a compact property rule call.
+For a full validator with nested properties, see
+[core validation](core-validation.md#build-a-full-teacher-validator).
+
 ## Examples
 
 The examples in these references are excerpts from tested Go source.

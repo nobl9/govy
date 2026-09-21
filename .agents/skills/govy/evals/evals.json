@@ -18,12 +18,13 @@
       "id": 2,
       "name": "custom-rule-metadata",
       "prompt": "Create package validation with `type Contact struct { Email string }` and a reusable govy.Validator[Contact] named ContactValidator. Email is required. Add a custom rule accepting only the exact example.com domain, case-insensitively; subdomains and suffix lookalikes are invalid. Give this rule error code email_domain, a useful plan description, and a valid example. A rejected address must appear in its runtime message. Required on the property owns the empty-value failure. Include govytest tests and verify the generated plan. Save compilable .go files and a brief explanation.",
-      "expected_output": "A custom domain rule with correct runtime errors, required-value handling, and observable plan metadata.",
+      "expected_output": "A readable custom domain rule with correct runtime errors, required-value handling, and observable plan metadata.",
       "expectations": [
         "The output compiles and its tests pass against the pinned govy checkout.",
         "The contract tests accept example.com and EXAMPLE.COM, reject different domains and lookalikes, and report only required for an empty email.",
         "The email_domain failure includes the actual rejected address, not a function value or a construction-time placeholder.",
-        "The generated email plan contains a nonempty description, a valid example, and error code email_domain."
+        "The generated email plan contains a nonempty description, a valid example, and error code email_domain.",
+        "Property builder methods and rule metadata use separate lines with indentation that makes their scope clear; custom validation logic leaves the property list easy to scan."
       ],
       "files": []
     },
