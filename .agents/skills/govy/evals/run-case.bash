@@ -7,9 +7,13 @@ if (($# != 3)); then
 fi
 
 case "$1" in
-[1-8]) ;;
+[1-9]) ;;
+10)
+	printf 'Case 10 is explanation-only; grade explanation.md against evals.json.\n' >&2
+	exit 2
+	;;
 *)
-	printf 'Invalid case ID: %s (expected 1-8)\n' "$1" >&2
+	printf 'Invalid case ID: %s (expected 1-9)\n' "$1" >&2
 	exit 2
 	;;
 esac

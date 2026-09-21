@@ -105,6 +105,34 @@
         "The validator uses existing govy format rules and accepts absolute paths without requiring file-system existence; independent errors retain complete lower-camel paths."
       ],
       "files": []
+    },
+    {
+      "id": 9,
+      "name": "plain-language-composition",
+      "prompt": "Create package validation with `type Address struct { City string }` and `type Registration struct { Username string; DisplayName string; Address *Address }`. Use govy to expose ValidateRegistration, assignable to func(Registration) error. Both names are required and must contain 3-20 ASCII letters or digits. Share their common checks and build the validation once for reuse across calls. Address is optional; when present, City is required. Error paths are username, displayName, and address.city. Return all independent field failures. Include table tests for valid boundaries, invalid characters, missing values, optional addresses, and independent failures. Save compilable .go files and a brief explanation.",
+      "expected_output": "Reusable scalar checks and nested validation chosen from plain requirements, with correct boundaries and complete property paths.",
+      "expectations": [
+        "The output compiles, its tests pass, and ValidateRegistration is assignable to func(Registration) error.",
+        "The contract tests accept ASCII letters and digits at lengths 3/20, reject lengths 2/21 and invalid characters, and reject missing names.",
+        "The contract tests accept a nil address, require city on a present address, and preserve all independent failures at username, displayName, and address.city.",
+        "The implementation shares the scalar checks between separate named properties, composes nested validation, and constructs reusable validation outside the callback.",
+        "The generated table tests exercise valid boundaries, invalid characters, missing names, optional addresses, and independent field failures."
+      ],
+      "files": []
+    },
+    {
+      "id": 10,
+      "name": "explain-building-blocks",
+      "prompt": "I am new to govy. Username and displayName need the same length and character checks. An optional address has its own fields to check. Explain what I should reuse, what connects a check to a field and its error path, and what combines the checks for the whole input. Where would I put a constraint that compares two fields? Name the relevant Govy types and construction functions, and explain how an address failure gets a path such as address.city. Keep the explanation within 200 words. Save explanation.md; no Go implementation is needed.",
+      "expected_output": "A concise explanation that applies Govy's building blocks to scalar reuse, nested composition, cross-field checks, and error paths.",
+      "expectations": [
+        "Distinguishes Rule/NewRule from RuleSet/NewRuleSet and reuses value checks across the two name properties without assigning paths to the shared rules.",
+        "Explains that PropertyRules/For connects a getter and property path to checks, while Validator/New combines property validation for an input type.",
+        "Uses a reusable nested validator with Include and describes optional pointer handling and parent/child path composition into address.city.",
+        "Places a cross-field constraint in a rule with access to the relevant fields, such as a whole-input rule attached through GetSelf, rather than restricting every rule to a scalar field.",
+        "The explanation stays within 200 words and uses real Govy APIs with task-relevant reference selection."
+      ],
+      "files": []
     }
   ]
 }
