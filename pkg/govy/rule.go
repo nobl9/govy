@@ -3,11 +3,14 @@ package govy
 import (
 	"bytes"
 	"fmt"
+	"log/slog"
 	"strings"
+	"sync"
 	"text/template"
 
 	"github.com/nobl9/govy/internal"
 	"github.com/nobl9/govy/internal/collections"
+	"github.com/nobl9/govy/internal/logging"
 	"github.com/nobl9/govy/internal/messagetemplates"
 )
 
@@ -34,6 +37,7 @@ func RuleToPointer[T any](rule Rule[T]) Rule[*T] {
 		messageTemplate: rule.messageTemplate,
 		examples:        rule.examples,
 		description:     rule.description,
+		descriptionTpl:  rule.descriptionTpl,
 		planModifiers:   rule.planModifiers,
 	}
 }
@@ -49,6 +53,7 @@ type Rule[T any] struct {
 	messageTemplate *template.Template
 	examples        []string
 	description     string
+	descriptionTpl  func() string
 	planModifiers   []RulePlanModifier
 }
 
@@ -73,7 +78,7 @@ func (r Rule[T]) Validate(v T, opts ...ValidationOption) error {
 		if len(r.message) > 0 {
 			ev.Message = createErrorMessage(r.message, r.details, r.examples)
 		}
-		ev.Description = r.description
+		ev.Description = r.resolveDescription()
 		_ = ev.AddCode(r.errorCode)
 		if vOpts.hideValue {
 			ev.Message = hideStringValue(ev.Message, v)
@@ -111,7 +116,7 @@ func (r Rule[T]) Validate(v T, opts ...ValidationOption) error {
 		return &RuleError{
 			Message:     buf.String(),
 			Code:        r.errorCode,
-			Description: r.description,
+			Description: r.resolveDescription(),
 		}
 	}
 	msg := err.Error()
@@ -121,7 +126,7 @@ func (r Rule[T]) Validate(v T, opts ...ValidationOption) error {
 	ruleErr := &RuleError{
 		Message:     createErrorMessage(msg, r.details, r.examples),
 		Code:        r.errorCode,
-		Description: r.description,
+		Description: r.resolveDescription(),
 	}
 	if vOpts.hideValue {
 		ruleErr.Message = hideStringValue(ruleErr.Message, v)
@@ -195,6 +200,30 @@ func (r Rule[T]) WithPlanModifiers(mods ...RulePlanModifier) Rule[T] {
 // It is used to enhance the [RulePlan], but otherwise does not appear in standard [RuleError.Error] output.
 func (r Rule[T]) WithDescription(description string) Rule[T] {
 	r.description = description
+	r.descriptionTpl = nil
+	return r
+}
+
+// WithDescriptionTemplate adds a description rendered from [template.Template] and [TemplateVars] to the rule.
+// Rendering occurs once, when failed validation needs the description or [Plan] is called.
+// Copies of the rule share the rendered description.
+//
+// WithDescriptionTemplate panics if the template is nil.
+// It logs template execution errors once and caches any partial description.
+func (r Rule[T]) WithDescriptionTemplate(tpl *template.Template, vars TemplateVars) Rule[T] {
+	if tpl == nil {
+		panic("description template must not be nil")
+	}
+	r.description = ""
+	r.descriptionTpl = sync.OnceValue(func() string {
+		var buf bytes.Buffer
+		if err := tpl.Execute(&buf, vars); err != nil {
+			logging.Logger().Error("failed to execute description template",
+				slog.String("template", tpl.Name()),
+				slog.String("error", err.Error()))
+		}
+		return buf.String()
+	})
 	return r
 }
 
@@ -215,7 +244,7 @@ func (r Rule[T]) plan(builder planBuilder) {
 	rulePlan := RulePlan{
 		ErrorCode:   r.errorCode,
 		Details:     r.details,
-		Description: r.description,
+		Description: r.resolveDescription(),
 		Conditions:  builder.rulePlan.Conditions,
 		Examples:    r.examples,
 	}
@@ -224,6 +253,13 @@ func (r Rule[T]) plan(builder planBuilder) {
 	}
 	builder.rulePlan = rulePlan
 	*builder.path = append(*builder.path, builder)
+}
+
+func (r Rule[T]) resolveDescription() string {
+	if r.descriptionTpl != nil {
+		return r.descriptionTpl()
+	}
+	return r.description
 }
 
 func createErrorMessage(message, details string, examples []string) string {

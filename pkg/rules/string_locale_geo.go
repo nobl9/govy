@@ -330,7 +330,7 @@ func StringBCP47LanguageTag() govy.Rule[string] {
 		WithErrorCode(ErrorCodeStringBCP47LanguageTag).
 		WithMessageTemplate(tpl).
 		WithExamples("en", "en-US", "zh-Hant-TW").
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescriptionTemplate(tpl, govy.TemplateVars{})
 }
 
 // StringBCP47StrictLanguageTag ensures the property's value is a valid canonical BCP 47 language tag.
@@ -348,7 +348,7 @@ func StringBCP47StrictLanguageTag() govy.Rule[string] {
 		WithErrorCode(ErrorCodeStringBCP47StrictLanguageTag).
 		WithMessageTemplate(tpl).
 		WithExamples("en", "en-US", "zh-Hant-TW").
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescriptionTemplate(tpl, govy.TemplateVars{})
 }
 
 // StringISO3166Alpha2 ensures the property's value is a valid ISO 3166-1 alpha-2 country code.
@@ -366,7 +366,7 @@ func StringISO3166Alpha2() govy.Rule[string] {
 		WithErrorCode(ErrorCodeStringISO3166Alpha2).
 		WithMessageTemplate(tpl).
 		WithExamples("US", "PL", "JP").
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescriptionTemplate(tpl, govy.TemplateVars{})
 }
 
 // StringISO3166Alpha3 ensures the property's value is a valid ISO 3166-1 alpha-3 country code.
@@ -384,7 +384,7 @@ func StringISO3166Alpha3() govy.Rule[string] {
 		WithErrorCode(ErrorCodeStringISO3166Alpha3).
 		WithMessageTemplate(tpl).
 		WithExamples("USA", "POL", "JPN").
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescriptionTemplate(tpl, govy.TemplateVars{})
 }
 
 // StringISO3166Numeric ensures the property's value is a valid ISO 3166-1 numeric-3 country code.
@@ -402,7 +402,7 @@ func StringISO3166Numeric() govy.Rule[string] {
 		WithErrorCode(ErrorCodeStringISO3166Numeric).
 		WithMessageTemplate(tpl).
 		WithExamples("840", "616", "392").
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescriptionTemplate(tpl, govy.TemplateVars{})
 }
 
 // StringISO31662 ensures the property's value is a valid ISO 3166-2 country subdivision code.
@@ -420,7 +420,7 @@ func StringISO31662() govy.Rule[string] {
 		WithErrorCode(ErrorCodeStringISO31662).
 		WithMessageTemplate(tpl).
 		WithExamples("US-CA", "GB-ENG", "PL-14").
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescriptionTemplate(tpl, govy.TemplateVars{})
 }
 
 // StringISO4217 ensures the property's value is a valid ISO 4217 three-letter alphabetic currency code.
@@ -438,7 +438,7 @@ func StringISO4217() govy.Rule[string] {
 		WithErrorCode(ErrorCodeStringISO4217).
 		WithMessageTemplate(tpl).
 		WithExamples("USD", "EUR", "JPY").
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescriptionTemplate(tpl, govy.TemplateVars{})
 }
 
 // StringLatitude ensures the property's value is a decimal latitude coordinate between -90 and 90 degrees.
