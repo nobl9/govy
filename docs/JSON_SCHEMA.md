@@ -238,6 +238,12 @@ dots, or no separators.
 `StringCIDR`, `StringCIDRv4`, and `StringCIDRv6` emit approximate structural
 patterns. They do not validate address components, prefix ranges, or the
 network-alignment check in `StringCIDRv4`.
+`StringGitRef` emits an approximate pattern. It accepts `HEAD` or two or more
+nonempty slash-separated components. It rejects ASCII control characters,
+spaces, and the unconditional forbidden characters `\`, `?`, `*`, `[`, `~`,
+`^`, and `:`. It does not reject `..`, `@{`, leading dots, `.lock` suffixes,
+trailing dots, components equal to `@`, or leading hyphens in branch and tag
+components.
 `StringKubernetesQualifiedName` emits its global length bounds and a pattern
 for the prefix and name structure. It does not enforce the separate
 253-character prefix and 63-character name limits.
@@ -262,7 +268,6 @@ prefixes. The ISSN pattern enforces its fixed hyphenated form.
 The following rules validate decoded content or use complex parsers:
 
 - both BCP 47 rules
-- `StringGitRef`
 - `StringCrontab`
 - `StringTitle`
 - `StringJWT`

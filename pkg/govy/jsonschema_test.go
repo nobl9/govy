@@ -501,6 +501,30 @@ func TestJSONSchema_StringPatternRules(t *testing.T) {
 	assert.Equal(t, expected, actual.String())
 }
 
+func TestJSONSchema_StringGitRef(t *testing.T) {
+	t.Parallel()
+
+	type document struct {
+		GitRef string
+	}
+	validator := govy.New(
+		govy.For(func(v document) string { return v.GitRef }).
+			WithName("gitRef").
+			Rules(rules.StringGitRef()),
+	).
+		WithName("StringGitRef")
+
+	schema, err := govy.JSONSchema(validator)
+	assert.Require(t, assert.NoError(t, err))
+
+	expected := readTestData(t, "expected_string_git_ref_json_schema.json")
+	var actual bytes.Buffer
+	encoder := json.NewEncoder(&actual)
+	encoder.SetIndent("", "  ")
+	assert.Require(t, assert.NoError(t, encoder.Encode(schema)))
+	assert.Equal(t, expected, actual.String())
+}
+
 func TestJSONSchema_StringChecksumRules(t *testing.T) {
 	t.Parallel()
 

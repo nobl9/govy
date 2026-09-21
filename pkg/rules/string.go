@@ -1248,6 +1248,8 @@ type stringGitRefTemplateVars struct {
 	GitRefForbiddenChars  bool
 }
 
+const gitRefJSONSchemaPattern = `^(?:HEAD|[^\x00-\x20\x7F\\?*\[~^:/]+(?:/[^\x00-\x20\x7F\\?*\[~^:/]+)+)$`
+
 // StringGitRef ensures a git reference name follows the [git-check-ref-format] rules.
 //
 // It is important to note that this function does not check if the reference exists in the repository.
@@ -1330,7 +1332,8 @@ func StringGitRef() govy.Rule[string] {
 		WithErrorCode(ErrorCodeStringGitRef).
 		WithMessageTemplate(tpl).
 		WithDetails("see https://git-scm.com/docs/git-check-ref-format for more information on Git reference naming rules").
-		WithDescription("string must be a valid git reference")
+		WithDescription("string must be a valid git reference").
+		WithJSONSchema(jsonSchemaPattern(gitRefJSONSchemaPattern))
 }
 
 // StringFileSystemPath ensures the property's value is an existing file system path.

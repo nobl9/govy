@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "StringGitRef",
+  "type": "object",
+  "properties": {
+    "gitRef": {
+      "type": "string",
+      "pattern": "^(?:HEAD|[^\\u0000- */:?\\[\\\\\\^~\\u007f]+(?:/[^\\u0000- */:?\\[\\\\\\^~\\u007f]+)+)(?![\\s\\S])"
+    }
+  }
+}
