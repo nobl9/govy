@@ -87,6 +87,7 @@ const (
 	StringFileSystemPathTemplate
 	StringFilePathTemplate
 	StringDirPathTemplate
+	StringAbsoluteFilePathTemplate
 	StringMatchFileSystemPathTemplate
 	StringRegexpTemplate
 	StringCrontabTemplate
@@ -223,6 +224,7 @@ var rawMessageTemplates = map[templateKey]string{
 	StringFileSystemPathTemplate:         "string must be an existing file system path{{- if .Error }}: {{ .Error }}{{- end }}",
 	StringFilePathTemplate:               "string must be a file system path to an existing file{{- if .Error }}: {{ .Error }}{{- end }}",
 	StringDirPathTemplate:                "string must be a file system path to an existing directory{{- if .Error }}: {{ .Error }}{{- end }}",
+	StringAbsoluteFilePathTemplate:       "string must be an absolute file path",
 	StringMatchFileSystemPathTemplate:    "string must match file path pattern: '{{ .ComparisonValue }}'{{- if .Error }}: {{ .Error }}{{- end }}",
 	StringRegexpTemplate:                 "string must be a valid regular expression{{- if .Error }}: {{ .Error }}{{- end }}",
 	StringCrontabTemplate:                "string must be a valid cron schedule expression",
