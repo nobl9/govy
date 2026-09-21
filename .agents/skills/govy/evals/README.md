@@ -1,10 +1,16 @@
 # Govy Skill Evals
 
-[evals.json](evals.json) defines eight tasks with observable acceptance criteria.
+[evals.json](evals.json) defines ten tasks with observable acceptance criteria.
 The cases cover field boundaries, custom metadata, nested paths, optional data,
 pointer presence, conditions, transformed values, validation plans,
-hidden nested values, callback compatibility, and strict format selection.
+hidden nested values, callback compatibility, strict format selection,
+and understanding the validation building blocks.
 The custom-rule task also checks the readability of builder chains and metadata.
+
+Case 9 asks for an implementation from plain requirements without naming
+the construction APIs.
+Case 10 asks for an explanation of reuse, composition, and error paths.
+Use these cases to compare changes to the skill's introduction.
 
 ## Run a comparison
 
@@ -12,15 +18,16 @@ The custom-rule task also checks the readability of builder chains and metadata.
 2. Give independent agents the same prompt and pinned govy checkout.
    Assign one skill snapshot per agent.
    Keep expectations, contract tests, and other outputs out of each agent's context.
-3. Save each run's Go files and explanation in its own `outputs/` directory.
+3. Save each run's requested files in its own `outputs/` directory.
    Ask the agent to record the skill references it actually reads.
    Keep generated modules and logs outside `outputs/`.
-4. Run the independent checks with [run-case.bash](run-case.bash).
+4. For cases 1-9, run independent checks with [run-case.bash](run-case.bash).
    Use an installed Go toolchain that supports the checkout's `go.mod`.
    The checkout's dependencies must already be cached.
+   Case 10 needs only `explanation.md`; review it against the expectations.
 5. Grade every expectation from the outputs and test results.
    Record evidence in `grading.json` with `text`, `passed`, and `evidence` fields.
-6. Compare correctness and reference selection before accepting a smaller skill.
+6. Compare correctness and reference selection before accepting the revision.
 
 Set `eval_outputs` to one run's output directory.
 Set `govy_checkout` to the pinned source checkout.
@@ -47,8 +54,11 @@ An answer that names the expected APIs can still implement the wrong behavior.
 
 Record the entrypoint size and references read for each task.
 A narrow question must reach its relevant reference without loading every guide.
+For case 10, grade how the explanation applies the concepts to the task.
+Naming all four types without explaining their relationships is insufficient.
 Treat file size as a context estimate, not a measured model token count.
 One run per case checks coverage, not statistical improvement or output variance.
+Use repeated independent runs to check whether an observed difference recurs.
 
 Before trusting a new assertion, run it against an intentionally incorrect output.
 For example, omit required project names or replace collection limits with 999.
