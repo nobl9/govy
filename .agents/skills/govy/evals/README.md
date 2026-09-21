@@ -1,11 +1,6 @@
 # Govy Skill Evals
 
-[evals.json](evals.json) defines ten tasks with observable acceptance criteria.
-The cases cover field boundaries, custom metadata, nested paths, optional data,
-pointer presence, conditions, transformed values, validation plans,
-hidden nested values, callback compatibility, strict format selection,
-and understanding the validation building blocks.
-The custom-rule task also checks the readability of builder chains and metadata.
+[evals.json](evals.json) contains the evaluation prompts and acceptance criteria.
 
 Case 9 asks for an implementation from plain requirements without naming
 the construction APIs.
