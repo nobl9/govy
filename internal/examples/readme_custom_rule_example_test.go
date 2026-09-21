@@ -28,7 +28,8 @@ func Example_customRules() {
 			Required().
 			Rules(
 				customRule,
-				rules.StringStartsWith("J")),
+				rules.StringStartsWith("J"),
+			),
 	).WithNameFunc(govy.NameFuncFromTypeName[Teacher]())
 
 	teacher := Teacher{Name: "George"}

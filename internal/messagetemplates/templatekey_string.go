@@ -82,30 +82,31 @@ func _() {
 	_ = x[StringFileSystemPathTemplate-72]
 	_ = x[StringFilePathTemplate-73]
 	_ = x[StringDirPathTemplate-74]
-	_ = x[StringMatchFileSystemPathTemplate-75]
-	_ = x[StringRegexpTemplate-76]
-	_ = x[StringCrontabTemplate-77]
-	_ = x[StringDateTimeTemplate-78]
-	_ = x[StringTimeZoneTemplate-79]
-	_ = x[StringBCP47LanguageTagTemplate-80]
-	_ = x[StringBCP47StrictLanguageTagTemplate-81]
-	_ = x[StringISO3166Alpha2Template-82]
-	_ = x[StringISO3166Alpha3Template-83]
-	_ = x[StringISO3166NumericTemplate-84]
-	_ = x[StringISO31662Template-85]
-	_ = x[StringISO4217Template-86]
-	_ = x[StringLatitudeTemplate-87]
-	_ = x[StringLongitudeTemplate-88]
-	_ = x[StringKubernetesQualifiedNameTemplate-89]
-	_ = x[StringMongoDBObjectIDTemplate-90]
-	_ = x[URLTemplate-91]
-	_ = x[SliceUniqueTemplate-92]
-	_ = x[UniquePropertiesTemplate-93]
+	_ = x[StringAbsoluteFilePathTemplate-75]
+	_ = x[StringMatchFileSystemPathTemplate-76]
+	_ = x[StringRegexpTemplate-77]
+	_ = x[StringCrontabTemplate-78]
+	_ = x[StringDateTimeTemplate-79]
+	_ = x[StringTimeZoneTemplate-80]
+	_ = x[StringBCP47LanguageTagTemplate-81]
+	_ = x[StringBCP47StrictLanguageTagTemplate-82]
+	_ = x[StringISO3166Alpha2Template-83]
+	_ = x[StringISO3166Alpha3Template-84]
+	_ = x[StringISO3166NumericTemplate-85]
+	_ = x[StringISO31662Template-86]
+	_ = x[StringISO4217Template-87]
+	_ = x[StringLatitudeTemplate-88]
+	_ = x[StringLongitudeTemplate-89]
+	_ = x[StringKubernetesQualifiedNameTemplate-90]
+	_ = x[StringMongoDBObjectIDTemplate-91]
+	_ = x[URLTemplate-92]
+	_ = x[SliceUniqueTemplate-93]
+	_ = x[UniquePropertiesTemplate-94]
 }
 
-const _templateKey_name = "LengthTemplateMinLengthTemplateMaxLengthTemplateEQTemplateNEQTemplateGTTemplateGTETemplateLTTemplateLTETemplateEqualPropertiesTemplateGTPropertiesTemplateGTEPropertiesTemplateLTPropertiesTemplateLTEPropertiesTemplateGTComparablePropertiesTemplateGTEComparablePropertiesTemplateLTComparablePropertiesTemplateLTEComparablePropertiesTemplateDurationPrecisionTemplateForbiddenTemplateOneOfTemplateNotOneOfTemplateOneOfPropertiesTemplateMutuallyExclusiveTemplateMutuallyDependentTemplateRequiredTemplateStringNonEmptyTemplateStringMatchRegexpTemplateStringDenyRegexpTemplateStringBase64TemplateStringBase64URLTemplateStringBase64RawURLTemplateStringHexadecimalTemplateStringMD5TemplateStringSHA256TemplateStringSHA384TemplateStringSHA512TemplateStringEmailTemplateStringE164TemplateStringMACTemplateStringIPTemplateStringIPv4TemplateStringIPv6TemplateStringCIDRTemplateStringCIDRv4TemplateStringCIDRv6TemplateStringCreditCardTemplateStringLuhnChecksumTemplateStringBICTemplateStringBICISO93622014TemplateStringUUIDRFC4122TemplateStringUUIDv3TemplateStringUUIDv4TemplateStringUUIDv5TemplateStringULIDTemplateStringEINTemplateStringSSNTemplateStringJSONTemplateStringSemverTemplateStringCVETemplateStringISBNTemplateStringISBN10TemplateStringISBN13TemplateStringISSNTemplateStringJWTTemplateStringContainsTemplateStringExcludesTemplateStringStartsWithTemplateStringEndsWithTemplateStringTitleTemplateStringGitRefTemplateStringFileSystemPathTemplateStringFilePathTemplateStringDirPathTemplateStringMatchFileSystemPathTemplateStringRegexpTemplateStringCrontabTemplateStringDateTimeTemplateStringTimeZoneTemplateStringBCP47LanguageTagTemplateStringBCP47StrictLanguageTagTemplateStringISO3166Alpha2TemplateStringISO3166Alpha3TemplateStringISO3166NumericTemplateStringISO31662TemplateStringISO4217TemplateStringLatitudeTemplateStringLongitudeTemplateStringKubernetesQualifiedNameTemplateStringMongoDBObjectIDTemplateURLTemplateSliceUniqueTemplateUniquePropertiesTemplate"
+const _templateKey_name = "LengthTemplateMinLengthTemplateMaxLengthTemplateEQTemplateNEQTemplateGTTemplateGTETemplateLTTemplateLTETemplateEqualPropertiesTemplateGTPropertiesTemplateGTEPropertiesTemplateLTPropertiesTemplateLTEPropertiesTemplateGTComparablePropertiesTemplateGTEComparablePropertiesTemplateLTComparablePropertiesTemplateLTEComparablePropertiesTemplateDurationPrecisionTemplateForbiddenTemplateOneOfTemplateNotOneOfTemplateOneOfPropertiesTemplateMutuallyExclusiveTemplateMutuallyDependentTemplateRequiredTemplateStringNonEmptyTemplateStringMatchRegexpTemplateStringDenyRegexpTemplateStringBase64TemplateStringBase64URLTemplateStringBase64RawURLTemplateStringHexadecimalTemplateStringMD5TemplateStringSHA256TemplateStringSHA384TemplateStringSHA512TemplateStringEmailTemplateStringE164TemplateStringMACTemplateStringIPTemplateStringIPv4TemplateStringIPv6TemplateStringCIDRTemplateStringCIDRv4TemplateStringCIDRv6TemplateStringCreditCardTemplateStringLuhnChecksumTemplateStringBICTemplateStringBICISO93622014TemplateStringUUIDRFC4122TemplateStringUUIDv3TemplateStringUUIDv4TemplateStringUUIDv5TemplateStringULIDTemplateStringEINTemplateStringSSNTemplateStringJSONTemplateStringSemverTemplateStringCVETemplateStringISBNTemplateStringISBN10TemplateStringISBN13TemplateStringISSNTemplateStringJWTTemplateStringContainsTemplateStringExcludesTemplateStringStartsWithTemplateStringEndsWithTemplateStringTitleTemplateStringGitRefTemplateStringFileSystemPathTemplateStringFilePathTemplateStringDirPathTemplateStringAbsoluteFilePathTemplateStringMatchFileSystemPathTemplateStringRegexpTemplateStringCrontabTemplateStringDateTimeTemplateStringTimeZoneTemplateStringBCP47LanguageTagTemplateStringBCP47StrictLanguageTagTemplateStringISO3166Alpha2TemplateStringISO3166Alpha3TemplateStringISO3166NumericTemplateStringISO31662TemplateStringISO4217TemplateStringLatitudeTemplateStringLongitudeTemplateStringKubernetesQualifiedNameTemplateStringMongoDBObjectIDTemplateURLTemplateSliceUniqueTemplateUniquePropertiesTemplate"
 
-var _templateKey_index = [...]uint16{0, 14, 31, 48, 58, 69, 79, 90, 100, 111, 134, 154, 175, 195, 216, 246, 277, 307, 338, 363, 380, 393, 409, 432, 457, 482, 498, 520, 545, 569, 589, 612, 638, 663, 680, 700, 720, 740, 759, 777, 794, 810, 828, 846, 864, 884, 904, 928, 954, 971, 999, 1024, 1044, 1064, 1084, 1102, 1119, 1136, 1154, 1174, 1191, 1209, 1229, 1249, 1267, 1284, 1306, 1328, 1352, 1374, 1393, 1413, 1441, 1463, 1484, 1517, 1537, 1558, 1580, 1602, 1632, 1668, 1695, 1722, 1750, 1772, 1793, 1815, 1838, 1875, 1904, 1915, 1934, 1958}
+var _templateKey_index = [...]uint16{0, 14, 31, 48, 58, 69, 79, 90, 100, 111, 134, 154, 175, 195, 216, 246, 277, 307, 338, 363, 380, 393, 409, 432, 457, 482, 498, 520, 545, 569, 589, 612, 638, 663, 680, 700, 720, 740, 759, 777, 794, 810, 828, 846, 864, 884, 904, 928, 954, 971, 999, 1024, 1044, 1064, 1084, 1102, 1119, 1136, 1154, 1174, 1191, 1209, 1229, 1249, 1267, 1284, 1306, 1328, 1352, 1374, 1393, 1413, 1441, 1463, 1484, 1514, 1547, 1567, 1588, 1610, 1632, 1662, 1698, 1725, 1752, 1780, 1802, 1823, 1845, 1868, 1905, 1934, 1945, 1964, 1988}
 
 func (i templateKey) String() string {
 	idx := int(i) - 1

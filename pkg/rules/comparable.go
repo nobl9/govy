@@ -339,6 +339,8 @@ func isTemporal(v any) bool {
 	}
 }
 
+// GTComparableProperties ensures the first property's value is greater than the second property's value.
+// It works with types that implement [Comparable], such as [time.Time].
 func GTComparableProperties[T Comparable[T], P any](
 	firstName string,
 	firstGetter func(parent P) T,
@@ -366,6 +368,8 @@ func GTComparableProperties[T Comparable[T], P any](
 		WithDescription(fmt.Sprintf("'%s' must be greater than '%s'", firstName, secondName))
 }
 
+// GTEComparableProperties ensures the first property's value is greater than or equal to the second property's value.
+// It works with types that implement [Comparable], such as [time.Time].
 func GTEComparableProperties[T Comparable[T], P any](
 	firstName string,
 	firstGetter func(parent P) T,
@@ -393,6 +397,8 @@ func GTEComparableProperties[T Comparable[T], P any](
 		WithDescription(fmt.Sprintf("'%s' must be greater than or equal to '%s'", firstName, secondName))
 }
 
+// LTComparableProperties ensures the first property's value is less than the second property's value.
+// It works with types that implement [Comparable], such as [time.Time].
 func LTComparableProperties[T Comparable[T], P any](
 	firstName string,
 	firstGetter func(parent P) T,
@@ -420,6 +426,8 @@ func LTComparableProperties[T Comparable[T], P any](
 		WithDescription(fmt.Sprintf("'%s' must be less than '%s'", firstName, secondName))
 }
 
+// LTEComparableProperties ensures the first property's value is less than or equal to the second property's value.
+// It works with types that implement [Comparable], such as [time.Time].
 func LTEComparableProperties[T Comparable[T], P any](
 	firstName string,
 	firstGetter func(parent P) T,

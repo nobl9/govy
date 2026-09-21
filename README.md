@@ -22,8 +22,9 @@ for upcoming, planned features.
 ## Legend
 
 1. [Getting started](#getting-started)
-    1. [Use cases](#use-cases)
-    2. [Comparison with other libraries](#comparison-with-other-libraries)
+    1. [Agent skill](#agent-skill)
+    2. [Use cases](#use-cases)
+    3. [Comparison with other libraries](#comparison-with-other-libraries)
 2. [Building blocks](#building-blocks)
     1. [Errors](#errors)
 3. [Features](#features)
@@ -122,7 +123,8 @@ func Example_basicUsage() {
 			Required().
 			Rules(
 				rules.StringNotEmpty(),
-				rules.OneOf("Jake", "George")),
+				rules.OneOf("Jake", "George"),
+			),
 		govy.ForPointer(func(t Teacher) *string { return t.MiddleName }).
 			WithName("middleName").
 			Rules(rules.StringTitle()),
@@ -130,7 +132,8 @@ func Example_basicUsage() {
 			WithName("students").
 			Rules(
 				rules.SliceMaxLength[[]Student](2),
-				rules.SliceUnique(func(v Student) string { return v.Index })).
+				rules.SliceUnique(func(v Student) string { return v.Index }),
+			).
 			IncludeForEach(studentValidator),
 		govy.For(func(t Teacher) University { return t.University }).
 			WithName("university").
@@ -177,6 +180,16 @@ func Example_basicUsage() {
 	//   - 'university.address' with value '10th University St.':
 	//     - string must match regular expression: '[\w\s.]+, \d{2}-\d{3} \w+' (e.g. '5 M. Skłodowska-Curie Square, 60-965 Poznan'); Polish address format must consist of the main address and zip code
 }
+```
+
+### Agent skill
+
+The [Govy skill](.agents/skills/govy/SKILL.md) helps coding agents write,
+review, and test validators.
+Install it in your project with the [skills CLI](https://skills.sh/docs/cli):
+
+```shell
+npx skills add nobl9/govy --skill govy
 ```
 
 ### Use cases
@@ -448,7 +461,8 @@ func Example_customRules() {
 			Required().
 			Rules(
 				customRule,
-				rules.StringStartsWith("J")),
+				rules.StringStartsWith("J"),
+			),
 	).WithNameFunc(govy.NameFuncFromTypeName[Teacher]())
 
 	teacher := Teacher{Name: "George"}
@@ -529,7 +543,8 @@ func Example_validationPlan() {
 			WithName("name").
 			Rules(
 				rules.StringNotEmpty(),
-				rules.OneOf("Jake", "George")),
+				rules.OneOf("Jake", "George"),
+			),
 		govy.ForPointer(func(t Teacher) *string { return t.MiddleName }).
 			WithName("middleName").
 			Rules(rules.StringTitle()),
@@ -537,7 +552,8 @@ func Example_validationPlan() {
 			WithName("students").
 			Rules(
 				rules.SliceMaxLength[[]Student](2),
-				rules.SliceUnique(func(v Student) string { return v.Index })).
+				rules.SliceUnique(func(v Student) string { return v.Index }),
+			).
 			IncludeForEach(studentValidator),
 		govy.For(func(t Teacher) University { return t.University }).
 			WithName("university").

@@ -1203,6 +1203,25 @@ func StringDirPath() govy.Rule[string] {
 		WithDescriptionTemplate(tpl, govy.TemplateVars{})
 }
 
+// StringAbsoluteFilePath ensures the property's value is an absolute file system path.
+// It uses [filepath.IsAbs] and follows the host operating system's path rules.
+// It does not check whether the path exists or expand environment variables or '~'.
+func StringAbsoluteFilePath() govy.Rule[string] {
+	tpl := messagetemplates.Get(messagetemplates.StringAbsoluteFilePathTemplate)
+
+	return govy.NewRule(func(s string) error {
+		if !filepath.IsAbs(s) {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringAbsoluteFilePath).
+		WithMessageTemplate(tpl).
+		WithDescriptionTemplate(tpl, govy.TemplateVars{})
+}
+
 // StringMatchFileSystemPath ensures the property's value matches the provided file path pattern.
 // It uses [filepath.Match] to match the pattern. The native function comes with some limitations,
 // most notably it does not support '**' recursive expansion.

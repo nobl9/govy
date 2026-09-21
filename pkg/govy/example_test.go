@@ -446,7 +446,7 @@ func ExampleTransform() {
 // the property does not contain a zero value.
 //
 // Note: [govy.PropertyRules.Required] is introducing a short circuit.
-// If the assertion fails, validation will stop and return [govy.govy.ErrorCodeRequired].
+// If the assertion fails, validation will stop and return [rules.ErrorCodeRequired].
 // None of the rules you've defined would be evaluated.
 //
 // Note: Placement of [govy.PropertyRules.Required] does not matter,
@@ -1200,7 +1200,8 @@ func ExampleNewPropertyError() {
 						jsonpath.Parse("name"),
 						t.Name,
 						govy.NewRuleError("name cannot be Jake", "error_code_jake"),
-						govy.NewRuleError("you can pass me too!"))
+						govy.NewRuleError("you can pass me too!"),
+					)
 				}
 				return nil
 			})),
@@ -1307,7 +1308,8 @@ func ExampleForSlice() {
 			WithName("students").
 			Rules(
 				rules.SliceMaxLength[[]Student](2),
-				rules.SliceUnique(func(v Student) string { return v.Index })).
+				rules.SliceUnique(func(v Student) string { return v.Index }),
+			).
 			IncludeForEach(studentValidator),
 	).When(func(t Teacher) bool { return t.Age < 50 })
 
@@ -1400,7 +1402,7 @@ func ExampleForSlice_sliceOfPointers() {
 //
 // You can use [govy.ForMap] function to define rules for all the aforementioned iterators.
 // It returns a new struct [govy.PropertyRulesForMap] which behaves similar to
-// [govy.PropertyRulesForSlice]..
+// [govy.PropertyRulesForSlice].
 //
 // To define rules for keys use:
 //   - [govy.PropertyRulesForMap.RulesForKeys]
@@ -1424,7 +1426,7 @@ func ExampleForSlice_sliceOfPointers() {
 //   - Joan cannot be a teacher for student with index 918230013 (items).
 //
 // Notice that property path for maps has the following format:
-// <map_name>.<key>.<map_property_name>
+// <map_name>[<key>].<map_property_name>
 func ExampleForMap() {
 	teacherValidator := govy.New(
 		govy.For(func(t Teacher) string { return t.Name }).
@@ -1712,12 +1714,14 @@ func ExampleValidator() {
 			Required().
 			Rules(
 				rules.StringNotEmpty(),
-				rules.OneOf("Jake", "George")),
+				rules.OneOf("Jake", "George"),
+			),
 		govy.ForSlice(func(t Teacher) []Student { return t.Students }).
 			WithName("students").
 			Rules(
 				rules.SliceMaxLength[[]Student](2),
-				rules.SliceUnique(func(v Student) string { return v.Index })).
+				rules.SliceUnique(func(v Student) string { return v.Index }),
+			).
 			IncludeForEach(studentValidator),
 		govy.For(func(t Teacher) University { return t.University }).
 			WithName("university").
@@ -2048,7 +2052,7 @@ func ExampleInferPathModeGenerate() {
 	govyconfig.SetInferredPath(govyconfig.InferredPath{
 		Path: jsonpath.New().Name("name"),
 		File: "pkg/govy/example_test.go",
-		Line: 2055,
+		Line: 2059,
 	})
 
 	v2 := govy.New(
