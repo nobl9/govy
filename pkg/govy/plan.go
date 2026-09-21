@@ -71,7 +71,8 @@ type TypeInfo struct {
 
 // RulePlan is a validation plan for a single [Rule].
 type RulePlan struct {
-	// Description is the value provided to [Rule.WithDescription].
+	// Description is the final rule description. It is usually provided by
+	// [Rule.WithDescription] or rendered by [Rule.WithDescriptionTemplate].
 	Description string `json:"description"`
 	// Details is the value provided to [Rule.WithDetails].
 	Details string `json:"details,omitempty"`

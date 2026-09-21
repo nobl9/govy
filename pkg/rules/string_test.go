@@ -4015,7 +4015,9 @@ func TestStringAbsoluteFilePath(t *testing.T) {
 			if isAbs {
 				assert.NoError(t, err)
 			} else {
-				assert.EqualError(t, err, "string must be an absolute file path")
+				assert.Require(t, assert.EqualError(t, err, "string must be an absolute file path"))
+				assert.Require(t, assert.IsType[*govy.RuleError](t, err))
+				assert.Equal(t, "string must be an absolute file path", err.(*govy.RuleError).Description)
 				assert.True(t, govy.HasErrorCode(err, ErrorCodeStringAbsoluteFilePath))
 				err = customRule.Validate(tc.in)
 				assert.EqualError(t, err, fmt.Sprintf("absolute path required: '%s'", tc.in))
