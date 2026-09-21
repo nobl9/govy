@@ -2,7 +2,6 @@ package govy_test
 
 import (
 	"errors"
-	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -292,7 +291,7 @@ func TestRule_WithDescriptionTemplate(t *testing.T) {
 		assert.Equal(t, int32(1), executions.Load())
 	})
 
-	t.Run("execution failure is cached and panics for every consumer", func(t *testing.T) {
+	t.Run("execution failure retains partial description and is cached", func(t *testing.T) {
 		var executions atomic.Int32
 		renderErr := errors.New("render failed")
 		tpl := template.Must(template.New("description").
@@ -310,33 +309,16 @@ func TestRule_WithDescriptionTemplate(t *testing.T) {
 				WithName("value").
 				Rules(rule),
 		)
-		assertExecutionPanic := func(call func()) {
-			t.Helper()
-			defer func() {
-				recovered := recover()
-				executionErr, ok := recovered.(error)
-				if !ok {
-					t.Fatalf("unexpected panic: %v", recovered)
-				}
-				if !errors.Is(executionErr, renderErr) {
-					t.Fatalf("panic does not wrap the execution error: %v", executionErr)
-				}
-				if !strings.Contains(
-					executionErr.Error(),
-					`failed to execute description template "description"`,
-				) {
-					t.Fatalf("unexpected panic: %s", executionErr)
-				}
-			}()
-			call()
-		}
 
-		assertExecutionPanic(func() {
-			_ = rule.Validate(0)
-		})
-		assertExecutionPanic(func() {
-			_, _ = govy.Plan(validator)
-		})
+		for range 2 {
+			err := rule.Validate(0)
+			assert.Equal(t, &govy.RuleError{Message: "invalid", Description: "partial "}, err)
+		}
+		plan, err := govy.Plan(validator)
+		assert.Require(t, assert.NoError(t, err))
+		assert.Require(t, assert.Len(t, plan.Properties, 1))
+		assert.Require(t, assert.Len(t, plan.Properties[0].Rules, 1))
+		assert.Equal(t, "partial ", plan.Properties[0].Rules[0].Description)
 		assert.Equal(t, int32(1), executions.Load())
 	})
 

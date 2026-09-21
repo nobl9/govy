@@ -72,6 +72,77 @@ func BenchmarkNEQ(b *testing.B) {
 	}
 }
 
+func TestComparableRule_DescriptionTemplateFailure(t *testing.T) {
+	compared, other := make(chan int), make(chan int)
+	for _, tc := range []struct {
+		name        string
+		newRule     func(chan int) govy.Rule[chan int]
+		valid       chan int
+		invalid     chan int
+		errorCode   govy.ErrorCode
+		description string
+	}{
+		{
+			name:        "EQ",
+			newRule:     EQ[chan int],
+			valid:       compared,
+			invalid:     other,
+			errorCode:   ErrorCodeEqualTo,
+			description: "must be equal to '",
+		},
+		{
+			name:        "NEQ",
+			newRule:     NEQ[chan int],
+			valid:       other,
+			invalid:     compared,
+			errorCode:   ErrorCodeNotEqualTo,
+			description: "must not be equal to '",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Run("plan before validation", func(t *testing.T) {
+				validator := govy.New(
+					govy.For(govy.GetSelf[chan int]()).WithName("channel").Rules(tc.newRule(compared)),
+				)
+				plan, err := govy.Plan(validator)
+				assert.Require(t, assert.NoError(t, err))
+				assert.Require(t, assert.Len(t, plan.Properties, 1))
+				assert.Require(t, assert.Len(t, plan.Properties[0].Rules, 1))
+				assert.Equal(t, tc.description, plan.Properties[0].Rules[0].Description)
+				assert.Equal(t, tc.errorCode, plan.Properties[0].Rules[0].ErrorCode)
+			})
+
+			for _, consumer := range []struct {
+				name     string
+				override func(govy.Rule[chan int]) govy.Rule[chan int]
+			}{
+				{
+					name: "message",
+					override: func(rule govy.Rule[chan int]) govy.Rule[chan int] {
+						return rule.WithMessage("invalid channel")
+					},
+				},
+				{
+					name: "message template",
+					override: func(rule govy.Rule[chan int]) govy.Rule[chan int] {
+						return rule.WithMessageTemplateString("invalid channel")
+					},
+				},
+			} {
+				t.Run(consumer.name, func(t *testing.T) {
+					rule := consumer.override(tc.newRule(compared))
+					assert.NoError(t, rule.Validate(tc.valid))
+					assert.Equal(t, &govy.RuleError{
+						Message:     "invalid channel",
+						Code:        tc.errorCode,
+						Description: tc.description,
+					}, rule.Validate(tc.invalid))
+				})
+			}
+		})
+	}
+}
+
 var gtTestCases = []*struct {
 	value         int
 	input         int

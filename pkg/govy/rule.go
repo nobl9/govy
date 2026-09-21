@@ -3,12 +3,14 @@ package govy
 import (
 	"bytes"
 	"fmt"
+	"log/slog"
 	"strings"
 	"sync"
 	"text/template"
 
 	"github.com/nobl9/govy/internal"
 	"github.com/nobl9/govy/internal/collections"
+	"github.com/nobl9/govy/internal/logging"
 	"github.com/nobl9/govy/internal/messagetemplates"
 )
 
@@ -207,7 +209,7 @@ func (r Rule[T]) WithDescription(description string) Rule[T] {
 // Copies of the rule share the rendered description.
 //
 // WithDescriptionTemplate panics if the template is nil.
-// Template execution errors are wrapped, cached, and replayed as panics.
+// It logs template execution errors once and caches any partial description.
 func (r Rule[T]) WithDescriptionTemplate(tpl *template.Template, vars TemplateVars) Rule[T] {
 	if tpl == nil {
 		panic("description template must not be nil")
@@ -216,11 +218,9 @@ func (r Rule[T]) WithDescriptionTemplate(tpl *template.Template, vars TemplateVa
 	r.descriptionTpl = sync.OnceValue(func() string {
 		var buf bytes.Buffer
 		if err := tpl.Execute(&buf, vars); err != nil {
-			panic(fmt.Errorf(
-				"failed to execute description template %q: %w",
-				tpl.Name(),
-				err,
-			))
+			logging.Logger().Error("failed to execute description template",
+				slog.String("template", tpl.Name()),
+				slog.String("error", err.Error()))
 		}
 		return buf.String()
 	})
