@@ -681,6 +681,9 @@ func TestValidatorRemovePropertiesByID(t *testing.T) {
 				WithName("value").
 				WithID("inner").
 				Rules(rules.EQ("expected")),
+			govy.For(func(value leaf) string { return value.Value }).
+				WithName("kept").
+				Rules(rules.EQ("expected")),
 		)
 		childValidator := govy.New(
 			govy.For(func(value child) leaf { return value.Leaf }).
@@ -703,8 +706,112 @@ func TestValidatorRemovePropertiesByID(t *testing.T) {
 		}
 
 		filtered := parentValidator.RemovePropertiesByID("inner")
-		assert.Error(t, parentValidator.Validate(value))
-		assert.NoError(t, filtered.Validate(value))
+		govytest.AssertError(
+			t,
+			filtered.Validate(value),
+			govytest.ExpectedRuleError{
+				PropertyPath: "children.first[0].leaf.kept",
+				Message:      "must be equal to 'expected'",
+			},
+		)
+		govytest.AssertError(
+			t,
+			parentValidator.Validate(value),
+			govytest.ExpectedRuleError{
+				PropertyPath: "children.first[0].leaf.value",
+				Message:      "must be equal to 'expected'",
+			},
+			govytest.ExpectedRuleError{
+				PropertyPath: "children.first[0].leaf.kept",
+				Message:      "must be equal to 'expected'",
+			},
+		)
+	})
+
+	t.Run("recursive validators", func(t *testing.T) {
+		type node struct {
+			Value string
+			Next  *node
+		}
+		newValidator := func(next *govy.Validator[node]) govy.Validator[node] {
+			return govy.New(
+				govy.For(func(value node) string { return value.Value }).
+					WithName("removed").WithID("remove").Rules(rules.EQ("expected")),
+				govy.For(func(value node) string { return value.Value }).
+					WithName("kept").WithID("keep").Rules(rules.EQ("expected")),
+				govy.ForPointer(func(value node) *node { return value.Next }).
+					WithName("next").Include(next),
+			)
+		}
+		value := node{Next: &node{Next: &node{}}}
+		originalErrors := []govytest.ExpectedRuleError{
+			{PropertyPath: "removed", Message: "must be equal to 'expected'"},
+			{PropertyPath: "kept", Message: "must be equal to 'expected'"},
+			{PropertyPath: "next.removed", Message: "must be equal to 'expected'"},
+			{PropertyPath: "next.kept", Message: "must be equal to 'expected'"},
+			{PropertyPath: "next.next.removed", Message: "must be equal to 'expected'"},
+			{PropertyPath: "next.next.kept", Message: "must be equal to 'expected'"},
+		}
+		for _, name := range []string{"self", "mutual"} {
+			t.Run(name, func(t *testing.T) {
+				var validator govy.Validator[node]
+				next := &validator
+				if name == "mutual" {
+					other := newValidator(&validator)
+					next = &other
+				}
+				validator = newValidator(next)
+
+				filtered := validator.RemovePropertiesByID("remove")
+				govytest.AssertError(t, filtered.Validate(value),
+					govytest.ExpectedRuleError{PropertyPath: "kept", Message: "must be equal to 'expected'"},
+					govytest.ExpectedRuleError{PropertyPath: "next.kept", Message: "must be equal to 'expected'"},
+					govytest.ExpectedRuleError{PropertyPath: "next.next.kept", Message: "must be equal to 'expected'"},
+				)
+				govytest.AssertError(t, validator.Validate(value), originalErrors...)
+				govytest.AssertError(t, validator.RemovePropertiesByID("missing").Validate(value), originalErrors...)
+				assert.NoError(t, filtered.RemovePropertiesByID("keep").Validate(value))
+			})
+		}
+	})
+
+	t.Run("preserves validator wrappers", func(t *testing.T) {
+		wrapper := idRemovalValidatorWrapper{Validator: govy.New(
+			govy.For(govy.GetSelf[string]()).WithID("inner").Rules(rules.EQ("expected")),
+		)}
+		validator := govy.New(
+			govy.For(govy.GetSelf[string]()).WithName("wrapped").Include(wrapper),
+			govy.For(govy.GetSelf[string]()).WithName("pointerWrapped").Include(&wrapper),
+			govy.For(govy.GetSelf[string]()).WithName("outer").WithID("outer").Rules(rules.EQ("expected")),
+			govy.For(govy.GetSelf[string]()).
+				When(func(string) bool { return false }).
+				Include((*govy.Validator[string])(nil)),
+		)
+		testCases := []struct {
+			name        string
+			ids         []string
+			removeOuter bool
+		}{
+			{name: "no IDs"},
+			{name: "empty ID", ids: []string{""}},
+			{name: "unknown ID", ids: []string{"missing"}},
+			{name: "wrapped property ID", ids: []string{"inner"}},
+			{name: "sibling property ID", ids: []string{"outer"}, removeOuter: true},
+		}
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+				expected := []govytest.ExpectedRuleError{
+					{PropertyPath: "wrapped", Message: "wrapper rejected"},
+					{PropertyPath: "pointerWrapped", Message: "wrapper rejected"},
+				}
+				if !tc.removeOuter {
+					expected = append(expected, govytest.ExpectedRuleError{
+						PropertyPath: "outer", Message: "must be equal to 'expected'",
+					})
+				}
+				govytest.AssertError(t, validator.RemovePropertiesByID(tc.ids...).Validate("actual"), expected...)
+			})
+		}
 	})
 
 	t.Run("supports scalar, slice, and map properties", func(t *testing.T) {
@@ -733,6 +840,14 @@ func TestValidatorRemovePropertiesByID(t *testing.T) {
 		assert.Error(t, validator.Validate(value{}))
 		assert.NoError(t, validator.RemovePropertiesByID("scalar", "slice", "map").Validate(value{}))
 	})
+}
+
+type idRemovalValidatorWrapper struct {
+	govy.Validator[string]
+}
+
+func (idRemovalValidatorWrapper) Validate(string, ...govy.ValidationOption) error {
+	return errors.New("wrapper rejected")
 }
 
 func mustValidatorError(t *testing.T, err error) *govy.ValidatorError {

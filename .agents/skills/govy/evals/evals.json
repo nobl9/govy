@@ -44,11 +44,12 @@
     {
       "id": 4,
       "name": "paths-and-optional-data",
-      "prompt": "Explain WithName, WithPath, and path inference in govy in at most 250 words. Also create compilable package validation with `type Details struct { Name string }` and `type Profile struct { Code string; Details *Details }`. Export a govy.Validator[Profile] named ProfileValidator. A blank Code must fail at the synthetic path settings.code (two path segments). Details is optional; when present, its Name is required and must fail at details.name. Use explicit paths for this new validator. Include tests for nil Details and both failing paths. Save the .go files and explanation.md.",
+      "prompt": "Explain WithName, WithPath, and path inference in govy in at most 250 words. Also create compilable package validation with `type Details struct { Name string }` and `type Profile struct { Code string; Details *Details }`. Export a govy.Validator[Profile] named ProfileValidator. A blank Code must fail at the synthetic path settings.code (two path segments). Details is optional; when present, its Name is required and must fail at details.name. Use explicit paths for this new validator. Assign ID details-name to the Name property. Export ProfileWithoutNameValidator by removing that ID from ProfileValidator. Preserve Code validation and the original validator. Include tests for nil Details, both failing paths, and the derived validator. Save the .go files and explanation.md.",
       "expected_output": "A concise, correct path explanation plus executable synthetic-path and optional-nested-object examples.",
       "expectations": [
         "The output compiles and its tests pass against the pinned govy checkout.",
         "The contract tests distinguish settings.code from a single property named settings.code, and verify details.name and nil skipping.",
+        "The derived validator removes the nested Name check by ID, preserves Code validation, and leaves ProfileValidator unchanged.",
         "The explanation correctly distinguishes one segment, multiple segments, and inferred paths.",
         "The explanation stays within 250 words and the examples use real govy APIs."
       ],

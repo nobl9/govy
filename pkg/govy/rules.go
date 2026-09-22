@@ -302,15 +302,28 @@ func (r PropertyRules[T, P]) propertyID() string {
 	return r.id
 }
 
-func (r PropertyRules[T, P]) removePropertiesByID(ids []string) PropertyRulesInterface[P] {
-	return r.removePropertiesByIDFromIncludes(ids)
+func (r PropertyRules[T, P]) removePropertiesByID(removal *propertyRemoval) PropertyRulesInterface[P] {
+	return r.removePropertiesByIDFromIncludes(removal)
 }
 
-func (r PropertyRules[T, P]) removePropertiesByIDFromIncludes(ids []string) PropertyRules[T, P] {
+func (r PropertyRules[T, P]) removePropertiesByIDFromIncludes(removal *propertyRemoval) PropertyRules[T, P] {
 	rules := make([]validationInterface[T], 0, len(r.rules))
 	for _, rule := range r.rules {
-		if validator, ok := rule.(ValidatorInterface[T]); ok {
-			rule = validator.removePropertiesByID(ids)
+		switch validator := rule.(type) {
+		case Validator[T]:
+			rule = validator.removePropertiesByID(removal)
+		case *Validator[T]:
+			if validator == nil {
+				break
+			}
+			filtered, ok := removal.copies[validator].(*Validator[T])
+			if !ok {
+				filtered = new(Validator[T])
+				// Register first so recursive includes reuse the filtered copy.
+				removal.copies[validator] = filtered
+				*filtered = validator.removePropertiesByID(removal)
+			}
+			rule = filtered
 		}
 		rules = append(rules, rule)
 	}

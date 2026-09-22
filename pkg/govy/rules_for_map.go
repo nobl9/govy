@@ -260,11 +260,11 @@ func (r PropertyRulesForMap[M, K, V, P]) propertyID() string {
 	return r.mapRules.propertyID()
 }
 
-func (r PropertyRulesForMap[M, K, V, P]) removePropertiesByID(ids []string) PropertyRulesInterface[P] {
-	r.mapRules = r.mapRules.removePropertiesByIDFromIncludes(ids)
-	r.forKeyRules = r.forKeyRules.removePropertiesByIDFromIncludes(ids)
-	r.forValueRules = r.forValueRules.removePropertiesByIDFromIncludes(ids)
-	r.forItemRules = r.forItemRules.removePropertiesByIDFromIncludes(ids)
+func (r PropertyRulesForMap[M, K, V, P]) removePropertiesByID(removal *propertyRemoval) PropertyRulesInterface[P] {
+	r.mapRules = r.mapRules.removePropertiesByIDFromIncludes(removal)
+	r.forKeyRules = r.forKeyRules.removePropertiesByIDFromIncludes(removal)
+	r.forValueRules = r.forValueRules.removePropertiesByIDFromIncludes(removal)
+	r.forItemRules = r.forItemRules.removePropertiesByIDFromIncludes(removal)
 	return r
 }
 

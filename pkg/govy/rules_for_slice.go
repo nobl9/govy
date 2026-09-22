@@ -174,9 +174,9 @@ func (r PropertyRulesForSlice[S, T, P]) propertyID() string {
 	return r.sliceRules.propertyID()
 }
 
-func (r PropertyRulesForSlice[S, T, P]) removePropertiesByID(ids []string) PropertyRulesInterface[P] {
-	r.sliceRules = r.sliceRules.removePropertiesByIDFromIncludes(ids)
-	r.forEachRules = r.forEachRules.removePropertiesByIDFromIncludes(ids)
+func (r PropertyRulesForSlice[S, T, P]) removePropertiesByID(removal *propertyRemoval) PropertyRulesInterface[P] {
+	r.sliceRules = r.sliceRules.removePropertiesByIDFromIncludes(removal)
+	r.forEachRules = r.forEachRules.removePropertiesByIDFromIncludes(removal)
 	return r
 }
 

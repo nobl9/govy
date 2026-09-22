@@ -12,7 +12,6 @@ import (
 type ValidatorInterface[T any] interface {
 	validationInterface[T]
 	isValidator()
-	removePropertiesByID(ids []string) ValidatorInterface[T]
 }
 
 // PropertyRulesInterface defines validation entities which describe properties,
@@ -28,7 +27,7 @@ type PropertyRulesInterface[T any] interface {
 	inferPathModeInternal(mode InferPathMode) PropertyRulesInterface[T]
 	isPropertyRules()
 	propertyID() string
-	removePropertiesByID(ids []string) PropertyRulesInterface[T]
+	removePropertiesByID(removal *propertyRemoval) PropertyRulesInterface[T]
 }
 
 // RulesInterface defines validation entities on the validation rule level,
