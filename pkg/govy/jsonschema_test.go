@@ -1,13 +1,12 @@
 package govy_test
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"math"
 	"regexp"
+	"strings"
 	"testing"
-	"time"
 	"unsafe"
 
 	"github.com/nobl9/govy/internal/assert"
@@ -22,24 +21,69 @@ import (
 func TestValidatorPlan_JSONSchema(t *testing.T) {
 	t.Parallel()
 
-	schema, err := govy.JSONSchema(newPodValidator())
+	validator := newPodValidator()
+	schema, err := govy.JSONSchema(validator)
 	assert.Require(t, assert.NoError(t, err))
 
-	expected := readTestData(t, "expected_pod_json_schema.json")
-	var actual bytes.Buffer
-	encoder := json.NewEncoder(&actual)
-	encoder.SetIndent("", "  ")
-	assert.Require(t, assert.NoError(t, encoder.Encode(schema)))
-	assert.Equal(t, expected, actual.String())
+	valid := Pod{
+		APIVersion: "v1", Kind: "Pod",
+		Metadata: PodMetadata{
+			Name: "pod", Namespace: "default", Labels: Labels{"app": "web"}, Annotations: Annotations{"owner": "team"},
+		},
+		Spec: PodSpec{
+			DNSPolicy: "Default", Containers: []Container{{Name: "web", Image: "image", Env: []EnvVar{}}},
+		},
+	}
+	invalidKind, invalidLabel, invalidContainer := valid, valid, valid
+	invalidKind.Kind = "Deployment"
+	invalidLabel.Metadata.Labels = Labels{"INVALID": "web"}
+	invalidContainer.Spec.Containers = []Container{{Name: "INVALID", Image: "image", Env: []EnvVar{}}}
+	duplicateContainers, matchingAnnotation, emptyPolicy, nilLabels := valid, valid, valid, valid
+	duplicateContainers.Spec.Containers = []Container{valid.Spec.Containers[0], valid.Spec.Containers[0]}
+	matchingAnnotation.Metadata.Annotations = Annotations{"owner": "owner"}
+	emptyPolicy.Spec.DNSPolicy = ""
+	nilLabels.Metadata.Labels = nil
+	cases := []jsonschematest.Case[Pod]{
+		{Name: "valid nested document", Input: valid, Valid: true},
+		{Name: "root property rule", Input: invalidKind},
+		{Name: "map key rule", Input: invalidLabel},
+		{Name: "included array item rule", Input: invalidContainer},
+		{
+			Name:                 "custom uniqueness rule omitted",
+			Input:                duplicateContainers,
+			JSONSchemaDifference: "SliceUnique compares selected container names and has no JSON Schema builder.",
+		},
+		{
+			Name:                 "custom map item rule omitted",
+			Input:                matchingAnnotation,
+			JSONSchemaDifference: "The custom rule relating an annotation key to its value has no JSON Schema builder.",
+		},
+		{
+			Name:                 "empty optional enum",
+			Input:                emptyPolicy,
+			Valid:                true,
+			JSONSchemaDifference: "OmitEmpty skips the empty Go string, but a present JSON string still must match the enum.",
+		},
+		{
+			Name:                 "nil map serializes as null",
+			Input:                nilLabels,
+			Valid:                true,
+			JSONSchemaDifference: "JSON Schema emits only the object type, while a nil Go map serializes as null.",
+		},
+	}
+	for _, tc := range cases {
+		assert.Equal(t, tc.Valid, validator.Validate(tc.Input) == nil)
+	}
+	jsonschematest.Assert(t, schema, "test_data/expected_pod_json_schema.json", cases)
 }
 
 func TestJSONSchema_BuilderContext(t *testing.T) {
 	t.Parallel()
 
 	type document struct {
-		Custom           string
-		PropertyRequired string
-		RuleRequired     bool
+		Custom           string `json:"custom"`
+		PropertyRequired string `json:"propertyRequired,omitempty"`
+		RuleRequired     bool   `json:"ruleRequired"`
 	}
 	rootRule := govy.NewRule(func(document) error { return nil }).
 		WithDescription("customize root schema").
@@ -52,7 +96,12 @@ func TestJSONSchema_BuilderContext(t *testing.T) {
 			}
 			return &jsonschema.Schema{Title: "Builder Context"}, nil
 		})
-	customRule := govy.NewRule(func(string) error { return nil }).
+	customRule := govy.NewRule(func(v string) error {
+		if !strings.Contains(v, "custom") {
+			return fmt.Errorf("value must contain custom")
+		}
+		return nil
+	}).
 		WithDescription("customize property schema").
 		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 			if !ctx.Path.Equal(jsonpath.Parse("$.custom")) {
@@ -80,25 +129,43 @@ func TestJSONSchema_BuilderContext(t *testing.T) {
 	schema, err := govy.JSONSchema(validator)
 	assert.Require(t, assert.NoError(t, err))
 
-	expected := readTestData(t, "expected_builder_context_json_schema.json")
-	var actual bytes.Buffer
-	encoder := json.NewEncoder(&actual)
-	encoder.SetIndent("", "  ")
-	assert.Require(t, assert.NoError(t, encoder.Encode(schema)))
-	assert.Equal(t, expected, actual.String())
+	cases := []jsonschematest.Case[document]{
+		{
+			Name:  "custom builder and required properties",
+			Input: document{Custom: "custom value", PropertyRequired: "present", RuleRequired: true},
+			Valid: true,
+		},
+		{
+			Name:  "custom builder rejects unmatched value",
+			Input: document{Custom: "other", PropertyRequired: "present", RuleRequired: true},
+		},
+		{
+			Name:  "missing required property",
+			Input: document{Custom: "custom", RuleRequired: true},
+		},
+		{
+			Name:                 "present false boolean",
+			Input:                document{Custom: "custom", PropertyRequired: "present"},
+			JSONSchemaDifference: "JSON Schema required checks presence, not Go zero values.",
+		},
+	}
+	for _, tc := range cases {
+		assert.Equal(t, tc.Valid, validator.Validate(tc.Input) == nil)
+	}
+	jsonschematest.Assert(t, schema, "test_data/expected_builder_context_json_schema.json", cases)
 }
 
 func TestJSONSchema_When(t *testing.T) {
 	t.Parallel()
 
 	type item struct {
-		Kind  string
-		Value string
+		Kind  string `json:"kind,omitempty"`
+		Value string `json:"value,omitempty"`
 	}
 	type document struct {
-		Enabled bool
-		Ignored string
-		Items   []item
+		Enabled bool   `json:"enabled"`
+		Ignored string `json:"ignored,omitempty"`
+		Items   []item `json:"items"`
 	}
 	enabled := any(true)
 	kind := any("required")
@@ -152,141 +219,112 @@ func TestJSONSchema_When(t *testing.T) {
 	schema, err := govy.JSONSchema(validator)
 	assert.Require(t, assert.NoError(t, err))
 
-	expected := readTestData(t, "expected_when_json_schema.json")
-	var actual bytes.Buffer
-	encoder := json.NewEncoder(&actual)
-	encoder.SetIndent("", "  ")
-	assert.Require(t, assert.NoError(t, encoder.Encode(schema)))
-	assert.Equal(t, expected, actual.String())
+	cases := []jsonschematest.Case[document]{
+		{
+			Name:  "disabled validator skips required item value",
+			Input: document{Items: []item{{Kind: "required"}}},
+			Valid: true,
+		},
+		{
+			Name:  "enabled required item has value",
+			Input: document{Enabled: true, Ignored: "present", Items: []item{{Kind: "required", Value: "present"}}},
+			Valid: true,
+		},
+		{
+			Name:  "enabled optional item omits value",
+			Input: document{Enabled: true, Ignored: "present", Items: []item{{Kind: "optional"}, {}}},
+			Valid: true,
+		},
+		{
+			Name:  "required item omits value",
+			Input: document{Enabled: true, Ignored: "present", Items: []item{{Kind: "required"}}},
+		},
+		{
+			Name:  "condition is evaluated for each item",
+			Input: document{Enabled: true, Ignored: "present", Items: []item{{Kind: "optional"}, {Kind: "required"}}},
+		},
+		{
+			Name:                 "unmapped condition omits required rule",
+			Input:                document{Enabled: true, Items: []item{}},
+			JSONSchemaDifference: "Rules guarded by a condition without WhenJSONSchema are omitted.",
+		},
+	}
+	for _, tc := range cases {
+		assert.Equal(t, tc.Valid, validator.Validate(tc.Input) == nil)
+	}
+	jsonschematest.Assert(t, schema, "test_data/expected_when_json_schema.json", cases)
 }
 
-func TestJSONSchema_Rules(t *testing.T) {
+func TestJSONSchema_RuleComposition(t *testing.T) {
 	t.Parallel()
 
-	type choice struct {
-		Name    string `json:"name"`
-		Enabled bool   `json:"enabled"`
-	}
-	type presence struct {
-		A string `json:"a"`
-		B string `json:"b"`
-		C string `json:"c"`
-	}
-	presenceGetters := map[string]func(presence) any{
-		"a": func(v presence) any { return v.A },
-		"b": func(v presence) any { return v.B },
-		"c": func(v presence) any { return v.C },
-	}
 	type document struct {
-		ArrayLength  []string
-		AtLeastOne   presence
-		AtMostOne    presence
-		Bounds       int
-		Const        [2]int
-		ContainsAll  string
-		DenyPattern  string
-		Dependent    presence
-		Duration     time.Duration
-		EndsWith     string
-		Enum         choice
-		ExactlyOne   presence
-		Excludes     string
-		Forbidden    int
-		MatchPattern string
-		NotConst     string
-		NotEmpty     string
-		NotEnum      int
-		ObjectLength map[string]string
-		Ordered      string
-		Pointer      *string
-		Required     bool
-		StartsWith   string
+		Text     string  `json:"text"`
+		Count    int     `json:"count"`
+		Optional *string `json:"optional,omitempty"`
+		Required bool    `json:"required,omitempty"`
 	}
 	validator := govy.New(
-		govy.For(func(v document) []string { return v.ArrayLength }).
-			WithName("arrayLength").
-			Rules(rules.SliceLength[[]string](1, 3)),
-		govy.For(func(v document) presence { return v.AtLeastOne }).
-			WithName("atLeastOne").
-			Rules(rules.OneOfProperties(presenceGetters)),
-		govy.For(func(v document) presence { return v.AtMostOne }).
-			WithName("atMostOne").
-			Rules(rules.MutuallyExclusive(false, presenceGetters)),
-		govy.For(func(v document) int { return v.Bounds }).
-			WithName("bounds").
-			Rules(rules.GT(1), rules.GTE(2), rules.LT(10), rules.LTE(9)),
-		govy.For(func(v document) [2]int { return v.Const }).
-			WithName("const").
-			Rules(rules.EQ([2]int{1, 2})),
-		govy.For(func(v document) string { return v.ContainsAll }).
-			WithName("containsAll").
-			Rules(rules.StringContains("alpha", "omega")),
-		govy.For(func(v document) string { return v.DenyPattern }).
-			WithName("denyPattern").
-			Rules(rules.StringDenyRegexp(regexp.MustCompile("secret"))),
-		govy.For(func(v document) presence { return v.Dependent }).
-			WithName("dependent").
-			Rules(rules.MutuallyDependent(presenceGetters)),
-		govy.For(func(v document) time.Duration { return v.Duration }).
-			WithName("duration").
-			Rules(rules.DurationPrecision(250*time.Millisecond)),
-		govy.For(func(v document) string { return v.EndsWith }).
-			WithName("endsWith").
-			Rules(rules.StringEndsWith(".json")),
-		govy.For(func(v document) choice { return v.Enum }).
-			WithName("enum").
-			Rules(rules.OneOf(
-				choice{Name: "first", Enabled: true},
-				choice{Name: "second"},
-			)),
-		govy.For(func(v document) presence { return v.ExactlyOne }).
-			WithName("exactlyOne").
-			Rules(rules.MutuallyExclusive(true, presenceGetters)),
-		govy.For(func(v document) string { return v.Excludes }).
-			WithName("excludes").
-			Rules(rules.StringExcludes("secret")),
-		govy.For(func(v document) int { return v.Forbidden }).
-			WithName("forbidden").
-			Rules(rules.Forbidden[int]()),
-		govy.For(func(v document) string { return v.MatchPattern }).
-			WithName("matchPattern").
-			Rules(rules.StringMatchRegexp(regexp.MustCompile("[a-z]+"))),
-		govy.For(func(v document) string { return v.NotConst }).
-			WithName("notConst").
-			Rules(rules.NEQ("forbidden")),
-		govy.For(func(v document) string { return v.NotEmpty }).
-			WithName("notEmpty").
-			Rules(rules.StringNotEmpty()),
-		govy.For(func(v document) int { return v.NotEnum }).
-			WithName("notEnum").
-			Rules(rules.NotOneOf(1, 2)),
-		govy.For(func(v document) map[string]string { return v.ObjectLength }).
-			WithName("objectLength").
-			Rules(rules.MapLength[map[string]string](1, 3)),
-		govy.For(func(v document) string { return v.Ordered }).
-			WithName("ordered").
-			Rules(rules.GT("middle")),
-		govy.For(func(v document) *string { return v.Pointer }).
-			WithName("pointer").
+		govy.For(func(v document) string { return v.Text }).WithName("text").Rules(
+			rules.StringStartsWith("pre"),
+			rules.StringEndsWith("post"),
+			rules.StringMatchRegexp(regexp.MustCompile("^[a-z]+$")),
+		),
+		govy.For(func(v document) int { return v.Count }).WithName("count").Rules(
+			rules.GTE(2), rules.GTE(5), rules.LTE(10), rules.LTE(8),
+		),
+		govy.For(func(v document) *string { return v.Optional }).WithName("optional").
 			Rules(govy.RuleToPointer(rules.OneOf("first", "second"))),
-		govy.For(func(v document) bool { return v.Required }).
-			WithName("required").
-			Rules(rules.Required[bool]()),
-		govy.For(func(v document) string { return v.StartsWith }).
-			WithName("startsWith").
-			Rules(rules.StringStartsWith("prefix")),
-	).
-		WithName("Rules")
-
+		govy.For(func(v document) bool { return v.Required }).WithName("required").Rules(rules.Required[bool]()),
+	)
 	schema, err := govy.JSONSchema(validator)
 	assert.Require(t, assert.NoError(t, err))
 
-	expected := readTestData(t, "expected_rules_json_schema.json")
-	var actual bytes.Buffer
-	encoder := json.NewEncoder(&actual)
-	encoder.SetIndent("", "  ")
-	assert.Require(t, assert.NoError(t, encoder.Encode(schema)))
-	assert.Equal(t, expected, actual.String())
+	allowed, disallowed := "first", "third"
+	cases := []jsonschematest.Case[document]{
+		{
+			Name:  "all rules match",
+			Input: document{Text: "prepost", Count: 5, Optional: &allowed, Required: true},
+			Valid: true,
+		},
+		{
+			Name:  "optional pointer absent",
+			Input: document{Text: "prepost", Count: 8, Required: true},
+			Valid: true,
+		},
+		{
+			Name:  "first pattern fails",
+			Input: document{Text: "otherpost", Count: 5, Required: true},
+		},
+		{
+			Name:  "second pattern fails",
+			Input: document{Text: "preother", Count: 5, Required: true},
+		},
+		{
+			Name:  "third pattern fails",
+			Input: document{Text: "pre-post", Count: 5, Required: true},
+		},
+		{
+			Name:  "stricter minimum fails",
+			Input: document{Text: "prepost", Count: 4, Required: true},
+		},
+		{
+			Name:  "stricter maximum fails",
+			Input: document{Text: "prepost", Count: 9, Required: true},
+		},
+		{
+			Name:  "pointer rule fails",
+			Input: document{Text: "prepost", Count: 5, Optional: &disallowed, Required: true},
+		},
+		{
+			Name:  "required rule lifts to parent",
+			Input: document{Text: "prepost", Count: 5},
+		},
+	}
+	for _, tc := range cases {
+		assert.Equal(t, tc.Valid, validator.Validate(tc.Input) == nil)
+	}
+	jsonschematest.Assert(t, schema, "test_data/expected_rule_composition_json_schema.json", cases)
 }
 
 func TestJSONSchema_ZeroLengthLimits(t *testing.T) {
@@ -394,380 +432,22 @@ func TestJSONSchema_RuleBuilderError(t *testing.T) {
 	}
 }
 
-func TestJSONSchema_StringPatternRules(t *testing.T) {
+func TestJSONSchema_FormatComposition(t *testing.T) {
 	t.Parallel()
 
-	type document struct {
-		Alpha               string
-		AlphaUnicode        string
-		Alphanumeric        string
-		AlphanumericUnicode string
-		ASCII               string
-		Base64              string
-		Base64RawURL        string
-		Base64URL           string
-		BIC                 string
-		BICISO93622014      string
-		CIDR                string
-		CIDRv4              string
-		CIDRv6              string
-		CVE                 string
-		DNSLabel            string
-		DNSSubdomain        string
-		E164                string
-		EIN                 string
-		FQDN                string
-		Hexadecimal         string
-		KubernetesName      string
-		Latitude            string
-		Longitude           string
-		MAC                 string
-		MD5                 string
-		MongoObjectID       string
-		Semver              string
-		SHA256              string
-		SHA384              string
-		SHA512              string
-		SSN                 string
-		ULID                string
-		UUID                string
-		UUIDRFC4122         string
-		UUIDv3              string
-		UUIDv4              string
-		UUIDv5              string
-	}
-	validator := govy.New(
-		govy.For(func(v document) string { return v.Alpha }).
-			WithName("alpha").
-			Rules(rules.StringAlpha()),
-		govy.For(func(v document) string { return v.AlphaUnicode }).
-			WithName("alphaUnicode").
-			Rules(rules.StringAlphaUnicode()),
-		govy.For(func(v document) string { return v.Alphanumeric }).
-			WithName("alphanumeric").
-			Rules(rules.StringAlphanumeric()),
-		govy.For(func(v document) string { return v.AlphanumericUnicode }).
-			WithName("alphanumericUnicode").
-			Rules(rules.StringAlphanumericUnicode()),
-		govy.For(func(v document) string { return v.ASCII }).
-			WithName("ascii").
-			Rules(rules.StringASCII()),
-		govy.For(func(v document) string { return v.Base64 }).
-			WithName("base64").
-			Rules(rules.StringBase64()),
-		govy.For(func(v document) string { return v.Base64RawURL }).
-			WithName("base64RawURL").
-			Rules(rules.StringBase64RawURL()),
-		govy.For(func(v document) string { return v.Base64URL }).
-			WithName("base64URL").
-			Rules(rules.StringBase64URL()),
-		govy.For(func(v document) string { return v.BIC }).
-			WithName("bic").
-			Rules(rules.StringBIC()),
-		govy.For(func(v document) string { return v.BICISO93622014 }).
-			WithName("bicISO93622014").
-			Rules(rules.StringBICISO93622014()),
-		govy.For(func(v document) string { return v.CIDR }).
-			WithName("cidr").
-			Rules(rules.StringCIDR()),
-		govy.For(func(v document) string { return v.CIDRv4 }).
-			WithName("cidrV4").
-			Rules(rules.StringCIDRv4()),
-		govy.For(func(v document) string { return v.CIDRv6 }).
-			WithName("cidrV6").
-			Rules(rules.StringCIDRv6()),
-		govy.For(func(v document) string { return v.CVE }).
-			WithName("cve").
-			Rules(rules.StringCVE()),
-		govy.For(func(v document) string { return v.DNSLabel }).
-			WithName("dnsLabel").
-			Rules(rules.StringDNSLabel()),
-		govy.For(func(v document) string { return v.DNSSubdomain }).
-			WithName("dnsSubdomain").
-			Rules(rules.StringDNSSubdomain()),
-		govy.For(func(v document) string { return v.E164 }).
-			WithName("e164").
-			Rules(rules.StringE164()),
-		govy.For(func(v document) string { return v.EIN }).
-			WithName("ein").
-			Rules(rules.StringEIN()),
-		govy.For(func(v document) string { return v.FQDN }).
-			WithName("fqdn").
-			Rules(rules.StringFQDN()),
-		govy.For(func(v document) string { return v.Hexadecimal }).
-			WithName("hexadecimal").
-			Rules(rules.StringHexadecimal()),
-		govy.For(func(v document) string { return v.KubernetesName }).
-			WithName("kubernetesQualifiedName").
-			Rules(rules.StringKubernetesQualifiedName()),
-		govy.For(func(v document) string { return v.Latitude }).
-			WithName("latitude").
-			Rules(rules.StringLatitude()),
-		govy.For(func(v document) string { return v.Longitude }).
-			WithName("longitude").
-			Rules(rules.StringLongitude()),
-		govy.For(func(v document) string { return v.MAC }).
-			WithName("mac").
-			Rules(rules.StringMAC()),
-		govy.For(func(v document) string { return v.MD5 }).
-			WithName("md5").
-			Rules(rules.StringMD5()),
-		govy.For(func(v document) string { return v.MongoObjectID }).
-			WithName("mongoObjectID").
-			Rules(rules.StringMongoDBObjectID()),
-		govy.For(func(v document) string { return v.Semver }).
-			WithName("semver").
-			Rules(rules.StringSemver()),
-		govy.For(func(v document) string { return v.SHA256 }).
-			WithName("sha256").
-			Rules(rules.StringSHA256()),
-		govy.For(func(v document) string { return v.SHA384 }).
-			WithName("sha384").
-			Rules(rules.StringSHA384()),
-		govy.For(func(v document) string { return v.SHA512 }).
-			WithName("sha512").
-			Rules(rules.StringSHA512()),
-		govy.For(func(v document) string { return v.SSN }).
-			WithName("ssn").
-			Rules(rules.StringSSN()),
-		govy.For(func(v document) string { return v.ULID }).
-			WithName("ulid").
-			Rules(rules.StringULID()),
-		govy.For(func(v document) string { return v.UUID }).
-			WithName("uuid").
-			Rules(rules.StringUUID()),
-		govy.For(func(v document) string { return v.UUIDRFC4122 }).
-			WithName("uuidRFC4122").
-			Rules(rules.StringUUIDRFC4122()),
-		govy.For(func(v document) string { return v.UUIDv3 }).
-			WithName("uuidV3").
-			Rules(rules.StringUUIDv3()),
-		govy.For(func(v document) string { return v.UUIDv4 }).
-			WithName("uuidV4").
-			Rules(rules.StringUUIDv4()),
-		govy.For(func(v document) string { return v.UUIDv5 }).
-			WithName("uuidV5").
-			Rules(rules.StringUUIDv5()),
-	).
-		WithName("StringPatternRules")
-
+	validator := govy.New(govy.For(govy.GetSelf[string]()).Rules(rules.StringIPv4(), rules.StringIPv6()))
 	schema, err := govy.JSONSchema(validator)
 	assert.Require(t, assert.NoError(t, err))
 
-	expected := readTestData(t, "expected_string_pattern_rules_json_schema.json")
-	var actual bytes.Buffer
-	encoder := json.NewEncoder(&actual)
-	encoder.SetIndent("", "  ")
-	assert.Require(t, assert.NoError(t, encoder.Encode(schema)))
-	assert.Equal(t, expected, actual.String())
-}
-
-func TestJSONSchema_StringGitRef(t *testing.T) {
-	t.Parallel()
-
-	type document struct {
-		GitRef string
+	cases := []jsonschematest.Case[string]{
+		{Name: "IPv4 fails IPv6 constraint", Input: "127.0.0.1"},
+		{Name: "IPv6 fails IPv4 constraint", Input: "::1"},
+		{Name: "neither format", Input: "not an IP address"},
 	}
-	validator := govy.New(
-		govy.For(func(v document) string { return v.GitRef }).
-			WithName("gitRef").
-			Rules(rules.StringGitRef()),
-	).
-		WithName("StringGitRef")
-
-	schema, err := govy.JSONSchema(validator)
-	assert.Require(t, assert.NoError(t, err))
-
-	expected := readTestData(t, "expected_string_git_ref_json_schema.json")
-	var actual bytes.Buffer
-	encoder := json.NewEncoder(&actual)
-	encoder.SetIndent("", "  ")
-	assert.Require(t, assert.NoError(t, encoder.Encode(schema)))
-	assert.Equal(t, expected, actual.String())
-}
-
-func TestJSONSchema_StringChecksumRules(t *testing.T) {
-	t.Parallel()
-
-	type document struct {
-		CreditCard   string
-		ISBN         string
-		ISBN13       string
-		ISSN         string
-		LuhnChecksum string
+	for _, tc := range cases {
+		assert.Equal(t, tc.Valid, validator.Validate(tc.Input) == nil)
 	}
-	validator := govy.New(
-		govy.For(func(v document) string { return v.CreditCard }).
-			WithName("creditCard").
-			Rules(rules.StringCreditCard()),
-		govy.For(func(v document) string { return v.ISBN }).
-			WithName("isbn").
-			Rules(rules.StringISBN()),
-		govy.For(func(v document) string { return v.ISBN13 }).
-			WithName("isbn13").
-			Rules(rules.StringISBN13()),
-		govy.For(func(v document) string { return v.ISSN }).
-			WithName("issn").
-			Rules(rules.StringISSN()),
-		govy.For(func(v document) string { return v.LuhnChecksum }).
-			WithName("luhnChecksum").
-			Rules(rules.StringLuhnChecksum()),
-	).
-		WithName("StringChecksumRules")
-
-	schema, err := govy.JSONSchema(validator)
-	assert.Require(t, assert.NoError(t, err))
-
-	expected := readTestData(t, "expected_string_checksum_rules_json_schema.json")
-	var actual bytes.Buffer
-	encoder := json.NewEncoder(&actual)
-	encoder.SetIndent("", "  ")
-	assert.Require(t, assert.NoError(t, encoder.Encode(schema)))
-	assert.Equal(t, expected, actual.String())
-}
-
-func TestJSONSchema_StringEnumRules(t *testing.T) {
-	t.Parallel()
-
-	type document struct {
-		ISO3166Alpha2  string
-		ISO3166Alpha3  string
-		ISO3166Numeric string
-		ISO4217        string
-	}
-	validator := govy.New(
-		govy.For(func(v document) string { return v.ISO3166Alpha2 }).
-			WithName("iso3166Alpha2").
-			Rules(rules.StringISO3166Alpha2()),
-		govy.For(func(v document) string { return v.ISO3166Alpha3 }).
-			WithName("iso3166Alpha3").
-			Rules(rules.StringISO3166Alpha3()),
-		govy.For(func(v document) string { return v.ISO3166Numeric }).
-			WithName("iso3166Numeric").
-			Rules(rules.StringISO3166Numeric()),
-		govy.For(func(v document) string { return v.ISO4217 }).
-			WithName("iso4217").
-			Rules(rules.StringISO4217()),
-	).
-		WithName("StringEnumRules")
-
-	schema, err := govy.JSONSchema(validator)
-	assert.Require(t, assert.NoError(t, err))
-
-	expected := readTestData(t, "expected_string_enum_rules_json_schema.json")
-	var actual bytes.Buffer
-	encoder := json.NewEncoder(&actual)
-	encoder.SetIndent("", "  ")
-	assert.Require(t, assert.NoError(t, encoder.Encode(schema)))
-	assert.Equal(t, expected, actual.String())
-}
-
-func TestJSONSchema_StringISO31662(t *testing.T) {
-	t.Parallel()
-
-	type document struct {
-		Subdivision string
-	}
-	validator := govy.New(
-		govy.For(func(v document) string { return v.Subdivision }).
-			WithName("subdivision").
-			Rules(rules.StringISO31662()),
-	).
-		WithName("StringISO31662")
-
-	schema, err := govy.JSONSchema(validator)
-	assert.Require(t, assert.NoError(t, err))
-
-	expected := readTestData(t, "expected_string_iso3166_2_json_schema.json")
-	var actual bytes.Buffer
-	encoder := json.NewEncoder(&actual)
-	encoder.SetIndent("", "  ")
-	assert.Require(t, assert.NoError(t, encoder.Encode(schema)))
-	assert.Equal(t, expected, actual.String())
-}
-
-func TestJSONSchema_StringFormatRules(t *testing.T) {
-	t.Parallel()
-
-	type document struct {
-		CustomDateTime string
-		DateTime       string
-		DateTimeNano   string
-		Email          string
-		IP             string
-		IPv4           string
-		IPv6           string
-		Multiple       string
-		URL            string
-	}
-	validator := govy.New(
-		govy.For(func(v document) string { return v.CustomDateTime }).
-			WithName("customDateTime").
-			Rules(rules.StringDateTime("2006-01-02")),
-		govy.For(func(v document) string { return v.DateTime }).
-			WithName("dateTime").
-			Rules(rules.StringDateTime(time.RFC3339)),
-		govy.For(func(v document) string { return v.DateTimeNano }).
-			WithName("dateTimeNano").
-			Rules(rules.StringDateTime(time.RFC3339Nano)),
-		govy.For(func(v document) string { return v.Email }).
-			WithName("email").
-			Rules(rules.StringEmail()),
-		govy.For(func(v document) string { return v.IP }).
-			WithName("ip").
-			Rules(rules.StringIP()),
-		govy.For(func(v document) string { return v.IPv4 }).
-			WithName("ipv4").
-			Rules(rules.StringIPv4()),
-		govy.For(func(v document) string { return v.IPv6 }).
-			WithName("ipv6").
-			Rules(rules.StringIPv6()),
-		govy.For(func(v document) string { return v.Multiple }).
-			WithName("multiple").
-			Rules(rules.StringIPv4(), rules.StringIPv6()),
-		govy.For(func(v document) string { return v.URL }).
-			WithName("url").
-			Rules(rules.StringURL()),
-	).
-		WithName("StringFormatRules")
-
-	schema, err := govy.JSONSchema(validator)
-	assert.Require(t, assert.NoError(t, err))
-
-	expected := readTestData(t, "expected_string_format_rules_json_schema.json")
-	var actual bytes.Buffer
-	encoder := json.NewEncoder(&actual)
-	encoder.SetIndent("", "  ")
-	assert.Require(t, assert.NoError(t, encoder.Encode(schema)))
-	assert.Equal(t, expected, actual.String())
-}
-
-func TestJSONSchema_StringContentRules(t *testing.T) {
-	t.Parallel()
-
-	type document struct {
-		JSON string
-		JWT  string
-	}
-	validator := govy.New(
-		govy.For(func(v document) string { return v.JSON }).
-			WithName("json").
-			Rules(rules.StringJSON()),
-		govy.For(func(v document) string { return v.JWT }).
-			WithName("jwt").
-			Rules(rules.StringJWT()),
-	).
-		WithName("StringContentRules")
-
-	schema, err := govy.JSONSchema(validator)
-	assert.Require(t, assert.NoError(t, err))
-
-	expected := readTestData(t, "expected_string_content_rules_json_schema.json")
-	var actual bytes.Buffer
-	encoder := json.NewEncoder(&actual)
-	encoder.SetIndent("", "  ")
-	assert.Require(t, assert.NoError(t, encoder.Encode(schema)))
-	assert.Equal(t, expected, actual.String())
+	jsonschematest.Assert(t, schema, "test_data/expected_format_composition_json_schema.json", cases)
 }
 
 func TestJSONSchema_UnsupportedType(t *testing.T) {
@@ -810,9 +490,11 @@ func TestJSONSchema_MapItemUsesValueType(t *testing.T) {
 	t.Parallel()
 
 	type annotations map[string]string
-	type document struct{}
+	type document struct {
+		Annotations annotations `json:"annotations"`
+	}
 	validator := govy.New(
-		govy.ForMap(func(document) annotations { return nil }).
+		govy.ForMap(func(v document) annotations { return v.Annotations }).
 			WithName("annotations").
 			RulesForItems(
 				govy.NewRule(func(v govy.MapItem[string, string]) error {
@@ -834,12 +516,20 @@ func TestJSONSchema_MapItemUsesValueType(t *testing.T) {
 	schema, err := govy.JSONSchema(validator, govy.JSONSchemaIncludeOmittedRules())
 	assert.Require(t, assert.NoError(t, err))
 
-	expected := readTestData(t, "expected_map_item_json_schema.json")
-	var actual bytes.Buffer
-	encoder := json.NewEncoder(&actual)
-	encoder.SetIndent("", "  ")
-	assert.Require(t, assert.NoError(t, encoder.Encode(schema)))
-	assert.Equal(t, expected, actual.String())
+	cases := []jsonschematest.Case[document]{
+		{Name: "empty map", Input: document{Annotations: annotations{}}, Valid: true},
+		{
+			Name:  "string values",
+			Input: document{Annotations: annotations{"first": "one", "second": "two"}},
+			Valid: true,
+		},
+		{Name: "empty value", Input: document{Annotations: annotations{"first": ""}}},
+		{Name: "one empty value", Input: document{Annotations: annotations{"first": "one", "second": ""}}},
+	}
+	for _, tc := range cases {
+		assert.Equal(t, tc.Valid, validator.Validate(tc.Input) == nil)
+	}
+	jsonschematest.Assert(t, schema, "test_data/expected_map_item_json_schema.json", cases)
 }
 
 func TestJSONSchema_FixedArrayIndexes(t *testing.T) {
@@ -858,12 +548,30 @@ func TestJSONSchema_FixedArrayIndexes(t *testing.T) {
 	schema, err := govy.JSONSchema(validator)
 	assert.Require(t, assert.NoError(t, err))
 
-	expected := readTestData(t, "expected_fixed_array_indexes_json_schema.json")
-	var actual bytes.Buffer
-	encoder := json.NewEncoder(&actual)
-	encoder.SetIndent("", "  ")
-	assert.Require(t, assert.NoError(t, encoder.Encode(schema)))
-	assert.Equal(t, expected, actual.String())
+	jsonschematest.Assert(
+		t,
+		schema,
+		"test_data/expected_fixed_array_indexes_json_schema.json",
+		[]jsonschematest.Case[json.RawMessage]{
+			{Name: "empty array", Input: json.RawMessage(`{"tuple":[]}`), Valid: true},
+			{
+				Name:  "both fixed indexes",
+				Input: json.RawMessage(`{"tuple":[0,1,{"a":"first","b":"second"},3,4,5,6,7,8,9,{"c":"third"}]}`),
+				Valid: true,
+			},
+			{
+				Name:  "unconstrained positions and tail",
+				Input: json.RawMessage(`{"tuple":[{"a":1},false,{"a":"first"},3,4,5,6,7,8,9,{}, {"c":1}]}`),
+				Valid: true,
+			},
+			{Name: "first property at index two", Input: json.RawMessage(`{"tuple":[0,1,{"a":2}]}`)},
+			{Name: "second property at index two", Input: json.RawMessage(`{"tuple":[0,1,{"b":2}]}`)},
+			{
+				Name:  "property at index ten",
+				Input: json.RawMessage(`{"tuple":[0,1,{},3,4,5,6,7,8,9,{"c":2}]}`),
+			},
+		},
+	)
 }
 
 func TestJSONSchema_ArrayWildcardWithFixedIndex(t *testing.T) {
@@ -880,12 +588,20 @@ func TestJSONSchema_ArrayWildcardWithFixedIndex(t *testing.T) {
 	schema, err := govy.JSONSchema(validator)
 	assert.Require(t, assert.NoError(t, err))
 
-	expected := readTestData(t, "expected_array_wildcard_with_fixed_index_json_schema.json")
-	var actual bytes.Buffer
-	encoder := json.NewEncoder(&actual)
-	encoder.SetIndent("", "  ")
-	assert.Require(t, assert.NoError(t, encoder.Encode(schema)))
-	assert.Equal(t, expected, actual.String())
+	jsonschematest.Assert(
+		t,
+		schema,
+		"test_data/expected_array_wildcard_with_fixed_index_json_schema.json",
+		[]jsonschematest.Case[json.RawMessage]{
+			{Name: "empty array", Input: json.RawMessage(`{"values":[]}`), Valid: true},
+			{Name: "fixed index still requires integer", Input: json.RawMessage(`{"values":["text"]}`)},
+			{Name: "wildcard also applies to fixed index", Input: json.RawMessage(`{"values":[1]}`)},
+			{
+				Name:  "valid tail does not bypass wildcard at fixed index",
+				Input: json.RawMessage(`{"values":[1,"text"]}`),
+			},
+		},
+	)
 }
 
 func TestJSONSchema_ValueWildcardWithNamedProperty(t *testing.T) {
@@ -902,12 +618,18 @@ func TestJSONSchema_ValueWildcardWithNamedProperty(t *testing.T) {
 	schema, err := govy.JSONSchema(validator)
 	assert.Require(t, assert.NoError(t, err))
 
-	expected := readTestData(t, "expected_value_wildcard_with_named_property_json_schema.json")
-	var actual bytes.Buffer
-	encoder := json.NewEncoder(&actual)
-	encoder.SetIndent("", "  ")
-	assert.Require(t, assert.NoError(t, encoder.Encode(schema)))
-	assert.Equal(t, expected, actual.String())
+	jsonschematest.Assert(
+		t,
+		schema,
+		"test_data/expected_value_wildcard_with_named_property_json_schema.json",
+		[]jsonschematest.Case[json.RawMessage]{
+			{Name: "empty object", Input: json.RawMessage(`{"values":{}}`), Valid: true},
+			{Name: "unnamed property", Input: json.RawMessage(`{"values":{"bar":"text"}}`), Valid: true},
+			{Name: "named property still requires integer", Input: json.RawMessage(`{"values":{"foo":"text"}}`)},
+			{Name: "wildcard also applies to named property", Input: json.RawMessage(`{"values":{"foo":1}}`)},
+			{Name: "wildcard applies to unnamed property", Input: json.RawMessage(`{"values":{"bar":1}}`)},
+		},
+	)
 }
 
 func TestJSONSchema_ArrayIndexOutsideIntRange(t *testing.T) {

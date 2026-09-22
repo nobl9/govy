@@ -1,11 +1,11 @@
 package govy_test
 
 import (
-	"bytes"
 	"encoding/json"
 	"testing"
 
 	"github.com/nobl9/govy/internal/assert"
+	"github.com/nobl9/govy/internal/jsonschematest"
 	"github.com/nobl9/govy/pkg/govy"
 	"github.com/nobl9/govy/pkg/jsonschema"
 	"github.com/nobl9/govy/pkg/rules"
@@ -70,12 +70,17 @@ func TestJSONSchema_OmittedRules(t *testing.T) {
 			schema, err := govy.JSONSchema(validator, tc.options...)
 			assert.Require(t, assert.NoError(t, err))
 
-			expected := readTestData(t, tc.fixture)
-			var actual bytes.Buffer
-			encoder := json.NewEncoder(&actual)
-			encoder.SetIndent("", "  ")
-			assert.Require(t, assert.NoError(t, encoder.Encode(schema)))
-			assert.Equal(t, expected, actual.String())
+			jsonschematest.Assert(t, schema, "test_data/"+tc.fixture, []jsonschematest.Case[json.RawMessage]{
+				{Name: "optional properties absent", Input: json.RawMessage(`{}`), Valid: true},
+				{Name: "mapped rule retained", Input: json.RawMessage(`{"mixed":"mapped"}`), Valid: true},
+				{Name: "mapped rule rejects unmatched value", Input: json.RawMessage(`{"mixed":"other"}`)},
+				{
+					Name:                 "unmapped rule does not constrain value",
+					Input:                json.RawMessage(`{"timezone":"not a time zone"}`),
+					JSONSchemaDifference: "StringTimeZone has no JSON Schema builder, so the schema checks only the string type.",
+				},
+				{Name: "omission does not remove type", Input: json.RawMessage(`{"timezone":12}`)},
+			})
 		})
 	}
 }
@@ -110,12 +115,21 @@ func TestJSONSchema_OmittedConditions(t *testing.T) {
 	schema, err := govy.JSONSchema(validator, govy.JSONSchemaIncludeOmittedRules())
 	assert.Require(t, assert.NoError(t, err))
 
-	expected := readTestData(t, "expected_omitted_conditions_json_schema.json")
-	var actual bytes.Buffer
-	encoder := json.NewEncoder(&actual)
-	encoder.SetIndent("", "  ")
-	assert.Require(t, assert.NoError(t, encoder.Encode(schema)))
-	assert.Equal(t, expected, actual.String())
+	jsonschematest.Assert(
+		t,
+		schema,
+		"test_data/expected_omitted_conditions_json_schema.json",
+		[]jsonschematest.Case[json.RawMessage]{
+			{
+				Name:  "conditional property not required",
+				Input: json.RawMessage(`{"unconditional":"value"}`),
+				Valid: true,
+			},
+			{Name: "unconditional rule retained", Input: json.RawMessage(`{"unconditional":""}`)},
+			{Name: "conditional property type retained", Input: json.RawMessage(`{"property":1}`)},
+			{Name: "nested conditional property type retained", Input: json.RawMessage(`{"nested":{"value":1}}`)},
+		},
+	)
 }
 
 func TestJSONSchema_NoOmittedRules(t *testing.T) {
@@ -147,10 +161,29 @@ func TestJSONSchema_NoOmittedRules(t *testing.T) {
 	schema, err := govy.JSONSchema(validator, govy.JSONSchemaIncludeOmittedRules())
 	assert.Require(t, assert.NoError(t, err))
 
-	expected := readTestData(t, "expected_no_omitted_rules_json_schema.json")
-	var actual bytes.Buffer
-	encoder := json.NewEncoder(&actual)
-	encoder.SetIndent("", "  ")
-	assert.Require(t, assert.NoError(t, encoder.Encode(schema)))
-	assert.Equal(t, expected, actual.String())
+	jsonschematest.Assert(
+		t,
+		schema,
+		"test_data/expected_no_omitted_rules_json_schema.json",
+		[]jsonschematest.Case[json.RawMessage]{
+			{Name: "optional pointers absent", Input: json.RawMessage(`{"required":"present"}`), Valid: true},
+			{
+				Name: "pointer and included properties present",
+				Input: json.RawMessage(
+					`{"required":"present","pointer":"value","nestedPointer":{"value":"value"},"nestedEmpty":{"value":"value"}}`,
+				),
+				Valid: true,
+			},
+			{Name: "required property absent", Input: json.RawMessage(`{}`)},
+			{Name: "pointer value rule retained", Input: json.RawMessage(`{"required":"present","pointer":""}`)},
+			{
+				Name:  "included pointer rule retained",
+				Input: json.RawMessage(`{"required":"present","nestedPointer":{"value":""}}`),
+			},
+			{
+				Name:  "included omit-empty rule retained",
+				Input: json.RawMessage(`{"required":"present","nestedEmpty":{"value":""}}`),
+			},
+		},
+	)
 }

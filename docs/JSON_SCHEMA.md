@@ -195,6 +195,9 @@ an integer that cannot be decoded into `int8`.
 
 Floating-point validation also uses Go's finite precision, while JSON Schema
 defines numbers without Go-specific precision limits.
+Ajv uses JavaScript numbers, so integers outside the safe integer range can
+lose precision. The rule tests record this consumer-specific difference
+separately from the generated constraints.
 
 ### Regular expressions
 
@@ -368,9 +371,36 @@ the project explicitly accepts a nonportable extension.
 
 ### 5. Verify complete schema documents
 
-Tests should read expected JSON documents from `pkg/govy/test_data` and compare
-the complete marshaled schema. Each semantic gap that is fixed should have a
-focused fixture before it is removed from this document.
+Rule-specific tests live in `pkg/rules` and use the public `govy.JSONSchema`
+function. They compare the complete schema with a JSON fixture in
+`pkg/rules/testdata/jsonschema`, then validate the existing rule inputs with Ajv.
+Published input corpora remain part of those tests.
+
+The shared input tables record expected differences through
+`jsonschematest.Case.JSONSchemaDifference` or an equivalent field on the rule's
+case type. A nonempty reason requires the schema result to differ from Govy's
+expected result. It does not skip the case. Both unexpected agreement and an
+unexpected disagreement fail the test.
+
+Core generation tests stay in `pkg/govy`, with fixtures in
+`pkg/govy/test_data`. They cover composition, conditions, paths, transforms,
+omitted-rule metadata, and generation errors through the public API.
+
+`internal/jsonschematest` owns the shared fixture assertion and Node runner.
+Devbox installs the pinned Ajv and `ajv-formats` dependencies.
+The runner compiles each schema once and validates its input batch in one
+process. It uses Draft 2020-12 and [Ajv format assertions] in full mode.
+It does not coerce values, insert defaults, or remove properties.
+Content keywords remain annotations.
+
+Ajv's `strictTypes`, `strictRequired`, and `strictTuples` checks are disabled
+because Govy permits partial type trees, presence-only conditions, and open
+tuples. Schema validation and unknown-keyword checks remain enabled.
+The runner registers `x-govy-omittedRules` as an annotation.
+Invalid schemas, unknown formats, and missing dependencies fail the test.
+
+Each semantic gap that is fixed should have a focused fixture and input case
+before it is removed from this document.
 
 Run at least these repository targets after each implementation batch:
 
@@ -402,6 +432,7 @@ Run `make check` before the completed feature is handed off.
 - [Ajv strict mode]
 
 [Ajv `$data` references]: https://ajv.js.org/guide/combining-schemas.html#data-reference
+[Ajv format assertions]: https://ajv.js.org/packages/ajv-formats.html
 [Ajv strict mode]: https://ajv.js.org/strict-mode.html#unknown-keywords
 [JSON Schema custom-annotation convention]: https://json-schema.org/blog/posts/custom-annotations-will-continue
 [JSON Schema Draft 2020-12]: https://json-schema.org/draft/2020-12/schema

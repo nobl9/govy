@@ -1,7 +1,6 @@
 package govy_test
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -9,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/nobl9/govy/internal/assert"
+	"github.com/nobl9/govy/internal/jsonschematest"
 	"github.com/nobl9/govy/pkg/govy"
 	"github.com/nobl9/govy/pkg/jsonpath"
 	"github.com/nobl9/govy/pkg/jsonschema"
@@ -18,16 +18,26 @@ import (
 func TestJSONSchema_Transform(t *testing.T) {
 	t.Parallel()
 
-	type document struct{ Enabled bool }
-	getString := func(document) string { return "" }
+	type document struct {
+		Enabled          bool     `json:"enabled"`
+		Array            []string `json:"array"`
+		Conditional      string   `json:"conditional,omitempty"`
+		Normalized       string   `json:"normalized"`
+		Number           string   `json:"number"`
+		Plain            int      `json:"plain"`
+		RequiredProperty string   `json:"requiredProperty,omitempty"`
+		RequiredRule     string   `json:"requiredRule,omitempty"`
+	}
 	unexpectedBuilder := func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 		return nil, fmt.Errorf("transformed-value builder must not run")
 	}
 	enabled := any(true)
 	validator := govy.New(
-		govy.Transform(func(document) []string { return nil }, func(v []string) (int, error) { return len(v), nil }).
-			WithName("array").Rules(rules.GT(2)),
-		govy.Transform(getString, strconv.Atoi).WithName("conditional").Required().Rules(rules.EQ(12)).
+		govy.Transform(func(v document) []string { return v.Array }, func(v []string) (int, error) { return len(v), nil }).
+			WithName("array").
+			Rules(rules.GT(2)),
+		govy.Transform(func(v document) string { return v.Conditional }, strconv.Atoi).
+			WithName("conditional").Required().Rules(rules.EQ(12)).
 			When(func(v document) bool { return v.Enabled },
 				govy.WhenJSONSchema(func(ctx govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 					if !ctx.Path.Equal(jsonpath.NewRoot()) || ctx.Type != jsonschema.TypeObject {
@@ -38,15 +48,52 @@ func TestJSONSchema_Transform(t *testing.T) {
 						Required:   []string{"enabled"},
 					}, nil
 				})),
-		govy.Transform(getString, func(v string) (string, error) { return strings.ToLower(v), nil }).
-			WithName("normalized").Rules(rules.EQ("admin").WithJSONSchema(unexpectedBuilder)),
-		govy.Transform(getString, strconv.Atoi).WithName("number").
+		govy.Transform(func(v document) string { return v.Normalized }, func(v string) (string, error) { return strings.ToLower(v), nil }).
+			WithName("normalized").
+			Rules(rules.EQ("admin").WithJSONSchema(unexpectedBuilder)),
+		govy.Transform(func(v document) string { return v.Number }, strconv.Atoi).WithName("number").
 			Rules(govy.NewRuleSet(rules.EQ(12), rules.GTE(10))),
-		govy.For(func(document) int { return 0 }).WithName("plain").Rules(rules.EQ(12)),
-		govy.Transform(getString, strconv.Atoi).WithName("requiredProperty").Required().Rules(rules.EQ(12)),
-		govy.Transform(getString, strconv.Atoi).WithName("requiredRule").
+		govy.For(func(v document) int { return v.Plain }).WithName("plain").Rules(rules.EQ(12)),
+		govy.Transform(func(v document) string { return v.RequiredProperty }, strconv.Atoi).
+			WithName("requiredProperty").Required().Rules(rules.EQ(12)),
+		govy.Transform(func(v document) string { return v.RequiredRule }, strconv.Atoi).WithName("requiredRule").
 			Rules(rules.Required[int]().WithJSONSchema(unexpectedBuilder), rules.EQ(12)),
 	)
+	valid := document{
+		Enabled: true, Array: []string{"a", "b", "c"}, Conditional: "12", Normalized: "ADMIN",
+		Number: "12", Plain: 12, RequiredProperty: "12", RequiredRule: "12",
+	}
+	differentNumber, invalidNumber, invalidPlain := valid, valid, valid
+	differentNumber.Number = "13"
+	invalidNumber.Number = "invalid"
+	invalidPlain.Plain = 13
+	missingProperty, missingRule, missingConditional := valid, valid, valid
+	missingProperty.RequiredProperty = ""
+	missingRule.RequiredRule = ""
+	missingConditional.Conditional = ""
+	disabled := missingConditional
+	disabled.Enabled = false
+	cases := []jsonschematest.Case[document]{
+		{Name: "original input types", Input: valid, Valid: true},
+		{
+			Name:                 "transformed rule omitted",
+			Input:                differentNumber,
+			JSONSchemaDifference: "JSON Schema preserves the input type but omits rules on the transformed number.",
+		},
+		{
+			Name:                 "transform parse error omitted",
+			Input:                invalidNumber,
+			JSONSchemaDifference: "JSON Schema does not execute the transform or check whether parsing succeeds.",
+		},
+		{Name: "untransformed rule remains", Input: invalidPlain},
+		{Name: "required property remains", Input: missingProperty},
+		{Name: "required rule remains", Input: missingRule},
+		{Name: "conditional required property remains", Input: missingConditional},
+		{Name: "condition disables required property", Input: disabled, Valid: true},
+	}
+	for _, tc := range cases {
+		assert.Equal(t, tc.Valid, validator.Validate(tc.Input) == nil)
+	}
 	tests := []struct {
 		name    string
 		options []govy.JSONSchemaOption
@@ -65,12 +112,7 @@ func TestJSONSchema_Transform(t *testing.T) {
 			schema, err := govy.JSONSchema(validator, tc.options...)
 			assert.Require(t, assert.NoError(t, err))
 
-			expected := readTestData(t, tc.fixture)
-			var actual bytes.Buffer
-			encoder := json.NewEncoder(&actual)
-			encoder.SetIndent("", "  ")
-			assert.Require(t, assert.NoError(t, encoder.Encode(schema)))
-			assert.Equal(t, expected, actual.String())
+			jsonschematest.Assert(t, schema, "test_data/"+tc.fixture, cases)
 		})
 	}
 }
@@ -119,12 +161,21 @@ func TestJSONSchema_TransformIncludedValidators(t *testing.T) {
 	schema, err := govy.JSONSchema(validator, govy.JSONSchemaIncludeOmittedRules())
 	assert.Require(t, assert.NoError(t, err))
 
-	expected := readTestData(t, "expected_transform_included_validators_json_schema.json")
-	var actual bytes.Buffer
-	encoder := json.NewEncoder(&actual)
-	encoder.SetIndent("", "  ")
-	assert.Require(t, assert.NoError(t, encoder.Encode(schema)))
-	assert.Equal(t, expected, actual.String())
+	jsonschematest.Assert(
+		t,
+		schema,
+		"test_data/expected_transform_included_validators_json_schema.json",
+		[]jsonschematest.Case[json.RawMessage]{
+			{
+				Name:  "original string inputs",
+				Input: json.RawMessage(`{"object":"encoded object","slice":"encoded slice","map":"encoded map"}`),
+				Valid: true,
+			},
+			{Name: "transformed object is not an input object", Input: json.RawMessage(`{"object":{"name":"admin"}}`)},
+			{Name: "transformed slice is not an input slice", Input: json.RawMessage(`{"slice":[1]}`)},
+			{Name: "transformed map is not an input map", Input: json.RawMessage(`{"map":{"key":1}}`)},
+		},
+	)
 }
 
 func TestJSONSchema_TransformInputMapping(t *testing.T) {
@@ -150,12 +201,25 @@ func TestJSONSchema_TransformInputMapping(t *testing.T) {
 			schema, err := govy.JSONSchema(validator, govy.JSONSchemaIncludeOmittedRules())
 			assert.Require(t, assert.NoError(t, err))
 
-			expected := readTestData(t, "expected_transform_input_mapping_json_schema.json")
-			var actual bytes.Buffer
-			encoder := json.NewEncoder(&actual)
-			encoder.SetIndent("", "  ")
-			assert.Require(t, assert.NoError(t, encoder.Encode(schema)))
-			assert.Equal(t, expected, actual.String())
+			jsonschematest.Assert(
+				t,
+				schema,
+				"test_data/expected_transform_input_mapping_json_schema.json",
+				[]jsonschematest.Case[string]{
+					{Name: "valid transform", Input: "12", Valid: true},
+					{
+						Name:                 "transformed value rule omitted",
+						Input:                "13",
+						JSONSchemaDifference: "JSON Schema omits rules on the transformed number.",
+					},
+					{
+						Name:                 "transform error omitted",
+						Input:                "invalid",
+						JSONSchemaDifference: "JSON Schema does not execute the transform or check whether parsing succeeds.",
+					},
+					{Name: "original input mapping remains", Input: ""},
+				},
+			)
 
 			assert.NoError(t, validator.Validate("12"))
 			assert.True(t, govy.HasErrorCode(validator.Validate("13"), rules.ErrorCodeEqualTo))
