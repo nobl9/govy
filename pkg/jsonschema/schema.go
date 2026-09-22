@@ -49,6 +49,16 @@ const (
 	MediaTypeApplicationJWT  MediaType = "application/jwt"
 )
 
+// OmittedRule describes a rule that Govy could not include in a generated schema.
+type OmittedRule struct {
+	// Path is the absolute Govy JSON path to the validated value.
+	Path string `json:"path"`
+	// Rule is the rule's error code, if one was provided.
+	Rule string `json:"rule,omitempty"`
+	// Reason explains why the rule was omitted.
+	Reason string `json:"reason"`
+}
+
 // Schema represents the subset of a JSON Schema Draft 2020-12 schema object
 // required by Govy. Convert a root Schema to [Document] before marshaling it.
 type Schema struct {
@@ -122,6 +132,10 @@ type Schema struct {
 	ExclusiveMinimum json.Number `json:"exclusiveMinimum,omitempty"`
 	// ExclusiveMaximum is the exclusive upper bound for a number.
 	ExclusiveMaximum json.Number `json:"exclusiveMaximum,omitempty"`
+
+	// OmittedRules is Govy's optional annotation for rules without schema mappings.
+	// Govy emits it only on the document root. It does not affect validation.
+	OmittedRules []OmittedRule `json:"x-govy-omittedRules,omitempty"`
 }
 
 // Document represents a top-level JSON Schema document. Its JSON

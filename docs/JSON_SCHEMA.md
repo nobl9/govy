@@ -18,6 +18,8 @@ The current implementation has these properties:
 - The root document always declares JSON Schema Draft 2020-12.
 - Each generated schema node declares at most one JSON type.
 - A rule without a JSON Schema builder does not contribute a constraint.
+- `JSONSchemaIncludeOmittedRules()` adds optional metadata about missing
+  rule and condition builders to the document root.
 - A builder error stops generation and identifies the property and rule.
 - Unsupported Go kinds stop generation.
 - Builders receive the absolute path and JSON type of the selected value.
@@ -49,8 +51,44 @@ Each built-in rule mapping should have one documented classification:
 - **Annotation**: the schema documents semantics but does not enforce them.
 - **Unsupported**: the rule contributes no schema constraint.
 
-Generation should make unsupported and approximate mappings observable.
-The exact reporting API is still an open decision.
+Missing rule and condition builders can be reported through the optional
+annotation described below. Approximate mappings are documented here but are
+not classified in the generated schema.
+
+## Omitted-rule metadata
+
+Pass `govy.JSONSchemaIncludeOmittedRules()` to `govy.JSONSchema` to include
+`x-govy-omittedRules` on the document root. Default output does not include this
+annotation. The annotation is also absent when there are no omissions to report.
+
+Each record contains:
+
+- `path`: the absolute Govy JSON path to the validated value, including
+  wildcards for collection elements.
+- `rule`: the rule's error code, omitted if the rule has no code.
+- `reason`: `missing JSON Schema builder` if the rule has no `WithJSONSchema`
+  builder, or `missing WhenJSONSchema builder` if any guarding condition lacks
+  a builder.
+
+Govy records omissions during the existing plan traversal, before rules are
+filtered or deduplicated. A missing rule builder takes precedence when both
+the rule and a condition lack builders. The metadata does not affect validation.
+Builder errors still stop generation.
+
+An explicit rule or condition builder that returns `nil` is an intentional
+no-op and does not produce an omission record. Optional-property markers are
+not reported. The annotation is not a complete list of semantic differences:
+it does not classify approximate mappings or transformed-property gaps.
+
+`x-govy-omittedRules` is a Govy extension, not a standard JSON Schema keyword.
+Its prefix follows the [JSON Schema custom-annotation convention] and the
+`x-` naming used by [Typia custom fields]. Draft 2020-12 permits unknown
+keywords and recommends treating them as annotations.
+See [JSON Schema objects and keywords].
+
+[Ajv strict mode] rejects unknown keywords unless they are registered.
+Consumers that enable this metadata can register it with
+`ajv.addKeyword("x-govy-omittedRules")` before compiling the schema.
 
 ## Structural and semantic gaps
 
@@ -278,11 +316,11 @@ unsupported.
 
 ## Implementation plan
 
-### 1. Define observable generation behavior
+### 1. Extend observable generation behavior
 
-Decide how callers learn that a rule was omitted or approximated. The main
-options are generation diagnostics, a strict mode that returns an error, or
-schema annotations.
+Optional root metadata now reports missing rule and condition builders.
+Decide whether approximate mappings also need machine-readable classifications
+and whether callers need a strict mode that rejects omitted rules.
 
 ### 2. Complete structural generation
 
@@ -324,7 +362,7 @@ Run `make check` before the completed feature is handed off.
 ## Open decisions
 
 - Must the default schema be a conservative superset of Govy-valid JSON?
-- Should unsupported mappings be silent, reported, annotated, or errors?
+- Should generation offer a strict mode that rejects omitted rules?
 - Should nonportable Ajv or Govy vocabulary output be supported?
 - Should large finite enums be emitted by default?
 
@@ -332,8 +370,16 @@ Run `make check` before the completed feature is handed off.
 
 - [JSON Schema Draft 2020-12]
 - [JSON Schema validation vocabulary]
+- [JSON Schema objects and keywords]
+- [JSON Schema custom-annotation convention]
+- [Typia custom fields]
 - [Ajv `$data` references]
+- [Ajv strict mode]
 
 [Ajv `$data` references]: https://ajv.js.org/guide/combining-schemas.html#data-reference
+[Ajv strict mode]: https://ajv.js.org/strict-mode.html#unknown-keywords
+[JSON Schema custom-annotation convention]: https://json-schema.org/blog/posts/custom-annotations-will-continue
 [JSON Schema Draft 2020-12]: https://json-schema.org/draft/2020-12/schema
+[JSON Schema objects and keywords]: https://json-schema.org/draft/2020-12/json-schema-core#section-4.3.1
 [JSON Schema validation vocabulary]: https://json-schema.org/draft/2020-12/json-schema-validation
+[Typia custom fields]: https://typia.io/docs/json/schema/#custom-fields

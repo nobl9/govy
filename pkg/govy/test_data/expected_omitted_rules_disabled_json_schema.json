@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "anonymous": {
+      "type": "string"
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "properties": {
+          "value": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "labels": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "propertyNames": {
+        "type": "string"
+      }
+    },
+    "mixed": {
+      "type": "string",
+      "pattern": "mapped"
+    },
+    "nested": {
+      "properties": {
+        "value": {
+          "type": "string"
+        }
+      }
+    },
+    "timezone": {
+      "type": "string"
+    }
+  }
+}

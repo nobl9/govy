@@ -312,11 +312,16 @@ func (r PropertyRules[T, P]) plan(builder planBuilder) {
 			}).
 			plan(builder)
 	} else if r.omitEmpty || r.isPointer {
-		// Dummy rule to register the property as optional.
-		NewRule(func(v T) error { return nil }).
-			WithDescription(internal.OptionalDescription).
-			WithErrorCode(internal.OptionalErrorCode).
-			plan(builder)
+		if builder.options.recordJSONSchema {
+			// Optionality adds no schema constraint, but this entry preserves the property's type.
+			*builder.path = append(*builder.path, builder)
+		} else {
+			// Dummy rule to register the property as optional.
+			NewRule(func(v T) error { return nil }).
+				WithDescription(internal.OptionalDescription).
+				WithErrorCode(internal.OptionalErrorCode).
+				plan(builder)
+		}
 	}
 	for _, rule := range r.rules {
 		if p, ok := rule.(planner); ok {

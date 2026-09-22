@@ -10,6 +10,7 @@ import (
 	"github.com/nobl9/govy/internal"
 	"github.com/nobl9/govy/internal/collections"
 	"github.com/nobl9/govy/internal/messagetemplates"
+	"github.com/nobl9/govy/pkg/jsonschema"
 )
 
 // NewRule creates a new [Rule] instance.
@@ -235,17 +236,30 @@ func (r Rule[T]) plan(builder planBuilder) {
 	for _, mod := range r.planModifiers {
 		rulePlan = mod(rulePlan)
 	}
-	if builder.options.recordJSONSchema &&
-		r.jsonSchemaBuilder != nil &&
-		!slices.ContainsFunc(builder.jsonSchemaConditions, func(condition jsonSchemaCondition) bool {
+	if builder.options.recordJSONSchema {
+		var reason string
+		switch {
+		case r.jsonSchemaBuilder == nil:
+			reason = "missing JSON Schema builder"
+		case slices.ContainsFunc(builder.jsonSchemaConditions, func(condition jsonSchemaCondition) bool {
 			return condition.builder == nil
-		}) {
-		rulePlan.jsonSchemaBuilders = []*jsonSchemaPlanBuilder{
-			newJSONSchemaPlanBuilder(
-				builder.jsonSchemaConditions,
-				r.jsonSchemaBuilder,
-				r.errorCode == internal.RequiredErrorCode,
-			),
+		}):
+			reason = "missing WhenJSONSchema builder"
+		default:
+			rulePlan.jsonSchemaBuilders = []*jsonSchemaPlanBuilder{
+				newJSONSchemaPlanBuilder(
+					builder.jsonSchemaConditions,
+					r.jsonSchemaBuilder,
+					r.errorCode == internal.RequiredErrorCode,
+				),
+			}
+		}
+		if omitted := builder.options.omittedJSONSchemaRules; reason != "" && omitted != nil {
+			*omitted = append(*omitted, jsonschema.OmittedRule{
+				Path:   builder.propertyPath.String(),
+				Rule:   string(rulePlan.ErrorCode),
+				Reason: reason,
+			})
 		}
 	}
 	builder.rulePlan = rulePlan

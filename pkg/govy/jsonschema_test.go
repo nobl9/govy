@@ -362,8 +362,15 @@ func TestJSONSchema_RuleBuilderError(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			_, err := govy.JSONSchema(tc.validator)
-			assert.EqualError(t, err, tc.expectedError)
+			for name, options := range map[string][]govy.JSONSchemaOption{
+				"default":               nil,
+				"include omitted rules": {govy.JSONSchemaIncludeOmittedRules()},
+			} {
+				t.Run(name, func(t *testing.T) {
+					_, err := govy.JSONSchema(tc.validator, options...)
+					assert.EqualError(t, err, tc.expectedError)
+				})
+			}
 		})
 	}
 }

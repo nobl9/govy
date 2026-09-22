@@ -39,13 +39,39 @@ type jsonSchemaCondition struct {
 
 const maxJSONSchemaPrefixItemsIndex = math.MaxInt - 1
 
+type jsonSchemaOptions struct {
+	includeOmittedRules bool
+}
+
+// JSONSchemaOption configures [JSONSchema] generation.
+type JSONSchemaOption func(options jsonSchemaOptions) jsonSchemaOptions
+
+// JSONSchemaIncludeOmittedRules adds x-govy-omittedRules to the document root
+// when rules lack a [Rule.WithJSONSchema] builder or a condition lacks [WhenJSONSchema].
+// Builders that return nil do not produce omission records.
+func JSONSchemaIncludeOmittedRules() JSONSchemaOption {
+	return func(options jsonSchemaOptions) jsonSchemaOptions {
+		options.includeOmittedRules = true
+		return options
+	}
+}
+
 // JSONSchema creates a JSON Schema document for the provided [Validator].
 // It uses exclusively [Draft 2020-12] version.
 // It returns an error for Go kinds without a default JSON representation.
+// Omitted rules are not reported unless [JSONSchemaIncludeOmittedRules] is provided.
 //
 // [Draft 2020-12]: https://json-schema.org/draft/2020-12/schema
-func JSONSchema[T any](v Validator[T]) (*jsonschema.Document, error) {
-	plan, err := Plan(v, planRecordJSONSchema())
+func JSONSchema[T any](v Validator[T], opts ...JSONSchemaOption) (*jsonschema.Document, error) {
+	var options jsonSchemaOptions
+	for _, opt := range opts {
+		options = opt(options)
+	}
+	var omittedRules *[]jsonschema.OmittedRule
+	if options.includeOmittedRules {
+		omittedRules = new([]jsonschema.OmittedRule)
+	}
+	plan, err := Plan(v, planRecordJSONSchema(omittedRules))
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate %T: %w", plan, err)
 	}
@@ -85,6 +111,9 @@ func JSONSchema[T any](v Validator[T]) (*jsonschema.Document, error) {
 	ensureWildcardApplicatorsApplyToAllChildren(schema)
 
 	document := jsonschema.Document(*schema)
+	if omittedRules != nil {
+		document.OmittedRules = *omittedRules
+	}
 	return &document, nil
 }
 

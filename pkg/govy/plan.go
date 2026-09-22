@@ -10,6 +10,7 @@ import (
 	"github.com/nobl9/govy/internal/collections"
 	"github.com/nobl9/govy/internal/typeinfo"
 	"github.com/nobl9/govy/pkg/jsonpath"
+	"github.com/nobl9/govy/pkg/jsonschema"
 )
 
 // ValidatorPlan is a validation plan for a single [Validator].
@@ -113,6 +114,7 @@ func (r RulePlan) equal(r2 RulePlan) bool {
 type planOptions struct {
 	requirePredicateDescriptions bool
 	recordJSONSchema             bool
+	omittedJSONSchemaRules       *[]jsonschema.OmittedRule
 }
 
 func (p planOptions) apply(opts []PlanOption) planOptions {
@@ -145,9 +147,10 @@ func PlanStrictMode() PlanOption {
 }
 
 // planRecordJSONSchema records the internal builders used by [JSONSchema].
-func planRecordJSONSchema() PlanOption {
+func planRecordJSONSchema(omittedRules *[]jsonschema.OmittedRule) PlanOption {
 	return func(options planOptions) planOptions {
 		options.recordJSONSchema = true
+		options.omittedJSONSchemaRules = omittedRules
 		return options
 	}
 }
