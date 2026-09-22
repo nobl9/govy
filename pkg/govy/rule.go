@@ -238,7 +238,10 @@ func (r Rule[T]) plan(builder planBuilder) {
 	}
 	if builder.options.recordJSONSchema {
 		var reason string
+		required := r.errorCode == internal.RequiredErrorCode
 		switch {
+		case builder.jsonSchemaTransformed && (builder.jsonSchemaOmitProperty || !required):
+			reason = "rule validates a transformed value"
 		case r.jsonSchemaBuilder == nil:
 			reason = "missing JSON Schema builder"
 		case slices.ContainsFunc(builder.jsonSchemaConditions, func(condition jsonSchemaCondition) bool {
@@ -246,11 +249,16 @@ func (r Rule[T]) plan(builder planBuilder) {
 		}):
 			reason = "missing WhenJSONSchema builder"
 		default:
+			ruleBuilder := r.jsonSchemaBuilder
+			if builder.jsonSchemaTransformed {
+				// Preserve input presence without executing a builder for the transformed value.
+				ruleBuilder = func(JSONSchemaBuilderContext) (*jsonschema.Schema, error) { return nil, nil }
+			}
 			rulePlan.jsonSchemaBuilders = []*jsonSchemaPlanBuilder{
 				newJSONSchemaPlanBuilder(
 					builder.jsonSchemaConditions,
-					r.jsonSchemaBuilder,
-					r.errorCode == internal.RequiredErrorCode,
+					ruleBuilder,
+					required,
 				),
 			}
 		}

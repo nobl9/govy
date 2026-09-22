@@ -302,6 +302,16 @@ func (r PropertyRules[T, P]) plan(builder planBuilder) {
 	}
 	builder = builder.appendPath(r.getPath()).setExamples(r.examples...)
 	builder = appendPredicatesToPlanBuilder(builder, predicateScope, r.predicates)
+	if builder.options.recordJSONSchema {
+		builder.jsonSchemaOmitProperty = builder.jsonSchemaTransformed
+		if r.transformGetter != nil {
+			builder.jsonSchemaTransformed = true
+			if !builder.jsonSchemaOmitProperty {
+				// Included validators describe the transformed value, so retain the input type separately.
+				*builder.path = append(*builder.path, builder)
+			}
+		}
+	}
 	if r.required {
 		// Dummy rule to register the property as required.
 		NewRule(func(v T) error { return nil }).

@@ -220,6 +220,9 @@ func (e *missingPredicateDescriptionsError) Error() string {
 func aggregatePropertyPlans(builders []planBuilder) []*PropertyPlan {
 	propertiesMap := make(map[string]*PropertyPlan)
 	for _, b := range builders {
+		if b.jsonSchemaOmitProperty {
+			continue
+		}
 		path := b.propertyPath.String()
 		entry, ok := propertiesMap[path]
 		if !ok {
@@ -285,18 +288,23 @@ type planBuilder struct {
 	path                 *[]planBuilder
 	missingDescriptions  *[]predicateLocation
 	jsonSchemaConditions []jsonSchemaCondition
-	options              planOptions
+	// A Transform retains its input property, but properties selected from its result do not describe the input.
+	jsonSchemaTransformed  bool
+	jsonSchemaOmitProperty bool
+	options                planOptions
 }
 
 func (p planBuilder) appendPath(path jsonpath.Path) planBuilder {
 	builder := planBuilder{
-		path:                 p.path,
-		missingDescriptions:  p.missingDescriptions,
-		jsonSchemaConditions: p.jsonSchemaConditions,
-		options:              p.options,
-		rulePlan:             p.rulePlan,
-		propertyPlan:         p.propertyPlan,
-		propertyPath:         p.propertyPath.Join(path),
+		path:                   p.path,
+		missingDescriptions:    p.missingDescriptions,
+		jsonSchemaConditions:   p.jsonSchemaConditions,
+		jsonSchemaTransformed:  p.jsonSchemaTransformed,
+		jsonSchemaOmitProperty: p.jsonSchemaOmitProperty,
+		options:                p.options,
+		rulePlan:               p.rulePlan,
+		propertyPlan:           p.propertyPlan,
+		propertyPath:           p.propertyPath.Join(path),
 	}
 	return builder
 }

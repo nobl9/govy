@@ -19,7 +19,8 @@ The current implementation has these properties:
 - Each generated schema node declares at most one JSON type.
 - A rule without a JSON Schema builder does not contribute a constraint.
 - `JSONSchemaIncludeOmittedRules()` adds optional metadata about missing
-  rule and condition builders to the document root.
+  rule and condition builders, and rules on transformed values,
+  to the document root.
 - A builder error stops generation and identifies the property and rule.
 - Unsupported Go kinds stop generation.
 - Builders receive the absolute path and JSON type of the selected value.
@@ -51,9 +52,10 @@ Each built-in rule mapping should have one documented classification:
 - **Annotation**: the schema documents semantics but does not enforce them.
 - **Unsupported**: the rule contributes no schema constraint.
 
-Missing rule and condition builders can be reported through the optional
-annotation described below. Approximate mappings are documented here but are
-not classified in the generated schema.
+Missing builders and omitted rules on transformed values can be reported
+through the optional annotation described below.
+Approximate mappings are documented here
+but are not classified in the generated schema.
 
 ## Omitted-rule metadata
 
@@ -68,17 +70,20 @@ Each record contains:
 - `rule`: the rule's error code, omitted if the rule has no code.
 - `reason`: `missing JSON Schema builder` if the rule has no `WithJSONSchema`
   builder, or `missing WhenJSONSchema builder` if any guarding condition lacks
-  a builder.
+  a builder. Rules omitted because of `Transform` use
+  `rule validates a transformed value`.
 
 Govy records omissions during the existing plan traversal, before rules are
-filtered or deduplicated. A missing rule builder takes precedence when both
+filtered or deduplicated. Transformed-value omissions take precedence over
+missing builders. Otherwise, a missing rule builder takes precedence when both
 the rule and a condition lack builders. The metadata does not affect validation.
-Builder errors still stop generation.
+Errors from executed builders still stop generation.
 
-An explicit rule or condition builder that returns `nil` is an intentional
-no-op and does not produce an omission record. Optional-property markers are
-not reported. The annotation is not a complete list of semantic differences:
-it does not classify approximate mappings or transformed-property gaps.
+A rule or condition builder that runs and returns `nil` is an intentional
+no-op and does not produce an omission record. Builders for transformed values
+are not executed, so their omissions are reported even if they would return `nil`.
+Optional-property markers are not reported.
+The annotation does not classify approximate mappings.
 
 `x-govy-omittedRules` is a Govy extension, not a standard JSON Schema keyword.
 Its prefix follows the [JSON Schema custom-annotation convention] and the
@@ -146,13 +151,32 @@ required for schema generation.
 
 ### Transformed properties
 
-`govy.Transform` records the original property type, while its rules validate
-the transformed Go value. A numeric rule applied after a string-to-number
-transform can therefore add a numeric keyword to a string schema. That keyword
-does not validate the original JSON representation.
+`govy.Transform` preserves the original input type in the generated schema.
+Rules on the transformed value do not contribute value constraints.
+For example, parsing a string into an integer and applying `EQ(12)` emits
+`type: string`, without the incompatible numeric `const: 12`.
+The same policy applies when a transform preserves the type,
+such as lowercasing a string.
 
-Transformed property rules need an explicit schema mapping. Without one,
-generation should omit their builders.
+Directly attached `PropertyRules.Required` and `rules.Required` retain their
+property-presence effect, subject to conditions on the original parent.
+Their value constraints are not carried over.
+Included validators describe the transformed result, so their rules and
+property structure are omitted, including their required properties.
+Govy does not execute the transformer or schema builders for transformed values.
+Runtime validation and regular `govy.Plan` output remain unchanged.
+
+With `JSONSchemaIncludeOmittedRules()`, each omitted rule is reported with
+`rule validates a transformed value`.
+Included rule paths identify values in the transformed result.
+Those paths do not add properties to the input schema.
+
+To supply an explicit input mapping, add a separate `govy.For` with the original
+getter and the same property path, then attach a rule with `WithJSONSchema`.
+Its schema contribution combines with the preserved input type.
+The rule can use a no-op validation function if it only supplies schema metadata.
+A custom builder attached to a rule under `Transform` is still omitted.
+This approach reuses the existing API without changing runtime validation.
 
 ### Go equality and JSON equality
 
@@ -318,14 +342,15 @@ unsupported.
 
 ### 1. Extend observable generation behavior
 
-Optional root metadata now reports missing rule and condition builders.
+Optional root metadata now reports missing builders and rules on transformed values.
 Decide whether approximate mappings also need machine-readable classifications
 and whether callers need a strict mode that rejects omitted rules.
 
 ### 2. Complete structural generation
 
 Merge a complete JSON field tree into the validation plan when that metadata is
-available. Add explicit handling for transformed properties.
+available. Transformed properties already preserve their input types and omit
+constraints on transformed values.
 
 ### 3. Add missing standard keywords
 

@@ -800,12 +800,23 @@ func TestJSONSchema_MapItemUsesValueType(t *testing.T) {
 		govy.ForMap(func(document) annotations { return nil }).
 			WithName("annotations").
 			RulesForItems(
-				govy.NewRule(func(govy.MapItem[string, string]) error { return nil }).
-					WithDescription("key and value must differ"),
+				govy.NewRule(func(v govy.MapItem[string, string]) error {
+					if v.Value == "" {
+						return fmt.Errorf("value must not be empty")
+					}
+					return nil
+				}).WithDescription("map value must not be empty").
+					WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+						if !ctx.Path.Equal(jsonpath.Parse("$.annotations.*")) || ctx.Type != jsonschema.TypeString {
+							return nil, fmt.Errorf("builder must describe the map value")
+						}
+						minimum := uint64(1)
+						return &jsonschema.Schema{MinLength: &minimum}, nil
+					}),
 			),
 	)
 
-	schema, err := govy.JSONSchema(validator)
+	schema, err := govy.JSONSchema(validator, govy.JSONSchemaIncludeOmittedRules())
 	assert.Require(t, assert.NoError(t, err))
 
 	expected := readTestData(t, "expected_map_item_json_schema.json")

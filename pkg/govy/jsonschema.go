@@ -47,8 +47,8 @@ type jsonSchemaOptions struct {
 type JSONSchemaOption func(options jsonSchemaOptions) jsonSchemaOptions
 
 // JSONSchemaIncludeOmittedRules adds x-govy-omittedRules to the document root
-// when rules lack a [Rule.WithJSONSchema] builder or a condition lacks [WhenJSONSchema].
-// Builders that return nil do not produce omission records.
+// for rules without schema mappings, unmapped conditions, and transformed-value rules.
+// An executed builder that returns nil does not produce an omission record.
 func JSONSchemaIncludeOmittedRules() JSONSchemaOption {
 	return func(options jsonSchemaOptions) jsonSchemaOptions {
 		options.includeOmittedRules = true
@@ -59,6 +59,8 @@ func JSONSchemaIncludeOmittedRules() JSONSchemaOption {
 // JSONSchema creates a JSON Schema document for the provided [Validator].
 // It uses exclusively [Draft 2020-12] version.
 // It returns an error for Go kinds without a default JSON representation.
+// For [Transform], it preserves the input type and directly attached required constraints,
+// but omits other rules and properties of the transformed value.
 // Omitted rules are not reported unless [JSONSchemaIncludeOmittedRules] is provided.
 //
 // [Draft 2020-12]: https://json-schema.org/draft/2020-12/schema
