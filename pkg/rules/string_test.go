@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/nobl9/govy/internal/assert"
+	"github.com/nobl9/govy/internal/jsonschematest"
 
 	"github.com/nobl9/govy/pkg/govy"
 )
@@ -4973,61 +4974,70 @@ func BenchmarkStringISBNVeryLargeInvalid(b *testing.B) {
 	b.ReportMetric(1, "validations/op")
 }
 
-var validISBN10TestCases = map[string]string{
-	"hyphenated":                  "0-306-40615-2",
-	"plain":                       "0306406152",
-	"x check":                     "0-9752298-0-X",
-	"spaced":                      "0 9752298 0 x",
-	"library converter numeric":   "0394170660",
-	"library converter alternate": "0717941728",
-	"library converter x check":   "087779443X",
-	"MARC hyphenated":             "0-87068-693-3",
-}
-
-var invalidISBN10TestCases = map[string]string{
-	"empty":                "",
-	"failed check":         "0-306-40615-3",
-	"x check mutation":     "0877794430",
-	"x in body":            "08777X443X",
-	"x in fourth position": "087X79443X",
-	"short":                "087779443",
-	"trailing space":       "087779443X ",
-	"isbn 13":              "978-0-306-40615-7",
-	"isbn 13 plain":        "9780306406157",
-	"repeated separator":   "0-306--40615-2",
+var isbn10TestCases = []jsonschematest.Case[string]{
+	{Name: "hyphenated", Input: "0-306-40615-2", Valid: true},
+	{Name: "plain", Input: "0306406152", Valid: true},
+	{Name: "x check", Input: "0-9752298-0-X", Valid: true},
+	{Name: "spaced", Input: "0 9752298 0 x", Valid: true},
+	{Name: "library converter numeric", Input: "0394170660", Valid: true},
+	{Name: "library converter alternate", Input: "0717941728", Valid: true},
+	{Name: "library converter x check", Input: "087779443X", Valid: true},
+	{Name: "MARC hyphenated", Input: "0-87068-693-3", Valid: true},
+	{Name: "empty", Input: ""},
+	{
+		Name:                 "failed check",
+		Input:                "0-306-40615-3",
+		JSONSchemaDifference: "JSON Schema checks ISBN-10 syntax but does not validate the checksum.",
+	},
+	{
+		Name:                 "x check mutation",
+		Input:                "0877794430",
+		JSONSchemaDifference: "JSON Schema checks ISBN-10 syntax but does not validate the checksum.",
+	},
+	{Name: "x in body", Input: "08777X443X"},
+	{Name: "x in fourth position", Input: "087X79443X"},
+	{Name: "short", Input: "087779443"},
+	{Name: "trailing space", Input: "087779443X "},
+	{Name: "isbn 13", Input: "978-0-306-40615-7"},
+	{Name: "isbn 13 plain", Input: "9780306406157"},
+	{Name: "repeated separator", Input: "0-306--40615-2"},
 }
 
 func TestStringISBN10(t *testing.T) {
 	rule := StringISBN10()
-	t.Run("valid inputs", func(t *testing.T) {
-		for name, input := range validISBN10TestCases {
-			t.Run(name, func(t *testing.T) {
-				assert.NoError(t, rule.Validate(input))
-			})
-		}
-	})
-	t.Run("invalid inputs", func(t *testing.T) {
-		for name, input := range invalidISBN10TestCases {
-			t.Run(name, func(t *testing.T) {
-				err := rule.Validate(input)
-				assert.EqualError(
-					t,
-					err,
-					"string must be a valid International Standard Book Number (ISBN) in ISBN-10 format",
-				)
-				assert.True(t, govy.HasErrorCode(err, ErrorCodeStringISBN10))
-			})
-		}
-	})
+	for _, tc := range isbn10TestCases {
+		t.Run(tc.Name, func(t *testing.T) {
+			err := rule.Validate(tc.Input)
+			if tc.Valid {
+				assert.NoError(t, err)
+				return
+			}
+			assert.EqualError(
+				t,
+				err,
+				"string must be a valid International Standard Book Number (ISBN) in ISBN-10 format",
+			)
+			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringISBN10))
+		})
+	}
+}
+
+func TestStringISBN10_JSONSchema(t *testing.T) {
+	t.Parallel()
+
+	schema, err := govy.JSONSchema(govy.New(govy.For(govy.GetSelf[string]()).Rules(StringISBN10())))
+	assert.Require(t, assert.NoError(t, err))
+	jsonschematest.Assert(t, schema, "testdata/jsonschema/expected_string_isbn10.json", isbn10TestCases)
 }
 
 func BenchmarkStringISBN10(b *testing.B) {
-	benchmarkStringPublicationRule(
-		b,
-		StringISBN10(),
-		validISBN10TestCases,
-		invalidISBN10TestCases,
-	)
+	rule := StringISBN10()
+	for b.Loop() {
+		for _, tc := range isbn10TestCases {
+			_ = rule.Validate(tc.Input)
+		}
+	}
+	b.ReportMetric(float64(len(isbn10TestCases)), "validations/op")
 }
 
 var validISBN13TestCases = map[string]string{
@@ -5086,6 +5096,10 @@ func TestStringISBN13(t *testing.T) {
 }
 
 func TestISBNPredicatesMatchReference(t *testing.T) {
+	isbn10Inputs := make(map[string]string, len(isbn10TestCases))
+	for _, tc := range isbn10TestCases {
+		isbn10Inputs[tc.Name] = tc.Input
+	}
 	tests := map[string]struct {
 		predicate func(string) bool
 		reference func(string) bool
@@ -5103,8 +5117,7 @@ func TestISBNPredicatesMatchReference(t *testing.T) {
 			predicate: isISBN10,
 			reference: referenceISBN10,
 			inputs: []map[string]string{
-				validISBN10TestCases,
-				invalidISBN10TestCases,
+				isbn10Inputs,
 			},
 		},
 		"isbn-13": {

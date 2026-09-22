@@ -1,0 +1,7 @@
+{
+  "name": "govy-jsonschema-tests",
+  "private": true,
+  "dependencies": {
+    "ajv": "8.20.0"
+  }
+}

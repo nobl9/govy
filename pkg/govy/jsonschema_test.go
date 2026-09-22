@@ -11,6 +11,7 @@ import (
 	"unsafe"
 
 	"github.com/nobl9/govy/internal/assert"
+	"github.com/nobl9/govy/internal/jsonschematest"
 
 	"github.com/nobl9/govy/pkg/govy"
 	"github.com/nobl9/govy/pkg/jsonpath"
@@ -292,9 +293,9 @@ func TestJSONSchema_ZeroLengthLimits(t *testing.T) {
 	t.Parallel()
 
 	type document struct {
-		String string
-		Slice  []string
-		Map    map[string]string
+		String string            `json:"string"`
+		Slice  []string          `json:"slice"`
+		Map    map[string]string `json:"map"`
 	}
 	validator := govy.New(
 		govy.For(func(v document) string { return v.String }).
@@ -315,12 +316,30 @@ func TestJSONSchema_ZeroLengthLimits(t *testing.T) {
 	schema, err := govy.JSONSchema(validator)
 	assert.Require(t, assert.NoError(t, err))
 
-	expected := readTestData(t, "expected_zero_length_limits_json_schema.json")
-	var actual bytes.Buffer
-	encoder := json.NewEncoder(&actual)
-	encoder.SetIndent("", "  ")
-	assert.Require(t, assert.NoError(t, encoder.Encode(schema)))
-	assert.Equal(t, expected, actual.String())
+	jsonschematest.Assert(
+		t,
+		schema,
+		"test_data/expected_zero_length_limits_json_schema.json",
+		[]jsonschematest.Case[document]{
+			{
+				Name:  "empty values",
+				Input: document{Slice: []string{}, Map: map[string]string{}},
+				Valid: true,
+			},
+			{
+				Name:  "nonempty string",
+				Input: document{String: "a", Slice: []string{}, Map: map[string]string{}},
+			},
+			{
+				Name:  "nonempty slice",
+				Input: document{Slice: []string{"a"}, Map: map[string]string{}},
+			},
+			{
+				Name:  "nonempty map",
+				Input: document{Slice: []string{}, Map: map[string]string{"a": "b"}},
+			},
+		},
+	)
 }
 
 func TestJSONSchema_RuleBuilderError(t *testing.T) {
@@ -573,7 +592,6 @@ func TestJSONSchema_StringChecksumRules(t *testing.T) {
 	type document struct {
 		CreditCard   string
 		ISBN         string
-		ISBN10       string
 		ISBN13       string
 		ISSN         string
 		LuhnChecksum string
@@ -585,9 +603,6 @@ func TestJSONSchema_StringChecksumRules(t *testing.T) {
 		govy.For(func(v document) string { return v.ISBN }).
 			WithName("isbn").
 			Rules(rules.StringISBN()),
-		govy.For(func(v document) string { return v.ISBN10 }).
-			WithName("isbn10").
-			Rules(rules.StringISBN10()),
 		govy.For(func(v document) string { return v.ISBN13 }).
 			WithName("isbn13").
 			Rules(rules.StringISBN13()),
