@@ -118,6 +118,12 @@ func (r PropertyRulesForMap[M, K, V, P]) WithPath(path jsonpath.Path) PropertyRu
 	return r
 }
 
+// WithID => refer to [PropertyRules.WithID] documentation.
+func (r PropertyRulesForMap[M, K, V, P]) WithID(id string) PropertyRulesForMap[M, K, V, P] {
+	r.mapRules = r.mapRules.WithID(id)
+	return r
+}
+
 // WithExamples => refer to [PropertyRules.WithExamples] documentation.
 func (r PropertyRulesForMap[M, K, V, P]) WithExamples(examples ...string) PropertyRulesForMap[M, K, V, P] {
 	r.mapRules = r.mapRules.WithExamples(examples...)
@@ -248,6 +254,18 @@ func (r PropertyRulesForMap[M, K, V, P]) inferPathModeInternal(mode InferPathMod
 		return r
 	}
 	return r.InferPath(mode)
+}
+
+func (r PropertyRulesForMap[M, K, V, P]) propertyID() string {
+	return r.mapRules.propertyID()
+}
+
+func (r PropertyRulesForMap[M, K, V, P]) removePropertiesByID(removal *propertyRemoval) PropertyRulesInterface[P] {
+	r.mapRules = r.mapRules.removePropertiesByIDFromIncludes(removal)
+	r.forKeyRules = r.forKeyRules.removePropertiesByIDFromIncludes(removal)
+	r.forValueRules = r.forValueRules.removePropertiesByIDFromIncludes(removal)
+	r.forItemRules = r.forItemRules.removePropertiesByIDFromIncludes(removal)
+	return r
 }
 
 // plan constructs a validation plan for the property rules.

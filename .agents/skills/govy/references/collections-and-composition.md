@@ -180,8 +180,35 @@ func ExampleForMap() {
 
 ## Derive validator variants
 
-Derive variants with path-based removal.
+Derive variants with `RemovePropertiesByPath` or `RemovePropertiesByID`.
 The original validator remains unchanged.
+
+### Remove selected properties by ID
+
+Set `WithID` on scalar, slice, or map property rules.
+`RemovePropertiesByID` removes every property with a matching nonempty ID.
+It traverses included `Validator` values and pointers, including recursive references.
+Other `ValidatorInterface` implementations, such as wrappers with custom `Validate`
+methods, remain unchanged.
+Tag the containing property to remove an entire wrapper.
+Empty and unknown IDs have no effect.
+
+[//]: # (embed: ExampleValidator_RemovePropertiesByID?comments=false)
+
+```go
+func ExampleValidator_RemovePropertiesByID() {
+	ageProperty := govy.For(func(t Teacher) time.Duration { return t.Age }).
+		WithName("age").
+		WithID("age").
+		Rules(rules.GT(time.Duration(0)))
+	baseValidator := govy.New(ageProperty)
+	modifiedValidator := baseValidator.RemovePropertiesByID("age")
+	teacher := Teacher{Age: -1}
+
+	fmt.Println(baseValidator.Validate(teacher) != nil)
+	fmt.Println(modifiedValidator.Validate(teacher) != nil)
+}
+```
 
 ### Remove selected properties by path
 

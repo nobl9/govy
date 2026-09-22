@@ -64,7 +64,7 @@ func ExampleInferPathModeGenerate() {
 	govyconfig.SetInferredPath(govyconfig.InferredPath{
 		Path: jsonpath.New().Name("name"),
 		File: "pkg/govy/example_test.go",
-		Line: 2059,
+		Line: 2078,
 	})
 
 	v2 := govy.New(

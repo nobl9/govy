@@ -35,4 +35,13 @@ func TestGovyEvalPathsAndOptionalData(t *testing.T) {
 			t.Fatalf("synthetic path must contain separate settings and code segments: %q", path.String())
 		}
 	})
+
+	t.Run("remove_nested_name_by_id", func(t *testing.T) {
+		var derived govy.Validator[Profile] = ProfileWithoutNameValidator
+		input := Profile{Details: &Details{}}
+		govyEvalAssertErrors(t, derived.Validate(input), map[string]int{"settings.code": 1})
+		govyEvalAssertErrors(t, validator.Validate(input), map[string]int{"settings.code": 1, "details.name": 1})
+		input.Code = "valid"
+		govyEvalAssertErrors(t, derived.Validate(input), nil)
+	})
 }
