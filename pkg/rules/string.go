@@ -60,7 +60,7 @@ func StringNotEmpty() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringNotEmpty).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{})).
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
 		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 			return &jsonschema.Schema{Pattern: nonWhitespaceJSONSchemaPattern}, nil
 		})
@@ -82,9 +82,9 @@ func StringMatchRegexp(re *regexp.Regexp) govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringMatchRegexp).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: re.String(),
-		})).
+		}).
 		WithJSONSchema(jsonSchemaPattern(re.String()))
 }
 
@@ -104,9 +104,9 @@ func StringDenyRegexp(re *regexp.Regexp) govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringDenyRegexp).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: re.String(),
-		})).
+		}).
 		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 			pattern, err := ecmaregex.Translate(re.String())
 			if err != nil {
@@ -212,7 +212,7 @@ func StringMAC() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringMAC).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{})).
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
 		WithJSONSchema(jsonSchemaPattern(macJSONSchemaPattern))
 }
 
@@ -230,7 +230,7 @@ func StringIP() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringIP).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{})).
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
 		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 			return &jsonschema.Schema{
 				AnyOf: []*jsonschema.Schema{
@@ -255,7 +255,7 @@ func StringIPv4() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringIPv4).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{})).
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
 		WithJSONSchema(jsonSchemaFormat(jsonschema.FormatIPv4))
 }
 
@@ -273,7 +273,7 @@ func StringIPv6() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringIPv6).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{})).
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
 		WithJSONSchema(jsonSchemaFormat(jsonschema.FormatIPv6))
 }
 
@@ -291,7 +291,7 @@ func StringCIDR() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringCIDR).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{})).
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
 		WithJSONSchema(jsonSchemaPattern(
 			"^(?:" + cidrIPv4JSONSchemaPatternBody + "|" + cidrIPv6JSONSchemaPatternBody + ")$",
 		))
@@ -311,7 +311,7 @@ func StringCIDRv4() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringCIDRv4).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{})).
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
 		WithJSONSchema(jsonSchemaPattern("^" + cidrIPv4JSONSchemaPatternBody + "$"))
 }
 
@@ -329,7 +329,7 @@ func StringCIDRv6() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringCIDRv6).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{})).
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
 		WithJSONSchema(jsonSchemaPattern("^" + cidrIPv6JSONSchemaPatternBody + "$"))
 }
 
@@ -348,7 +348,7 @@ func StringEIN() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringEIN).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{})).
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
 		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 			return &jsonschema.Schema{Pattern: einJSONSchemaPattern}, nil
 		})
@@ -405,7 +405,7 @@ func StringSSN() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringSSN).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{})).
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
 		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 			return &jsonschema.Schema{Pattern: ssnJSONSchemaPattern}, nil
 		})
@@ -450,9 +450,9 @@ func StringUUID() govy.Rule[string] {
 		return nil
 	}).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: uuidPattern,
-		})).
+		}).
 		WithDetails("expected RFC-4122 compliant UUID string").
 		WithExamples(
 			"00000000-0000-0000-0000-000000000000",
@@ -479,7 +479,7 @@ func StringUUIDRFC4122() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringUUIDRFC4122).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{})).
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
 		WithJSONSchema(jsonSchemaPattern(uuidRFC4122JSONSchemaPattern))
 }
 
@@ -498,7 +498,7 @@ func StringUUIDv3() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringUUIDv3).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{})).
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
 		WithJSONSchema(jsonSchemaPattern(uuidVersionJSONSchemaPattern('3')))
 }
 
@@ -517,7 +517,7 @@ func StringUUIDv4() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringUUIDv4).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{})).
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
 		WithJSONSchema(jsonSchemaPattern(uuidVersionJSONSchemaPattern('4')))
 }
 
@@ -536,7 +536,7 @@ func StringUUIDv5() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringUUIDv5).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{})).
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
 		WithJSONSchema(jsonSchemaPattern(uuidVersionJSONSchemaPattern('5')))
 }
 
@@ -602,7 +602,7 @@ func StringULID() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringULID).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{})).
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
 		WithJSONSchema(jsonSchemaPattern(ulidJSONSchemaPattern))
 }
 
@@ -645,7 +645,7 @@ func StringMongoDBObjectID() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringMongoDBObjectID).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{})).
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
 		WithJSONSchema(jsonSchemaPattern(mongoObjectIDJSONSchemaPattern))
 }
 
@@ -665,7 +665,7 @@ func StringCreditCard() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringCreditCard).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{})).
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
 		WithJSONSchema(jsonSchemaPattern(`^[0-9]{13,19}$`))
 }
 
@@ -684,7 +684,7 @@ func StringLuhnChecksum() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringLuhnChecksum).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{})).
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
 		WithJSONSchema(jsonSchemaPattern(`^[0-9]+$`))
 }
 
@@ -703,7 +703,7 @@ func StringBIC() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringBIC).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{})).
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
 		WithJSONSchema(jsonSchemaPattern(bicJSONSchemaPattern))
 }
 
@@ -722,7 +722,7 @@ func StringBICISO93622014() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringBICISO93622014).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{})).
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
 		WithJSONSchema(jsonSchemaPattern(bicJSONSchemaPattern))
 }
 
@@ -745,7 +745,7 @@ func StringJSON() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringJSON).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{})).
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
 		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 			return &jsonschema.Schema{ContentMediaType: jsonschema.MediaTypeApplicationJSON}, nil
 		})
@@ -765,7 +765,7 @@ func StringE164() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringE164).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{})).
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
 		WithJSONSchema(jsonSchemaPattern(e164Regexp().String()))
 }
 
@@ -824,7 +824,7 @@ func StringBase64() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringBase64).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{})).
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
 		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 			pattern, err := ecmaregex.Translate(standardBase64Regexp().String())
 			if err != nil {
@@ -853,7 +853,7 @@ func StringBase64URL() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringBase64URL).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{})).
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
 		WithJSONSchema(jsonSchemaPattern(base64URLRegexp().String()))
 }
 
@@ -873,7 +873,7 @@ func StringBase64RawURL() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringBase64RawURL).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{})).
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
 		WithJSONSchema(jsonSchemaPattern(base64RawURLRegexp().String()))
 }
 
@@ -892,7 +892,7 @@ func StringHexadecimal() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringHexadecimal).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{})).
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
 		WithJSONSchema(jsonSchemaPattern(hexadecimalJSONSchemaPattern))
 }
 
@@ -934,7 +934,7 @@ func StringMD5() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringMD5).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{})).
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
 		WithJSONSchema(jsonSchemaPattern(lowerHexadecimalJSONSchemaPattern(32)))
 }
 
@@ -952,7 +952,7 @@ func StringSHA256() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringSHA256).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{})).
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
 		WithJSONSchema(jsonSchemaPattern(lowerHexadecimalJSONSchemaPattern(64)))
 }
 
@@ -970,7 +970,7 @@ func StringSHA384() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringSHA384).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{})).
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
 		WithJSONSchema(jsonSchemaPattern(lowerHexadecimalJSONSchemaPattern(96)))
 }
 
@@ -988,7 +988,7 @@ func StringSHA512() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringSHA512).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{})).
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
 		WithJSONSchema(jsonSchemaPattern(lowerHexadecimalJSONSchemaPattern(128)))
 }
 
@@ -1056,9 +1056,9 @@ func StringContains(substrings ...string) govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringContains).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: substrings,
-		})).
+		}).
 		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 			schema := new(jsonschema.Schema)
 			for i, substring := range substrings {
@@ -1102,9 +1102,9 @@ func StringExcludes(substrings ...string) govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringExcludes).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: substrings,
-		})).
+		}).
 		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 			schema := new(jsonschema.Schema)
 			for i, substring := range substrings {
@@ -1154,9 +1154,9 @@ func StringStartsWith(prefixes ...string) govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringStartsWith).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: prefixes,
-		})).
+		}).
 		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 			pattern := jsonSchemaAffixPattern(prefixes, "^", "")
 			translated, err := ecmaregex.Translate(pattern)
@@ -1198,9 +1198,9 @@ func StringEndsWith(suffixes ...string) govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringEndsWith).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: suffixes,
-		})).
+		}).
 		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 			pattern := jsonSchemaAffixPattern(suffixes, "", `\z`)
 			translated, err := ecmaregex.Translate(pattern)
@@ -1236,7 +1236,7 @@ func StringTitle() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringTitle).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescriptionTemplate(tpl, govy.TemplateVars{})
 }
 
 type stringGitRefTemplateVars struct {
@@ -1351,7 +1351,7 @@ func StringFileSystemPath() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringFileSystemPath).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescriptionTemplate(tpl, govy.TemplateVars{})
 }
 
 // StringFilePath ensures the property's value is a file system path pointing to an existing file.
@@ -1373,7 +1373,7 @@ func StringFilePath() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringFilePath).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescriptionTemplate(tpl, govy.TemplateVars{})
 }
 
 // StringDirPath ensures the property's value is a file system path pointing to an existing directory.
@@ -1395,7 +1395,26 @@ func StringDirPath() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringDirPath).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescriptionTemplate(tpl, govy.TemplateVars{})
+}
+
+// StringAbsoluteFilePath ensures the property's value is an absolute file system path.
+// It uses [filepath.IsAbs] and follows the host operating system's path rules.
+// It does not check whether the path exists or expand environment variables or '~'.
+func StringAbsoluteFilePath() govy.Rule[string] {
+	tpl := messagetemplates.Get(messagetemplates.StringAbsoluteFilePathTemplate)
+
+	return govy.NewRule(func(s string) error {
+		if !filepath.IsAbs(s) {
+			return govy.NewRuleErrorTemplate(govy.TemplateVars{
+				PropertyValue: s,
+			})
+		}
+		return nil
+	}).
+		WithErrorCode(ErrorCodeStringAbsoluteFilePath).
+		WithMessageTemplate(tpl).
+		WithDescriptionTemplate(tpl, govy.TemplateVars{})
 }
 
 // StringMatchFileSystemPath ensures the property's value matches the provided file path pattern.
@@ -1424,9 +1443,9 @@ func StringMatchFileSystemPath(pattern string) govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringMatchFileSystemPath).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: pattern,
-		}))
+		})
 }
 
 // StringRegexp ensures the property's value is a valid regular expression.
@@ -1450,7 +1469,7 @@ func StringRegexp() govy.Rule[string] {
 		WithErrorCode(ErrorCodeStringRegexp).
 		WithMessageTemplate(tpl).
 		WithDetails(`the regular expression syntax must comply to RE2, it is described at https://golang.org/s/re2syntax, except for \C; for an overview of the syntax, see https://pkg.go.dev/regexp/syntax`).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescriptionTemplate(tpl, govy.TemplateVars{})
 }
 
 // StringCrontab ensures the property's value is a valid crontab schedule expression.
@@ -1472,7 +1491,7 @@ func StringCrontab() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringCrontab).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescriptionTemplate(tpl, govy.TemplateVars{})
 }
 
 // StringDateTime ensures the property's value is a valid date and time in the specified layout.
@@ -1495,9 +1514,9 @@ func StringDateTime(layout string) govy.Rule[string] {
 		WithErrorCode(ErrorCodeStringDateTime).
 		WithMessageTemplate(tpl).
 		WithDetails("date and time format follows Go's time layout, see https://pkg.go.dev/time#Layout for more details").
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: layout,
-		}))
+		})
 	if layout == time.RFC3339 || layout == time.RFC3339Nano {
 		return rule.WithJSONSchema(jsonSchemaFormat(jsonschema.FormatDateTime))
 	}
@@ -1535,7 +1554,7 @@ func StringTimeZone() govy.Rule[string] {
 		WithErrorCode(ErrorCodeStringTimeZone).
 		WithMessageTemplate(tpl).
 		WithExamples("UTC", "America/New_York", "Europe/Warsaw").
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{}))
+		WithDescriptionTemplate(tpl, govy.TemplateVars{})
 }
 
 // StringAlpha ensures the property's value consists only of ASCII letters.

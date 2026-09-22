@@ -28,9 +28,9 @@ func DurationPrecision(precision time.Duration) govy.Rule[time.Duration] {
 	}).
 		WithErrorCode(ErrorCodeDurationPrecision).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			PropertyValue: precision,
-		})).
+		}).
 		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 			value, err := jsonSchemaValue(precision)
 			if err != nil {

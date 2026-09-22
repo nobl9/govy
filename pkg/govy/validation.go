@@ -26,6 +26,8 @@ type PropertyRulesInterface[T any] interface {
 	getPath() jsonpath.Path
 	inferPathModeInternal(mode InferPathMode) PropertyRulesInterface[T]
 	isPropertyRules()
+	propertyID() string
+	removePropertiesByID(removal *propertyRemoval) PropertyRulesInterface[T]
 }
 
 // RulesInterface defines validation entities on the validation rule level,

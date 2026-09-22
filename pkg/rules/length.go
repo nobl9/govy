@@ -32,10 +32,10 @@ func StringLength(minLen, maxLen int) govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringLength).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			MinLength: minLen,
 			MaxLength: maxLen,
-		})).
+		}).
 		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 			return &jsonschema.Schema{
 				MinLength: ptr(schemaMinLen),
@@ -62,9 +62,9 @@ func StringMinLength(limit int) govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringMinLength).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: limit,
-		})).
+		}).
 		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 			return &jsonschema.Schema{MinLength: ptr(schemaLimit)}, nil
 		})
@@ -88,9 +88,9 @@ func StringMaxLength(limit int) govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringMaxLength).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: limit,
-		})).
+		}).
 		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 			return &jsonschema.Schema{MaxLength: ptr(schemaLimit)}, nil
 		})
@@ -119,10 +119,10 @@ func SliceLength[S ~[]E, E any](minLen, maxLen int) govy.Rule[S] {
 	}).
 		WithErrorCode(ErrorCodeSliceLength).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			MinLength: minLen,
 			MaxLength: maxLen,
-		})).
+		}).
 		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 			return &jsonschema.Schema{
 				MinItems: ptr(schemaMinLen),
@@ -149,9 +149,9 @@ func SliceMinLength[S ~[]E, E any](limit int) govy.Rule[S] {
 	}).
 		WithErrorCode(ErrorCodeSliceMinLength).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: limit,
-		})).
+		}).
 		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 			return &jsonschema.Schema{MinItems: ptr(schemaLimit)}, nil
 		})
@@ -175,9 +175,9 @@ func SliceMaxLength[S ~[]E, E any](limit int) govy.Rule[S] {
 	}).
 		WithErrorCode(ErrorCodeSliceMaxLength).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: limit,
-		})).
+		}).
 		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 			return &jsonschema.Schema{MaxItems: ptr(schemaLimit)}, nil
 		})
@@ -206,10 +206,10 @@ func MapLength[M ~map[K]V, K comparable, V any](minLen, maxLen int) govy.Rule[M]
 	}).
 		WithErrorCode(ErrorCodeMapLength).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			MinLength: minLen,
 			MaxLength: maxLen,
-		})).
+		}).
 		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 			return &jsonschema.Schema{
 				MinProperties: ptr(schemaMinLen),
@@ -236,9 +236,9 @@ func MapMinLength[M ~map[K]V, K comparable, V any](limit int) govy.Rule[M] {
 	}).
 		WithErrorCode(ErrorCodeMapMinLength).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: limit,
-		})).
+		}).
 		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 			return &jsonschema.Schema{MinProperties: ptr(schemaLimit)}, nil
 		})
@@ -262,9 +262,9 @@ func MapMaxLength[M ~map[K]V, K comparable, V any](limit int) govy.Rule[M] {
 	}).
 		WithErrorCode(ErrorCodeMapMaxLength).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: limit,
-		})).
+		}).
 		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 			return &jsonschema.Schema{MaxProperties: ptr(schemaLimit)}, nil
 		})

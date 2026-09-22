@@ -103,6 +103,7 @@ func (emptyErr) Error() string { return "" }
 // It is the middle-level building block of the validation process,
 // aggregated by [Validator] and aggregating [Rule].
 type PropertyRules[T, P any] struct {
+	id                string
 	path              jsonpath.Path
 	pathFunc          inferPathFunc
 	getter            internalPropertyGetter[T, P]
@@ -189,6 +190,14 @@ func (r PropertyRules[T, P]) WithName(name string) PropertyRules[T, P] {
 // or when you need explicit control over the path construction.
 func (r PropertyRules[T, P]) WithPath(path jsonpath.Path) PropertyRules[T, P] {
 	r.path = path
+	return r
+}
+
+// WithID sets an identifier for these property rules.
+// It can be used with [Validator.RemovePropertiesByID].
+// An empty identifier leaves the property without an identifier.
+func (r PropertyRules[T, P]) WithID(id string) PropertyRules[T, P] {
+	r.id = id
 	return r
 }
 
@@ -288,6 +297,39 @@ func (r PropertyRules[T, P]) inferPathModeInternal(mode InferPathMode) PropertyR
 		return r
 	}
 	return r.InferPath(mode)
+}
+
+func (r PropertyRules[T, P]) propertyID() string {
+	return r.id
+}
+
+func (r PropertyRules[T, P]) removePropertiesByID(removal *propertyRemoval) PropertyRulesInterface[P] {
+	return r.removePropertiesByIDFromIncludes(removal)
+}
+
+func (r PropertyRules[T, P]) removePropertiesByIDFromIncludes(removal *propertyRemoval) PropertyRules[T, P] {
+	rules := make([]validationInterface[T], 0, len(r.rules))
+	for _, rule := range r.rules {
+		switch validator := rule.(type) {
+		case Validator[T]:
+			rule = validator.removePropertiesByID(removal)
+		case *Validator[T]:
+			if validator == nil {
+				break
+			}
+			filtered, ok := removal.copies[validator].(*Validator[T])
+			if !ok {
+				filtered = new(Validator[T])
+				// Register first so recursive includes reuse the filtered copy.
+				removal.copies[validator] = filtered
+				*filtered = validator.removePropertiesByID(removal)
+			}
+			rule = filtered
+		}
+		rules = append(rules, rule)
+	}
+	r.rules = rules
+	return r
 }
 
 // plan constructs a validation plan for the property.

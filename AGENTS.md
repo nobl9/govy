@@ -43,7 +43,7 @@ Report the exact failing command and error if verification cannot be completed.
 Do not substitute raw `go test ./...` or `golangci-lint run ./...` for final
 verification when a Makefile target exists.
 The targets include extra packages, build tags, formatting, generated-file,
-spelling, Markdown, and vulnerability checks.
+spelling, and Markdown checks.
 
 ### Code Generation
 
@@ -88,7 +88,8 @@ When adding a rule in `pkg/rules`:
 - Assign an exported error code from `pkg/rules/error_codes.go`.
 - Always use message templates from `internal/messagetemplates`.
 - Set a useful description with `WithDescription` so validation plans remain informative.
-- Add examples or details when they materially improve user-facing errors.
+- Use `WithExamples` or `WithDetails` when they materially improve
+  validation errors.
 - Add tests for success, failure message, and error-code behavior.
 
 When changing core validation behavior in `pkg/govy`, preserve the public error
@@ -109,12 +110,21 @@ Keep derived boundary cases in addition to, not instead of, the source corpus.
 If a source vector is intentionally excluded,
 enumerate the literal and explain why it falls outside the documented contract.
 
-For rules, keep table data close to the rule test and cover both passing and
-failing inputs.
+For each rule, default to one table-driven unit test and one benchmark.
+Keep table data close to the rule test and cover both passing and failing inputs.
+Use a shared case helper when inputs need setup.
+Reserve separate test functions for cases whose setup or assertions
+cannot fit clearly in the table.
 When expected output includes validation messages, assert the exact message
 unless the existing package uses a looser helper for that case.
 
-For user-facing examples, prefer Go testable examples.
+Add Go `Example...` functions for rules only when a complex rule needs extra
+usage guidance.
+The example must explain configuration, composition, or property interactions
+that the doc comment and test table do not make clear.
+For simple rules, use doc comments and table cases without an `Example...`
+function.
+Prefer Go testable examples for other user-facing documentation.
 Examples in `internal/examples` are embedded into `README.md`, so changes there
 must still pass `make test` and `make generate/readme`.
 
@@ -137,6 +147,16 @@ in new docs.
 
 When editing `README.md`, prefer changing tested source examples and
 regenerating embedded blocks.
+
+### Govy Skill
+
+Always update the [Govy skill](.agents/skills/govy/SKILL.md)
+when changing public APIs, validation behavior, or usage guidance.
+
+- Update affected references, examples, and evaluations in the same change.
+- Regenerate embedded content with `make generate/readme`.
+- Run affected [skill evaluations](.agents/skills/govy/evals/README.md).
+- Keep `SKILL.md` concise. Put detailed guidance in linked references.
 
 ## Pull Requests
 

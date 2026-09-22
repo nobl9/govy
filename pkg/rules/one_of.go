@@ -34,9 +34,9 @@ func OneOf[T comparable](values ...T) govy.Rule[T] {
 	}).
 		WithErrorCode(ErrorCodeOneOf).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: values,
-		})).
+		}).
 		WithPlanModifiers(govy.RulePlanModifierValidValues(values...)).
 		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 			converted, err := jsonSchemaValues(values)
@@ -69,9 +69,9 @@ func NotOneOf[T comparable](values ...T) govy.Rule[T] {
 	}).
 		WithErrorCode(ErrorCodeNotOneOf).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: values,
-		})).
+		}).
 		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 			converted, err := jsonSchemaValues(values)
 			if err != nil {
@@ -107,9 +107,9 @@ func OneOfProperties[T any](getters map[string]func(parent T) any) govy.Rule[T] 
 	}).
 		WithErrorCode(ErrorCodeOneOfProperties).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: sortedKeys,
-		})).
+		}).
 		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 			return &jsonschema.Schema{
 				AnyOf: jsonSchemaRequiredAlternatives(sortedKeys),

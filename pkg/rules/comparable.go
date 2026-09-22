@@ -29,9 +29,9 @@ func EQ[T comparable](compared T) govy.Rule[T] {
 	}).
 		WithErrorCode(ErrorCodeEqualTo).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: compared,
-		})).
+		}).
 		WithPlanModifiers(govy.RulePlanModifierValidValues(compared)).
 		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 			value, err := jsonSchemaValue(compared)
@@ -57,9 +57,9 @@ func NEQ[T comparable](compared T) govy.Rule[T] {
 	}).
 		WithErrorCode(ErrorCodeNotEqualTo).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: compared,
-		})).
+		}).
 		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 			value, err := jsonSchemaValue(compared)
 			if err != nil {
@@ -86,9 +86,9 @@ func GT[T cmp.Ordered](compared T) govy.Rule[T] {
 	}).
 		WithErrorCode(ErrorCodeGreaterThan).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: compared,
-		})).
+		}).
 		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 			if reflect.TypeOf(compared).Kind() == reflect.String {
 				return nil, nil
@@ -123,9 +123,9 @@ func GTE[T cmp.Ordered](compared T) govy.Rule[T] {
 	}).
 		WithErrorCode(ErrorCodeGreaterThanOrEqualTo).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: compared,
-		})).
+		}).
 		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 			if reflect.TypeOf(compared).Kind() == reflect.String {
 				return nil, nil
@@ -160,9 +160,9 @@ func LT[T cmp.Ordered](compared T) govy.Rule[T] {
 	}).
 		WithErrorCode(ErrorCodeLessThan).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: compared,
-		})).
+		}).
 		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 			if reflect.TypeOf(compared).Kind() == reflect.String {
 				return nil, nil
@@ -197,9 +197,9 @@ func LTE[T cmp.Ordered](compared T) govy.Rule[T] {
 	}).
 		WithErrorCode(ErrorCodeLessThanOrEqualTo).
 		WithMessageTemplate(tpl).
-		WithDescription(mustExecuteTemplate(tpl, govy.TemplateVars{
+		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: compared,
-		})).
+		}).
 		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 			if reflect.TypeOf(compared).Kind() == reflect.String {
 				return nil, nil
@@ -425,6 +425,8 @@ func isTemporal(v any) bool {
 	}
 }
 
+// GTComparableProperties ensures the first property's value is greater than the second property's value.
+// It works with types that implement [Comparable], such as [time.Time].
 func GTComparableProperties[T Comparable[T], P any](
 	firstName string,
 	firstGetter func(parent P) T,
@@ -452,6 +454,8 @@ func GTComparableProperties[T Comparable[T], P any](
 		WithDescription(fmt.Sprintf("'%s' must be greater than '%s'", firstName, secondName))
 }
 
+// GTEComparableProperties ensures the first property's value is greater than or equal to the second property's value.
+// It works with types that implement [Comparable], such as [time.Time].
 func GTEComparableProperties[T Comparable[T], P any](
 	firstName string,
 	firstGetter func(parent P) T,
@@ -479,6 +483,8 @@ func GTEComparableProperties[T Comparable[T], P any](
 		WithDescription(fmt.Sprintf("'%s' must be greater than or equal to '%s'", firstName, secondName))
 }
 
+// LTComparableProperties ensures the first property's value is less than the second property's value.
+// It works with types that implement [Comparable], such as [time.Time].
 func LTComparableProperties[T Comparable[T], P any](
 	firstName string,
 	firstGetter func(parent P) T,
@@ -506,6 +512,8 @@ func LTComparableProperties[T Comparable[T], P any](
 		WithDescription(fmt.Sprintf("'%s' must be less than '%s'", firstName, secondName))
 }
 
+// LTEComparableProperties ensures the first property's value is less than or equal to the second property's value.
+// It works with types that implement [Comparable], such as [time.Time].
 func LTEComparableProperties[T Comparable[T], P any](
 	firstName string,
 	firstGetter func(parent P) T,
