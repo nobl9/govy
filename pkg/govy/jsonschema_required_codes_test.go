@@ -6,6 +6,7 @@ import (
 	"github.com/nobl9/govy/internal/assert"
 	"github.com/nobl9/govy/internal/jsonschematest"
 	"github.com/nobl9/govy/pkg/govy"
+	"github.com/nobl9/govy/pkg/jsonschema"
 	"github.com/nobl9/govy/pkg/rules"
 )
 
@@ -19,6 +20,9 @@ func TestJSONSchema_RequiredErrorCodes(t *testing.T) {
 		"original": rules.Required[string](),
 		"replaced": rules.Required[string]().WithErrorCode("custom_required"),
 		"grouped":  govy.NewRuleSet(rules.Required[string]()).WithErrorCode("group"),
+		"custom presence marker": rules.StringMinLength(1).
+			WithPlanModifiers(govy.RulePlanModifierRequired()).
+			WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) { return nil, nil }),
 	} {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()

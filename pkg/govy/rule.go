@@ -245,6 +245,7 @@ func (r Rule[T]) WithJSONSchema(builder JSONSchemaBuilder) Rule[T] {
 type RulePlanModifier func(plan RulePlan) RulePlan
 
 // RulePlanModifierRequired marks a named property as required in JSON Schema.
+// The rule must also have a [Rule.WithJSONSchema] builder, which can return nil.
 // It does not change Go validation or the rule's error code.
 func RulePlanModifierRequired() RulePlanModifier {
 	return func(plan RulePlan) RulePlan {
