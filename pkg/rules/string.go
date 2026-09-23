@@ -68,7 +68,13 @@ func StringNotEmpty() govy.Rule[string] {
 
 // StringMatchRegexp ensures the property's value matches the regular expression.
 // The error message can be enhanced with examples of valid values.
+// JSON Schema generation rejects patterns with different Perl and POSIX meanings.
+// Use [govy.Rule.WithJSONSchema] to supply an explicit mapping for such patterns.
 func StringMatchRegexp(re *regexp.Regexp) govy.Rule[string] {
+	return stringMatchRegexp(re, jsonSchemaCompiledPattern(re.String()))
+}
+
+func stringMatchRegexp(re *regexp.Regexp, builder govy.JSONSchemaBuilder) govy.Rule[string] {
 	tpl := messagetemplates.Get(messagetemplates.StringMatchRegexpTemplate)
 
 	return govy.NewRule(func(s string) error {
@@ -85,11 +91,13 @@ func StringMatchRegexp(re *regexp.Regexp) govy.Rule[string] {
 		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: re.String(),
 		}).
-		WithJSONSchema(jsonSchemaPattern(re.String()))
+		WithJSONSchema(builder)
 }
 
 // StringDenyRegexp ensures the property's value does not match the regular expression.
 // The error message can be enhanced with examples of invalid values.
+// JSON Schema generation rejects patterns with different Perl and POSIX meanings.
+// Use [govy.Rule.WithJSONSchema] to supply an explicit mapping for such patterns.
 func StringDenyRegexp(re *regexp.Regexp) govy.Rule[string] {
 	tpl := messagetemplates.Get(messagetemplates.StringDenyRegexpTemplate)
 
@@ -107,13 +115,13 @@ func StringDenyRegexp(re *regexp.Regexp) govy.Rule[string] {
 		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: re.String(),
 		}).
-		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
-			pattern, err := ecmaregex.Translate(re.String())
+		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+			pattern, err := jsonSchemaCompiledPattern(re.String())(ctx)
 			if err != nil {
 				return nil, err
 			}
 			return &jsonschema.Schema{
-				Not: &jsonschema.Schema{Pattern: pattern},
+				Not: pattern,
 			}, nil
 		})
 }
@@ -124,7 +132,7 @@ func StringDenyRegexp(re *regexp.Regexp) govy.Rule[string] {
 func StringDNSLabel() govy.RuleSet[string] {
 	return govy.NewRuleSet(
 		StringLength(1, 63),
-		StringMatchRegexp(rfc1123DnsLabelRegexp()).
+		stringMatchRegexp(rfc1123DnsLabelRegexp(), jsonSchemaPattern(rfc1123DnsLabelRegexp().String())).
 			WithDetails("an RFC-1123 compliant label name must consist of lower case alphanumeric characters or '-',"+
 				" and must start and end with an alphanumeric character").
 			WithExamples("my-name", "123-abc"),
@@ -139,7 +147,7 @@ func StringDNSLabel() govy.RuleSet[string] {
 func StringDNSSubdomain() govy.RuleSet[string] {
 	return govy.NewRuleSet(
 		StringLength(1, 253),
-		StringMatchRegexp(rfc1123DnsSubdomainRegexp()).
+		stringMatchRegexp(rfc1123DnsSubdomainRegexp(), jsonSchemaPattern(rfc1123DnsSubdomainRegexp().String())).
 			WithDetails("an RFC-1123 compliant subdomain must consist of lower case alphanumeric characters, '-'"+
 				" or '.', and must start and end with an alphanumeric character").
 			WithExamples("example.com"),
@@ -728,7 +736,10 @@ func StringBICISO93622014() govy.Rule[string] {
 
 // StringASCII ensures property's value contains only ASCII characters.
 func StringASCII() govy.Rule[string] {
-	return StringMatchRegexp(asciiRegexp()).WithErrorCode(ErrorCodeStringASCII)
+	return stringMatchRegexp(
+		asciiRegexp(),
+		jsonSchemaPattern(asciiRegexp().String()),
+	).WithErrorCode(ErrorCodeStringASCII)
 }
 
 // StringJSON ensures property's value is a valid JSON literal.
@@ -1559,31 +1570,31 @@ func StringTimeZone() govy.Rule[string] {
 
 // StringAlpha ensures the property's value consists only of ASCII letters.
 func StringAlpha() govy.Rule[string] {
-	return StringMatchRegexp(alphaRegexp()).
+	return stringMatchRegexp(alphaRegexp(), jsonSchemaPattern(alphaRegexp().String())).
 		WithErrorCode(ErrorCodeStringAlpha)
 }
 
 // StringAlphanumeric ensures the property's value consists only of ASCII letters and numbers.
 func StringAlphanumeric() govy.Rule[string] {
-	return StringMatchRegexp(alphanumericRegexp()).
+	return stringMatchRegexp(alphanumericRegexp(), jsonSchemaPattern(alphanumericRegexp().String())).
 		WithErrorCode(ErrorCodeStringAlphanumeric)
 }
 
 // StringAlphaUnicode ensures the property's value consists only of Unicode letters.
 func StringAlphaUnicode() govy.Rule[string] {
-	return StringMatchRegexp(alphaUnicodeRegexp()).
+	return stringMatchRegexp(alphaUnicodeRegexp(), jsonSchemaPattern(alphaUnicodeRegexp().String())).
 		WithErrorCode(ErrorCodeStringAlphaUnicode)
 }
 
 // StringAlphanumericUnicode ensures the property's value consists only of Unicode letters and numbers.
 func StringAlphanumericUnicode() govy.Rule[string] {
-	return StringMatchRegexp(alphanumericUnicodeRegexp()).
+	return stringMatchRegexp(alphanumericUnicodeRegexp(), jsonSchemaPattern(alphanumericUnicodeRegexp().String())).
 		WithErrorCode(ErrorCodeStringAlphanumericUnicode)
 }
 
 // StringFQDN ensures the property's value is a fully qualified domain name (FQDN).
 func StringFQDN() govy.Rule[string] {
-	return StringMatchRegexp(fqdnRegexp()).
+	return stringMatchRegexp(fqdnRegexp(), jsonSchemaPattern(fqdnRegexp().String())).
 		WithErrorCode(ErrorCodeStringFQDN)
 }
 

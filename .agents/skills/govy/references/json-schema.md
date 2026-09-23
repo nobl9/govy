@@ -230,6 +230,10 @@ Do not promise equivalent Govy and JSON Schema validation:
   No omission record does not prove exact validation.
 - Format assertions depend on the JSON Schema consumer's configuration.
   Regex mappings group repeated assertions to preserve valid ECMA-262 syntax.
+- Compiled regular expressions do not expose their Perl or POSIX mode.
+  Patterns whose meanings differ between those modes need an explicit
+  `WithJSONSchema` mapping, or explicit Perl syntax such as `(?-m)` when applicable.
+  Generation returns an error for ambiguous patterns.
 
 When working in the Govy repository, inspect `JSONSchemaDifference` cases
 in `pkg/rules` and `pkg/govy` for documented validation differences.
