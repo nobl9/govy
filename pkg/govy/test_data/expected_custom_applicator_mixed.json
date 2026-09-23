@@ -3,19 +3,19 @@
   "type": "object",
   "allOf": [
     {
-      "additionalProperties": {
-        "not": {
-          "const": null
+      "properties": {
+        "name": {
+          "type": "string"
         }
+      },
+      "additionalProperties": {
+        "type": "integer"
       }
     }
   ],
-  "properties": {
-    "name": {
-      "type": "string"
-    }
-  },
   "additionalProperties": {
-    "type": "integer"
+    "not": {
+      "const": 1
+    }
   }
 }

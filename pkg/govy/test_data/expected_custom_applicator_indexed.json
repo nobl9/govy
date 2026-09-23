@@ -3,14 +3,15 @@
   "type": "array",
   "allOf": [
     {
-      "prefixItems": [
-        {
-          "type": "string"
-        }
-      ],
       "items": {
-        "type": "integer"
+        "minimum": 2
       }
+    }
+  ],
+  "prefixItems": [
+    {
+      "type": "integer",
+      "minimum": 1
     }
   ]
 }

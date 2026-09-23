@@ -3,14 +3,15 @@
   "type": "object",
   "allOf": [
     {
-      "properties": {
-        "name": {
-          "type": "string"
-        }
-      },
       "additionalProperties": {
-        "type": "integer"
+        "minimum": 2
       }
     }
-  ]
+  ],
+  "properties": {
+    "name": {
+      "type": "integer",
+      "minimum": 1
+    }
+  }
 }
