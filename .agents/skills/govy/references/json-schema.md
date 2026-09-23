@@ -58,6 +58,9 @@ The builder context exposes the selected value's absolute path and JSON type.
 It does not expose a mutable baseline schema.
 Return only the constraints owned by the rule.
 Govy merges non-conflicting keywords and uses `allOf` when keywords overlap.
+Custom `additionalProperties` applies only to unnamed properties.
+Custom `items` applies only after `prefixItems`.
+Govy normalizes its own wildcard paths without broadening these custom constraints.
 A builder that returns `nil, nil` contributes no constraint.
 
 [//]: # (embed: pkg/govy/jsonschema_example_test.go#ExampleRule_WithJSONSchema?comments=false)
