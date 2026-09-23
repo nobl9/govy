@@ -244,16 +244,6 @@ func (r Rule[T]) WithJSONSchema(builder JSONSchemaBuilder) Rule[T] {
 // RulePlanModifier allows modifying [RulePlan] calculated when calling [Plan].
 type RulePlanModifier func(plan RulePlan) RulePlan
 
-// RulePlanModifierRequired marks a named property as required in JSON Schema.
-// The rule must also have a [Rule.WithJSONSchema] builder, which can return nil.
-// It does not change Go validation or the rule's error code.
-func RulePlanModifierRequired() RulePlanModifier {
-	return func(plan RulePlan) RulePlan {
-		plan.jsonSchemaRequired = true
-		return plan
-	}
-}
-
 // RulePlanModifierValidValues adds valid values associated with the given [RulePlan].
 // These values are not directly availabile through [RulePlan], rather
 // they are aggregated and an intersection is calculated for [PropertyPlan].
@@ -277,7 +267,7 @@ func (r Rule[T]) plan(builder planBuilder) {
 	}
 	if builder.options.recordJSONSchema {
 		var reason string
-		required := rulePlan.jsonSchemaRequired
+		required := r.errorCode.Has(internal.RequiredErrorCode)
 		switch {
 		case builder.jsonSchemaTransformed && (builder.jsonSchemaOmitProperty || !required):
 			reason = "rule validates a transformed value"

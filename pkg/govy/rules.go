@@ -359,7 +359,6 @@ func (r PropertyRules[T, P]) plan(builder planBuilder) {
 		NewRule(func(v T) error { return nil }).
 			WithDescription(internal.RequiredDescription).
 			WithErrorCode(internal.RequiredErrorCode).
-			WithPlanModifiers(RulePlanModifierRequired()).
 			WithJSONSchema(func(JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 				return nil, nil
 			}).

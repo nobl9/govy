@@ -22,7 +22,6 @@ func Required[T any]() govy.Rule[T] {
 		WithErrorCode(ErrorCodeRequired).
 		WithMessageTemplate(tpl).
 		WithDescription(internal.RequiredDescription).
-		WithPlanModifiers(govy.RulePlanModifierRequired()).
 		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 			return nil, nil
 		})
