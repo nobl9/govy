@@ -99,8 +99,10 @@ type RulePlan struct {
 }
 
 func (r RulePlan) isEmpty(recordJSONSchema bool) bool {
-	return (r.Description == "" && r.Details == "" && r.ErrorCode == "") ||
-		(recordJSONSchema && len(r.jsonSchemaBuilders) == 0)
+	if recordJSONSchema {
+		return len(r.jsonSchemaBuilders) == 0
+	}
+	return r.Description == "" && r.Details == "" && r.ErrorCode == ""
 }
 
 func (r RulePlan) equal(r2 RulePlan) bool {
