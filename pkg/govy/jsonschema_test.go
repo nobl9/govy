@@ -2,6 +2,7 @@ package govy_test
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math"
 	"regexp"
@@ -153,6 +154,30 @@ func TestJSONSchema_BuilderContext(t *testing.T) {
 		assert.Equal(t, tc.Valid, validator.Validate(tc.Input) == nil)
 	}
 	jsonschematest.Assert(t, schema, "test_data/expected_builder_context_json_schema.json", cases)
+}
+
+func TestJSONSchema_UnlabelledBuilder(t *testing.T) {
+	t.Parallel()
+
+	rule := govy.NewRule(func(value int) error {
+		if value < 3 {
+			return fmt.Errorf("value must be at least 3")
+		}
+		return nil
+	}).WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+		return &jsonschema.Schema{Minimum: "3"}, nil
+	})
+	validator := govy.New(govy.For(govy.GetSelf[int]()).Rules(rule))
+	schema, err := govy.JSONSchema(validator, govy.JSONSchemaIncludeOmittedRules())
+	assert.Require(t, assert.NoError(t, err))
+	cases := []jsonschematest.Case[int]{
+		{Name: "below minimum", Input: 2},
+		{Name: "at minimum", Input: 3, Valid: true},
+	}
+	for _, tc := range cases {
+		assert.Equal(t, tc.Valid, validator.Validate(tc.Input) == nil)
+	}
+	jsonschematest.Assert(t, schema, "test_data/expected_unlabelled_builder_json_schema.json", cases)
 }
 
 func TestJSONSchema_When(t *testing.T) {
@@ -823,10 +848,24 @@ func TestJSONSchema_ZeroLengthLimits(t *testing.T) {
 func TestJSONSchema_RuleBuilderError(t *testing.T) {
 	t.Parallel()
 
+	builderError := errors.New("builder failed")
 	tests := map[string]struct {
 		validator     govy.Validator[struct{}]
 		expectedError string
+		expectedCause error
 	}{
+		"builder without descriptive metadata": {
+			validator: govy.New(
+				govy.For(func(struct{}) int { return 0 }).Rules(
+					govy.NewRule(func(int) error { return nil }).
+						WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+							return nil, builderError
+						}),
+				),
+			),
+			expectedError: `failed to build JSON Schema for "$" property and "" rule: builder failed`,
+			expectedCause: builderError,
+		},
 		"value without a JSON representation": {
 			validator: govy.New(
 				govy.For(func(struct{}) any { return nil }).
@@ -866,6 +905,9 @@ func TestJSONSchema_RuleBuilderError(t *testing.T) {
 				t.Run(name, func(t *testing.T) {
 					_, err := govy.JSONSchema(tc.validator, options...)
 					assert.EqualError(t, err, tc.expectedError)
+					if tc.expectedCause != nil {
+						assert.True(t, errors.Is(err, tc.expectedCause))
+					}
 				})
 			}
 		})
