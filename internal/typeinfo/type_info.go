@@ -72,16 +72,16 @@ func jsonKind(typ reflect.Type) reflect.Kind {
 	case reflect.TypeFor[time.Time]():
 		return reflect.String
 	}
-	if typ.Implements(reflect.TypeFor[json.Marshaler]()) {
+	// Pointer methods can change the encoding of addressable struct fields.
+	// The selected property's type alone does not establish addressability.
+	if typ.Implements(reflect.TypeFor[json.Marshaler]()) ||
+		reflect.PointerTo(typ).Implements(reflect.TypeFor[json.Marshaler]()) {
 		return reflect.Interface
 	}
 	if typ.Implements(reflect.TypeFor[encoding.TextMarshaler]()) {
 		return reflect.String
 	}
-	// Pointer methods can change the encoding of addressable struct fields.
-	// The selected property's type alone does not establish addressability.
-	if reflect.PointerTo(typ).Implements(reflect.TypeFor[json.Marshaler]()) ||
-		reflect.PointerTo(typ).Implements(reflect.TypeFor[encoding.TextMarshaler]()) {
+	if reflect.PointerTo(typ).Implements(reflect.TypeFor[encoding.TextMarshaler]()) {
 		return reflect.Interface
 	}
 	if base.Kind() == reflect.Slice && base.Elem().Kind() == reflect.Uint8 {

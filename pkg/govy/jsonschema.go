@@ -103,6 +103,10 @@ func JSONSchema[T any](v Validator[T], opts ...JSONSchemaOption) (*jsonschema.Do
 		if err != nil {
 			return nil, fmt.Errorf("failed to generate JSON Schema type info for %q property: %w", prop.Path, err)
 		}
+		if ctx.segment.Kind() == jsonpath.SegmentKeyWildcard && prop.TypeInfo.reflectKind == reflect.String {
+			// String-kind map keys use their underlying string, not their value encoder.
+			ctx.Type = jsonschema.TypeString
+		}
 		ctx.schema.Type = ctx.Type
 		scopeTypes[prop.Path.String()] = ctx.Type
 		ctx.scopeTypes = scopeTypes
