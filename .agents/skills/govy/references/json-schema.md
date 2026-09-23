@@ -203,6 +203,8 @@ func ExampleJSONSchemaIncludeOmittedRules() {
 Do not promise equivalent Govy and JSON Schema validation:
 
 - `Required` checks property presence in the schema, not Go zero values.
+  Changing a rule's error code or adding a RuleSet code preserves this constraint.
+  Custom presence rules can use `RulePlanModifierRequired` through `WithPlanModifiers`.
 - Optional pointers can be absent, but their schemas do not accept explicit `null`.
   Decoding either form into a zero-valued Go struct produces a nil pointer.
 - `Transform` preserves the input type and directly attached required constraints.
