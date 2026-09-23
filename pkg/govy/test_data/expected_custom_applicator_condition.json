@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": {
+          "type": "integer"
+        }
+      },
+      "then": {
+        "maxProperties": 2
+      }
+    }
+  ]
+}
