@@ -52,6 +52,8 @@ func ExampleJSONSchema() {
 
 Use `Rule.WithJSONSchema` to return an independent `*jsonschema.Schema`
 containing the rule's constraints.
+Descriptions, details, and error codes are optional for schema builders.
+Generation calls the builder and propagates its errors even without this metadata.
 The builder context exposes the selected value's absolute path and JSON type.
 It does not expose a mutable baseline schema.
 Return only the constraints owned by the rule.
