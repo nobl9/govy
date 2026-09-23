@@ -15,6 +15,9 @@ or existing path inference.
 Generation uses the validation plan, not struct-tag discovery.
 It does not include unvalidated fields or guarantee types for intermediate containers.
 Unsupported Go kinds and builder errors stop generation.
+Map key rules require string keys.
+Generation rejects numeric or structured key rules because JSON property names are strings.
+For these maps, attach an explicit schema to the whole map instead of its Go keys.
 
 [//]: # (embed: pkg/govy/jsonschema_example_test.go#ExampleJSONSchema?comments=false)
 
