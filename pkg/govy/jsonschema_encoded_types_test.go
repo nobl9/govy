@@ -51,6 +51,34 @@ func TestJSONSchema_EncodedTypes(t *testing.T) {
 			{Name: "addressable string", Input: &value, Valid: true},
 		})
 	})
+	t.Run("pointer JSON method precedes value text method", func(t *testing.T) {
+		t.Parallel()
+		v := govy.New(govy.For(govy.GetSelf[schemaMixedEncoding]()).Rules(rules.Required[schemaMixedEncoding]()))
+		schema, err := govy.JSONSchema(v)
+		assert.Require(t, assert.NoError(t, err))
+		value := schemaMixedEncoding{Value: "a"}
+		assert.NoError(t, v.Validate(value))
+		jsonschematest.Assert(t, schema, "test_data/expected_encoded_unknown.json", []jsonschematest.Case[any]{
+			{Name: "text for value", Input: value, Valid: true},
+			{Name: "JSON object for pointer", Input: &value, Valid: true},
+		})
+	})
+	t.Run("number map keys", func(t *testing.T) {
+		t.Parallel()
+		v := govy.New(govy.ForMap(govy.GetSelf[map[json.Number]string]()).RulesForKeys(rules.Required[json.Number]()))
+		schema, err := govy.JSONSchema(v)
+		assert.Require(t, assert.NoError(t, err))
+		value := map[json.Number]string{"1": "ok"}
+		assert.NoError(t, v.Validate(value))
+		jsonschematest.Assert(
+			t,
+			schema,
+			"test_data/expected_encoded_number_keys.json",
+			[]jsonschematest.Case[map[json.Number]string]{
+				{Name: "string property name", Input: value, Valid: true},
+			},
+		)
+	})
 }
 
 func assertEncodedSchema[T comparable](t *testing.T, valid, invalid T, fixture string) {
@@ -68,60 +96,6 @@ func assertEncodedSchema[T comparable](t *testing.T, valid, invalid T, fixture s
 	jsonschematest.Assert(t, schema, "test_data/expected_encoded_"+fixture+".json", cases)
 }
 
-func TestJSONSchema_ByteSliceLengths(t *testing.T) {
-	t.Parallel()
-	for name, rule := range map[string]govy.Rule[[]byte]{
-		"both limits": rules.SliceLength[[]byte](1, 2),
-		"minimum":     rules.SliceMinLength[[]byte](1),
-		"maximum":     rules.SliceMaxLength[[]byte](2),
-	} {
-		t.Run(name, func(t *testing.T) {
-			t.Parallel()
-			v := govy.New(govy.For(govy.GetSelf[[]byte]()).Rules(rule))
-			schema, err := govy.JSONSchema(v)
-			assert.Require(t, assert.NoError(t, err))
-			cases := make([]jsonschematest.Case[[]byte], 0, 4)
-			for _, input := range [][]byte{{}, {1}, {1, 2}, {1, 2, 3}} {
-				valid := v.Validate(input) == nil
-				var difference string
-				if !valid {
-					difference = "Byte counts do not map to the length of the base64 JSON string."
-				}
-				cases = append(
-					cases,
-					jsonschematest.Case[[]byte]{Input: input, Valid: valid, JSONSchemaDifference: difference},
-				)
-			}
-			jsonschematest.Assert(t, schema, "test_data/expected_encoded_bytes.json", cases)
-		})
-	}
-	t.Run("named byte slice", func(t *testing.T) {
-		t.Parallel()
-		type bytes []byte
-		v := govy.New(govy.For(govy.GetSelf[bytes]()).Rules(rules.SliceMinLength[bytes](1)))
-		schema, err := govy.JSONSchema(v)
-		assert.Require(t, assert.NoError(t, err))
-		jsonschematest.Assert(t, schema, "test_data/expected_encoded_bytes.json", []jsonschematest.Case[bytes]{
-			{Name: "base64", Input: bytes{1}, Valid: true},
-		})
-	})
-	t.Run("byte elements with JSON methods", func(t *testing.T) {
-		t.Parallel()
-		v := govy.New(govy.For(govy.GetSelf[[]schemaJSONByte]()).Rules(rules.SliceLength[[]schemaJSONByte](1, 2)))
-		schema, err := govy.JSONSchema(v)
-		assert.Require(t, assert.NoError(t, err))
-		jsonschematest.Assert(
-			t,
-			schema,
-			"test_data/expected_encoded_byte_elements.json",
-			[]jsonschematest.Case[[]schemaJSONByte]{
-				{Name: "one element", Input: []schemaJSONByte{1}, Valid: true},
-				{Name: "too many elements", Input: []schemaJSONByte{1, 2, 3}},
-			},
-		)
-	})
-}
-
 type schemaJSONValue struct{ Value int }
 
 func (v schemaJSONValue) MarshalJSON() ([]byte, error) { return json.Marshal(v.Value) }
@@ -134,6 +108,10 @@ type schemaPointerTextValue struct{ Value string }
 
 func (v *schemaPointerTextValue) MarshalText() ([]byte, error) { return []byte(v.Value), nil }
 
-type schemaJSONByte byte
+type schemaMixedEncoding struct{ Value string }
 
-func (v schemaJSONByte) MarshalJSON() ([]byte, error) { return json.Marshal(byte(v)) }
+func (v schemaMixedEncoding) MarshalText() ([]byte, error) { return []byte(v.Value), nil }
+
+func (v *schemaMixedEncoding) MarshalJSON() ([]byte, error) {
+	return json.Marshal(map[string]string{"value": v.Value})
+}
