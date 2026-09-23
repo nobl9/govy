@@ -105,6 +105,12 @@ func JSONSchema[T any](v Validator[T], opts ...JSONSchemaOption) (*jsonschema.Do
 		ctx.schema.Type = ctx.Type
 		scopeTypes[prop.Path.String()] = ctx.Type
 		ctx.scopeTypes = scopeTypes
+		if ctx.segment.Kind() == jsonpath.SegmentKeyWildcard && prop.TypeInfo.reflectKind != reflect.String {
+			return nil, fmt.Errorf(
+				"cannot generate JSON Schema for %q property: map key rules require string keys, got Go kind %q",
+				prop.Path, prop.TypeInfo.reflectKind,
+			)
+		}
 		for _, rule := range prop.Rules {
 			for _, builder := range rule.jsonSchemaBuilders {
 				if err = builder.Build(ctx); err != nil {
