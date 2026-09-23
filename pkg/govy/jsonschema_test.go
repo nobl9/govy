@@ -592,7 +592,7 @@ func TestJSONSchema_RuleComposition(t *testing.T) {
 		govy.For(func(v document) string { return v.Text }).WithName("text").Rules(
 			rules.StringStartsWith("pre"),
 			rules.StringEndsWith("post"),
-			rules.StringMatchRegexp(regexp.MustCompile("^[a-z]+$")),
+			rules.StringMatchRegexp(regexp.MustCompile("(?-m)^[a-z]+$")),
 		),
 		govy.For(func(v document) int { return v.Count }).WithName("count").Rules(
 			rules.GTE(2), rules.GTE(5), rules.LTE(10), rules.LTE(8),
