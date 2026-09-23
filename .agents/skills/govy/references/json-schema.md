@@ -229,6 +229,7 @@ Do not promise equivalent Govy and JSON Schema validation:
 - Some rules have only approximate mappings, annotations, or no mapping.
   No omission record does not prove exact validation.
 - Format assertions depend on the JSON Schema consumer's configuration.
+  Regex mappings group repeated assertions to preserve valid ECMA-262 syntax.
 
 When working in the Govy repository, inspect `JSONSchemaDifference` cases
 in `pkg/rules` and `pkg/govy` for documented validation differences.
