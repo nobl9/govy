@@ -1,6 +1,7 @@
 package rules
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -177,6 +178,74 @@ func TestSliceLength_JSONSchema(t *testing.T) {
 	t.Parallel()
 	assertLengthJSONSchema(t, "slice_length", SliceLength[[]string], sliceLengthTestCases)
 }
+
+func TestSliceLength_JSONSchema_EncodedBytes(t *testing.T) {
+	t.Parallel()
+	for _, tt := range []struct {
+		name  string
+		rule  govy.Rule[[]byte]
+		valid [4]bool
+	}{
+		{name: "both limits", rule: SliceLength[[]byte](1, 2), valid: [4]bool{false, true, true, false}},
+		{name: "minimum", rule: SliceMinLength[[]byte](1), valid: [4]bool{false, true, true, true}},
+		{name: "maximum", rule: SliceMaxLength[[]byte](2), valid: [4]bool{true, true, true, false}},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			v := govy.New(govy.For(govy.GetSelf[[]byte]()).Rules(tt.rule))
+			schema, err := govy.JSONSchema(v)
+			assert.Require(t, assert.NoError(t, err))
+			cases := make([]jsonschematest.Case[[]byte], 0, 4)
+			for i, input := range [][]byte{{}, {1}, {1, 2}, {1, 2, 3}} {
+				valid := tt.valid[i]
+				assert.Equal(t, valid, v.Validate(input) == nil)
+				var difference string
+				if !valid {
+					difference = "Byte counts do not map to the length of the base64 JSON string."
+				}
+				cases = append(
+					cases,
+					jsonschematest.Case[[]byte]{Input: input, Valid: valid, JSONSchemaDifference: difference},
+				)
+			}
+			jsonschematest.Assert(t, schema, "testdata/jsonschema/expected_encoded_bytes.json", cases)
+		})
+	}
+	t.Run("named byte slice", func(t *testing.T) {
+		t.Parallel()
+		type bytes []byte
+		v := govy.New(govy.For(govy.GetSelf[bytes]()).Rules(SliceMinLength[bytes](1)))
+		schema, err := govy.JSONSchema(v)
+		assert.Require(t, assert.NoError(t, err))
+		jsonschematest.Assert(
+			t,
+			schema,
+			"testdata/jsonschema/expected_encoded_bytes.json",
+			[]jsonschematest.Case[bytes]{
+				{Name: "base64", Input: bytes{1}, Valid: true},
+			},
+		)
+	})
+	t.Run("byte elements with JSON methods", func(t *testing.T) {
+		t.Parallel()
+		v := govy.New(govy.For(govy.GetSelf[[]schemaJSONByte]()).Rules(SliceLength[[]schemaJSONByte](1, 2)))
+		schema, err := govy.JSONSchema(v)
+		assert.Require(t, assert.NoError(t, err))
+		jsonschematest.Assert(
+			t,
+			schema,
+			"testdata/jsonschema/expected_encoded_byte_elements.json",
+			[]jsonschematest.Case[[]schemaJSONByte]{
+				{Name: "one element", Input: []schemaJSONByte{1}, Valid: true},
+				{Name: "too many elements", Input: []schemaJSONByte{1, 2, 3}},
+			},
+		)
+	})
+}
+
+type schemaJSONByte byte
+
+func (v schemaJSONByte) MarshalJSON() ([]byte, error) { return json.Marshal(byte(v)) }
 
 func BenchmarkSliceLength(b *testing.B) {
 	for _, tc := range sliceLengthTestCases {

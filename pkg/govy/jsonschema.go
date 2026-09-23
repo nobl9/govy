@@ -16,7 +16,8 @@ type JSONSchemaBuilderContext struct {
 	// Path is the absolute JSON path of the selected value.
 	Path jsonpath.Path
 	// Type is the JSON type of the selected value. It is empty when the
-	// validation plan has no type information for the selected path.
+	// validation plan has no type information for the selected path or its
+	// custom JSON encoding has an unknown type.
 	Type jsonschema.Type
 }
 
@@ -101,6 +102,10 @@ func JSONSchema[T any](v Validator[T], opts ...JSONSchemaOption) (*jsonschema.Do
 		ctx.Type, err = jsonSchemaTypeFromTypeInfo(prop.TypeInfo)
 		if err != nil {
 			return nil, fmt.Errorf("failed to generate JSON Schema type info for %q property: %w", prop.Path, err)
+		}
+		if ctx.segment.Kind() == jsonpath.SegmentKeyWildcard && prop.TypeInfo.reflectKind == reflect.String {
+			// String-kind map keys use their underlying string, not their value encoder.
+			ctx.Type = jsonschema.TypeString
 		}
 		ctx.schema.Type = ctx.Type
 		scopeTypes[prop.Path.String()] = ctx.Type
@@ -412,7 +417,11 @@ func getJSONSchemaForSegment(
 }
 
 func jsonSchemaTypeFromTypeInfo(info TypeInfo) (jsonschema.Type, error) {
-	switch info.reflectKind {
+	kind := info.reflectKind
+	if info.jsonKind != reflect.Invalid {
+		kind = info.jsonKind
+	}
+	switch kind {
 	case reflect.Invalid, reflect.Interface, reflect.Pointer:
 		return "", nil
 	case reflect.Bool:
