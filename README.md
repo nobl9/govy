@@ -36,8 +36,9 @@ for upcoming, planned features.
     6. [Predefined rules](#predefined-rules)
     7. [Custom rules](#custom-rules)
     8. [Validation plan](#validation-plan)
-    9. [Properties path inference](#properties-path-inference)
-    10. [Testing helpers](#testing-helpers)
+    9. [JSON Schema (experimental)](#json-schema-experimental)
+    10. [Properties path inference](#properties-path-inference)
+    11. [Testing helpers](#testing-helpers)
 4. [Rationale](#rationale)
     1. [Reflection](#reflection)
     2. [Trivia](#trivia)
@@ -690,6 +691,97 @@ func Example_validationPlan() {
 	// }
 }
 ```
+
+### JSON Schema (experimental)
+
+**Experimental:** the JSON Schema API and generated output can change in future
+releases.
+
+Generate a Draft 2020-12 schema from the same validator you use for Go values.
+The schema is an approximation, not a replacement for Govy validation.
+Generation needs no Node.js or Ajv dependency.
+Use property paths that match your JSON document.
+Generation does not discover struct tags.
+
+[//]: # (embed: pkg/govy/jsonschema_example_test.go#ExampleJSONSchema)
+
+```go
+func ExampleJSONSchema() {
+	type Service struct {
+		Name     string `json:"name"`
+		Replicas int    `json:"replicas"`
+	}
+	v := govy.New(
+		govy.For(func(s Service) string { return s.Name }).
+			WithName("name").
+			Required().
+			Rules(rules.StringMinLength(1)),
+		govy.For(func(s Service) int { return s.Replicas }).
+			WithName("replicas").
+			Rules(rules.GTE(1)),
+	).WithName("Service")
+
+	schema, err := govy.JSONSchema(v)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	data, err := json.MarshalIndent(schema, "", "  ")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(string(data))
+
+	// Output:
+	// {
+	//   "$schema": "https://json-schema.org/draft/2020-12/schema",
+	//   "title": "Service",
+	//   "type": "object",
+	//   "properties": {
+	//     "name": {
+	//       "type": "string",
+	//       "minLength": 1
+	//     },
+	//     "replicas": {
+	//       "type": "integer",
+	//       "minimum": 1
+	//     }
+	//   },
+	//   "required": [
+	//     "name"
+	//   ]
+	// }
+}
+```
+
+Custom rules can return their constraints through `Rule.WithJSONSchema`.
+Govy combines the contributions and handles `allOf` when keywords overlap.
+Use `govy.WhenJSONSchema` to map Go predicates to schema conditions.
+Without a condition mapping, Govy omits the guarded rules from the schema.
+See the [runnable examples](pkg/govy/jsonschema_example_test.go) for both APIs.
+
+Pass `govy.JSONSchemaIncludeOmittedRules()` to include `x-govy-omittedRules`
+on the document root.
+This annotation reports missing rule or condition builders
+and constraints on transformed values.
+It does not report approximate mappings or change schema validation.
+An executed builder that returns `nil` also produces no omission record.
+Strict Ajv consumers must register this annotation with
+`ajv.addKeyword("x-govy-omittedRules")` before compiling the schema.
+
+Keep these differences in mind:
+
+- Only recorded validation paths contribute structure.
+- `Required` checks property presence, not Go zero values.
+  Optional pointers can be absent, but their schemas reject explicit `null`.
+- `Transform` preserves the input type and directly attached required constraints.
+  It omits constraints and included structure for the transformed value.
+- Format assertions depend on the consumer's configuration.
+  Content keywords are annotations, not checks of decoded content.
+
+The [rule tests](pkg/rules) and [generation tests](pkg/govy/jsonschema_test.go)
+record rule-specific differences in `JSONSchemaDifference` fields.
 
 ### Properties path inference
 

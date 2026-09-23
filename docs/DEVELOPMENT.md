@@ -128,8 +128,15 @@ in `pkg/rules/testdata/jsonschema`.
 The helper also validates the inputs with Ajv.
 Keep shared helpers and cross-rule schema cases in the matching rule test file.
 Do not add separate `*_jsonschema_test.go` files.
-See [JSON Schema testing](JSON_SCHEMA.md#5-verify-complete-schema-documents)
-for runner behavior and expected differences.
+
+A nonempty `JSONSchemaDifference` requires the schema result to differ from Govy.
+It does not skip the case.
+Both unexpected agreement and unexpected disagreement fail the test.
+Devbox supplies Ajv and `ajv-formats` for Draft 2020-12 validation
+with format assertions enabled in full mode.
+Content keywords remain annotations.
+See the [runner configuration](../internal/jsonschematest/testdata/validate.cjs)
+for its strictness settings.
 
 Every exported predefined rule must have a standard test and benchmark.
 The presence check in [`pkg/rules/rules_test.go`](../pkg/rules/rules_test.go)

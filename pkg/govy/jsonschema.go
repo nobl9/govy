@@ -57,11 +57,13 @@ func JSONSchemaIncludeOmittedRules() JSONSchemaOption {
 }
 
 // JSONSchema creates a JSON Schema document for the provided [Validator].
-// It uses exclusively [Draft 2020-12] version.
+// It uses [Draft 2020-12].
 // It returns an error for Go kinds without a default JSON representation.
 // For [Transform], it preserves the input type and directly attached required constraints,
 // but omits other rules and properties of the transformed value.
 // Omitted rules are not reported unless [JSONSchemaIncludeOmittedRules] is provided.
+//
+// The schema approximates Govy validation and does not replace [Validator.Validate].
 //
 // [Draft 2020-12]: https://json-schema.org/draft/2020-12/schema
 func JSONSchema[T any](v Validator[T], opts ...JSONSchemaOption) (*jsonschema.Document, error) {
