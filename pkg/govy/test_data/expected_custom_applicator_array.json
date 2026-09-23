@@ -1,12 +1,16 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "array",
-  "prefixItems": [
+  "allOf": [
     {
-      "type": "string"
+      "prefixItems": [
+        {
+          "type": "string"
+        }
+      ],
+      "items": {
+        "type": "integer"
+      }
     }
-  ],
-  "items": {
-    "type": "integer"
-  }
+  ]
 }

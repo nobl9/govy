@@ -60,7 +60,8 @@ Return only the constraints owned by the rule.
 Govy merges non-conflicting keywords and uses `allOf` when keywords overlap.
 Custom `additionalProperties` applies only to unnamed properties.
 Custom `items` applies only after `prefixItems`.
-Govy normalizes its own wildcard paths without broadening these custom constraints.
+Govy keeps custom child applicators in separate `allOf` branches,
+so generated paths cannot change their scope.
 A builder that returns `nil, nil` contributes no constraint.
 
 [//]: # (embed: pkg/govy/jsonschema_example_test.go#ExampleRule_WithJSONSchema?comments=false)

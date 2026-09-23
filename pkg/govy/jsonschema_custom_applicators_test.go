@@ -7,6 +7,7 @@ import (
 	"github.com/nobl9/govy/internal/assert"
 	"github.com/nobl9/govy/internal/jsonschematest"
 	"github.com/nobl9/govy/pkg/govy"
+	"github.com/nobl9/govy/pkg/jsonpath"
 	"github.com/nobl9/govy/pkg/jsonschema"
 	"github.com/nobl9/govy/pkg/rules"
 )
@@ -67,11 +68,12 @@ func TestJSONSchema_CustomObjectApplicators(t *testing.T) {
 			name: "custom and generated wildcards",
 			validator: govy.New(
 				govy.For(govy.GetSelf[map[string]any]()).Rules(rule),
-				govy.ForMap(govy.GetSelf[map[string]any]()).RulesForValues(rules.NEQ[any](nil)),
+				govy.ForMap(govy.GetSelf[map[string]any]()).RulesForValues(rules.NEQ[any](1)),
 			),
 			fixture: "mixed",
 			cases: []jsonschematest.Case[map[string]any]{
-				{Name: "named string remains valid", Input: map[string]any{"name": "ok", "extra": 1}, Valid: true},
+				{Name: "named string remains valid", Input: map[string]any{"name": "ok", "extra": 2}, Valid: true},
+				{Name: "wildcard rejects integer", Input: map[string]any{"name": "ok", "extra": 1}},
 				{Name: "invalid extra", Input: map[string]any{"name": "ok", "extra": "wrong"}},
 			},
 		},
@@ -121,4 +123,66 @@ func TestJSONSchema_CustomArrayApplicators(t *testing.T) {
 		assert.Equal(t, tc.Valid, validator.Validate(tc.Input) == nil)
 	}
 	jsonschematest.Assert(t, schema, "test_data/expected_custom_applicator_array.json", cases)
+}
+
+func TestJSONSchema_CustomApplicatorsWithExplicitPaths(t *testing.T) {
+	t.Parallel()
+	t.Run("named property", func(t *testing.T) {
+		t.Parallel()
+		rule := govy.NewRule(func(value map[string]int) error {
+			for _, item := range value {
+				if item < 2 {
+					return fmt.Errorf("all values must be at least 2")
+				}
+			}
+			return nil
+		}).WithDescription("minimum for all values").
+			WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+				return &jsonschema.Schema{AdditionalProperties: &jsonschema.Schema{Minimum: "2"}}, nil
+			})
+		v := govy.New(
+			govy.For(govy.GetSelf[map[string]int]()).Rules(rule),
+			govy.For(func(value map[string]int) int { return value["name"] }).WithName("name").Rules(rules.GTE(1)),
+		)
+		schema, err := govy.JSONSchema(v)
+		assert.Require(t, assert.NoError(t, err))
+		cases := []jsonschematest.Case[map[string]int]{
+			{Name: "both constraints pass", Input: map[string]int{"name": 2, "extra": 2}, Valid: true},
+			{Name: "custom rule rejects named value", Input: map[string]int{"name": 1, "extra": 2}},
+			{Name: "custom rule rejects extra value", Input: map[string]int{"name": 2, "extra": 1}},
+		}
+		for _, tc := range cases {
+			assert.Equal(t, tc.Valid, v.Validate(tc.Input) == nil)
+		}
+		jsonschematest.Assert(t, schema, "test_data/expected_custom_applicator_named.json", cases)
+	})
+	t.Run("indexed item", func(t *testing.T) {
+		t.Parallel()
+		rule := govy.NewRule(func(value []int) error {
+			for _, item := range value {
+				if item < 2 {
+					return fmt.Errorf("all items must be at least 2")
+				}
+			}
+			return nil
+		}).WithDescription("minimum for all items").
+			WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+				return &jsonschema.Schema{Items: &jsonschema.Schema{Minimum: "2"}}, nil
+			})
+		v := govy.New(
+			govy.For(govy.GetSelf[[]int]()).Rules(rule),
+			govy.For(func(value []int) int { return value[0] }).WithPath(jsonpath.New().Index(0)).Rules(rules.GTE(1)),
+		)
+		schema, err := govy.JSONSchema(v)
+		assert.Require(t, assert.NoError(t, err))
+		cases := []jsonschematest.Case[[]int]{
+			{Name: "both constraints pass", Input: []int{2, 2}, Valid: true},
+			{Name: "custom rule rejects indexed value", Input: []int{1, 2}},
+			{Name: "custom rule rejects remaining value", Input: []int{2, 1}},
+		}
+		for _, tc := range cases {
+			assert.Equal(t, tc.Valid, v.Validate(tc.Input) == nil)
+		}
+		jsonschematest.Assert(t, schema, "test_data/expected_custom_applicator_indexed.json", cases)
+	})
 }

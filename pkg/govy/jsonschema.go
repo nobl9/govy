@@ -259,6 +259,13 @@ func mergeJSONSchemaContribution(target, contribution *jsonschema.Schema) {
 	if contribution == nil || isEmptyJSONSchemaValue(reflect.ValueOf(*contribution)) {
 		return
 	}
+	// Child applicators share a lexical scope with properties and prefixItems.
+	// Keep custom scopes separate from paths added by the validation plan.
+	if contribution.Items != nil || contribution.AdditionalProperties != nil ||
+		len(contribution.Properties) > 0 || len(contribution.PrefixItems) > 0 {
+		target.AllOf = append(target.AllOf, contribution)
+		return
+	}
 	targetValue := reflect.ValueOf(target).Elem()
 	contributionValue := reflect.ValueOf(contribution).Elem()
 	for i := range contributionValue.NumField() {
@@ -372,38 +379,20 @@ func getJSONSchemaForSegment(
 		}
 		return schema.PrefixItems[idx]
 	case jsonpath.SegmentIndexWildcard, jsonpath.SegmentUnknownIndex:
-		if _, generated := wildcards[schema.Items]; generated {
+		if schema.Items != nil {
 			return schema.Items
 		}
-		for _, branch := range schema.AllOf {
-			if _, generated := wildcards[branch.Items]; generated {
-				return branch.Items
-			}
-		}
 		newSchema := new(jsonschema.Schema)
 		wildcards[newSchema] = struct{}{}
-		if schema.Items == nil {
-			schema.Items = newSchema
-		} else {
-			schema.AllOf = append(schema.AllOf, &jsonschema.Schema{Items: newSchema})
-		}
+		schema.Items = newSchema
 		return newSchema
 	case jsonpath.SegmentValueWildcard:
-		if _, generated := wildcards[schema.AdditionalProperties]; generated {
+		if schema.AdditionalProperties != nil {
 			return schema.AdditionalProperties
-		}
-		for _, branch := range schema.AllOf {
-			if _, generated := wildcards[branch.AdditionalProperties]; generated {
-				return branch.AdditionalProperties
-			}
 		}
 		newSchema := new(jsonschema.Schema)
 		wildcards[newSchema] = struct{}{}
-		if schema.AdditionalProperties == nil {
-			schema.AdditionalProperties = newSchema
-		} else {
-			schema.AllOf = append(schema.AllOf, &jsonschema.Schema{AdditionalProperties: newSchema})
-		}
+		schema.AdditionalProperties = newSchema
 		return newSchema
 	case jsonpath.SegmentKeyWildcard:
 		if schema.PropertyNames != nil {
