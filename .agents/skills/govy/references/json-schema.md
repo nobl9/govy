@@ -14,6 +14,13 @@ Use the consumer's JSON property paths through `WithName`, `WithPath`,
 or existing path inference.
 Generation uses the validation plan, not struct-tag discovery.
 It does not include unvalidated fields or guarantee types for intermediate containers.
+Type inference follows standard JSON encodings for `json.Number`, `time.Time`,
+byte slices, and text marshalers.
+Custom JSON marshalers have no inferred type because their output can depend on the value.
+Types with only pointer marshaling methods can also have an unknown type
+when the selected value's addressability is not known.
+Slice length rules contribute bounds only for JSON arrays.
+They do not constrain the length of base64 strings produced from byte slices.
 Unsupported Go kinds and builder errors stop generation.
 Map key rules require string keys.
 Generation rejects numeric or structured key rules because JSON property names are strings.
