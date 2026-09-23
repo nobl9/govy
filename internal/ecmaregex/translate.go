@@ -138,6 +138,9 @@ func regexpPrecedence(re *syntax.Regexp) precedence {
 		return precedenceAtom
 	case syntax.OpStar, syntax.OpPlus, syntax.OpQuest, syntax.OpRepeat:
 		return precedenceRepeat
+	case syntax.OpBeginText, syntax.OpEndText, syntax.OpWordBoundary, syntax.OpNoWordBoundary:
+		// ECMAScript assertions need a group before a quantifier.
+		return precedenceRepeat
 	default:
 		return precedenceAtom
 	}
