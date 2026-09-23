@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"reflect"
 	"regexp"
+	"regexp/syntax"
 	"strings"
 
 	"github.com/nobl9/govy/internal/collections"
@@ -81,6 +82,25 @@ func jsonSchemaPattern(pattern string) govy.JSONSchemaBuilder {
 			return nil, fmt.Errorf("translate Go regular expression %q: %w", pattern, err)
 		}
 		return &jsonschema.Schema{Pattern: translated}, nil
+	}
+}
+
+func jsonSchemaCompiledPattern(pattern string) govy.JSONSchemaBuilder {
+	return func(ctx govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+		perl, err := syntax.Parse(pattern, syntax.Perl)
+		if err != nil {
+			return nil, fmt.Errorf("parse Go regular expression %q: %w", pattern, err)
+		}
+		// Regexp.String does not preserve the compilation mode. Only translate
+		// patterns whose meaning is independent of that missing information.
+		posix, err := syntax.Parse(pattern, syntax.POSIX)
+		if err == nil && !perl.Equal(posix) {
+			return nil, fmt.Errorf(
+				"regular expression %q has different Perl and POSIX meanings; provide an explicit WithJSONSchema mapping",
+				pattern,
+			)
+		}
+		return jsonSchemaPattern(pattern)(ctx)
 	}
 }
 
