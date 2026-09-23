@@ -123,7 +123,10 @@ func SliceLength[S ~[]E, E any](minLen, maxLen int) govy.Rule[S] {
 			MinLength: minLen,
 			MaxLength: maxLen,
 		}).
-		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+			if ctx.Type != jsonschema.TypeArray {
+				return nil, nil
+			}
 			return &jsonschema.Schema{
 				MinItems: ptr(schemaMinLen),
 				MaxItems: ptr(schemaMaxLen),
@@ -152,7 +155,10 @@ func SliceMinLength[S ~[]E, E any](limit int) govy.Rule[S] {
 		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: limit,
 		}).
-		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+			if ctx.Type != jsonschema.TypeArray {
+				return nil, nil
+			}
 			return &jsonschema.Schema{MinItems: ptr(schemaLimit)}, nil
 		})
 }
@@ -178,7 +184,10 @@ func SliceMaxLength[S ~[]E, E any](limit int) govy.Rule[S] {
 		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: limit,
 		}).
-		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+			if ctx.Type != jsonschema.TypeArray {
+				return nil, nil
+			}
 			return &jsonschema.Schema{MaxItems: ptr(schemaLimit)}, nil
 		})
 }

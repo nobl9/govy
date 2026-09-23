@@ -72,6 +72,7 @@ type TypeInfo struct {
 
 	// reflectKind preserves the original, dereferenced [reflect.Kind] of the type.
 	reflectKind reflect.Kind
+	jsonKind    reflect.Kind
 }
 
 // RulePlan is a validation plan for a single [Rule].
@@ -360,6 +361,7 @@ func typeInfoFromInternal(info typeinfo.TypeInfo) TypeInfo {
 		Kind:        info.Kind,
 		Package:     info.Package,
 		reflectKind: info.ReflectKind,
+		jsonKind:    info.JSONKind,
 	}
 }
 
