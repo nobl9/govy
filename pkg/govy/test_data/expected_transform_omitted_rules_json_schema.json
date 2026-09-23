@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "enabled": {
+            "const": true
+          }
+        },
+        "required": [
+          "enabled"
+        ]
+      },
+      "then": {
+        "properties": {
+          "conditional": {}
+        },
+        "required": [
+          "conditional"
+        ]
+      }
+    }
+  ],
+  "properties": {
+    "array": {
+      "type": "array"
+    },
+    "conditional": {
+      "type": "string"
+    },
+    "normalized": {
+      "type": "string"
+    },
+    "number": {
+      "type": "string"
+    },
+    "plain": {
+      "type": "integer",
+      "const": 12
+    },
+    "requiredProperty": {
+      "type": "string"
+    },
+    "requiredRule": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "requiredProperty",
+    "requiredRule"
+  ],
+  "x-govy-omittedRules": [
+    {
+      "path": "$.array",
+      "rule": "greater_than",
+      "reason": "rule validates a transformed value"
+    },
+    {
+      "path": "$.conditional",
+      "rule": "equal_to",
+      "reason": "rule validates a transformed value"
+    },
+    {
+      "path": "$.normalized",
+      "rule": "equal_to",
+      "reason": "rule validates a transformed value"
+    },
+    {
+      "path": "$.number",
+      "rule": "equal_to",
+      "reason": "rule validates a transformed value"
+    },
+    {
+      "path": "$.number",
+      "rule": "greater_than_or_equal_to",
+      "reason": "rule validates a transformed value"
+    },
+    {
+      "path": "$.requiredProperty",
+      "rule": "equal_to",
+      "reason": "rule validates a transformed value"
+    },
+    {
+      "path": "$.requiredRule",
+      "rule": "equal_to",
+      "reason": "rule validates a transformed value"
+    }
+  ]
+}

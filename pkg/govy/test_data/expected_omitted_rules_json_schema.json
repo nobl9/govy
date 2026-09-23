@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "anonymous": {
+      "type": "string"
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "properties": {
+          "value": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "labels": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "propertyNames": {
+        "type": "string"
+      }
+    },
+    "mixed": {
+      "type": "string",
+      "pattern": "mapped"
+    },
+    "nested": {
+      "properties": {
+        "value": {
+          "type": "string"
+        }
+      }
+    },
+    "timezone": {
+      "type": "string"
+    }
+  },
+  "x-govy-omittedRules": [
+    {
+      "path": "$",
+      "rule": "root",
+      "reason": "missing JSON Schema builder"
+    },
+    {
+      "path": "$.anonymous",
+      "reason": "missing JSON Schema builder"
+    },
+    {
+      "path": "$.timezone",
+      "rule": "string_time_zone",
+      "reason": "missing JSON Schema builder"
+    },
+    {
+      "path": "$.mixed",
+      "rule": "custom",
+      "reason": "missing JSON Schema builder"
+    },
+    {
+      "path": "$.mixed",
+      "rule": "custom",
+      "reason": "missing JSON Schema builder"
+    },
+    {
+      "path": "$.items[*].value",
+      "rule": "custom",
+      "reason": "missing JSON Schema builder"
+    },
+    {
+      "path": "$.labels.*~",
+      "rule": "custom",
+      "reason": "missing JSON Schema builder"
+    },
+    {
+      "path": "$.labels.*",
+      "rule": "custom",
+      "reason": "missing JSON Schema builder"
+    },
+    {
+      "path": "$.nested.value",
+      "rule": "custom",
+      "reason": "missing JSON Schema builder"
+    }
+  ]
+}

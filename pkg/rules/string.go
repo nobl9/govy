@@ -15,11 +15,35 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/nobl9/govy/internal/ecmaregex"
 	"github.com/nobl9/govy/internal/messagetemplates"
 	"github.com/nobl9/govy/pkg/govy"
+	"github.com/nobl9/govy/pkg/jsonschema"
 )
 
 const uuidPattern = `^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`
+
+const (
+	nonWhitespaceJSONSchemaPattern = `[^\u0009-\u000D\u0020\u0085\u00A0\u1680\u2000-\u200A\u2028-\u2029\u202F\u205F\u3000]`
+	uuidRFC4122JSONSchemaPattern   = `^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89aAbB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$`
+	ulidJSONSchemaPattern          = `^[0-7][0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{25}$`
+	mongoObjectIDJSONSchemaPattern = `^[0-9a-fA-F]{24}$`
+	hexadecimalJSONSchemaPattern   = `^(?:0[xX])?[0-9a-fA-F]+$`
+	bicJSONSchemaPattern           = `^[A-Z0-9]{4}[A-Z]{2}[A-Z0-9]{2}(?:[A-Z0-9]{3})?$`
+	einJSONSchemaPattern           = `^(?:0[1-6]|1[0-6]|2[0-7]|3[0-9]|4[0-8]|5[0-9]|6[0-8]|7[1-7]|8[0-8]|9[0-589])-[0-9]{7}(?![\s\S])`
+	ssnJSONSchemaPattern           = `^(?!(?:000|666|9[0-9]{2})-)[0-9]{3}-(?!00-)[0-9]{2}-(?!0000)[0-9]{4}(?![\s\S])`
+)
+
+const macJSONSchemaPattern = `^(?:` +
+	`[0-9a-fA-F]{2}(?:(?::[0-9a-fA-F]{2}){5}|(?::[0-9a-fA-F]{2}){7}|(?::[0-9a-fA-F]{2}){19})|` +
+	`[0-9a-fA-F]{2}(?:(?:-[0-9a-fA-F]{2}){5}|(?:-[0-9a-fA-F]{2}){7}|(?:-[0-9a-fA-F]{2}){19})|` +
+	`[0-9a-fA-F]{4}(?:(?:\.[0-9a-fA-F]{4}){2}|(?:\.[0-9a-fA-F]{4}){3}|(?:\.[0-9a-fA-F]{4}){9})|` +
+	`[0-9a-fA-F]{12}|[0-9a-fA-F]{16}|[0-9a-fA-F]{40})$`
+
+const (
+	cidrIPv4JSONSchemaPatternBody = `(?:[0-9]{1,3}\.){3}[0-9]{1,3}/[0-9]+`
+	cidrIPv6JSONSchemaPatternBody = `[0-9a-fA-F.]*:[0-9a-fA-F:.]+/[0-9]+`
+)
 
 // StringNotEmpty ensures the property's value is not empty.
 // The string is considered empty if it contains only whitespace characters.
@@ -36,7 +60,10 @@ func StringNotEmpty() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringNotEmpty).
 		WithMessageTemplate(tpl).
-		WithDescriptionTemplate(tpl, govy.TemplateVars{})
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
+		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+			return &jsonschema.Schema{Pattern: nonWhitespaceJSONSchemaPattern}, nil
+		})
 }
 
 // StringMatchRegexp ensures the property's value matches the regular expression.
@@ -57,7 +84,8 @@ func StringMatchRegexp(re *regexp.Regexp) govy.Rule[string] {
 		WithMessageTemplate(tpl).
 		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: re.String(),
-		})
+		}).
+		WithJSONSchema(jsonSchemaPattern(re.String()))
 }
 
 // StringDenyRegexp ensures the property's value does not match the regular expression.
@@ -78,6 +106,15 @@ func StringDenyRegexp(re *regexp.Regexp) govy.Rule[string] {
 		WithMessageTemplate(tpl).
 		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: re.String(),
+		}).
+		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+			pattern, err := ecmaregex.Translate(re.String())
+			if err != nil {
+				return nil, err
+			}
+			return &jsonschema.Schema{
+				Not: &jsonschema.Schema{Pattern: pattern},
+			}, nil
 		})
 }
 
@@ -129,7 +166,8 @@ func StringEmail() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringEmail).
 		WithMessageTemplate(tpl).
-		WithDescription("string must be a valid email address")
+		WithDescription("string must be a valid email address").
+		WithJSONSchema(jsonSchemaFormat(jsonschema.FormatEmail))
 }
 
 // StringURL ensures property's value is a valid URL as defined by [url.Parse] function.
@@ -155,7 +193,8 @@ func StringURL() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringURL).
 		WithMessageTemplate(tpl).
-		WithDescription(urlDescription)
+		WithDescription(urlDescription).
+		WithJSONSchema(jsonSchemaFormat(jsonschema.FormatURI))
 }
 
 // StringMAC ensures property's value is a valid MAC address.
@@ -173,7 +212,8 @@ func StringMAC() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringMAC).
 		WithMessageTemplate(tpl).
-		WithDescriptionTemplate(tpl, govy.TemplateVars{})
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
+		WithJSONSchema(jsonSchemaPattern(macJSONSchemaPattern))
 }
 
 // StringIP ensures property's value is a valid IP address.
@@ -190,7 +230,15 @@ func StringIP() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringIP).
 		WithMessageTemplate(tpl).
-		WithDescriptionTemplate(tpl, govy.TemplateVars{})
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
+		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+			return &jsonschema.Schema{
+				AnyOf: []*jsonschema.Schema{
+					{Format: jsonschema.FormatIPv4},
+					{Format: jsonschema.FormatIPv6},
+				},
+			}, nil
+		})
 }
 
 // StringIPv4 ensures property's value is a valid IPv4 address.
@@ -207,7 +255,8 @@ func StringIPv4() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringIPv4).
 		WithMessageTemplate(tpl).
-		WithDescriptionTemplate(tpl, govy.TemplateVars{})
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
+		WithJSONSchema(jsonSchemaFormat(jsonschema.FormatIPv4))
 }
 
 // StringIPv6 ensures property's value is a valid IPv6 address.
@@ -224,7 +273,8 @@ func StringIPv6() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringIPv6).
 		WithMessageTemplate(tpl).
-		WithDescriptionTemplate(tpl, govy.TemplateVars{})
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
+		WithJSONSchema(jsonSchemaFormat(jsonschema.FormatIPv6))
 }
 
 // StringCIDR ensures property's value is a valid CIDR notation IP address.
@@ -241,7 +291,10 @@ func StringCIDR() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringCIDR).
 		WithMessageTemplate(tpl).
-		WithDescriptionTemplate(tpl, govy.TemplateVars{})
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
+		WithJSONSchema(jsonSchemaPattern(
+			"^(?:" + cidrIPv4JSONSchemaPatternBody + "|" + cidrIPv6JSONSchemaPatternBody + ")$",
+		))
 }
 
 // StringCIDRv4 ensures property's value is a valid CIDR notation IPv4 address.
@@ -258,7 +311,8 @@ func StringCIDRv4() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringCIDRv4).
 		WithMessageTemplate(tpl).
-		WithDescriptionTemplate(tpl, govy.TemplateVars{})
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
+		WithJSONSchema(jsonSchemaPattern("^" + cidrIPv4JSONSchemaPatternBody + "$"))
 }
 
 // StringCIDRv6 ensures property's value is a valid CIDR notation IPv6 address.
@@ -275,7 +329,8 @@ func StringCIDRv6() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringCIDRv6).
 		WithMessageTemplate(tpl).
-		WithDescriptionTemplate(tpl, govy.TemplateVars{})
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
+		WithJSONSchema(jsonSchemaPattern("^" + cidrIPv6JSONSchemaPatternBody + "$"))
 }
 
 // StringEIN ensures the property's value is a United States Employer Identification Number (EIN)
@@ -293,7 +348,10 @@ func StringEIN() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringEIN).
 		WithMessageTemplate(tpl).
-		WithDescriptionTemplate(tpl, govy.TemplateVars{})
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
+		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+			return &jsonschema.Schema{Pattern: einJSONSchemaPattern}, nil
+		})
 }
 
 func isValidEIN(s string) bool {
@@ -347,7 +405,10 @@ func StringSSN() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringSSN).
 		WithMessageTemplate(tpl).
-		WithDescriptionTemplate(tpl, govy.TemplateVars{})
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
+		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+			return &jsonschema.Schema{Pattern: ssnJSONSchemaPattern}, nil
+		})
 }
 
 func isValidSSN(s string) bool {
@@ -398,7 +459,8 @@ func StringUUID() govy.Rule[string] {
 			"e190c630-8873-11ee-b9d1-0242ac120002",
 			"79258D24-01A7-47E5-ACBB-7E762DE52298",
 		).
-		WithErrorCode(ErrorCodeStringUUID)
+		WithErrorCode(ErrorCodeStringUUID).
+		WithJSONSchema(jsonSchemaPattern(uuidPattern))
 }
 
 // StringUUIDRFC4122 ensures the property's value is a Universally Unique Identifier (UUID)
@@ -417,7 +479,8 @@ func StringUUIDRFC4122() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringUUIDRFC4122).
 		WithMessageTemplate(tpl).
-		WithDescriptionTemplate(tpl, govy.TemplateVars{})
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
+		WithJSONSchema(jsonSchemaPattern(uuidRFC4122JSONSchemaPattern))
 }
 
 // StringUUIDv3 ensures the property's value is a version 3 Universally Unique Identifier (UUID)
@@ -435,7 +498,8 @@ func StringUUIDv3() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringUUIDv3).
 		WithMessageTemplate(tpl).
-		WithDescriptionTemplate(tpl, govy.TemplateVars{})
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
+		WithJSONSchema(jsonSchemaPattern(uuidVersionJSONSchemaPattern('3')))
 }
 
 // StringUUIDv4 ensures the property's value is a version 4 Universally Unique Identifier (UUID)
@@ -453,7 +517,8 @@ func StringUUIDv4() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringUUIDv4).
 		WithMessageTemplate(tpl).
-		WithDescriptionTemplate(tpl, govy.TemplateVars{})
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
+		WithJSONSchema(jsonSchemaPattern(uuidVersionJSONSchemaPattern('4')))
 }
 
 // StringUUIDv5 ensures the property's value is a version 5 Universally Unique Identifier (UUID)
@@ -471,7 +536,15 @@ func StringUUIDv5() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringUUIDv5).
 		WithMessageTemplate(tpl).
-		WithDescriptionTemplate(tpl, govy.TemplateVars{})
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
+		WithJSONSchema(jsonSchemaPattern(uuidVersionJSONSchemaPattern('5')))
+}
+
+func uuidVersionJSONSchemaPattern(version byte) string {
+	return fmt.Sprintf(
+		`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-%c[0-9a-fA-F]{3}-[89aAbB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$`,
+		version,
+	)
 }
 
 func isValidUUID(s string) bool {
@@ -529,7 +602,8 @@ func StringULID() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringULID).
 		WithMessageTemplate(tpl).
-		WithDescriptionTemplate(tpl, govy.TemplateVars{})
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
+		WithJSONSchema(jsonSchemaPattern(ulidJSONSchemaPattern))
 }
 
 func isValidULID(s string) bool {
@@ -571,7 +645,8 @@ func StringMongoDBObjectID() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringMongoDBObjectID).
 		WithMessageTemplate(tpl).
-		WithDescriptionTemplate(tpl, govy.TemplateVars{})
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
+		WithJSONSchema(jsonSchemaPattern(mongoObjectIDJSONSchemaPattern))
 }
 
 // StringCreditCard ensures the property's value is a plausible digit-only
@@ -590,7 +665,8 @@ func StringCreditCard() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringCreditCard).
 		WithMessageTemplate(tpl).
-		WithDescriptionTemplate(tpl, govy.TemplateVars{})
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
+		WithJSONSchema(jsonSchemaPattern(`^[0-9]{13,19}$`))
 }
 
 // StringLuhnChecksum ensures the property's value is a digit-only string that
@@ -608,7 +684,8 @@ func StringLuhnChecksum() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringLuhnChecksum).
 		WithMessageTemplate(tpl).
-		WithDescriptionTemplate(tpl, govy.TemplateVars{})
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
+		WithJSONSchema(jsonSchemaPattern(`^[0-9]+$`))
 }
 
 // StringBIC ensures the property's value matches the current Business
@@ -626,7 +703,8 @@ func StringBIC() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringBIC).
 		WithMessageTemplate(tpl).
-		WithDescriptionTemplate(tpl, govy.TemplateVars{})
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
+		WithJSONSchema(jsonSchemaPattern(bicJSONSchemaPattern))
 }
 
 // StringBICISO93622014 ensures the property's value matches the ISO 9362:2014
@@ -644,7 +722,8 @@ func StringBICISO93622014() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringBICISO93622014).
 		WithMessageTemplate(tpl).
-		WithDescriptionTemplate(tpl, govy.TemplateVars{})
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
+		WithJSONSchema(jsonSchemaPattern(bicJSONSchemaPattern))
 }
 
 // StringASCII ensures property's value contains only ASCII characters.
@@ -666,7 +745,10 @@ func StringJSON() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringJSON).
 		WithMessageTemplate(tpl).
-		WithDescriptionTemplate(tpl, govy.TemplateVars{})
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
+		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+			return &jsonschema.Schema{ContentMediaType: jsonschema.MediaTypeApplicationJSON}, nil
+		})
 }
 
 // StringE164 ensures the property's value is a valid E.164 phone number.
@@ -683,7 +765,8 @@ func StringE164() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringE164).
 		WithMessageTemplate(tpl).
-		WithDescriptionTemplate(tpl, govy.TemplateVars{})
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
+		WithJSONSchema(jsonSchemaPattern(e164Regexp().String()))
 }
 
 // StringSemver ensures the property's value is a valid Semantic Versioning 2.0.0 version.
@@ -701,7 +784,8 @@ func StringSemver() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringSemver).
 		WithMessageTemplate(tpl).
-		WithDescription("string must be a valid Semantic Versioning 2.0.0 version")
+		WithDescription("string must be a valid Semantic Versioning 2.0.0 version").
+		WithJSONSchema(jsonSchemaPattern(semverRegexp().String()))
 }
 
 // StringCVE ensures the property's value is a valid CVE ID.
@@ -720,7 +804,8 @@ func StringCVE() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringCVE).
 		WithMessageTemplate(tpl).
-		WithDescription("string must be a valid CVE ID in CVE-YEAR-SEQUENCE format")
+		WithDescription("string must be a valid CVE ID in CVE-YEAR-SEQUENCE format").
+		WithJSONSchema(jsonSchemaPattern(cveRegexp().String()))
 }
 
 // StringBase64 ensures the property's value is a standard padded base64 string.
@@ -739,7 +824,17 @@ func StringBase64() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringBase64).
 		WithMessageTemplate(tpl).
-		WithDescriptionTemplate(tpl, govy.TemplateVars{})
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
+		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+			pattern, err := ecmaregex.Translate(standardBase64Regexp().String())
+			if err != nil {
+				return nil, err
+			}
+			return &jsonschema.Schema{
+				Pattern:         pattern,
+				ContentEncoding: jsonschema.ContentEncodingBase64,
+			}, nil
+		})
 }
 
 // StringBase64URL ensures the property's value is a URL-safe padded base64 string.
@@ -758,7 +853,8 @@ func StringBase64URL() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringBase64URL).
 		WithMessageTemplate(tpl).
-		WithDescriptionTemplate(tpl, govy.TemplateVars{})
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
+		WithJSONSchema(jsonSchemaPattern(base64URLRegexp().String()))
 }
 
 // StringBase64RawURL ensures the property's value is a URL-safe base64 string without padding.
@@ -777,7 +873,8 @@ func StringBase64RawURL() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringBase64RawURL).
 		WithMessageTemplate(tpl).
-		WithDescriptionTemplate(tpl, govy.TemplateVars{})
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
+		WithJSONSchema(jsonSchemaPattern(base64RawURLRegexp().String()))
 }
 
 // StringHexadecimal ensures the property's value is a hexadecimal string.
@@ -795,7 +892,8 @@ func StringHexadecimal() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringHexadecimal).
 		WithMessageTemplate(tpl).
-		WithDescriptionTemplate(tpl, govy.TemplateVars{})
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
+		WithJSONSchema(jsonSchemaPattern(hexadecimalJSONSchemaPattern))
 }
 
 func decodesBase64(encoding *base64.Encoding, s string) bool {
@@ -836,7 +934,8 @@ func StringMD5() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringMD5).
 		WithMessageTemplate(tpl).
-		WithDescriptionTemplate(tpl, govy.TemplateVars{})
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
+		WithJSONSchema(jsonSchemaPattern(lowerHexadecimalJSONSchemaPattern(32)))
 }
 
 // StringSHA256 ensures the property's value is a lowercase hexadecimal SHA-256 digest.
@@ -853,7 +952,8 @@ func StringSHA256() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringSHA256).
 		WithMessageTemplate(tpl).
-		WithDescriptionTemplate(tpl, govy.TemplateVars{})
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
+		WithJSONSchema(jsonSchemaPattern(lowerHexadecimalJSONSchemaPattern(64)))
 }
 
 // StringSHA384 ensures the property's value is a lowercase hexadecimal SHA-384 digest.
@@ -870,7 +970,8 @@ func StringSHA384() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringSHA384).
 		WithMessageTemplate(tpl).
-		WithDescriptionTemplate(tpl, govy.TemplateVars{})
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
+		WithJSONSchema(jsonSchemaPattern(lowerHexadecimalJSONSchemaPattern(96)))
 }
 
 // StringSHA512 ensures the property's value is a lowercase hexadecimal SHA-512 digest.
@@ -887,7 +988,12 @@ func StringSHA512() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringSHA512).
 		WithMessageTemplate(tpl).
-		WithDescriptionTemplate(tpl, govy.TemplateVars{})
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
+		WithJSONSchema(jsonSchemaPattern(lowerHexadecimalJSONSchemaPattern(128)))
+}
+
+func lowerHexadecimalJSONSchemaPattern(length int) string {
+	return fmt.Sprintf(`^[0-9a-f]{%d}$`, length)
 }
 
 // StringJWT ensures the property's value is a JSON Web Token (JWT) represented
@@ -913,11 +1019,23 @@ func StringJWT() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringJWT).
 		WithMessageTemplate(tpl).
-		WithDescription("string must be a JSON Web Token (JWT) using JWS Compact Serialization")
+		WithDescription("string must be a JSON Web Token (JWT) using JWS Compact Serialization").
+		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+			return &jsonschema.Schema{ContentMediaType: jsonschema.MediaTypeApplicationJWT}, nil
+		})
 }
 
 // StringContains ensures the property's value contains all the provided substrings.
+// It panics if no substrings are provided or any substring is empty.
 func StringContains(substrings ...string) govy.Rule[string] {
+	if len(substrings) == 0 {
+		panic("substrings must not be empty")
+	}
+	for _, substring := range substrings {
+		if substring == "" {
+			panic("substrings must not contain empty strings")
+		}
+	}
 	tpl := messagetemplates.Get(messagetemplates.StringContainsTemplate)
 
 	return govy.NewRule(func(s string) error {
@@ -940,11 +1058,35 @@ func StringContains(substrings ...string) govy.Rule[string] {
 		WithMessageTemplate(tpl).
 		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: substrings,
+		}).
+		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+			schema := new(jsonschema.Schema)
+			for i, substring := range substrings {
+				pattern, err := ecmaregex.Translate(regexp.QuoteMeta(substring))
+				if err != nil {
+					return nil, err
+				}
+				if i == 0 {
+					schema.Pattern = pattern
+				} else {
+					schema.AllOf = append(schema.AllOf, &jsonschema.Schema{Pattern: pattern})
+				}
+			}
+			return schema, nil
 		})
 }
 
 // StringExcludes ensures the property's value does not contain any of the provided substrings.
+// It panics if no substrings are provided or any substring is empty.
 func StringExcludes(substrings ...string) govy.Rule[string] {
+	if len(substrings) == 0 {
+		panic("substrings must not be empty")
+	}
+	for _, substring := range substrings {
+		if substring == "" {
+			panic("substrings must not contain empty strings")
+		}
+	}
 	tpl := messagetemplates.Get(messagetemplates.StringExcludesTemplate)
 
 	return govy.NewRule(func(s string) error {
@@ -962,11 +1104,36 @@ func StringExcludes(substrings ...string) govy.Rule[string] {
 		WithMessageTemplate(tpl).
 		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: substrings,
+		}).
+		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+			schema := new(jsonschema.Schema)
+			for i, substring := range substrings {
+				pattern, err := ecmaregex.Translate(regexp.QuoteMeta(substring))
+				if err != nil {
+					return nil, err
+				}
+				denied := &jsonschema.Schema{Pattern: pattern}
+				if i == 0 {
+					schema.Not = denied
+				} else {
+					schema.AllOf = append(schema.AllOf, &jsonschema.Schema{Not: denied})
+				}
+			}
+			return schema, nil
 		})
 }
 
 // StringStartsWith ensures the property's value starts with one of the provided prefixes.
+// It panics if no prefixes are provided or any prefix is empty.
 func StringStartsWith(prefixes ...string) govy.Rule[string] {
+	if len(prefixes) == 0 {
+		panic("prefixes must not be empty")
+	}
+	for _, prefix := range prefixes {
+		if prefix == "" {
+			panic("prefixes must not contain empty strings")
+		}
+	}
 	tpl := messagetemplates.Get(messagetemplates.StringStartsWithTemplate)
 
 	return govy.NewRule(func(s string) error {
@@ -989,11 +1156,28 @@ func StringStartsWith(prefixes ...string) govy.Rule[string] {
 		WithMessageTemplate(tpl).
 		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: prefixes,
+		}).
+		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+			pattern := jsonSchemaAffixPattern(prefixes, "^", "")
+			translated, err := ecmaregex.Translate(pattern)
+			if err != nil {
+				return nil, err
+			}
+			return &jsonschema.Schema{Pattern: translated}, nil
 		})
 }
 
 // StringEndsWith ensures the property's value ends with one of the provided suffixes.
+// It panics if no suffixes are provided or any suffix is empty.
 func StringEndsWith(suffixes ...string) govy.Rule[string] {
+	if len(suffixes) == 0 {
+		panic("suffixes must not be empty")
+	}
+	for _, suffix := range suffixes {
+		if suffix == "" {
+			panic("suffixes must not contain empty strings")
+		}
+	}
 	tpl := messagetemplates.Get(messagetemplates.StringEndsWithTemplate)
 
 	return govy.NewRule(func(s string) error {
@@ -1016,6 +1200,14 @@ func StringEndsWith(suffixes ...string) govy.Rule[string] {
 		WithMessageTemplate(tpl).
 		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: suffixes,
+		}).
+		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+			pattern := jsonSchemaAffixPattern(suffixes, "", `\z`)
+			translated, err := ecmaregex.Translate(pattern)
+			if err != nil {
+				return nil, err
+			}
+			return &jsonschema.Schema{Pattern: translated}, nil
 		})
 }
 
@@ -1055,6 +1247,8 @@ type stringGitRefTemplateVars struct {
 	GitRefStartsWithDash  bool
 	GitRefForbiddenChars  bool
 }
+
+const gitRefJSONSchemaPattern = `^(?:HEAD|[^\x00-\x20\x7F\\?*\[~^:/]+(?:/[^\x00-\x20\x7F\\?*\[~^:/]+)+)$`
 
 // StringGitRef ensures a git reference name follows the [git-check-ref-format] rules.
 //
@@ -1138,7 +1332,8 @@ func StringGitRef() govy.Rule[string] {
 		WithErrorCode(ErrorCodeStringGitRef).
 		WithMessageTemplate(tpl).
 		WithDetails("see https://git-scm.com/docs/git-check-ref-format for more information on Git reference naming rules").
-		WithDescription("string must be a valid git reference")
+		WithDescription("string must be a valid git reference").
+		WithJSONSchema(jsonSchemaPattern(gitRefJSONSchemaPattern))
 }
 
 // StringFileSystemPath ensures the property's value is an existing file system path.
@@ -1306,7 +1501,7 @@ func StringCrontab() govy.Rule[string] {
 func StringDateTime(layout string) govy.Rule[string] {
 	tpl := messagetemplates.Get(messagetemplates.StringDateTimeTemplate)
 
-	return govy.NewRule(func(s string) error {
+	rule := govy.NewRule(func(s string) error {
 		if _, err := time.Parse(layout, s); err != nil {
 			return govy.NewRuleErrorTemplate(govy.TemplateVars{
 				PropertyValue:   s,
@@ -1322,6 +1517,10 @@ func StringDateTime(layout string) govy.Rule[string] {
 		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: layout,
 		})
+	if layout == time.RFC3339 || layout == time.RFC3339Nano {
+		return rule.WithJSONSchema(jsonSchemaFormat(jsonschema.FormatDateTime))
+	}
+	return rule
 }
 
 // StringTimeZone ensures the property's value is a valid time zone name which
@@ -1403,6 +1602,10 @@ const (
 	maxK8sQualifiedNamePartLength   = 63
 )
 
+const k8sQualifiedNameJSONSchemaPattern = `^(?:` +
+	`[a-z0-9](?:[-a-z0-9]*[a-z0-9])?(?:\.[a-z0-9](?:[-a-z0-9]*[a-z0-9])?)*/)?` +
+	`(?:[A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9]$`
+
 // StringKubernetesQualifiedName ensures the property's value is a valid "qualified name"
 // as defined by [Kubernetes validation].
 // The qualified name is used in various parts of the Kubernetes system, examples:
@@ -1483,7 +1686,8 @@ func stringKubernetesQualifiedNameRule() govy.Rule[string] {
 		WithDetails("Kubernetes Qualified Name must consist of alphanumeric characters, '-', '_' or '.', "+
 			"and must start and end with an alphanumeric character with an optional DNS subdomain prefix and '/'").
 		WithExamples("my.domain/MyName", "MyName", "my.name", "123-abc").
-		WithDescription("string must be a Kubernetes Qualified Name")
+		WithDescription("string must be a Kubernetes Qualified Name").
+		WithJSONSchema(jsonSchemaPattern(k8sQualifiedNameJSONSchemaPattern))
 }
 
 func isValidCreditCard(s string) bool {
@@ -1725,9 +1929,11 @@ func isLowerHexadecimal(s string, length int) bool {
 }
 
 const (
-	isbn10Length = 10
-	isbn13Length = 13
-	issnLength   = 9
+	isbn10Length                = 10
+	isbn13Length                = 13
+	issnLength                  = 9
+	isbn10JSONSchemaPatternBody = `[0-9](?:[ -]?[0-9]){8}[ -]?[0-9Xx]`
+	isbn13JSONSchemaPatternBody = `9[ -]?7[ -]?[89](?:[ -]?[0-9]){10}`
 )
 
 // StringISBN ensures the property's value is a valid International Standard
@@ -1747,7 +1953,10 @@ func StringISBN() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringISBN).
 		WithMessageTemplate(tpl).
-		WithDescription("string must be a valid International Standard Book Number (ISBN) in ISBN-10 or ISBN-13 format")
+		WithDescription("string must be a valid International Standard Book Number (ISBN) in ISBN-10 or ISBN-13 format").
+		WithJSONSchema(jsonSchemaPattern(
+			`^(?:` + isbn10JSONSchemaPatternBody + `|` + isbn13JSONSchemaPatternBody + `)$`,
+		))
 }
 
 // StringISBN10 ensures the property's value is a valid International Standard
@@ -1767,7 +1976,8 @@ func StringISBN10() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringISBN10).
 		WithMessageTemplate(tpl).
-		WithDescription("string must be a valid International Standard Book Number (ISBN) in ISBN-10 format")
+		WithDescription("string must be a valid International Standard Book Number (ISBN) in ISBN-10 format").
+		WithJSONSchema(jsonSchemaPattern(`^` + isbn10JSONSchemaPatternBody + `$`))
 }
 
 // StringISBN13 ensures the property's value is a valid International Standard
@@ -1787,7 +1997,8 @@ func StringISBN13() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringISBN13).
 		WithMessageTemplate(tpl).
-		WithDescription("string must be a valid International Standard Book Number (ISBN) in ISBN-13 format")
+		WithDescription("string must be a valid International Standard Book Number (ISBN) in ISBN-13 format").
+		WithJSONSchema(jsonSchemaPattern(`^` + isbn13JSONSchemaPatternBody + `$`))
 }
 
 // StringISSN ensures the property's value is a valid International Standard
@@ -1806,7 +2017,8 @@ func StringISSN() govy.Rule[string] {
 	}).
 		WithErrorCode(ErrorCodeStringISSN).
 		WithMessageTemplate(tpl).
-		WithDescription("string must be a valid hyphenated International Standard Serial Number (ISSN)")
+		WithDescription("string must be a valid hyphenated International Standard Serial Number (ISSN)").
+		WithJSONSchema(jsonSchemaPattern(`^[0-9]{4}-[0-9]{3}[0-9Xx]$`))
 }
 
 func isISBN(s string) bool {

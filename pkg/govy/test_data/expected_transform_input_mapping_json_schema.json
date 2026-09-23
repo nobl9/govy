@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "string",
+  "minLength": 1,
+  "x-govy-omittedRules": [
+    {
+      "path": "$",
+      "rule": "equal_to",
+      "reason": "rule validates a transformed value"
+    }
+  ]
+}

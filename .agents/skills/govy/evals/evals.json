@@ -134,6 +134,21 @@
         "The explanation stays within 200 words and uses real Govy APIs with task-relevant reference selection."
       ],
       "files": []
+    },
+    {
+      "id": 11,
+      "name": "explain-json-schema",
+      "prompt": "Our pinned Govy checkout exposes JSON Schema generation. We want a schema for an existing validator that includes a custom even-number rule, an address required only when mode is remote, and a duration string parsed with Transform before validation. Explain how to export the schema, extend the custom rule, map the condition, and inspect anything left out. Should our clients treat schema validation as equivalent to Govy? Mention stability and runtime dependencies. Keep the explanation within 350 words. Save explanation.md; no Go implementation is needed.",
+      "expected_output": "A concise account of the generation API, independent builder contributions, predicate scope, omission metadata, and semantic limits.",
+      "expectations": [
+        "Calls govy.JSONSchema on the validator and marshals the returned document, which declares Draft 2020-12; does not require Node.js or Ajv for generation.",
+        "Uses Rule.WithJSONSchema to return an independent *jsonschema.Schema with multipleOf for the even-number rule; Govy handles merging and allOf without a mutable baseline schema.",
+        "Uses WhenJSONSchema at the predicate scope, checks mode on the parent object, and distinguishes an absent mode with required; Govy provides if/then and omits guarded constraints when a condition mapping is missing.",
+        "Uses JSONSchemaIncludeOmittedRules and x-govy-omittedRules to report missing mappings, without claiming that the annotation covers approximate mappings or executed nil builders.",
+        "Explains that Transform preserves the input type and directly attached required constraints, but omits constraints on the transformed value.",
+        "Describes feature stability consistently with the README, rejects exact equivalence, explains presence versus zero-value or null differences, and stays within 350 words."
+      ],
+      "files": []
     }
   ]
 }

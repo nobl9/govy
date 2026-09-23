@@ -6,6 +6,7 @@ import (
 	"github.com/nobl9/govy/internal"
 	"github.com/nobl9/govy/internal/typeinfo"
 	"github.com/nobl9/govy/pkg/jsonpath"
+	"github.com/nobl9/govy/pkg/jsonschema"
 )
 
 // For creates a new [PropertyRules] instance for the property
@@ -333,27 +334,46 @@ func (r PropertyRules[T, P]) removePropertiesByIDFromIncludes(removal *propertyR
 
 // plan constructs a validation plan for the property.
 func (r PropertyRules[T, P]) plan(builder planBuilder) {
+	predicateScope := builder.propertyPath
 	vOpts := newValidationOptions(r.validationOptions...)
 	builder.propertyPlan.IsHidden = vOpts.hideValue
 	if r.originalType != nil {
-		builder.propertyPlan.TypeInfo = TypeInfo(*r.originalType)
+		builder.propertyPlan.TypeInfo = typeInfoFromInternal(*r.originalType)
 	} else {
-		builder.propertyPlan.TypeInfo = TypeInfo(typeinfo.Get[T]())
+		builder.propertyPlan.TypeInfo = typeInfoFromInternal(typeinfo.Get[T]())
 	}
 	builder = builder.appendPath(r.getPath()).setExamples(r.examples...)
-	builder = appendPredicatesToPlanBuilder(builder, r.predicates)
+	builder = appendPredicatesToPlanBuilder(builder, predicateScope, r.predicates)
+	if builder.options.recordJSONSchema {
+		builder.jsonSchemaOmitProperty = builder.jsonSchemaTransformed
+		if r.transformGetter != nil {
+			builder.jsonSchemaTransformed = true
+			if !builder.jsonSchemaOmitProperty {
+				// Included validators describe the transformed value, so retain the input type separately.
+				*builder.path = append(*builder.path, builder)
+			}
+		}
+	}
 	if r.required {
 		// Dummy rule to register the property as required.
 		NewRule(func(v T) error { return nil }).
 			WithDescription(internal.RequiredDescription).
 			WithErrorCode(internal.RequiredErrorCode).
+			WithJSONSchema(func(JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+				return nil, nil
+			}).
 			plan(builder)
 	} else if r.omitEmpty || r.isPointer {
-		// Dummy rule to register the property as optional.
-		NewRule(func(v T) error { return nil }).
-			WithDescription(internal.OptionalDescription).
-			WithErrorCode(internal.OptionalErrorCode).
-			plan(builder)
+		if builder.options.recordJSONSchema {
+			// Optionality adds no schema constraint, but this entry preserves the property's type.
+			*builder.path = append(*builder.path, builder)
+		} else {
+			// Dummy rule to register the property as optional.
+			NewRule(func(v T) error { return nil }).
+				WithDescription(internal.OptionalDescription).
+				WithErrorCode(internal.OptionalErrorCode).
+				plan(builder)
+		}
 	}
 	for _, rule := range r.rules {
 		if p, ok := rule.(planner); ok {

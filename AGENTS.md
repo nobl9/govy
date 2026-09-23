@@ -110,7 +110,7 @@ Keep derived boundary cases in addition to, not instead of, the source corpus.
 If a source vector is intentionally excluded,
 enumerate the literal and explain why it falls outside the documented contract.
 
-For each rule, default to one table-driven unit test and one benchmark.
+For each rule, follow the [rule test layout](docs/DEVELOPMENT.md#rule-tests).
 Keep table data close to the rule test and cover both passing and failing inputs.
 Use a shared case helper when inputs need setup.
 Reserve separate test functions for cases whose setup or assertions

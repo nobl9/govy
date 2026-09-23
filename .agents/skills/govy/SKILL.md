@@ -2,7 +2,7 @@
 name: govy
 description: >-
   Write, review, explain, and test validation with github.com/nobl9/govy.
-  Use for govy rules, validators, structured errors, plans, and path inference.
+  Use for govy rules, validators, structured errors, plans, JSON Schema, and path inference.
 ---
 
 # Govy
@@ -28,4 +28,5 @@ Load only the references needed for the task.
 | Inspect or construct errors | [Errors](references/errors.md) |
 | Test validation | [Testing](references/testing.md) |
 | Generate validation plans | [Validation plans](references/validation-plan.md) |
+| Generate JSON Schema or map rules and conditions | [JSON Schema](references/json-schema.md) |
 | Configure path inference | [Path inference](references/path-inference.md) |

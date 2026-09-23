@@ -1,0 +1,38 @@
+{
+  "typeInfo": {
+    "name": "string",
+    "kind": "string"
+  },
+  "properties": [
+    {
+      "path": "$",
+      "typeInfo": {
+        "name": "string",
+        "kind": "string"
+      },
+      "rules": [
+        {
+          "description": "property is required",
+          "errorCode": "required"
+        }
+      ]
+    },
+    {
+      "path": "$.count",
+      "typeInfo": {
+        "name": "int",
+        "kind": "int"
+      },
+      "rules": [
+        {
+          "description": "property is required",
+          "errorCode": "required"
+        },
+        {
+          "description": "must be greater than '0'",
+          "errorCode": "greater_than"
+        }
+      ]
+    }
+  ]
+}

@@ -11,13 +11,14 @@ import (
 	"regexp"
 	"runtime"
 	"slices"
+	"strconv"
 	"strings"
 	"syscall"
 	"testing"
 	"time"
 
 	"github.com/nobl9/govy/internal/assert"
-
+	"github.com/nobl9/govy/internal/jsonschematest"
 	"github.com/nobl9/govy/pkg/govy"
 )
 
@@ -35,6 +36,13 @@ var stringNotEmptyTestCases = []*struct {
 }{
 	{"                s", false},
 	{"     ", true},
+	{"", true},
+	{"\t\n\v\f\r", true},
+	{"\u0085", true},
+	{"\u00a0\u1680\u2000\u200a\u2028\u2029\u202f\u205f\u3000", true},
+	{"\u200b", false},
+	{"\ufeff", false},
+	{"\u0085s\u00a0", false},
 }
 
 func TestStringNotEmpty(t *testing.T) {
@@ -47,6 +55,15 @@ func TestStringNotEmpty(t *testing.T) {
 			assert.NoError(t, err)
 		}
 	}
+}
+
+func TestStringNotEmpty_JSONSchema(t *testing.T) {
+	t.Parallel()
+
+	schema, err := govy.JSONSchema(govy.New(govy.For(govy.GetSelf[string]()).Rules(StringNotEmpty())))
+	assert.Require(t, assert.NoError(t, err))
+	jsonschematest.Assert(t, schema, "testdata/jsonschema/expected_string_not_empty.json",
+		stringBooleanJSONSchemaCases(stringNotEmptyTestCases))
 }
 
 func BenchmarkStringNotEmpty(b *testing.B) {
@@ -68,6 +85,16 @@ var (
 			in: "ab",
 		},
 		{
+			in: "prefix absuffix",
+		},
+		{
+			in: "\na\n",
+		},
+		{
+			in:            "",
+			expectedError: "string must match regular expression: '[ab]+'",
+		},
+		{
 			in:            "cd",
 			expectedError: "string must match regular expression: '[ab]+'",
 		},
@@ -84,6 +111,16 @@ func TestStringMatchRegexp(t *testing.T) {
 			assert.NoError(t, err)
 		}
 	}
+}
+
+func TestStringMatchRegexp_JSONSchema(t *testing.T) {
+	t.Parallel()
+
+	schema, err := govy.JSONSchema(govy.New(govy.For(govy.GetSelf[string]()).
+		Rules(StringMatchRegexp(stringMatchRegexpRegexp))))
+	assert.Require(t, assert.NoError(t, err))
+	jsonschematest.Assert(t, schema, "testdata/jsonschema/expected_string_match_regexp.json",
+		stringRegexpJSONSchemaCases(stringMatchRegexpTestCases))
 }
 
 func BenchmarkStringMatchRegexp(b *testing.B) {
@@ -105,6 +142,17 @@ var (
 			in: "cd",
 		},
 		{
+			in: "",
+		},
+		{
+			in:            "prefix absuffix",
+			expectedError: "string must not match regular expression: '[ab]+'",
+		},
+		{
+			in:            "\na\n",
+			expectedError: "string must not match regular expression: '[ab]+'",
+		},
+		{
 			in:            "ab",
 			expectedError: "string must not match regular expression: '[ab]+'",
 		},
@@ -121,6 +169,16 @@ func TestStringDenyRegexp(t *testing.T) {
 			assert.NoError(t, err)
 		}
 	}
+}
+
+func TestStringDenyRegexp_JSONSchema(t *testing.T) {
+	t.Parallel()
+
+	schema, err := govy.JSONSchema(govy.New(govy.For(govy.GetSelf[string]()).
+		Rules(StringDenyRegexp(stringDenyRegexpRegexp))))
+	assert.Require(t, assert.NoError(t, err))
+	jsonschematest.Assert(t, schema, "testdata/jsonschema/expected_string_deny_regexp.json",
+		stringRegexpJSONSchemaCases(stringDenyRegexpTestCases))
 }
 
 func BenchmarkStringDenyRegexp(b *testing.B) {
@@ -150,6 +208,7 @@ var stringDNSLabelTestCases = []*struct {
 	{"test this", true},
 	{"1_2", true},
 	{"LOL", true},
+	{"test\n", true},
 }
 
 func TestStringDNSLabel(t *testing.T) {
@@ -162,6 +221,15 @@ func TestStringDNSLabel(t *testing.T) {
 			assert.NoError(t, err)
 		}
 	}
+}
+
+func TestStringDNSLabel_JSONSchema(t *testing.T) {
+	t.Parallel()
+
+	schema, err := govy.JSONSchema(govy.New(govy.For(govy.GetSelf[string]()).Rules(StringDNSLabel())))
+	assert.Require(t, assert.NoError(t, err))
+	jsonschematest.Assert(t, schema, "testdata/jsonschema/expected_string_dns_label.json",
+		stringBooleanJSONSchemaCases(stringDNSLabelTestCases))
 }
 
 func BenchmarkStringDNSLabel(b *testing.B) {
@@ -212,6 +280,7 @@ var stringDNSSubdomainTestCases = []*struct {
 	{".2.3.4", true},
 	{"1a.2B.3c.4d", true},
 	{"a--b--c.", true},
+	{"example.com\n", true},
 }
 
 func TestStringDNSSubdomain(t *testing.T) {
@@ -224,6 +293,15 @@ func TestStringDNSSubdomain(t *testing.T) {
 			assert.NoError(t, err)
 		}
 	}
+}
+
+func TestStringDNSSubdomain_JSONSchema(t *testing.T) {
+	t.Parallel()
+
+	schema, err := govy.JSONSchema(govy.New(govy.For(govy.GetSelf[string]()).Rules(StringDNSSubdomain())))
+	assert.Require(t, assert.NoError(t, err))
+	jsonschematest.Assert(t, schema, "testdata/jsonschema/expected_string_dns_subdomain.json",
+		stringBooleanJSONSchemaCases(stringDNSSubdomainTestCases))
 }
 
 func BenchmarkStringDNSSubdomain(b *testing.B) {
@@ -269,6 +347,19 @@ func TestStringUUID(t *testing.T) {
 		"string must match regular expression: '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$' (e.g. '00000000-0000-0000-0000-000000000000', 'e190c630-8873-11ee-b9d1-0242ac120002', '79258D24-01A7-47E5-ACBB-7E762DE52298'); expected RFC-4122 compliant UUID string",
 		stringUUIDValidInputs,
 		stringUUIDInvalidInputs,
+	)
+}
+
+func TestStringUUID_JSONSchema(t *testing.T) {
+	t.Parallel()
+
+	schema, err := govy.JSONSchema(govy.New(govy.For(govy.GetSelf[string]()).Rules(StringUUID())))
+	assert.Require(t, assert.NoError(t, err))
+	jsonschematest.Assert(
+		t,
+		schema,
+		"testdata/jsonschema/expected_string_uuid.json",
+		stringNamedJSONSchemaCases(stringUUIDValidInputs, stringUUIDInvalidInputs),
 	)
 }
 
@@ -328,6 +419,19 @@ func TestStringUUIDRFC4122(t *testing.T) {
 	)
 }
 
+func TestStringUUIDRFC4122_JSONSchema(t *testing.T) {
+	t.Parallel()
+
+	schema, err := govy.JSONSchema(govy.New(govy.For(govy.GetSelf[string]()).Rules(StringUUIDRFC4122())))
+	assert.Require(t, assert.NoError(t, err))
+	jsonschematest.Assert(
+		t,
+		schema,
+		"testdata/jsonschema/expected_string_uuid_rfc4122.json",
+		stringNamedJSONSchemaCases(stringUUIDRFC4122ValidInputs, stringUUIDRFC4122InvalidInputs),
+	)
+}
+
 func BenchmarkStringUUIDRFC4122(b *testing.B) {
 	benchmarkStringFormatIDRule(
 		b,
@@ -381,6 +485,19 @@ func TestStringUUIDv3(t *testing.T) {
 	)
 }
 
+func TestStringUUIDv3_JSONSchema(t *testing.T) {
+	t.Parallel()
+
+	schema, err := govy.JSONSchema(govy.New(govy.For(govy.GetSelf[string]()).Rules(StringUUIDv3())))
+	assert.Require(t, assert.NoError(t, err))
+	jsonschematest.Assert(
+		t,
+		schema,
+		"testdata/jsonschema/expected_string_uuid_v3.json",
+		stringNamedJSONSchemaCases(stringUUIDv3ValidInputs, stringUUIDv3InvalidInputs),
+	)
+}
+
 func BenchmarkStringUUIDv3(b *testing.B) {
 	benchmarkStringFormatIDRule(b, StringUUIDv3(), stringUUIDv3ValidInputs, stringUUIDv3InvalidInputs)
 }
@@ -430,6 +547,19 @@ func TestStringUUIDv4(t *testing.T) {
 	)
 }
 
+func TestStringUUIDv4_JSONSchema(t *testing.T) {
+	t.Parallel()
+
+	schema, err := govy.JSONSchema(govy.New(govy.For(govy.GetSelf[string]()).Rules(StringUUIDv4())))
+	assert.Require(t, assert.NoError(t, err))
+	jsonschematest.Assert(
+		t,
+		schema,
+		"testdata/jsonschema/expected_string_uuid_v4.json",
+		stringNamedJSONSchemaCases(stringUUIDv4ValidInputs, stringUUIDv4InvalidInputs),
+	)
+}
+
 func BenchmarkStringUUIDv4(b *testing.B) {
 	benchmarkStringFormatIDRule(b, StringUUIDv4(), stringUUIDv4ValidInputs, stringUUIDv4InvalidInputs)
 }
@@ -476,6 +606,19 @@ func TestStringUUIDv5(t *testing.T) {
 		"string must be a valid version 5 Universally Unique Identifier (UUID) as defined by RFC 4122",
 		stringUUIDv5ValidInputs,
 		stringUUIDv5InvalidInputs,
+	)
+}
+
+func TestStringUUIDv5_JSONSchema(t *testing.T) {
+	t.Parallel()
+
+	schema, err := govy.JSONSchema(govy.New(govy.For(govy.GetSelf[string]()).Rules(StringUUIDv5())))
+	assert.Require(t, assert.NoError(t, err))
+	jsonschematest.Assert(
+		t,
+		schema,
+		"testdata/jsonschema/expected_string_uuid_v5.json",
+		stringNamedJSONSchemaCases(stringUUIDv5ValidInputs, stringUUIDv5InvalidInputs),
 	)
 }
 
@@ -551,6 +694,19 @@ func TestStringULID(t *testing.T) {
 		"string must be a valid Universally Unique Lexicographically Sortable Identifier (ULID)",
 		stringULIDValidInputs,
 		stringULIDInvalidInputs,
+	)
+}
+
+func TestStringULID_JSONSchema(t *testing.T) {
+	t.Parallel()
+
+	schema, err := govy.JSONSchema(govy.New(govy.For(govy.GetSelf[string]()).Rules(StringULID())))
+	assert.Require(t, assert.NoError(t, err))
+	jsonschematest.Assert(
+		t,
+		schema,
+		"testdata/jsonschema/expected_string_ulid.json",
+		stringNamedJSONSchemaCases(stringULIDValidInputs, stringULIDInvalidInputs),
 	)
 }
 
@@ -673,6 +829,15 @@ func TestStringASCII(t *testing.T) {
 	}
 }
 
+func TestStringASCII_JSONSchema(t *testing.T) {
+	t.Parallel()
+
+	schema, err := govy.JSONSchema(govy.New(govy.For(govy.GetSelf[string]()).Rules(StringASCII())))
+	assert.Require(t, assert.NoError(t, err))
+	jsonschematest.Assert(t, schema, "testdata/jsonschema/expected_string_ascii.json",
+		stringBooleanJSONSchemaCases(stringASCIITestCases))
+}
+
 func BenchmarkStringASCII(b *testing.B) {
 	for _, tc := range stringASCIITestCases {
 		rule := StringASCII()
@@ -682,42 +847,42 @@ func BenchmarkStringASCII(b *testing.B) {
 	}
 }
 
-type stringPaymentBankingTestCases struct {
-	validInputs   map[string]string
-	invalidInputs map[string]string
-}
-
-var stringCreditCardTestCases = stringPaymentBankingTestCases{
-	validInputs: map[string]string{
-		"visa":                      "4111111111111111",
-		"visa alternate":            "4242424242424242",
-		"mastercard":                "5555555555554444",
-		"american express":          "378282246310005",
-		"discover":                  "6011111111111117",
-		"six-series sixteen digits": "6123451234567893",
-		"diners club":               "36227206271667",
-		"mastercard 2-series":       "2223003122003222",
-		"JCB":                       "3566002020360505",
-		"UnionPay nineteen digits":  "6205500000000000004",
-		"visa decline test number":  "4000111111111115",
-		"minimum thirteen digits":   "1000000000009",
-		"maximum nineteen digits":   "1000000000000000009",
+var stringCreditCardTestCases = []jsonschematest.Case[string]{
+	{Name: "visa", Input: "4111111111111111", Valid: true},
+	{Name: "visa alternate", Input: "4242424242424242", Valid: true},
+	{Name: "mastercard", Input: "5555555555554444", Valid: true},
+	{Name: "american express", Input: "378282246310005", Valid: true},
+	{Name: "discover", Input: "6011111111111117", Valid: true},
+	{Name: "six-series sixteen digits", Input: "6123451234567893", Valid: true},
+	{Name: "diners club", Input: "36227206271667", Valid: true},
+	{Name: "mastercard 2-series", Input: "2223003122003222", Valid: true},
+	{Name: "JCB", Input: "3566002020360505", Valid: true},
+	{Name: "UnionPay nineteen digits", Input: "6205500000000000004", Valid: true},
+	{Name: "visa decline test number", Input: "4000111111111115", Valid: true},
+	{Name: "minimum thirteen digits", Input: "1000000000009", Valid: true},
+	{Name: "maximum nineteen digits", Input: "1000000000000000009", Valid: true},
+	{Name: "empty", Input: ""},
+	{Name: "minimum length minus one", Input: "100000000008"},
+	{Name: "maximum length plus one", Input: "10000000000000000008"},
+	{
+		Name: "failed thirteen digit checksum", Input: "1000000000008",
+		JSONSchemaDifference: "JSON Schema checks payment-card syntax but does not validate the Luhn checksum.",
 	},
-	invalidInputs: map[string]string{
-		"empty":                          "",
-		"minimum length minus one":       "100000000008",
-		"maximum length plus one":        "10000000000000000008",
-		"failed thirteen digit checksum": "1000000000008",
-		"failed nineteen digit checksum": "1000000000000000008",
-		"all same digits":                "6666666666666",
-		"leading space":                  " 1000000000009",
-		"trailing space":                 "1000000000009 ",
-		"trailing newline":               "1000000000009\n",
-		"embedded spaces":                "4111 1111 1111 1111",
-		"hyphens":                        "4111-1111-1111-1111",
-		"full-width digit":               "10000000000０9",
-		"alphabetic character":           "10000000000A9",
+	{
+		Name: "failed nineteen digit checksum", Input: "1000000000000000008",
+		JSONSchemaDifference: "JSON Schema checks payment-card syntax but does not validate the Luhn checksum.",
 	},
+	{
+		Name: "all same digits", Input: "6666666666666",
+		JSONSchemaDifference: "JSON Schema does not reject payment-card numbers with identical digits.",
+	},
+	{Name: "leading space", Input: " 1000000000009"},
+	{Name: "trailing space", Input: "1000000000009 "},
+	{Name: "trailing newline", Input: "1000000000009\n"},
+	{Name: "embedded spaces", Input: "4111 1111 1111 1111"},
+	{Name: "hyphens", Input: "4111-1111-1111-1111"},
+	{Name: "full-width digit", Input: "10000000000０9"},
+	{Name: "alphabetic character", Input: "10000000000A9"},
 }
 
 func TestStringCreditCard(t *testing.T) {
@@ -730,34 +895,49 @@ func TestStringCreditCard(t *testing.T) {
 	)
 }
 
+func TestStringCreditCard_JSONSchema(t *testing.T) {
+	t.Parallel()
+
+	schema, err := govy.JSONSchema(govy.New(govy.For(govy.GetSelf[string]()).Rules(StringCreditCard())))
+	assert.Require(t, assert.NoError(t, err))
+	jsonschematest.Assert(
+		t,
+		schema,
+		"testdata/jsonschema/expected_string_credit_card.json",
+		slices.Concat(stringCreditCardTestCases, readPaymentCardProcessorTestCases(t)),
+	)
+}
+
 func BenchmarkStringCreditCard(b *testing.B) {
 	rule := StringCreditCard()
 	benchmarkStringPaymentBankingRule(b, rule, stringCreditCardTestCases)
 }
 
-var stringLuhnChecksumTestCases = stringPaymentBankingTestCases{
-	validInputs: map[string]string{
-		"single zero":                "0",
-		"four zeroes":                "0000",
-		"twenty zeroes":              "00000000000000000000",
-		"two digits ending in eight": "18",
-		"two digits ending in nine":  "59",
-		"sample number":              "79927398713",
-		"six-series example":         "6123451234567893",
-		"fifteen digit example":      "808401234567893",
-		"nineteen digit example":     "6205500000000000004",
+var stringLuhnChecksumTestCases = []jsonschematest.Case[string]{
+	{Name: "single zero", Input: "0", Valid: true},
+	{Name: "four zeroes", Input: "0000", Valid: true},
+	{Name: "twenty zeroes", Input: "00000000000000000000", Valid: true},
+	{Name: "two digits ending in eight", Input: "18", Valid: true},
+	{Name: "two digits ending in nine", Input: "59", Valid: true},
+	{Name: "sample number", Input: "79927398713", Valid: true},
+	{Name: "six-series example", Input: "6123451234567893", Valid: true},
+	{Name: "fifteen digit example", Input: "808401234567893", Valid: true},
+	{Name: "nineteen digit example", Input: "6205500000000000004", Valid: true},
+	{Name: "empty", Input: ""},
+	{
+		Name: "failed thirteen digit check", Input: "6123451234567894",
+		JSONSchemaDifference: "JSON Schema requires digits but does not validate the Luhn checksum.",
 	},
-	invalidInputs: map[string]string{
-		"empty":                       "",
-		"failed thirteen digit check": "6123451234567894",
-		"failed fifteen digit check":  "808401234567894",
-		"slash before zero":           "/0",
-		"colon before zero":           ":0",
-		"plus before zero":            "+0",
-		"trailing space":              "0 ",
-		"alphabetic character":        "79927A398713",
-		"full-width digits":           "１２",
+	{
+		Name: "failed fifteen digit check", Input: "808401234567894",
+		JSONSchemaDifference: "JSON Schema requires digits but does not validate the Luhn checksum.",
 	},
+	{Name: "slash before zero", Input: "/0"},
+	{Name: "colon before zero", Input: ":0"},
+	{Name: "plus before zero", Input: "+0"},
+	{Name: "trailing space", Input: "0 "},
+	{Name: "alphabetic character", Input: "79927A398713"},
+	{Name: "full-width digits", Input: "１２"},
 }
 
 func TestStringLuhnChecksum(t *testing.T) {
@@ -770,12 +950,62 @@ func TestStringLuhnChecksum(t *testing.T) {
 	)
 }
 
+func TestStringLuhnChecksum_JSONSchema(t *testing.T) {
+	t.Parallel()
+
+	schema, err := govy.JSONSchema(govy.New(govy.For(govy.GetSelf[string]()).Rules(StringLuhnChecksum())))
+	assert.Require(t, assert.NoError(t, err))
+	jsonschematest.Assert(
+		t,
+		schema,
+		"testdata/jsonschema/expected_string_luhn_checksum.json",
+		slices.Concat(stringLuhnChecksumTestCases, readPaymentCardProcessorTestCases(t)),
+	)
+}
+
 func BenchmarkStringLuhnChecksum(b *testing.B) {
 	rule := StringLuhnChecksum()
 	benchmarkStringPaymentBankingRule(b, rule, stringLuhnChecksumTestCases)
 }
 
 func TestStringPaymentCardProcessorFixtures(t *testing.T) {
+	rules := []struct {
+		name          string
+		rule          govy.Rule[string]
+		expectedError string
+		errorCode     govy.ErrorCode
+	}{
+		{
+			name:          "StringCreditCard",
+			rule:          StringCreditCard(),
+			expectedError: "string must be a valid payment card number",
+			errorCode:     ErrorCodeStringCreditCard,
+		},
+		{
+			name:          "StringLuhnChecksum",
+			rule:          StringLuhnChecksum(),
+			expectedError: "string must pass the Luhn checksum",
+			errorCode:     ErrorCodeStringLuhnChecksum,
+		},
+	}
+	for _, tc := range readPaymentCardProcessorTestCases(t) {
+		t.Run(tc.Name, func(t *testing.T) {
+			for _, testRule := range rules {
+				t.Run(testRule.name, func(t *testing.T) {
+					err := testRule.rule.Validate(tc.Input)
+					if !tc.Valid {
+						assertPaymentBankingRuleError(t, err, testRule.expectedError, testRule.errorCode)
+						return
+					}
+					assert.NoError(t, err)
+				})
+			}
+		})
+	}
+}
+
+func readPaymentCardProcessorTestCases(t *testing.T) []jsonschematest.Case[string] {
+	t.Helper()
 	fixtures := []struct {
 		name                   string
 		path                   string
@@ -809,114 +1039,102 @@ func TestStringPaymentCardProcessorFixtures(t *testing.T) {
 			expectedCount:          86,
 		},
 	}
-	rules := []struct {
-		name          string
-		rule          govy.Rule[string]
-		expectedError string
-		errorCode     govy.ErrorCode
-	}{
-		{
-			name:          "StringCreditCard",
-			rule:          StringCreditCard(),
-			expectedError: "string must be a valid payment card number",
-			errorCode:     ErrorCodeStringCreditCard,
-		},
-		{
-			name:          "StringLuhnChecksum",
-			rule:          StringLuhnChecksum(),
-			expectedError: "string must pass the Luhn checksum",
-			errorCode:     ErrorCodeStringLuhnChecksum,
-		},
+	invalidProcessorCardNumber := jsonschematest.Case[string]{
+		Input:                "4242424242424241",
+		JSONSchemaDifference: "JSON Schema checks payment-card syntax but does not validate the Luhn checksum.",
 	}
-
-	const (
-		invalidProcessorCardNumber         = "4242424242424241"
-		expectedUniqueProcessorCardNumbers = 264
-	)
+	const expectedUniqueProcessorCardNumbers = 264
+	var cases []jsonschematest.Case[string]
 	union := make(map[string]struct{}, expectedUniqueProcessorCardNumbers)
 	invalidOccurrences := 0
 	for _, fixture := range fixtures {
-		t.Run(fixture.name, func(t *testing.T) {
-			rawFixture, inputs := readTestDataFields(t, fixture.path)
-			assert.Require(t, assert.Len(t, inputs, fixture.expectedCount))
-			assert.True(t, strings.Contains(rawFixture, "# Source: "+fixture.source+"\n"))
-			assert.True(t, strings.Contains(
-				rawFixture,
-				"# Source snapshot SHA-256: "+fixture.sourceSnapshotSHA256+"\n",
-			))
-			normalizedValues := strings.Join(inputs, "\n") + "\n"
-			actualValuesSHA256 := fmt.Sprintf("%x", sha256.Sum256([]byte(normalizedValues)))
-			assert.Equal(t, fixture.normalizedValuesSHA256, actualValuesSHA256)
+		rawFixture, inputs := readTestDataFields(t, fixture.path)
+		assert.Require(t, assert.Len(t, inputs, fixture.expectedCount))
+		assert.True(t, strings.Contains(rawFixture, "# Source: "+fixture.source+"\n"))
+		assert.True(t, strings.Contains(
+			rawFixture,
+			"# Source snapshot SHA-256: "+fixture.sourceSnapshotSHA256+"\n",
+		))
+		normalizedValues := strings.Join(inputs, "\n") + "\n"
+		actualValuesSHA256 := fmt.Sprintf("%x", sha256.Sum256([]byte(normalizedValues)))
+		assert.Equal(t, fixture.normalizedValuesSHA256, actualValuesSHA256)
 
-			uniqueInputs := make(map[string]struct{}, len(inputs))
-			for _, input := range inputs {
-				uniqueInputs[input] = struct{}{}
-				union[input] = struct{}{}
-				if input == invalidProcessorCardNumber {
-					invalidOccurrences++
-				}
-				t.Run(input, func(t *testing.T) {
-					for _, testRule := range rules {
-						t.Run(testRule.name, func(t *testing.T) {
-							err := testRule.rule.Validate(input)
-							if input == invalidProcessorCardNumber {
-								assertPaymentBankingRuleError(
-									t,
-									err,
-									testRule.expectedError,
-									testRule.errorCode,
-								)
-								return
-							}
-							assert.NoError(t, err)
-						})
-					}
-				})
+		uniqueInputs := make(map[string]struct{}, len(inputs))
+		for _, input := range inputs {
+			uniqueInputs[input] = struct{}{}
+			union[input] = struct{}{}
+			tc := jsonschematest.Case[string]{Input: input, Valid: true}
+			if input == invalidProcessorCardNumber.Input {
+				invalidOccurrences++
+				tc = invalidProcessorCardNumber
 			}
-			assert.Len(t, uniqueInputs, len(inputs))
-		})
+			tc.Name = fixture.name + "/" + input
+			cases = append(cases, tc)
+		}
+		assert.Len(t, uniqueInputs, len(inputs))
 	}
 	assert.Len(t, union, expectedUniqueProcessorCardNumbers)
 	assert.Equal(t, 1, invalidOccurrences)
+	return cases
 }
 
-var stringBICTestCases = stringPaymentBankingTestCases{
-	validInputs: map[string]string{
-		"eight characters":                  "DEUTDEFF",
-		"eleven characters":                 "DEUTDEFF500",
-		"branch placeholder":                "NEDSZAJJXXX",
-		"ISO 9362 eight character example":  "ABCDFRPP",
-		"ISO 9362 eleven character example": "WG11US335AB",
-		"TC68 eight character example":      "ABCDBE22",
-		"TC68 eleven character example":     "ABCDBE22XYZ",
-		"alphanumeric party prefix":         "A1B2US33XXX",
-		"zero in party suffix":              "ABCDUS0A",
-		"one in party suffix":               "ABCDUS1A",
-		"letter O in party suffix":          "ABCDUSAO",
-		"Kosovo bank example":               "EKOMXKPR",
-		"Kosovo bank identifier":            "BPBXXKPR",
+var stringBICTestCases = []jsonschematest.Case[string]{
+	{Name: "eight characters", Input: "DEUTDEFF", Valid: true},
+	{Name: "eleven characters", Input: "DEUTDEFF500", Valid: true},
+	{Name: "branch placeholder", Input: "NEDSZAJJXXX", Valid: true},
+	{Name: "ISO 9362 eight character example", Input: "ABCDFRPP", Valid: true},
+	{Name: "ISO 9362 eleven character example", Input: "WG11US335AB", Valid: true},
+	{Name: "TC68 eight character example", Input: "ABCDBE22", Valid: true},
+	{Name: "TC68 eleven character example", Input: "ABCDBE22XYZ", Valid: true},
+	{Name: "alphanumeric party prefix", Input: "A1B2US33XXX", Valid: true},
+	{Name: "zero in party suffix", Input: "ABCDUS0A", Valid: true},
+	{Name: "one in party suffix", Input: "ABCDUS1A", Valid: true},
+	{Name: "letter O in party suffix", Input: "ABCDUSAO", Valid: true},
+	{Name: "Kosovo bank example", Input: "EKOMXKPR", Valid: true},
+	{Name: "Kosovo bank identifier", Input: "BPBXXKPR", Valid: true},
+	{Name: "empty", Input: ""},
+	{Name: "lowercase", Input: "abcdfrpp"},
+	{Name: "digit in country code", Input: "ABCD3R22"},
+	{
+		Name: "user-assigned country AA", Input: "ABCDAA22",
+		JSONSchemaDifference: "JSON Schema checks BIC syntax but does not enforce the country-code allowlist.",
 	},
-	invalidInputs: map[string]string{
-		"empty":                       "",
-		"lowercase":                   "abcdfrpp",
-		"digit in country code":       "ABCD3R22",
-		"user-assigned country AA":    "ABCDAA22",
-		"user-assigned country QM":    "ABCDQM22",
-		"user-assigned country QZ":    "ABCDQZ22",
-		"user-assigned country XA":    "ABCDXA22",
-		"user-assigned country XZ":    "ABCDXZ22",
-		"user-assigned country ZZ":    "ABCDZZ22",
-		"deleted country AN":          "ABCDAN22",
-		"deleted country CS":          "ABCDCS22",
-		"seven characters":            "ABCDFR2",
-		"nine characters":             "ABCDFR22X",
-		"ten characters":              "ABCDFR22XX",
-		"twelve characters":           "ABCDFR22XXXX",
-		"punctuation in party prefix": "ABC-FR22",
-		"punctuation in party suffix": "ABCDFR2-",
-		"punctuation in branch":       "ABCDFR22XY-",
-		"trailing space":              "ABCDFR22 ",
+	{
+		Name: "user-assigned country QM", Input: "ABCDQM22",
+		JSONSchemaDifference: "JSON Schema checks BIC syntax but does not enforce the country-code allowlist.",
 	},
+	{
+		Name: "user-assigned country QZ", Input: "ABCDQZ22",
+		JSONSchemaDifference: "JSON Schema checks BIC syntax but does not enforce the country-code allowlist.",
+	},
+	{
+		Name: "user-assigned country XA", Input: "ABCDXA22",
+		JSONSchemaDifference: "JSON Schema checks BIC syntax but does not enforce the country-code allowlist.",
+	},
+	{
+		Name: "user-assigned country XZ", Input: "ABCDXZ22",
+		JSONSchemaDifference: "JSON Schema checks BIC syntax but does not enforce the country-code allowlist.",
+	},
+	{
+		Name: "user-assigned country ZZ", Input: "ABCDZZ22",
+		JSONSchemaDifference: "JSON Schema checks BIC syntax but does not enforce the country-code allowlist.",
+	},
+	{
+		Name: "deleted country AN", Input: "ABCDAN22",
+		JSONSchemaDifference: "JSON Schema checks BIC syntax but does not enforce the country-code allowlist.",
+	},
+	{
+		Name: "deleted country CS", Input: "ABCDCS22",
+		JSONSchemaDifference: "JSON Schema checks BIC syntax but does not enforce the country-code allowlist.",
+	},
+	{Name: "seven characters", Input: "ABCDFR2"},
+	{Name: "nine characters", Input: "ABCDFR22X"},
+	{Name: "ten characters", Input: "ABCDFR22XX"},
+	{Name: "twelve characters", Input: "ABCDFR22XXXX"},
+	{Name: "punctuation in party prefix", Input: "ABC-FR22"},
+	{Name: "punctuation in party suffix", Input: "ABCDFR2-"},
+	{Name: "punctuation in branch", Input: "ABCDFR22XY-"},
+	{Name: "trailing space", Input: "ABCDFR22 "},
 }
 
 func TestStringBIC(t *testing.T) {
@@ -929,49 +1147,27 @@ func TestStringBIC(t *testing.T) {
 	)
 }
 
+func TestStringBIC_JSONSchema(t *testing.T) {
+	t.Parallel()
+
+	cases := slices.Clone(stringBICTestCases)
+	for _, countryCode := range append(readISOAlpha2CountryCodes(t), "XK") {
+		cases = append(cases, jsonschematest.Case[string]{
+			Name: "country code/" + countryCode, Input: "ABCD" + countryCode + "22", Valid: true,
+		})
+	}
+
+	schema, err := govy.JSONSchema(govy.New(govy.For(govy.GetSelf[string]()).Rules(StringBIC())))
+	assert.Require(t, assert.NoError(t, err))
+	jsonschematest.Assert(t, schema, "testdata/jsonschema/expected_string_bic.json", cases)
+}
+
 func BenchmarkStringBIC(b *testing.B) {
 	rule := StringBIC()
 	benchmarkStringPaymentBankingRule(b, rule, stringBICTestCases)
 }
 
-var stringBICISO93622014TestCases = stringPaymentBankingTestCases{
-	validInputs: map[string]string{
-		"eight characters":                  "DEUTDEFF",
-		"eleven characters":                 "DEUTDEFF500",
-		"branch placeholder":                "NEDSZAJJXXX",
-		"ISO 9362 eight character example":  "ABCDFRPP",
-		"ISO 9362 eleven character example": "WG11US335AB",
-		"TC68 eight character example":      "ABCDBE22",
-		"TC68 eleven character example":     "ABCDBE22XYZ",
-		"alphanumeric party prefix":         "A1B2US33XXX",
-		"zero in party suffix":              "ABCDUS0A",
-		"one in party suffix":               "ABCDUS1A",
-		"letter O in party suffix":          "ABCDUSAO",
-		"Kosovo bank example":               "EKOMXKPR",
-		"Kosovo bank identifier":            "BPBXXKPR",
-	},
-	invalidInputs: map[string]string{
-		"empty":                       "",
-		"lowercase":                   "abcdfrpp",
-		"digit in country code":       "ABCD3R22",
-		"user-assigned country AA":    "ABCDAA22",
-		"user-assigned country QM":    "ABCDQM22",
-		"user-assigned country QZ":    "ABCDQZ22",
-		"user-assigned country XA":    "ABCDXA22",
-		"user-assigned country XZ":    "ABCDXZ22",
-		"user-assigned country ZZ":    "ABCDZZ22",
-		"deleted country AN":          "ABCDAN22",
-		"deleted country CS":          "ABCDCS22",
-		"seven characters":            "ABCDFR2",
-		"nine characters":             "ABCDFR22X",
-		"ten characters":              "ABCDFR22XX",
-		"twelve characters":           "ABCDFR22XXXX",
-		"punctuation in party prefix": "ABC-FR22",
-		"punctuation in party suffix": "ABCDFR2-",
-		"punctuation in branch":       "ABCDFR22XY-",
-		"trailing space":              "ABCDFR22 ",
-	},
-}
+var stringBICISO93622014TestCases = stringBICTestCases
 
 func TestStringBICISO93622014(t *testing.T) {
 	assertPaymentBankingRule(
@@ -1012,20 +1208,15 @@ func TestStringBICCountryCodes(t *testing.T) {
 
 func TestBICPredicatesMatchRegexpOracle(t *testing.T) {
 	oracle := regexp.MustCompile(`^[A-Z0-9]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$`)
-	corpora := map[string]stringPaymentBankingTestCases{
+	corpora := map[string][]jsonschematest.Case[string]{
 		"StringBIC":            stringBICTestCases,
 		"StringBICISO93622014": stringBICISO93622014TestCases,
 	}
 	for corpusName, testCases := range corpora {
 		t.Run(corpusName, func(t *testing.T) {
-			for caseName, input := range testCases.validInputs {
-				t.Run("valid "+caseName, func(t *testing.T) {
-					assertBICPredicatesMatchRegexpOracle(t, oracle, input)
-				})
-			}
-			for caseName, input := range testCases.invalidInputs {
-				t.Run("invalid "+caseName, func(t *testing.T) {
-					assertBICPredicatesMatchRegexpOracle(t, oracle, input)
+			for _, tc := range testCases {
+				t.Run(tc.Name, func(t *testing.T) {
+					assertBICPredicatesMatchRegexpOracle(t, oracle, tc.Input)
 				})
 			}
 		})
@@ -1064,6 +1255,21 @@ func TestBICPredicatesMatchRegexpOracle(t *testing.T) {
 			assertBICPredicatesMatchRegexpOracle(t, oracle, "ABCD"+countryCode+"22XYZ")
 		}
 	})
+}
+
+func TestStringBICISO93622014_JSONSchema(t *testing.T) {
+	t.Parallel()
+
+	cases := slices.Clone(stringBICTestCases)
+	for _, countryCode := range append(readISOAlpha2CountryCodes(t), "XK") {
+		cases = append(cases, jsonschematest.Case[string]{
+			Name: "country code/" + countryCode, Input: "ABCD" + countryCode + "22", Valid: true,
+		})
+	}
+
+	schema, err := govy.JSONSchema(govy.New(govy.For(govy.GetSelf[string]()).Rules(StringBICISO93622014())))
+	assert.Require(t, assert.NoError(t, err))
+	jsonschematest.Assert(t, schema, "testdata/jsonschema/expected_string_bic_iso93622014.json", cases)
 }
 
 func BenchmarkStringBICISO93622014(b *testing.B) {
@@ -1166,6 +1372,22 @@ func Test_isMongoDBObjectID(t *testing.T) {
 	})
 }
 
+func TestStringMongoDBObjectID_JSONSchema(t *testing.T) {
+	t.Parallel()
+
+	cases := make([]jsonschematest.Case[string], 0, len(stringMongoDBObjectIDTestCases))
+	for name, tc := range stringMongoDBObjectIDTestCases {
+		cases = append(cases, jsonschematest.Case[string]{
+			Name:  name,
+			Input: tc.in,
+			Valid: !tc.shouldFail,
+		})
+	}
+	schema, err := govy.JSONSchema(govy.New(govy.For(govy.GetSelf[string]()).Rules(StringMongoDBObjectID())))
+	assert.Require(t, assert.NoError(t, err))
+	jsonschematest.Assert(t, schema, "testdata/jsonschema/expected_string_mongodb_object_id.json", cases)
+}
+
 func BenchmarkStringMongoDBObjectID(b *testing.B) {
 	rule := StringMongoDBObjectID()
 	for name, tt := range stringMongoDBObjectIDTestCases {
@@ -1177,32 +1399,74 @@ func BenchmarkStringMongoDBObjectID(b *testing.B) {
 	}
 }
 
-var stringEmailTestCases = []*struct {
-	in         string
-	shouldFail bool
-}{
-	{"test@mail.com", false},
-	{"Dörte@Sörensen.example.com", false},
-	{"θσερ@εχαμπλε.ψομ", false},
-	{"юзер@екзампл.ком", false},
-	{"उपयोगकर्ता@उदाहरण.कॉम", false},
-	{"用户@例子.广告", false},
-	{`"test test"@email.com`, false},
-	{"mail@domain_with_underscores.org", false},
-	{"test@email", false},
-	{"test@t", false},
-	{"", true},
-	{"test@", true},
-	{"test", true},
-	{"test@email.", true},
-	{"@email.com", true},
-	{`"@email.com`, true},
+var stringEmailTestCases = []jsonschematest.Case[string]{
+	{Name: "test@mail.com", Input: "test@mail.com", Valid: true},
+	{
+		Name:                 "Dörte@Sörensen.example.com",
+		Input:                "Dörte@Sörensen.example.com",
+		Valid:                true,
+		JSONSchemaDifference: "Ajv's email format does not accept internationalized mailbox addresses.",
+	},
+	{
+		Name:                 "θσερ@εχαμπλε.ψομ",
+		Input:                "θσερ@εχαμπλε.ψομ",
+		Valid:                true,
+		JSONSchemaDifference: "Ajv's email format does not accept internationalized mailbox addresses.",
+	},
+	{
+		Name:                 "юзер@екзампл.ком",
+		Input:                "юзер@екзампл.ком",
+		Valid:                true,
+		JSONSchemaDifference: "Ajv's email format does not accept internationalized mailbox addresses.",
+	},
+	{
+		Name:                 "उपयोगकर्ता@उदाहरण.कॉम",
+		Input:                "उपयोगकर्ता@उदाहरण.कॉम",
+		Valid:                true,
+		JSONSchemaDifference: "Ajv's email format does not accept internationalized mailbox addresses.",
+	},
+	{
+		Name:                 "用户@例子.广告",
+		Input:                "用户@例子.广告",
+		Valid:                true,
+		JSONSchemaDifference: "Ajv's email format does not accept internationalized mailbox addresses.",
+	},
+	{
+		Name:                 `"test test"@email.com`,
+		Input:                `"test test"@email.com`,
+		Valid:                true,
+		JSONSchemaDifference: "Ajv's email format does not accept quoted local parts.",
+	},
+	{
+		Name:                 "mail@domain_with_underscores.org",
+		Input:                "mail@domain_with_underscores.org",
+		Valid:                true,
+		JSONSchemaDifference: "Ajv's email format does not accept underscores in domain names.",
+	},
+	{
+		Name:                 "test@email",
+		Input:                "test@email",
+		Valid:                true,
+		JSONSchemaDifference: "Ajv's email format requires a dot in the domain name.",
+	},
+	{
+		Name:                 "test@t",
+		Input:                "test@t",
+		Valid:                true,
+		JSONSchemaDifference: "Ajv's email format requires a dot in the domain name.",
+	},
+	{Name: "empty", Input: ""},
+	{Name: "test@", Input: "test@"},
+	{Name: "test", Input: "test"},
+	{Name: "test@email.", Input: "test@email."},
+	{Name: "@email.com", Input: "@email.com"},
+	{Name: `"@email.com`, Input: `"@email.com`},
 }
 
 func TestStringEmail(t *testing.T) {
 	for _, tc := range stringEmailTestCases {
-		err := StringEmail().Validate(tc.in)
-		if tc.shouldFail {
+		err := StringEmail().Validate(tc.Input)
+		if !tc.Valid {
 			assert.ErrorContains(t, err, "string must be a valid email address")
 			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringEmail))
 		} else {
@@ -1211,13 +1475,26 @@ func TestStringEmail(t *testing.T) {
 	}
 }
 
+func TestStringEmail_JSONSchema(t *testing.T) {
+	t.Parallel()
+
+	schema, err := govy.JSONSchema(govy.New(govy.For(govy.GetSelf[string]()).Rules(StringEmail())))
+	assert.Require(t, assert.NoError(t, err))
+	jsonschematest.Assert(t, schema, "testdata/jsonschema/expected_string_email.json", stringEmailTestCases)
+}
+
 func BenchmarkStringEmail(b *testing.B) {
 	for _, tc := range stringEmailTestCases {
 		rule := StringEmail()
 		for range b.N {
-			_ = rule.Validate(tc.in)
+			_ = rule.Validate(tc.Input)
 		}
 	}
+}
+
+var stringURLParseErrorTestCase = jsonschematest.Case[string]{
+	Name:  "control character",
+	Input: "http://\x1f",
 }
 
 func TestStringURL(t *testing.T) {
@@ -1231,7 +1508,7 @@ func TestStringURL(t *testing.T) {
 		}
 	}
 	t.Run("failed to parse url", func(t *testing.T) {
-		err := StringURL().Validate("http://\x1f")
+		err := StringURL().Validate(stringURLParseErrorTestCase.Input)
 		assert.ErrorContains(
 			t,
 			err,
@@ -1239,6 +1516,25 @@ func TestStringURL(t *testing.T) {
 		)
 		assert.True(t, govy.HasErrorCode(err, ErrorCodeStringURL))
 	})
+}
+
+func TestStringURL_JSONSchema(t *testing.T) {
+	t.Parallel()
+
+	urlCases := make([]jsonschematest.Case[string], 0, len(urlTestCases)+1)
+	for _, tc := range urlTestCases {
+		urlCases = append(urlCases, jsonschematest.Case[string]{
+			Name:                 fmt.Sprintf("%q", tc.url),
+			Input:                tc.url,
+			Valid:                !tc.shouldFail,
+			JSONSchemaDifference: tc.jsonSchemaDifference,
+		})
+	}
+	urlCases = append(urlCases, stringURLParseErrorTestCase)
+
+	schema, err := govy.JSONSchema(govy.New(govy.For(govy.GetSelf[string]()).Rules(StringURL())))
+	assert.Require(t, assert.NoError(t, err))
+	jsonschematest.Assert(t, schema, "testdata/jsonschema/expected_string_url.json", urlCases)
 }
 
 func BenchmarkStringURL(b *testing.B) {
@@ -1250,23 +1546,20 @@ func BenchmarkStringURL(b *testing.B) {
 	}
 }
 
-var stringMACTestCases = []*struct {
-	in         string
-	shouldFail bool
-}{
-	{"3D:F2:C9:A6:B3:4F", false},
-	{"00:25:96:FF:FE:12:34:56", false},
-	{"3D-F2-C9-A6-B3:4F", true},
-	{"123", true},
-	{"", true},
-	{"abacaba", true},
-	{"0025:96FF:FE12:3456", true},
+var stringMACTestCases = []jsonschematest.Case[string]{
+	{Name: "3D:F2:C9:A6:B3:4F", Input: "3D:F2:C9:A6:B3:4F", Valid: true},
+	{Name: "00:25:96:FF:FE:12:34:56", Input: "00:25:96:FF:FE:12:34:56", Valid: true},
+	{Name: "3D-F2-C9-A6-B3:4F", Input: "3D-F2-C9-A6-B3:4F"},
+	{Name: "123", Input: "123"},
+	{Name: "empty", Input: ""},
+	{Name: "abacaba", Input: "abacaba"},
+	{Name: "0025:96FF:FE12:3456", Input: "0025:96FF:FE12:3456"},
 }
 
 func TestStringMAC(t *testing.T) {
 	for _, tc := range stringMACTestCases {
-		err := StringMAC().Validate(tc.in)
-		if tc.shouldFail {
+		err := StringMAC().Validate(tc.Input)
+		if !tc.Valid {
 			assert.EqualError(t, err, "string must be a valid MAC address")
 			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringMAC))
 		} else {
@@ -1275,36 +1568,41 @@ func TestStringMAC(t *testing.T) {
 	}
 }
 
+func TestStringMAC_JSONSchema(t *testing.T) {
+	t.Parallel()
+
+	schema, err := govy.JSONSchema(govy.New(govy.For(govy.GetSelf[string]()).Rules(StringMAC())))
+	assert.Require(t, assert.NoError(t, err))
+	jsonschematest.Assert(t, schema, "testdata/jsonschema/expected_string_mac.json", stringMACTestCases)
+}
+
 func BenchmarkStringMAC(b *testing.B) {
 	for _, tc := range stringMACTestCases {
 		rule := StringMAC()
 		for range b.N {
-			_ = rule.Validate(tc.in)
+			_ = rule.Validate(tc.Input)
 		}
 	}
 }
 
-var stringIPTestCases = []*struct {
-	in         string
-	shouldFail bool
-}{
-	{"10.0.0.1", false},
-	{"172.16.0.1", false},
-	{"192.168.0.1", false},
-	{"192.168.255.254", false},
-	{"172.16.255.254", false},
-	{"2001:cdba:0000:0000:0000:0000:3257:9652", false},
-	{"2001:cdba:0:0:0:0:3257:9652", false},
-	{"2001:cdba::3257:9652", false},
-	{"", true},
-	{"172.16.256.255", true},
-	{"192.168.255.256", true},
+var stringIPTestCases = []jsonschematest.Case[string]{
+	{Name: "10.0.0.1", Input: "10.0.0.1", Valid: true},
+	{Name: "172.16.0.1", Input: "172.16.0.1", Valid: true},
+	{Name: "192.168.0.1", Input: "192.168.0.1", Valid: true},
+	{Name: "192.168.255.254", Input: "192.168.255.254", Valid: true},
+	{Name: "172.16.255.254", Input: "172.16.255.254", Valid: true},
+	{Name: "2001:cdba:0000:0000:0000:0000:3257:9652", Input: "2001:cdba:0000:0000:0000:0000:3257:9652", Valid: true},
+	{Name: "2001:cdba:0:0:0:0:3257:9652", Input: "2001:cdba:0:0:0:0:3257:9652", Valid: true},
+	{Name: "2001:cdba::3257:9652", Input: "2001:cdba::3257:9652", Valid: true},
+	{Name: "empty", Input: ""},
+	{Name: "172.16.256.255", Input: "172.16.256.255"},
+	{Name: "192.168.255.256", Input: "192.168.255.256"},
 }
 
 func TestStringIP(t *testing.T) {
 	for _, tc := range stringIPTestCases {
-		err := StringIP().Validate(tc.in)
-		if tc.shouldFail {
+		err := StringIP().Validate(tc.Input)
+		if !tc.Valid {
 			assert.EqualError(t, err, "string must be a valid IP address")
 			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringIP))
 		} else {
@@ -1313,35 +1611,40 @@ func TestStringIP(t *testing.T) {
 	}
 }
 
+func TestStringIP_JSONSchema(t *testing.T) {
+	t.Parallel()
+
+	schema, err := govy.JSONSchema(govy.New(govy.For(govy.GetSelf[string]()).Rules(StringIP())))
+	assert.Require(t, assert.NoError(t, err))
+	jsonschematest.Assert(t, schema, "testdata/jsonschema/expected_string_ip.json", stringIPTestCases)
+}
+
 func BenchmarkStringIP(b *testing.B) {
 	for _, tc := range stringIPTestCases {
 		rule := StringIP()
 		for range b.N {
-			_ = rule.Validate(tc.in)
+			_ = rule.Validate(tc.Input)
 		}
 	}
 }
 
-var stringIPv4TestCases = []*struct {
-	in         string
-	shouldFail bool
-}{
-	{"10.0.0.1", false},
-	{"172.16.0.1", false},
-	{"192.168.0.1", false},
-	{"192.168.255.254", false},
-	{"172.16.255.254", false},
-	{"192.168.255.256", true},
-	{"172.16.256.255", true},
-	{"2001:cdba:0000:0000:0000:0000:3257:9652", true},
-	{"2001:cdba:0:0:0:0:3257:9652", true},
-	{"2001:cdba::3257:9652", true},
+var stringIPv4TestCases = []jsonschematest.Case[string]{
+	{Name: "10.0.0.1", Input: "10.0.0.1", Valid: true},
+	{Name: "172.16.0.1", Input: "172.16.0.1", Valid: true},
+	{Name: "192.168.0.1", Input: "192.168.0.1", Valid: true},
+	{Name: "192.168.255.254", Input: "192.168.255.254", Valid: true},
+	{Name: "172.16.255.254", Input: "172.16.255.254", Valid: true},
+	{Name: "192.168.255.256", Input: "192.168.255.256"},
+	{Name: "172.16.256.255", Input: "172.16.256.255"},
+	{Name: "2001:cdba:0000:0000:0000:0000:3257:9652", Input: "2001:cdba:0000:0000:0000:0000:3257:9652"},
+	{Name: "2001:cdba:0:0:0:0:3257:9652", Input: "2001:cdba:0:0:0:0:3257:9652"},
+	{Name: "2001:cdba::3257:9652", Input: "2001:cdba::3257:9652"},
 }
 
 func TestStringIPv4(t *testing.T) {
 	for _, tc := range stringIPv4TestCases {
-		err := StringIPv4().Validate(tc.in)
-		if tc.shouldFail {
+		err := StringIPv4().Validate(tc.Input)
+		if !tc.Valid {
 			assert.EqualError(t, err, "string must be a valid IPv4 address")
 			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringIPv4))
 		} else {
@@ -1350,35 +1653,40 @@ func TestStringIPv4(t *testing.T) {
 	}
 }
 
+func TestStringIPv4_JSONSchema(t *testing.T) {
+	t.Parallel()
+
+	schema, err := govy.JSONSchema(govy.New(govy.For(govy.GetSelf[string]()).Rules(StringIPv4())))
+	assert.Require(t, assert.NoError(t, err))
+	jsonschematest.Assert(t, schema, "testdata/jsonschema/expected_string_ipv4.json", stringIPv4TestCases)
+}
+
 func BenchmarkStringIPv4(b *testing.B) {
 	for _, tc := range stringIPv4TestCases {
 		rule := StringIPv4()
 		for range b.N {
-			_ = rule.Validate(tc.in)
+			_ = rule.Validate(tc.Input)
 		}
 	}
 }
 
-var stringIPv6TestCases = []*struct {
-	in         string
-	shouldFail bool
-}{
-	{"2001:cdba:0000:0000:0000:0000:3257:9652", false},
-	{"2001:cdba:0:0:0:0:3257:9652", false},
-	{"2001:cdba::3257:9652", false},
-	{"10.0.0.1", true},
-	{"172.16.0.1", true},
-	{"192.168.0.1", true},
-	{"192.168.255.254", true},
-	{"192.168.255.256", true},
-	{"172.16.255.254", true},
-	{"172.16.256.255", true},
+var stringIPv6TestCases = []jsonschematest.Case[string]{
+	{Name: "2001:cdba:0000:0000:0000:0000:3257:9652", Input: "2001:cdba:0000:0000:0000:0000:3257:9652", Valid: true},
+	{Name: "2001:cdba:0:0:0:0:3257:9652", Input: "2001:cdba:0:0:0:0:3257:9652", Valid: true},
+	{Name: "2001:cdba::3257:9652", Input: "2001:cdba::3257:9652", Valid: true},
+	{Name: "10.0.0.1", Input: "10.0.0.1"},
+	{Name: "172.16.0.1", Input: "172.16.0.1"},
+	{Name: "192.168.0.1", Input: "192.168.0.1"},
+	{Name: "192.168.255.254", Input: "192.168.255.254"},
+	{Name: "192.168.255.256", Input: "192.168.255.256"},
+	{Name: "172.16.255.254", Input: "172.16.255.254"},
+	{Name: "172.16.256.255", Input: "172.16.256.255"},
 }
 
 func TestStringIPv6(t *testing.T) {
 	for _, tc := range stringIPv6TestCases {
-		err := StringIPv6().Validate(tc.in)
-		if tc.shouldFail {
+		err := StringIPv6().Validate(tc.Input)
+		if !tc.Valid {
 			assert.EqualError(t, err, "string must be a valid IPv6 address")
 			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringIPv6))
 		} else {
@@ -1387,38 +1695,63 @@ func TestStringIPv6(t *testing.T) {
 	}
 }
 
+func TestStringIPv6_JSONSchema(t *testing.T) {
+	t.Parallel()
+
+	schema, err := govy.JSONSchema(govy.New(govy.For(govy.GetSelf[string]()).Rules(StringIPv6())))
+	assert.Require(t, assert.NoError(t, err))
+	jsonschematest.Assert(t, schema, "testdata/jsonschema/expected_string_ipv6.json", stringIPv6TestCases)
+}
+
 func BenchmarkStringIPv6(b *testing.B) {
 	for _, tc := range stringIPv6TestCases {
 		rule := StringIPv6()
 		for range b.N {
-			_ = rule.Validate(tc.in)
+			_ = rule.Validate(tc.Input)
 		}
 	}
 }
 
-var stringCIDRTestCases = []*struct {
-	in         string
-	shouldFail bool
-}{
-	{"10.0.0.0/0", false},
-	{"10.0.0.1/8", false},
-	{"172.16.0.1/16", false},
-	{"192.168.0.1/24", false},
-	{"192.168.255.254/24", false},
-	{"172.16.255.254/16", false},
-	{"2001:cdba:0000:0000:0000:0000:3257:9652/64", false},
-	{"2001:cdba:0:0:0:0:3257:9652/32", false},
-	{"2001:cdba::3257:9652/16", false},
-	{"192.168.255.254/48", true},
-	{"192.168.255.256/24", true},
-	{"172.16.256.255/16", true},
-	{"2001:cdba:0000:0000:0000:0000:3257:9652/256", true},
+var stringCIDRTestCases = []jsonschematest.Case[string]{
+	{Name: "10.0.0.0/0", Input: "10.0.0.0/0", Valid: true},
+	{Name: "10.0.0.1/8", Input: "10.0.0.1/8", Valid: true},
+	{Name: "172.16.0.1/16", Input: "172.16.0.1/16", Valid: true},
+	{Name: "192.168.0.1/24", Input: "192.168.0.1/24", Valid: true},
+	{Name: "192.168.255.254/24", Input: "192.168.255.254/24", Valid: true},
+	{Name: "172.16.255.254/16", Input: "172.16.255.254/16", Valid: true},
+	{
+		Name:  "2001:cdba:0000:0000:0000:0000:3257:9652/64",
+		Input: "2001:cdba:0000:0000:0000:0000:3257:9652/64",
+		Valid: true,
+	},
+	{Name: "2001:cdba:0:0:0:0:3257:9652/32", Input: "2001:cdba:0:0:0:0:3257:9652/32", Valid: true},
+	{Name: "2001:cdba::3257:9652/16", Input: "2001:cdba::3257:9652/16", Valid: true},
+	{
+		Name:                 "192.168.255.254/48",
+		Input:                "192.168.255.254/48",
+		JSONSchemaDifference: "The schema checks CIDR structure but does not validate the prefix range.",
+	},
+	{
+		Name:                 "192.168.255.256/24",
+		Input:                "192.168.255.256/24",
+		JSONSchemaDifference: "The schema checks CIDR structure but does not validate address components.",
+	},
+	{
+		Name:                 "172.16.256.255/16",
+		Input:                "172.16.256.255/16",
+		JSONSchemaDifference: "The schema checks CIDR structure but does not validate address components.",
+	},
+	{
+		Name:                 "2001:cdba:0000:0000:0000:0000:3257:9652/256",
+		Input:                "2001:cdba:0000:0000:0000:0000:3257:9652/256",
+		JSONSchemaDifference: "The schema checks CIDR structure but does not validate the prefix range.",
+	},
 }
 
 func TestStringCIDR(t *testing.T) {
 	for _, tc := range stringCIDRTestCases {
-		err := StringCIDR().Validate(tc.in)
-		if tc.shouldFail {
+		err := StringCIDR().Validate(tc.Input)
+		if !tc.Valid {
 			assert.EqualError(t, err, "string must be a valid CIDR notation IP address")
 			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringCIDR))
 		} else {
@@ -1427,45 +1760,90 @@ func TestStringCIDR(t *testing.T) {
 	}
 }
 
+func TestStringCIDR_JSONSchema(t *testing.T) {
+	t.Parallel()
+
+	schema, err := govy.JSONSchema(govy.New(govy.For(govy.GetSelf[string]()).Rules(StringCIDR())))
+	assert.Require(t, assert.NoError(t, err))
+	jsonschematest.Assert(t, schema, "testdata/jsonschema/expected_string_cidr.json", stringCIDRTestCases)
+}
+
 func BenchmarkStringCIDR(b *testing.B) {
 	for _, tc := range stringCIDRTestCases {
 		rule := StringCIDR()
 		for range b.N {
-			_ = rule.Validate(tc.in)
+			_ = rule.Validate(tc.Input)
 		}
 	}
 }
 
-var stringCIDRv4TestCases = []*struct {
-	in         string
-	shouldFail bool
-}{
-	{"0.0.0.0/0", false},
-	{"10.0.0.0/8", false},
-	{"172.16.0.0/16", false},
-	{"192.168.0.0/24", false},
-	{"172.16.0.0/16", false},
-	{"192.168.255.0/24", false},
-	{"10.0.0.0/0", true},
-	{"10.0.0.1/8", true},
-	{"172.16.0.1/16", true},
-	{"192.168.0.1/24", true},
-	{"192.168.255.254/24", true},
-	{"192.168.255.254/48", true},
-	{"192.168.255.256/24", true},
-	{"172.16.255.254/16", true},
-	{"172.16.256.255/16", true},
-	{"2001:cdba:0000:0000:0000:0000:3257:9652/64", true},
-	{"2001:cdba:0000:0000:0000:0000:3257:9652/256", true},
-	{"2001:cdba:0:0:0:0:3257:9652/32", true},
-	{"2001:cdba::3257:9652/16", true},
-	{"172.56.1.0/16", true},
+var stringCIDRv4TestCases = []jsonschematest.Case[string]{
+	{Name: "0.0.0.0/0", Input: "0.0.0.0/0", Valid: true},
+	{Name: "10.0.0.0/8", Input: "10.0.0.0/8", Valid: true},
+	{Name: "172.16.0.0/16", Input: "172.16.0.0/16", Valid: true},
+	{Name: "192.168.0.0/24", Input: "192.168.0.0/24", Valid: true},
+	{Name: "172.16.0.0/16", Input: "172.16.0.0/16", Valid: true},
+	{Name: "192.168.255.0/24", Input: "192.168.255.0/24", Valid: true},
+	{
+		Name:                 "10.0.0.0/0",
+		Input:                "10.0.0.0/0",
+		JSONSchemaDifference: "The schema checks CIDR structure but does not require network alignment.",
+	},
+	{
+		Name:                 "10.0.0.1/8",
+		Input:                "10.0.0.1/8",
+		JSONSchemaDifference: "The schema checks CIDR structure but does not require network alignment.",
+	},
+	{
+		Name:                 "172.16.0.1/16",
+		Input:                "172.16.0.1/16",
+		JSONSchemaDifference: "The schema checks CIDR structure but does not require network alignment.",
+	},
+	{
+		Name:                 "192.168.0.1/24",
+		Input:                "192.168.0.1/24",
+		JSONSchemaDifference: "The schema checks CIDR structure but does not require network alignment.",
+	},
+	{
+		Name:                 "192.168.255.254/24",
+		Input:                "192.168.255.254/24",
+		JSONSchemaDifference: "The schema checks CIDR structure but does not require network alignment.",
+	},
+	{
+		Name:                 "192.168.255.254/48",
+		Input:                "192.168.255.254/48",
+		JSONSchemaDifference: "The schema checks CIDR structure but does not validate the prefix range.",
+	},
+	{
+		Name:                 "192.168.255.256/24",
+		Input:                "192.168.255.256/24",
+		JSONSchemaDifference: "The schema checks CIDR structure but does not validate address components.",
+	},
+	{
+		Name:                 "172.16.255.254/16",
+		Input:                "172.16.255.254/16",
+		JSONSchemaDifference: "The schema checks CIDR structure but does not require network alignment.",
+	},
+	{
+		Name:                 "172.16.256.255/16",
+		Input:                "172.16.256.255/16",
+		JSONSchemaDifference: "The schema checks CIDR structure but does not validate address components.",
+	},
+	{Name: "2001:cdba:0000:0000:0000:0000:3257:9652/64", Input: "2001:cdba:0000:0000:0000:0000:3257:9652/64"},
+	{Name: "2001:cdba:0000:0000:0000:0000:3257:9652/256", Input: "2001:cdba:0000:0000:0000:0000:3257:9652/256"},
+	{Name: "2001:cdba:0:0:0:0:3257:9652/32", Input: "2001:cdba:0:0:0:0:3257:9652/32"},
+	{Name: "2001:cdba::3257:9652/16", Input: "2001:cdba::3257:9652/16"},
+	{
+		Name:                 "172.56.1.0/16",
+		Input:                "172.56.1.0/16",
+		JSONSchemaDifference: "The schema checks CIDR structure but does not require network alignment.",
+	},
 }
 
 func TestStringCIDRv4(t *testing.T) {
 	for _, tc := range stringCIDRv4TestCases {
-		err := StringCIDRv4().Validate(tc.in)
-		if tc.shouldFail {
+		err := StringCIDRv4().Validate(tc.Input)
+		if !tc.Valid {
 			assert.EqualError(t, err, "string must be a valid CIDR notation IPv4 address")
 			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringCIDRv4))
 		} else {
@@ -1474,38 +1852,51 @@ func TestStringCIDRv4(t *testing.T) {
 	}
 }
 
+func TestStringCIDRv4_JSONSchema(t *testing.T) {
+	t.Parallel()
+
+	schema, err := govy.JSONSchema(govy.New(govy.For(govy.GetSelf[string]()).Rules(StringCIDRv4())))
+	assert.Require(t, assert.NoError(t, err))
+	jsonschematest.Assert(t, schema, "testdata/jsonschema/expected_string_cidrv4.json", stringCIDRv4TestCases)
+}
+
 func BenchmarkStringCIDRv4(b *testing.B) {
 	for _, tc := range stringCIDRv4TestCases {
 		rule := StringCIDRv4()
 		for range b.N {
-			_ = rule.Validate(tc.in)
+			_ = rule.Validate(tc.Input)
 		}
 	}
 }
 
-var stringCIDRv6TestCases = []*struct {
-	in         string
-	shouldFail bool
-}{
-	{"2001:cdba:0000:0000:0000:0000:3257:9652/64", false},
-	{"2001:cdba:0:0:0:0:3257:9652/32", false},
-	{"2001:cdba::3257:9652/16", false},
-	{"10.0.0.0/0", true},
-	{"10.0.0.1/8", true},
-	{"172.16.0.1/16", true},
-	{"192.168.0.1/24", true},
-	{"192.168.255.254/24", true},
-	{"192.168.255.254/48", true},
-	{"192.168.255.256/24", true},
-	{"172.16.255.254/16", true},
-	{"172.16.256.255/16", true},
-	{"2001:cdba:0000:0000:0000:0000:3257:9652/256", true},
+var stringCIDRv6TestCases = []jsonschematest.Case[string]{
+	{
+		Name:  "2001:cdba:0000:0000:0000:0000:3257:9652/64",
+		Input: "2001:cdba:0000:0000:0000:0000:3257:9652/64",
+		Valid: true,
+	},
+	{Name: "2001:cdba:0:0:0:0:3257:9652/32", Input: "2001:cdba:0:0:0:0:3257:9652/32", Valid: true},
+	{Name: "2001:cdba::3257:9652/16", Input: "2001:cdba::3257:9652/16", Valid: true},
+	{Name: "10.0.0.0/0", Input: "10.0.0.0/0"},
+	{Name: "10.0.0.1/8", Input: "10.0.0.1/8"},
+	{Name: "172.16.0.1/16", Input: "172.16.0.1/16"},
+	{Name: "192.168.0.1/24", Input: "192.168.0.1/24"},
+	{Name: "192.168.255.254/24", Input: "192.168.255.254/24"},
+	{Name: "192.168.255.254/48", Input: "192.168.255.254/48"},
+	{Name: "192.168.255.256/24", Input: "192.168.255.256/24"},
+	{Name: "172.16.255.254/16", Input: "172.16.255.254/16"},
+	{Name: "172.16.256.255/16", Input: "172.16.256.255/16"},
+	{
+		Name:                 "2001:cdba:0000:0000:0000:0000:3257:9652/256",
+		Input:                "2001:cdba:0000:0000:0000:0000:3257:9652/256",
+		JSONSchemaDifference: "The schema checks CIDR structure but does not validate the prefix range.",
+	},
 }
 
 func TestStringCIDRv6(t *testing.T) {
 	for _, tc := range stringCIDRv6TestCases {
-		err := StringCIDRv6().Validate(tc.in)
-		if tc.shouldFail {
+		err := StringCIDRv6().Validate(tc.Input)
+		if !tc.Valid {
 			assert.EqualError(t, err, "string must be a valid CIDR notation IPv6 address")
 			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringCIDRv6))
 		} else {
@@ -1514,31 +1905,48 @@ func TestStringCIDRv6(t *testing.T) {
 	}
 }
 
+func TestStringCIDRv6_JSONSchema(t *testing.T) {
+	t.Parallel()
+
+	schema, err := govy.JSONSchema(govy.New(govy.For(govy.GetSelf[string]()).Rules(StringCIDRv6())))
+	assert.Require(t, assert.NoError(t, err))
+	jsonschematest.Assert(t, schema, "testdata/jsonschema/expected_string_cidrv6.json", stringCIDRv6TestCases)
+}
+
 func BenchmarkStringCIDRv6(b *testing.B) {
 	for _, tc := range stringCIDRv6TestCases {
 		rule := StringCIDRv6()
 		for range b.N {
-			_ = rule.Validate(tc.in)
+			_ = rule.Validate(tc.Input)
 		}
 	}
 }
 
-var stringJSONTestCases = []*struct {
-	in         string
-	shouldFail bool
-}{
-	{`{"foo": "bar"}`, false},
-	{`{}`, false},
-	{`[]`, false},
-	{"{]}", true},
-	{"", true},
-	{"yaml: ok", true},
+var stringJSONTestCases = []jsonschematest.Case[string]{
+	{Name: `{"foo": "bar"}`, Input: `{"foo": "bar"}`, Valid: true},
+	{Name: `{}`, Input: `{}`, Valid: true},
+	{Name: `[]`, Input: `[]`, Valid: true},
+	{
+		Name:                 "{]}",
+		Input:                "{]}",
+		JSONSchemaDifference: "contentMediaType is an annotation and does not validate the embedded JSON.",
+	},
+	{
+		Name:                 "empty",
+		Input:                "",
+		JSONSchemaDifference: "contentMediaType is an annotation and does not validate the embedded JSON.",
+	},
+	{
+		Name:                 "yaml: ok",
+		Input:                "yaml: ok",
+		JSONSchemaDifference: "contentMediaType is an annotation and does not validate the embedded JSON.",
+	},
 }
 
 func TestStringJSON(t *testing.T) {
 	for _, tc := range stringJSONTestCases {
-		err := StringJSON().Validate(tc.in)
-		if tc.shouldFail {
+		err := StringJSON().Validate(tc.Input)
+		if !tc.Valid {
 			assert.Error(t, err)
 			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringJSON))
 		} else {
@@ -1547,11 +1955,19 @@ func TestStringJSON(t *testing.T) {
 	}
 }
 
+func TestStringJSON_JSONSchema(t *testing.T) {
+	t.Parallel()
+
+	schema, err := govy.JSONSchema(govy.New(govy.For(govy.GetSelf[string]()).Rules(StringJSON())))
+	assert.Require(t, assert.NoError(t, err))
+	jsonschematest.Assert(t, schema, "testdata/jsonschema/expected_string_json.json", stringJSONTestCases)
+}
+
 func BenchmarkStringJSON(b *testing.B) {
 	for _, tc := range stringJSONTestCases {
 		rule := StringJSON()
 		for range b.N {
-			_ = rule.Validate(tc.in)
+			_ = rule.Validate(tc.Input)
 		}
 	}
 }
@@ -1666,11 +2082,32 @@ func TestStringSemver(t *testing.T) {
 	})
 }
 
+func TestStringSemver_JSONSchema(t *testing.T) {
+	t.Parallel()
+
+	cases := make([]jsonschematest.Case[string], 0, len(validSemverTestCases)+len(invalidSemverTestCases))
+	for _, input := range validSemverTestCases {
+		cases = append(cases, jsonschematest.Case[string]{Name: "valid/" + input, Input: input, Valid: true})
+	}
+	for _, input := range invalidSemverTestCases {
+		cases = append(cases, jsonschematest.Case[string]{Name: "invalid/" + input, Input: input})
+	}
+	schema, err := govy.JSONSchema(govy.New(govy.For(govy.GetSelf[string]()).Rules(StringSemver())))
+	assert.Require(t, assert.NoError(t, err))
+	jsonschematest.Assert(t, schema, "testdata/jsonschema/expected_string_semver.json", cases)
+}
+
 func BenchmarkStringSemver(b *testing.B) {
 	rule := StringSemver()
 	for b.Loop() {
-		_ = rule.Validate("2.7.3-rc.1+build.11.e0f985a")
+		for _, input := range validSemverTestCases {
+			_ = rule.Validate(input)
+		}
+		for _, input := range invalidSemverTestCases {
+			_ = rule.Validate(input)
+		}
 	}
+	b.ReportMetric(float64(len(validSemverTestCases)+len(invalidSemverTestCases)), "validations/op")
 }
 
 var stringCVETestCases = map[string]struct {
@@ -1744,6 +2181,28 @@ func TestStringCVE(t *testing.T) {
 	}
 }
 
+func TestStringCVE_JSONSchema(t *testing.T) {
+	t.Parallel()
+
+	cases := make([]jsonschematest.Case[string], 0, len(stringCVETestCases))
+	for name, tc := range stringCVETestCases {
+		cases = append(cases, jsonschematest.Case[string]{Name: name, Input: tc.in, Valid: tc.expectedError == ""})
+	}
+	schema, err := govy.JSONSchema(govy.New(govy.For(govy.GetSelf[string]()).Rules(StringCVE())))
+	assert.Require(t, assert.NoError(t, err))
+	jsonschematest.Assert(t, schema, "testdata/jsonschema/expected_string_cve.json", cases)
+}
+
+func BenchmarkStringCVE(b *testing.B) {
+	rule := StringCVE()
+	for b.Loop() {
+		for _, tc := range stringCVETestCases {
+			_ = rule.Validate(tc.in)
+		}
+	}
+	b.ReportMetric(float64(len(stringCVETestCases)), "validations/op")
+}
+
 var stringE164TestCases = map[string]struct {
 	in            string
 	expectedError string
@@ -1805,26 +2264,26 @@ func TestStringE164(t *testing.T) {
 	}
 }
 
-func BenchmarkStringE164(b *testing.B) {
-	tests := map[string]string{
-		"valid":   "+14155552671",
-		"invalid": "+1-415-555-2671",
-	}
+func TestStringE164_JSONSchema(t *testing.T) {
+	t.Parallel()
 
-	for name, in := range tests {
+	cases := make([]jsonschematest.Case[string], 0, len(stringE164TestCases))
+	for name, tc := range stringE164TestCases {
+		cases = append(cases, jsonschematest.Case[string]{Name: name, Input: tc.in, Valid: tc.expectedError == ""})
+	}
+	schema, err := govy.JSONSchema(govy.New(govy.For(govy.GetSelf[string]()).Rules(StringE164())))
+	assert.Require(t, assert.NoError(t, err))
+	jsonschematest.Assert(t, schema, "testdata/jsonschema/expected_string_e164.json", cases)
+}
+
+func BenchmarkStringE164(b *testing.B) {
+	for name, tc := range stringE164TestCases {
 		b.Run(name, func(b *testing.B) {
 			rule := StringE164()
 			for b.Loop() {
-				_ = rule.Validate(in)
+				_ = rule.Validate(tc.in)
 			}
 		})
-	}
-}
-
-func BenchmarkStringCVE(b *testing.B) {
-	rule := StringCVE()
-	for b.Loop() {
-		_ = rule.Validate("CVE-2021-44228")
 	}
 }
 
@@ -1835,81 +2294,90 @@ func BenchmarkStringCVE(b *testing.B) {
 // inputs, and both strict-decoder issue 15656 inputs. Go's duplicate
 // "sure." pair is represented once. CR and LF are invalid under this rule's
 // RFC 4648 generic profile even though Go's decoder ignores them.
-var stringBase64ValidInputs = map[string]string{
-	"empty":                           "",
-	"rfc 4648 one byte":               "Zg==",
-	"rfc 4648 two bytes":              "Zm8=",
-	"rfc 4648 three bytes":            "Zm9v",
-	"rfc 4648 four bytes":             "Zm9vYg==",
-	"rfc 4648 five bytes":             "Zm9vYmE=",
-	"rfc 4648 six bytes":              "Zm9vYmFy",
-	"rfc 4648 six-byte illustration":  "FPucA9l+",
-	"rfc 4648 five-byte illustration": "FPucA9k=",
-	"rfc 4648 four-byte illustration": "FPucAw==",
-	"single zero byte":                "AA==",
-	"two zero bytes":                  "AAA=",
-	"three zero bytes":                "AAAA",
-	"standard alphabet characters":    "+/8=",
-	"go corpus sure with period":      "c3VyZS4=",
-	"go corpus sure":                  "c3VyZQ==",
-	"go corpus sur":                   "c3Vy",
-	"go corpus su":                    "c3U=",
-	"go corpus eight-byte variant":    "bGVhc3VyZS4=",
-	"go corpus seven-byte variant":    "ZWFzdXJlLg==",
-	"go corpus six-byte variant":      "YXN1cmUu",
-	"go strict canonical pad bits":    "WvLTlMrX9NpYDQlEIFlnDA==",
+var stringBase64ValidInputs = map[string]jsonschematest.Case[string]{
+	"empty":                           {Input: "", Valid: true},
+	"rfc 4648 one byte":               {Input: "Zg==", Valid: true},
+	"rfc 4648 two bytes":              {Input: "Zm8=", Valid: true},
+	"rfc 4648 three bytes":            {Input: "Zm9v", Valid: true},
+	"rfc 4648 four bytes":             {Input: "Zm9vYg==", Valid: true},
+	"rfc 4648 five bytes":             {Input: "Zm9vYmE=", Valid: true},
+	"rfc 4648 six bytes":              {Input: "Zm9vYmFy", Valid: true},
+	"rfc 4648 six-byte illustration":  {Input: "FPucA9l+", Valid: true},
+	"rfc 4648 five-byte illustration": {Input: "FPucA9k=", Valid: true},
+	"rfc 4648 four-byte illustration": {Input: "FPucAw==", Valid: true},
+	"single zero byte":                {Input: "AA==", Valid: true},
+	"two zero bytes":                  {Input: "AAA=", Valid: true},
+	"three zero bytes":                {Input: "AAAA", Valid: true},
+	"standard alphabet characters":    {Input: "+/8=", Valid: true},
+	"go corpus sure with period":      {Input: "c3VyZS4=", Valid: true},
+	"go corpus sure":                  {Input: "c3VyZQ==", Valid: true},
+	"go corpus sur":                   {Input: "c3Vy", Valid: true},
+	"go corpus su":                    {Input: "c3U=", Valid: true},
+	"go corpus eight-byte variant":    {Input: "bGVhc3VyZS4=", Valid: true},
+	"go corpus seven-byte variant":    {Input: "ZWFzdXJlLg==", Valid: true},
+	"go corpus six-byte variant":      {Input: "YXN1cmUu", Valid: true},
+	"go strict canonical pad bits":    {Input: "WvLTlMrX9NpYDQlEIFlnDA==", Valid: true},
 }
 
-var stringBase64InvalidInputs = map[string]string{
-	"noncanonical one-byte pad bits":                              "Zh==",
-	"noncanonical two-byte pad bits":                              "Zm9=",
-	"invalid alphabet characters":                                 "!!!!",
-	"padding only":                                                "====",
-	"one symbol with three padding characters":                    "x===",
-	"leading padding":                                             "=AAA",
-	"padding in second position":                                  "A=AA",
-	"padding in third position":                                   "AA=A",
-	"data after double padding":                                   "AA==A",
-	"data after padding":                                          "AAA=AAAA",
-	"length modulo four is one":                                   "AAAAA",
-	"six symbols without required padding":                        "AAAAAA",
-	"one symbol with one padding character":                       "A=",
-	"one symbol with two padding characters":                      "A==",
-	"two symbols with one padding character":                      "AA=",
-	"six symbols with one padding character":                      "AAAAAA=",
-	"excess padding":                                              "YWJjZA=====",
-	"missing double padding":                                      "Zg",
-	"missing single padding":                                      "Zm8",
-	"padding after complete quantum":                              "Zm9v=",
-	"three padding characters after one byte":                     "Zg===",
-	"concatenated padded values":                                  "Zg==AA==",
-	"url-safe alphabet":                                           "-_8=",
-	"line feed":                                                   "Zm9v\n",
-	"carriage return and line feed":                               "Zm9v\r\n",
-	"embedded carriage return and line feed":                      "Zm\r\n9v",
-	"newline only":                                                "\n",
-	"padded data followed by newline":                             "AAA=\n",
-	"complete quantum followed by newline":                        "AAAA\n",
-	"invalid symbol followed by newline":                          "A!\n",
-	"incomplete padding followed by newline":                      "A=\n",
-	"go newline corpus trailing carriage return":                  "c3VyZQ==\r",
-	"go newline corpus trailing line feed":                        "c3VyZQ==\n",
-	"go newline corpus trailing CRLF":                             "c3VyZQ==\r\n",
-	"go newline corpus embedded CRLF":                             "c3VyZ\r\nQ==",
-	"go newline corpus interleaved carriage return and line feed": "c3V\ryZ\nQ==",
-	"go newline corpus interleaved line feed and carriage return": "c3V\nyZ\rQ==",
-	"go newline corpus before fourth symbol":                      "c3VyZ\nQ==",
-	"go newline corpus before padding":                            "c3VyZQ\n==",
-	"go newline corpus between padding":                           "c3VyZQ=\n=",
-	"go newline corpus repeated CRLF between padding":             "c3VyZQ=\r\n\r\n=",
-	"embedded space":                                              "Zm 9v",
-	"leading space":                                               " Zm9v",
-	"trailing tab":                                                "Zm9v\t",
-	"NUL byte":                                                    "Zm9v\x00",
-	"zero-width space":                                            "Zm9v\u200b",
-	"non-ASCII letter":                                            "Zm9vé",
-	"mixed standard and URL-safe alphabet":                        "AA+_",
-	"go strict noncanonical pad bits":                             "WvLTlMrX9NpYDQlEIFlnDB==",
+var stringBase64InvalidInputs = map[string]jsonschematest.Case[string]{
+	"noncanonical one-byte pad bits": {
+		Input:                "Zh==",
+		JSONSchemaDifference: "The schema checks Base64 shape but does not require zero padding bits.",
+	},
+	"noncanonical two-byte pad bits": {
+		Input:                "Zm9=",
+		JSONSchemaDifference: "The schema checks Base64 shape but does not require zero padding bits.",
+	},
+	"invalid alphabet characters":                                 {Input: "!!!!"},
+	"padding only":                                                {Input: "===="},
+	"one symbol with three padding characters":                    {Input: "x==="},
+	"leading padding":                                             {Input: "=AAA"},
+	"padding in second position":                                  {Input: "A=AA"},
+	"padding in third position":                                   {Input: "AA=A"},
+	"data after double padding":                                   {Input: "AA==A"},
+	"data after padding":                                          {Input: "AAA=AAAA"},
+	"length modulo four is one":                                   {Input: "AAAAA"},
+	"six symbols without required padding":                        {Input: "AAAAAA"},
+	"one symbol with one padding character":                       {Input: "A="},
+	"one symbol with two padding characters":                      {Input: "A=="},
+	"two symbols with one padding character":                      {Input: "AA="},
+	"six symbols with one padding character":                      {Input: "AAAAAA="},
+	"excess padding":                                              {Input: "YWJjZA====="},
+	"missing double padding":                                      {Input: "Zg"},
+	"missing single padding":                                      {Input: "Zm8"},
+	"padding after complete quantum":                              {Input: "Zm9v="},
+	"three padding characters after one byte":                     {Input: "Zg==="},
+	"concatenated padded values":                                  {Input: "Zg==AA=="},
+	"url-safe alphabet":                                           {Input: "-_8="},
+	"line feed":                                                   {Input: "Zm9v\n"},
+	"carriage return and line feed":                               {Input: "Zm9v\r\n"},
+	"embedded carriage return and line feed":                      {Input: "Zm\r\n9v"},
+	"newline only":                                                {Input: "\n"},
+	"padded data followed by newline":                             {Input: "AAA=\n"},
+	"complete quantum followed by newline":                        {Input: "AAAA\n"},
+	"invalid symbol followed by newline":                          {Input: "A!\n"},
+	"incomplete padding followed by newline":                      {Input: "A=\n"},
+	"go newline corpus trailing carriage return":                  {Input: "c3VyZQ==\r"},
+	"go newline corpus trailing line feed":                        {Input: "c3VyZQ==\n"},
+	"go newline corpus trailing CRLF":                             {Input: "c3VyZQ==\r\n"},
+	"go newline corpus embedded CRLF":                             {Input: "c3VyZ\r\nQ=="},
+	"go newline corpus interleaved carriage return and line feed": {Input: "c3V\ryZ\nQ=="},
+	"go newline corpus interleaved line feed and carriage return": {Input: "c3V\nyZ\rQ=="},
+	"go newline corpus before fourth symbol":                      {Input: "c3VyZ\nQ=="},
+	"go newline corpus before padding":                            {Input: "c3VyZQ\n=="},
+	"go newline corpus between padding":                           {Input: "c3VyZQ=\n="},
+	"go newline corpus repeated CRLF between padding":             {Input: "c3VyZQ=\r\n\r\n="},
+	"embedded space":                                              {Input: "Zm 9v"},
+	"leading space":                                               {Input: " Zm9v"},
+	"trailing tab":                                                {Input: "Zm9v\t"},
+	"NUL byte":                                                    {Input: "Zm9v\x00"},
+	"zero-width space":                                            {Input: "Zm9v\u200b"},
+	"non-ASCII letter":                                            {Input: "Zm9vé"},
+	"mixed standard and URL-safe alphabet":                        {Input: "AA+_"},
+	"go strict noncanonical pad bits": {
+		Input:                "WvLTlMrX9NpYDQlEIFlnDB==",
+		JSONSchemaDifference: "The schema checks Base64 shape but does not require zero padding bits.",
+	},
 }
 
 func TestStringBase64(t *testing.T) {
@@ -1923,6 +2391,24 @@ func TestStringBase64(t *testing.T) {
 	)
 }
 
+func TestStringBase64_JSONSchema(t *testing.T) {
+	t.Parallel()
+
+	cases := make([]jsonschematest.Case[string], 0, len(stringBase64ValidInputs)+len(stringBase64InvalidInputs))
+	for name, tc := range stringBase64ValidInputs {
+		tc.Name = "valid/" + name
+		cases = append(cases, tc)
+	}
+	for name, tc := range stringBase64InvalidInputs {
+		tc.Name = "invalid/" + name
+		cases = append(cases, tc)
+	}
+
+	schema, err := govy.JSONSchema(govy.New(govy.For(govy.GetSelf[string]()).Rules(StringBase64())))
+	assert.Require(t, assert.NoError(t, err))
+	jsonschematest.Assert(t, schema, "testdata/jsonschema/expected_string_base64.json", cases)
+}
+
 func BenchmarkStringBase64(b *testing.B) {
 	benchmarkStringEncodingRule(
 		b,
@@ -1934,83 +2420,92 @@ func BenchmarkStringBase64(b *testing.B) {
 
 // The padded URL-safe corpus applies the same complete Go tables after the
 // standard-to-URL alphabet conversion and includes RFC 7515 Appendix C.
-var stringBase64URLValidInputs = map[string]string{
-	"empty":                             "",
-	"rfc 4648 one byte":                 "Zg==",
-	"rfc 4648 two bytes":                "Zm8=",
-	"rfc 4648 three bytes":              "Zm9v",
-	"rfc 4648 four bytes":               "Zm9vYg==",
-	"rfc 4648 five bytes":               "Zm9vYmE=",
-	"rfc 4648 six bytes":                "Zm9vYmFy",
-	"rfc 4648 six-byte URL form":        "FPucA9l-",
-	"rfc 4648 five-byte URL form":       "FPucA9k=",
-	"rfc 4648 four-byte URL form":       "FPucAw==",
-	"single zero byte":                  "AA==",
-	"two zero bytes":                    "AAA=",
-	"three zero bytes":                  "AAAA",
-	"six zero-bit symbols with padding": "AAAAAA==",
-	"rfc 7515 appendix C padded form":   "A-z_4ME=",
-	"url-safe alphabet characters":      "-_8=",
-	"go corpus sure with period":        "c3VyZS4=",
-	"go corpus sure":                    "c3VyZQ==",
-	"go corpus sur":                     "c3Vy",
-	"go corpus su":                      "c3U=",
-	"go corpus eight-byte variant":      "bGVhc3VyZS4=",
-	"go corpus seven-byte variant":      "ZWFzdXJlLg==",
-	"go corpus six-byte variant":        "YXN1cmUu",
-	"go strict canonical pad bits":      "WvLTlMrX9NpYDQlEIFlnDA==",
+var stringBase64URLValidInputs = map[string]jsonschematest.Case[string]{
+	"empty":                             {Input: "", Valid: true},
+	"rfc 4648 one byte":                 {Input: "Zg==", Valid: true},
+	"rfc 4648 two bytes":                {Input: "Zm8=", Valid: true},
+	"rfc 4648 three bytes":              {Input: "Zm9v", Valid: true},
+	"rfc 4648 four bytes":               {Input: "Zm9vYg==", Valid: true},
+	"rfc 4648 five bytes":               {Input: "Zm9vYmE=", Valid: true},
+	"rfc 4648 six bytes":                {Input: "Zm9vYmFy", Valid: true},
+	"rfc 4648 six-byte URL form":        {Input: "FPucA9l-", Valid: true},
+	"rfc 4648 five-byte URL form":       {Input: "FPucA9k=", Valid: true},
+	"rfc 4648 four-byte URL form":       {Input: "FPucAw==", Valid: true},
+	"single zero byte":                  {Input: "AA==", Valid: true},
+	"two zero bytes":                    {Input: "AAA=", Valid: true},
+	"three zero bytes":                  {Input: "AAAA", Valid: true},
+	"six zero-bit symbols with padding": {Input: "AAAAAA==", Valid: true},
+	"rfc 7515 appendix C padded form":   {Input: "A-z_4ME=", Valid: true},
+	"url-safe alphabet characters":      {Input: "-_8=", Valid: true},
+	"go corpus sure with period":        {Input: "c3VyZS4=", Valid: true},
+	"go corpus sure":                    {Input: "c3VyZQ==", Valid: true},
+	"go corpus sur":                     {Input: "c3Vy", Valid: true},
+	"go corpus su":                      {Input: "c3U=", Valid: true},
+	"go corpus eight-byte variant":      {Input: "bGVhc3VyZS4=", Valid: true},
+	"go corpus seven-byte variant":      {Input: "ZWFzdXJlLg==", Valid: true},
+	"go corpus six-byte variant":        {Input: "YXN1cmUu", Valid: true},
+	"go strict canonical pad bits":      {Input: "WvLTlMrX9NpYDQlEIFlnDA==", Valid: true},
 }
 
-var stringBase64URLInvalidInputs = map[string]string{
-	"noncanonical one-byte pad bits":                              "Zh==",
-	"noncanonical two-byte pad bits":                              "Zm9=",
-	"invalid alphabet characters":                                 "!!!!",
-	"padding only":                                                "====",
-	"one symbol with three padding characters":                    "x===",
-	"leading padding":                                             "=AAA",
-	"padding in second position":                                  "A=AA",
-	"padding in third position":                                   "AA=A",
-	"data after double padding":                                   "AA==A",
-	"data after padding":                                          "AAA=AAAA",
-	"length modulo four is one":                                   "AAAAA",
-	"six symbols without required padding":                        "AAAAAA",
-	"one symbol with one padding character":                       "A=",
-	"one symbol with two padding characters":                      "A==",
-	"two symbols with one padding character":                      "AA=",
-	"six symbols with one padding character":                      "AAAAAA=",
-	"excess padding":                                              "YWJjZA=====",
-	"missing double padding":                                      "Zg",
-	"missing single padding":                                      "Zm8",
-	"padding after complete quantum":                              "Zm9v=",
-	"three padding characters after one byte":                     "Zg===",
-	"concatenated padded values":                                  "Zg==AA==",
-	"standard alphabet":                                           "+/8=",
-	"line feed":                                                   "Zm9v\n",
-	"carriage return and line feed":                               "Zm9v\r\n",
-	"embedded carriage return and line feed":                      "Zm\r\n9v",
-	"newline only":                                                "\n",
-	"padded data followed by newline":                             "AAA=\n",
-	"complete quantum followed by newline":                        "AAAA\n",
-	"invalid symbol followed by newline":                          "A!\n",
-	"incomplete padding followed by newline":                      "A=\n",
-	"go newline corpus trailing carriage return":                  "c3VyZQ==\r",
-	"go newline corpus trailing line feed":                        "c3VyZQ==\n",
-	"go newline corpus trailing CRLF":                             "c3VyZQ==\r\n",
-	"go newline corpus embedded CRLF":                             "c3VyZ\r\nQ==",
-	"go newline corpus interleaved carriage return and line feed": "c3V\ryZ\nQ==",
-	"go newline corpus interleaved line feed and carriage return": "c3V\nyZ\rQ==",
-	"go newline corpus before fourth symbol":                      "c3VyZ\nQ==",
-	"go newline corpus before padding":                            "c3VyZQ\n==",
-	"go newline corpus between padding":                           "c3VyZQ=\n=",
-	"go newline corpus repeated CRLF between padding":             "c3VyZQ=\r\n\r\n=",
-	"embedded space":                                              "Zm 9v",
-	"leading space":                                               " Zm9v",
-	"trailing tab":                                                "Zm9v\t",
-	"NUL byte":                                                    "Zm9v\x00",
-	"zero-width space":                                            "Zm9v\u200b",
-	"non-ASCII letter":                                            "Zm9vé",
-	"mixed standard and URL-safe alphabet":                        "AA+_",
-	"go strict noncanonical pad bits":                             "WvLTlMrX9NpYDQlEIFlnDB==",
+var stringBase64URLInvalidInputs = map[string]jsonschematest.Case[string]{
+	"noncanonical one-byte pad bits": {
+		Input:                "Zh==",
+		JSONSchemaDifference: "The schema checks Base64 shape but does not require zero padding bits.",
+	},
+	"noncanonical two-byte pad bits": {
+		Input:                "Zm9=",
+		JSONSchemaDifference: "The schema checks Base64 shape but does not require zero padding bits.",
+	},
+	"invalid alphabet characters":                                 {Input: "!!!!"},
+	"padding only":                                                {Input: "===="},
+	"one symbol with three padding characters":                    {Input: "x==="},
+	"leading padding":                                             {Input: "=AAA"},
+	"padding in second position":                                  {Input: "A=AA"},
+	"padding in third position":                                   {Input: "AA=A"},
+	"data after double padding":                                   {Input: "AA==A"},
+	"data after padding":                                          {Input: "AAA=AAAA"},
+	"length modulo four is one":                                   {Input: "AAAAA"},
+	"six symbols without required padding":                        {Input: "AAAAAA"},
+	"one symbol with one padding character":                       {Input: "A="},
+	"one symbol with two padding characters":                      {Input: "A=="},
+	"two symbols with one padding character":                      {Input: "AA="},
+	"six symbols with one padding character":                      {Input: "AAAAAA="},
+	"excess padding":                                              {Input: "YWJjZA====="},
+	"missing double padding":                                      {Input: "Zg"},
+	"missing single padding":                                      {Input: "Zm8"},
+	"padding after complete quantum":                              {Input: "Zm9v="},
+	"three padding characters after one byte":                     {Input: "Zg==="},
+	"concatenated padded values":                                  {Input: "Zg==AA=="},
+	"standard alphabet":                                           {Input: "+/8="},
+	"line feed":                                                   {Input: "Zm9v\n"},
+	"carriage return and line feed":                               {Input: "Zm9v\r\n"},
+	"embedded carriage return and line feed":                      {Input: "Zm\r\n9v"},
+	"newline only":                                                {Input: "\n"},
+	"padded data followed by newline":                             {Input: "AAA=\n"},
+	"complete quantum followed by newline":                        {Input: "AAAA\n"},
+	"invalid symbol followed by newline":                          {Input: "A!\n"},
+	"incomplete padding followed by newline":                      {Input: "A=\n"},
+	"go newline corpus trailing carriage return":                  {Input: "c3VyZQ==\r"},
+	"go newline corpus trailing line feed":                        {Input: "c3VyZQ==\n"},
+	"go newline corpus trailing CRLF":                             {Input: "c3VyZQ==\r\n"},
+	"go newline corpus embedded CRLF":                             {Input: "c3VyZ\r\nQ=="},
+	"go newline corpus interleaved carriage return and line feed": {Input: "c3V\ryZ\nQ=="},
+	"go newline corpus interleaved line feed and carriage return": {Input: "c3V\nyZ\rQ=="},
+	"go newline corpus before fourth symbol":                      {Input: "c3VyZ\nQ=="},
+	"go newline corpus before padding":                            {Input: "c3VyZQ\n=="},
+	"go newline corpus between padding":                           {Input: "c3VyZQ=\n="},
+	"go newline corpus repeated CRLF between padding":             {Input: "c3VyZQ=\r\n\r\n="},
+	"embedded space":                                              {Input: "Zm 9v"},
+	"leading space":                                               {Input: " Zm9v"},
+	"trailing tab":                                                {Input: "Zm9v\t"},
+	"NUL byte":                                                    {Input: "Zm9v\x00"},
+	"zero-width space":                                            {Input: "Zm9v\u200b"},
+	"non-ASCII letter":                                            {Input: "Zm9vé"},
+	"mixed standard and URL-safe alphabet":                        {Input: "AA+_"},
+	"go strict noncanonical pad bits": {
+		Input:                "WvLTlMrX9NpYDQlEIFlnDB==",
+		JSONSchemaDifference: "The schema checks Base64 shape but does not require zero padding bits.",
+	},
 }
 
 func TestStringBase64URL(t *testing.T) {
@@ -2022,6 +2517,24 @@ func TestStringBase64URL(t *testing.T) {
 		stringBase64URLValidInputs,
 		stringBase64URLInvalidInputs,
 	)
+}
+
+func TestStringBase64URL_JSONSchema(t *testing.T) {
+	t.Parallel()
+
+	cases := make([]jsonschematest.Case[string], 0, len(stringBase64URLValidInputs)+len(stringBase64URLInvalidInputs))
+	for name, tc := range stringBase64URLValidInputs {
+		tc.Name = "valid/" + name
+		cases = append(cases, tc)
+	}
+	for name, tc := range stringBase64URLInvalidInputs {
+		tc.Name = "invalid/" + name
+		cases = append(cases, tc)
+	}
+
+	schema, err := govy.JSONSchema(govy.New(govy.For(govy.GetSelf[string]()).Rules(StringBase64URL())))
+	assert.Require(t, assert.NoError(t, err))
+	jsonschematest.Assert(t, schema, "testdata/jsonschema/expected_string_base64_url.json", cases)
 }
 
 func BenchmarkStringBase64URL(b *testing.B) {
@@ -2038,84 +2551,99 @@ func BenchmarkStringBase64URL(b *testing.B) {
 // exact TestNewLineCharacters inputs (all invalid), plus RFC 7515 Appendix C
 // and strict canonical pad-bit boundaries. Overlapping literals are represented
 // once, and exact corpus inputs are not replaced by rawURLRef transformations.
-var stringBase64RawURLValidInputs = map[string]string{
-	"empty":                            "",
-	"one byte without padding":         "Zg",
-	"two bytes without padding":        "Zm8",
-	"three bytes":                      "Zm9v",
-	"four bytes without padding":       "Zm9vYg",
-	"five bytes without padding":       "Zm9vYmE",
-	"six bytes":                        "Zm9vYmFy",
-	"rfc 4648 six-byte raw URL form":   "FPucA9l-",
-	"rfc 4648 five-byte raw URL form":  "FPucA9k",
-	"rfc 4648 four-byte raw URL form":  "FPucAw",
-	"single zero byte without padding": "AA",
-	"two zero bytes without padding":   "AAA",
-	"three zero bytes":                 "AAAA",
-	"six zero-bit symbols":             "AAAAAA",
-	"rfc 7515 appendix C":              "A-z_4ME",
-	"url-safe alphabet characters":     "-_8",
-	"go corpus sure with period":       "c3VyZS4",
-	"go corpus sure":                   "c3VyZQ",
-	"go corpus sur":                    "c3Vy",
-	"go corpus su":                     "c3U",
-	"go corpus eight-byte variant":     "bGVhc3VyZS4",
-	"go corpus seven-byte variant":     "ZWFzdXJlLg",
-	"go corpus six-byte variant":       "YXN1cmUu",
-	"go strict canonical pad bits":     "WvLTlMrX9NpYDQlEIFlnDA",
+var stringBase64RawURLValidInputs = map[string]jsonschematest.Case[string]{
+	"empty":                            {Input: "", Valid: true},
+	"one byte without padding":         {Input: "Zg", Valid: true},
+	"two bytes without padding":        {Input: "Zm8", Valid: true},
+	"three bytes":                      {Input: "Zm9v", Valid: true},
+	"four bytes without padding":       {Input: "Zm9vYg", Valid: true},
+	"five bytes without padding":       {Input: "Zm9vYmE", Valid: true},
+	"six bytes":                        {Input: "Zm9vYmFy", Valid: true},
+	"rfc 4648 six-byte raw URL form":   {Input: "FPucA9l-", Valid: true},
+	"rfc 4648 five-byte raw URL form":  {Input: "FPucA9k", Valid: true},
+	"rfc 4648 four-byte raw URL form":  {Input: "FPucAw", Valid: true},
+	"single zero byte without padding": {Input: "AA", Valid: true},
+	"two zero bytes without padding":   {Input: "AAA", Valid: true},
+	"three zero bytes":                 {Input: "AAAA", Valid: true},
+	"six zero-bit symbols":             {Input: "AAAAAA", Valid: true},
+	"rfc 7515 appendix C":              {Input: "A-z_4ME", Valid: true},
+	"url-safe alphabet characters":     {Input: "-_8", Valid: true},
+	"go corpus sure with period":       {Input: "c3VyZS4", Valid: true},
+	"go corpus sure":                   {Input: "c3VyZQ", Valid: true},
+	"go corpus sur":                    {Input: "c3Vy", Valid: true},
+	"go corpus su":                     {Input: "c3U", Valid: true},
+	"go corpus eight-byte variant":     {Input: "bGVhc3VyZS4", Valid: true},
+	"go corpus seven-byte variant":     {Input: "ZWFzdXJlLg", Valid: true},
+	"go corpus six-byte variant":       {Input: "YXN1cmUu", Valid: true},
+	"go strict canonical pad bits":     {Input: "WvLTlMrX9NpYDQlEIFlnDA", Valid: true},
 }
 
-var stringBase64RawURLInvalidInputs = map[string]string{
-	"noncanonical one-byte pad bits":                              "Zh",
-	"noncanonical two-byte pad bits":                              "Zm9",
-	"length modulo four is one":                                   "A",
-	"longer length modulo four is one":                            "AAAAA",
-	"single padding character":                                    "Zm8=",
-	"double padding characters":                                   "Zg==",
-	"padding after complete quantum":                              "Zm9v=",
-	"standard alphabet":                                           "+/8",
-	"line feed":                                                   "Zm9v\n",
-	"carriage return and line feed":                               "Zm9v\r\n",
-	"embedded carriage return and line feed":                      "Zm\r\n9v",
-	"embedded space":                                              "Zm 9v",
-	"leading space":                                               " Zm9v",
-	"trailing tab":                                                "Zm9v\t",
-	"NUL byte":                                                    "Zm9v\x00",
-	"zero-width space":                                            "Zm9v\u200b",
-	"non-ASCII letter":                                            "Zm9vé",
-	"mixed standard and URL-safe alphabet":                        "AA+_",
-	"go strict noncanonical pad bits":                             "WvLTlMrX9NpYDQlEIFlnDB",
-	"go corrupt corpus newline only":                              "\n",
-	"go corrupt corpus padded data followed by newline":           "AAA=\n",
-	"go corrupt corpus complete quantum followed by newline":      "AAAA\n",
-	"go corrupt corpus invalid alphabet":                          "!!!!",
-	"go corrupt corpus padding only":                              "====",
-	"go corrupt corpus excess padding after one symbol":           "x===",
-	"go corrupt corpus leading padding":                           "=AAA",
-	"go corrupt corpus padding in second position":                "A=AA",
-	"go corrupt corpus padding in third position":                 "AA=A",
-	"go corrupt corpus data after double padding":                 "AA==A",
-	"go corrupt corpus data after padding":                        "AAA=AAAA",
-	"go corrupt corpus one symbol with padding":                   "A=",
-	"go corrupt corpus one symbol with double padding":            "A==",
-	"go corrupt corpus two symbols with padding":                  "AA=",
-	"go corrupt corpus two symbols with double padding":           "AA==",
-	"go corrupt corpus three symbols with padding":                "AAA=",
-	"go corrupt corpus excess padding after six symbols":          "AAAAAA=",
-	"go corrupt corpus excess terminal padding":                   "YWJjZA=====",
-	"go corrupt corpus invalid symbol followed by newline":        "A!\n",
-	"go corrupt corpus incomplete padding followed by newline":    "A=\n",
-	"go newline corpus padded base":                               "c3VyZQ==",
-	"go newline corpus trailing carriage return":                  "c3VyZQ==\r",
-	"go newline corpus trailing line feed":                        "c3VyZQ==\n",
-	"go newline corpus trailing CRLF":                             "c3VyZQ==\r\n",
-	"go newline corpus embedded CRLF":                             "c3VyZ\r\nQ==",
-	"go newline corpus interleaved carriage return and line feed": "c3V\ryZ\nQ==",
-	"go newline corpus interleaved line feed and carriage return": "c3V\nyZ\rQ==",
-	"go newline corpus before fourth symbol":                      "c3VyZ\nQ==",
-	"go newline corpus before padding":                            "c3VyZQ\n==",
-	"go newline corpus between padding":                           "c3VyZQ=\n=",
-	"go newline corpus repeated CRLF between padding":             "c3VyZQ=\r\n\r\n=",
+var stringBase64RawURLInvalidInputs = map[string]jsonschematest.Case[string]{
+	"noncanonical one-byte pad bits": {
+		Input:                "Zh",
+		JSONSchemaDifference: "The schema checks Base64 shape but does not require zero padding bits.",
+	},
+	"noncanonical two-byte pad bits": {
+		Input:                "Zm9",
+		JSONSchemaDifference: "The schema checks Base64 shape but does not require zero padding bits.",
+	},
+	"length modulo four is one": {
+		Input:                "A",
+		JSONSchemaDifference: "The schema checks the Base64 alphabet but does not reject impossible unpadded lengths.",
+	},
+	"longer length modulo four is one": {
+		Input:                "AAAAA",
+		JSONSchemaDifference: "The schema checks the Base64 alphabet but does not reject impossible unpadded lengths.",
+	},
+	"single padding character":               {Input: "Zm8="},
+	"double padding characters":              {Input: "Zg=="},
+	"padding after complete quantum":         {Input: "Zm9v="},
+	"standard alphabet":                      {Input: "+/8"},
+	"line feed":                              {Input: "Zm9v\n"},
+	"carriage return and line feed":          {Input: "Zm9v\r\n"},
+	"embedded carriage return and line feed": {Input: "Zm\r\n9v"},
+	"embedded space":                         {Input: "Zm 9v"},
+	"leading space":                          {Input: " Zm9v"},
+	"trailing tab":                           {Input: "Zm9v\t"},
+	"NUL byte":                               {Input: "Zm9v\x00"},
+	"zero-width space":                       {Input: "Zm9v\u200b"},
+	"non-ASCII letter":                       {Input: "Zm9vé"},
+	"mixed standard and URL-safe alphabet":   {Input: "AA+_"},
+	"go strict noncanonical pad bits": {
+		Input:                "WvLTlMrX9NpYDQlEIFlnDB",
+		JSONSchemaDifference: "The schema checks Base64 shape but does not require zero padding bits.",
+	},
+	"go corrupt corpus newline only":                              {Input: "\n"},
+	"go corrupt corpus padded data followed by newline":           {Input: "AAA=\n"},
+	"go corrupt corpus complete quantum followed by newline":      {Input: "AAAA\n"},
+	"go corrupt corpus invalid alphabet":                          {Input: "!!!!"},
+	"go corrupt corpus padding only":                              {Input: "===="},
+	"go corrupt corpus excess padding after one symbol":           {Input: "x==="},
+	"go corrupt corpus leading padding":                           {Input: "=AAA"},
+	"go corrupt corpus padding in second position":                {Input: "A=AA"},
+	"go corrupt corpus padding in third position":                 {Input: "AA=A"},
+	"go corrupt corpus data after double padding":                 {Input: "AA==A"},
+	"go corrupt corpus data after padding":                        {Input: "AAA=AAAA"},
+	"go corrupt corpus one symbol with padding":                   {Input: "A="},
+	"go corrupt corpus one symbol with double padding":            {Input: "A=="},
+	"go corrupt corpus two symbols with padding":                  {Input: "AA="},
+	"go corrupt corpus two symbols with double padding":           {Input: "AA=="},
+	"go corrupt corpus three symbols with padding":                {Input: "AAA="},
+	"go corrupt corpus excess padding after six symbols":          {Input: "AAAAAA="},
+	"go corrupt corpus excess terminal padding":                   {Input: "YWJjZA====="},
+	"go corrupt corpus invalid symbol followed by newline":        {Input: "A!\n"},
+	"go corrupt corpus incomplete padding followed by newline":    {Input: "A=\n"},
+	"go newline corpus padded base":                               {Input: "c3VyZQ=="},
+	"go newline corpus trailing carriage return":                  {Input: "c3VyZQ==\r"},
+	"go newline corpus trailing line feed":                        {Input: "c3VyZQ==\n"},
+	"go newline corpus trailing CRLF":                             {Input: "c3VyZQ==\r\n"},
+	"go newline corpus embedded CRLF":                             {Input: "c3VyZ\r\nQ=="},
+	"go newline corpus interleaved carriage return and line feed": {Input: "c3V\ryZ\nQ=="},
+	"go newline corpus interleaved line feed and carriage return": {Input: "c3V\nyZ\rQ=="},
+	"go newline corpus before fourth symbol":                      {Input: "c3VyZ\nQ=="},
+	"go newline corpus before padding":                            {Input: "c3VyZQ\n=="},
+	"go newline corpus between padding":                           {Input: "c3VyZQ=\n="},
+	"go newline corpus repeated CRLF between padding":             {Input: "c3VyZQ=\r\n\r\n="},
 }
 
 func TestStringBase64RawURL(t *testing.T) {
@@ -2127,6 +2655,28 @@ func TestStringBase64RawURL(t *testing.T) {
 		stringBase64RawURLValidInputs,
 		stringBase64RawURLInvalidInputs,
 	)
+}
+
+func TestStringBase64RawURL_JSONSchema(t *testing.T) {
+	t.Parallel()
+
+	cases := make(
+		[]jsonschematest.Case[string],
+		0,
+		len(stringBase64RawURLValidInputs)+len(stringBase64RawURLInvalidInputs),
+	)
+	for name, tc := range stringBase64RawURLValidInputs {
+		tc.Name = "valid/" + name
+		cases = append(cases, tc)
+	}
+	for name, tc := range stringBase64RawURLInvalidInputs {
+		tc.Name = "invalid/" + name
+		cases = append(cases, tc)
+	}
+
+	schema, err := govy.JSONSchema(govy.New(govy.For(govy.GetSelf[string]()).Rules(StringBase64RawURL())))
+	assert.Require(t, assert.NoError(t, err))
+	jsonschematest.Assert(t, schema, "testdata/jsonschema/expected_string_base64_raw_url.json", cases)
 }
 
 func BenchmarkStringBase64RawURL(b *testing.B) {
@@ -2144,67 +2694,67 @@ func BenchmarkStringBase64RawURL(b *testing.B) {
 // error-table inputs are represented. Empty is invalid under this rule's
 // nonempty digit-string contract, while Go's three odd-length error inputs are
 // valid here.
-var stringHexadecimalValidInputs = map[string]string{
-	"two digits":                            "66",
-	"four digits":                           "666F",
-	"six digits":                            "666F6F",
-	"eight digits":                          "666F6F62",
-	"ten digits":                            "666F6F6261",
-	"twelve digits":                         "666F6F626172",
-	"single digit":                          "F",
-	"two zero digits":                       "00",
-	"lowercase":                             "deadbeef",
-	"uppercase":                             "DEADBEEF",
-	"lowercase prefix":                      "0xdeadBEEF",
-	"uppercase prefix":                      "0XABCDEF",
-	"lowercase prefix with one digit":       "0x0",
-	"uppercase prefix with one digit":       "0Xf",
-	"hex digits beginning with lowercase b": "0b1010",
-	"hex digits beginning with uppercase B": "0B1010",
-	"go byte range zero through seven":      "0001020304050607",
-	"go byte range eight through fifteen":   "08090a0b0c0d0e0f",
-	"go byte range f0 through f7":           "f0f1f2f3f4f5f6f7",
-	"go byte range f8 through ff":           "f8f9fafbfcfdfeff",
-	"go single byte":                        "67",
-	"go two bytes":                          "e3a1",
-	"go uppercase byte range":               "F8F9FAFBFCFDFEFF",
-	"go odd single digit":                   "0",
-	"go odd numeric sequence":               "30313",
-	"go odd alphabetic sequence":            "ffeed",
+var stringHexadecimalValidInputs = map[string]jsonschematest.Case[string]{
+	"two digits":                            {Input: "66", Valid: true},
+	"four digits":                           {Input: "666F", Valid: true},
+	"six digits":                            {Input: "666F6F", Valid: true},
+	"eight digits":                          {Input: "666F6F62", Valid: true},
+	"ten digits":                            {Input: "666F6F6261", Valid: true},
+	"twelve digits":                         {Input: "666F6F626172", Valid: true},
+	"single digit":                          {Input: "F", Valid: true},
+	"two zero digits":                       {Input: "00", Valid: true},
+	"lowercase":                             {Input: "deadbeef", Valid: true},
+	"uppercase":                             {Input: "DEADBEEF", Valid: true},
+	"lowercase prefix":                      {Input: "0xdeadBEEF", Valid: true},
+	"uppercase prefix":                      {Input: "0XABCDEF", Valid: true},
+	"lowercase prefix with one digit":       {Input: "0x0", Valid: true},
+	"uppercase prefix with one digit":       {Input: "0Xf", Valid: true},
+	"hex digits beginning with lowercase b": {Input: "0b1010", Valid: true},
+	"hex digits beginning with uppercase B": {Input: "0B1010", Valid: true},
+	"go byte range zero through seven":      {Input: "0001020304050607", Valid: true},
+	"go byte range eight through fifteen":   {Input: "08090a0b0c0d0e0f", Valid: true},
+	"go byte range f0 through f7":           {Input: "f0f1f2f3f4f5f6f7", Valid: true},
+	"go byte range f8 through ff":           {Input: "f8f9fafbfcfdfeff", Valid: true},
+	"go single byte":                        {Input: "67", Valid: true},
+	"go two bytes":                          {Input: "e3a1", Valid: true},
+	"go uppercase byte range":               {Input: "F8F9FAFBFCFDFEFF", Valid: true},
+	"go odd single digit":                   {Input: "0", Valid: true},
+	"go odd numeric sequence":               {Input: "30313", Valid: true},
+	"go odd alphabetic sequence":            {Input: "ffeed", Valid: true},
 }
 
-var stringHexadecimalInvalidInputs = map[string]string{
-	"empty":                            "",
-	"lowercase prefix only":            "0x",
-	"uppercase prefix only":            "0X",
-	"repeated prefix":                  "0x0x1",
-	"prefix after digit":               "10x1",
-	"minus sign":                       "-0x1",
-	"plus sign":                        "+F",
-	"underscore":                       "dead_beef",
-	"leading whitespace":               " deadbeef",
-	"trailing whitespace":              "deadbeef ",
-	"invalid digit G":                  "G",
-	"full-width F":                     "\uff26",
-	"Arabic-Indic digit":               "\u0660",
-	"NUL byte":                         "00\x00",
-	"octal prefix":                     "0o755",
-	"go invalid first digit":           "zd4aa",
-	"go invalid final digit":           "d4aaz",
-	"go invalid second digit":          "0g",
-	"go invalid trailing digits":       "00gg",
-	"go control byte":                  "0\x01",
-	"prefix after zero digit":          "00x1",
-	"plus before prefix":               "+0x1",
-	"underscore after prefix":          "0x1_2",
-	"leading whitespace before prefix": " 0x1",
-	"trailing whitespace after prefix": "0x1 ",
-	"whitespace after prefix":          "0x 1",
-	"invalid prefixed digit G":         "0xG",
-	"full-width digits":                "１２",
-	"non-ASCII letter":                 "é",
-	"NUL byte only":                    "\x00",
-	"audit octal prefix":               "0o77",
+var stringHexadecimalInvalidInputs = map[string]jsonschematest.Case[string]{
+	"empty":                            {Input: ""},
+	"lowercase prefix only":            {Input: "0x"},
+	"uppercase prefix only":            {Input: "0X"},
+	"repeated prefix":                  {Input: "0x0x1"},
+	"prefix after digit":               {Input: "10x1"},
+	"minus sign":                       {Input: "-0x1"},
+	"plus sign":                        {Input: "+F"},
+	"underscore":                       {Input: "dead_beef"},
+	"leading whitespace":               {Input: " deadbeef"},
+	"trailing whitespace":              {Input: "deadbeef "},
+	"invalid digit G":                  {Input: "G"},
+	"full-width F":                     {Input: "\uff26"},
+	"Arabic-Indic digit":               {Input: "\u0660"},
+	"NUL byte":                         {Input: "00\x00"},
+	"octal prefix":                     {Input: "0o755"},
+	"go invalid first digit":           {Input: "zd4aa"},
+	"go invalid final digit":           {Input: "d4aaz"},
+	"go invalid second digit":          {Input: "0g"},
+	"go invalid trailing digits":       {Input: "00gg"},
+	"go control byte":                  {Input: "0\x01"},
+	"prefix after zero digit":          {Input: "00x1"},
+	"plus before prefix":               {Input: "+0x1"},
+	"underscore after prefix":          {Input: "0x1_2"},
+	"leading whitespace before prefix": {Input: " 0x1"},
+	"trailing whitespace after prefix": {Input: "0x1 "},
+	"whitespace after prefix":          {Input: "0x 1"},
+	"invalid prefixed digit G":         {Input: "0xG"},
+	"full-width digits":                {Input: "１２"},
+	"non-ASCII letter":                 {Input: "é"},
+	"NUL byte only":                    {Input: "\x00"},
+	"audit octal prefix":               {Input: "0o77"},
 }
 
 func TestStringHexadecimal(t *testing.T) {
@@ -2238,6 +2788,28 @@ func Test_isHexadecimalMatchesRegexp(t *testing.T) {
 	}
 }
 
+func TestStringHexadecimal_JSONSchema(t *testing.T) {
+	t.Parallel()
+
+	cases := make(
+		[]jsonschematest.Case[string],
+		0,
+		len(stringHexadecimalValidInputs)+len(stringHexadecimalInvalidInputs),
+	)
+	for name, tc := range stringHexadecimalValidInputs {
+		tc.Name = "valid/" + name
+		cases = append(cases, tc)
+	}
+	for name, tc := range stringHexadecimalInvalidInputs {
+		tc.Name = "invalid/" + name
+		cases = append(cases, tc)
+	}
+
+	schema, err := govy.JSONSchema(govy.New(govy.For(govy.GetSelf[string]()).Rules(StringHexadecimal())))
+	assert.Require(t, assert.NoError(t, err))
+	jsonschematest.Assert(t, schema, "testdata/jsonschema/expected_string_hexadecimal.json", cases)
+}
+
 func BenchmarkStringHexadecimal(b *testing.B) {
 	benchmarkStringEncodingRule(
 		b,
@@ -2252,21 +2824,21 @@ func runStringEncodingRuleTest(
 	rule govy.Rule[string],
 	errorCode govy.ErrorCode,
 	expectedError string,
-	validInputs map[string]string,
-	invalidInputs map[string]string,
+	validInputs map[string]jsonschematest.Case[string],
+	invalidInputs map[string]jsonschematest.Case[string],
 ) {
 	t.Helper()
 	t.Run("valid", func(t *testing.T) {
-		for name, in := range validInputs {
+		for name, tc := range validInputs {
 			t.Run(name, func(t *testing.T) {
-				assert.NoError(t, rule.Validate(in))
+				assert.NoError(t, rule.Validate(tc.Input))
 			})
 		}
 	})
 	t.Run("invalid", func(t *testing.T) {
-		for name, in := range invalidInputs {
+		for name, tc := range invalidInputs {
 			t.Run(name, func(t *testing.T) {
-				err := rule.Validate(in)
+				err := rule.Validate(tc.Input)
 				assert.EqualError(t, err, expectedError)
 				assert.True(t, govy.HasErrorCode(err, errorCode))
 			})
@@ -2277,8 +2849,8 @@ func runStringEncodingRuleTest(
 func benchmarkStringEncodingRule(
 	b *testing.B,
 	rule govy.Rule[string],
-	validInputs map[string]string,
-	invalidInputs map[string]string,
+	validInputs map[string]jsonschematest.Case[string],
+	invalidInputs map[string]jsonschematest.Case[string],
 ) {
 	b.Helper()
 	b.Run("valid", func(b *testing.B) {
@@ -2292,12 +2864,12 @@ func benchmarkStringEncodingRule(
 func benchmarkStringEncodingInputs(
 	b *testing.B,
 	rule govy.Rule[string],
-	inputs map[string]string,
+	inputs map[string]jsonschematest.Case[string],
 ) {
 	b.Helper()
 	for b.Loop() {
-		for _, in := range inputs {
-			_ = rule.Validate(in)
+		for _, tc := range inputs {
+			_ = rule.Validate(tc.Input)
 		}
 	}
 	b.ReportMetric(float64(len(inputs)), "validations/op")
@@ -2475,6 +3047,29 @@ func TestStringEIN(t *testing.T) {
 	})
 }
 
+func TestStringEIN_JSONSchema(t *testing.T) {
+	t.Parallel()
+
+	schema, err := govy.JSONSchema(govy.New(govy.For(govy.GetSelf[string]()).Rules(StringEIN())))
+	assert.Require(t, assert.NoError(t, err))
+	jsonschematest.Assert(t, schema, "testdata/jsonschema/expected_string_ein.json", taxJSONSchemaCases(
+		stringEINPrefixTestCases,
+		stringEINAcceptedStructureTestCases,
+		stringEINRejectedStructureTestCases,
+	))
+}
+
+func BenchmarkStringEIN(b *testing.B) {
+	rule := StringEIN()
+	benchmarkStringTaxIDRule(
+		b,
+		rule,
+		stringEINPrefixTestCases,
+		stringEINAcceptedStructureTestCases,
+		stringEINRejectedStructureTestCases,
+	)
+}
+
 func TestStringSSN(t *testing.T) {
 	t.Parallel()
 
@@ -2600,15 +3195,18 @@ func TestStringSSN_StructuralFields(t *testing.T) {
 	})
 }
 
-func BenchmarkStringEIN(b *testing.B) {
-	rule := StringEIN()
-	benchmarkStringTaxIDRule(
-		b,
-		rule,
-		stringEINPrefixTestCases,
-		stringEINAcceptedStructureTestCases,
-		stringEINRejectedStructureTestCases,
-	)
+func TestStringSSN_JSONSchema(t *testing.T) {
+	t.Parallel()
+
+	schema, err := govy.JSONSchema(govy.New(govy.For(govy.GetSelf[string]()).Rules(StringSSN())))
+	assert.Require(t, assert.NoError(t, err))
+	jsonschematest.Assert(t, schema, "testdata/jsonschema/expected_string_ssn.json", taxJSONSchemaCases(
+		stringSSNAcceptedStructureTestCases,
+		stringSSNRejectedStructureTestCases,
+		stringSSNAreaTestCases,
+		stringSSNGroupTestCases,
+		stringSSNSerialTestCases,
+	))
 }
 
 func BenchmarkStringSSN(b *testing.B) {
@@ -2758,6 +3356,19 @@ func TestStringMD5(t *testing.T) {
 	})
 }
 
+func TestStringMD5_JSONSchema(t *testing.T) {
+	t.Parallel()
+
+	schema, err := govy.JSONSchema(govy.New(govy.For(govy.GetSelf[string]()).Rules(StringMD5())))
+	assert.Require(t, assert.NoError(t, err))
+	jsonschematest.Assert(
+		t,
+		schema,
+		"testdata/jsonschema/expected_string_md5.json",
+		stringNamedJSONSchemaCases(validMD5TestCases, invalidMD5TestCases),
+	)
+}
+
 func BenchmarkStringMD5(b *testing.B) {
 	rule := StringMD5()
 	benchmarkStringHashDigestRule(b, rule, validMD5TestCases, invalidMD5TestCases)
@@ -2802,6 +3413,23 @@ func TestStringSHA256(t *testing.T) {
 			})
 		}
 	})
+}
+
+func TestStringSHA256_JSONSchema(t *testing.T) {
+	t.Parallel()
+
+	cases := stringNamedJSONSchemaCases(validSHA256TestCases, invalidSHA256TestCases)
+	for line, digest := range loadNISTDigestOutputs(t, "nist_sha256_digest_outputs.txt", 729, 64) {
+		cases = append(cases, jsonschematest.Case[string]{
+			Name:  fmt.Sprintf("NIST/%d", line+1),
+			Input: digest,
+			Valid: true,
+		})
+	}
+
+	schema, err := govy.JSONSchema(govy.New(govy.For(govy.GetSelf[string]()).Rules(StringSHA256())))
+	assert.Require(t, assert.NoError(t, err))
+	jsonschematest.Assert(t, schema, "testdata/jsonschema/expected_string_sha256.json", cases)
 }
 
 func BenchmarkStringSHA256(b *testing.B) {
@@ -2850,6 +3478,23 @@ func TestStringSHA384(t *testing.T) {
 	})
 }
 
+func TestStringSHA384_JSONSchema(t *testing.T) {
+	t.Parallel()
+
+	cases := stringNamedJSONSchemaCases(validSHA384TestCases, invalidSHA384TestCases)
+	for line, digest := range loadNISTDigestOutputs(t, "nist_sha384_digest_outputs.txt", 857, 96) {
+		cases = append(cases, jsonschematest.Case[string]{
+			Name:  fmt.Sprintf("NIST/%d", line+1),
+			Input: digest,
+			Valid: true,
+		})
+	}
+
+	schema, err := govy.JSONSchema(govy.New(govy.For(govy.GetSelf[string]()).Rules(StringSHA384())))
+	assert.Require(t, assert.NoError(t, err))
+	jsonschematest.Assert(t, schema, "testdata/jsonschema/expected_string_sha384.json", cases)
+}
+
 func BenchmarkStringSHA384(b *testing.B) {
 	rule := StringSHA384()
 	benchmarkStringHashDigestRule(b, rule, validSHA384TestCases, invalidSHA384TestCases)
@@ -2894,6 +3539,23 @@ func TestStringSHA512(t *testing.T) {
 			})
 		}
 	})
+}
+
+func TestStringSHA512_JSONSchema(t *testing.T) {
+	t.Parallel()
+
+	cases := stringNamedJSONSchemaCases(validSHA512TestCases, invalidSHA512TestCases)
+	for line, digest := range loadNISTDigestOutputs(t, "nist_sha512_digest_outputs.txt", 857, 128) {
+		cases = append(cases, jsonschematest.Case[string]{
+			Name:  fmt.Sprintf("NIST/%d", line+1),
+			Input: digest,
+			Valid: true,
+		})
+	}
+
+	schema, err := govy.JSONSchema(govy.New(govy.For(govy.GetSelf[string]()).Rules(StringSHA512())))
+	assert.Require(t, assert.NoError(t, err))
+	jsonschematest.Assert(t, schema, "testdata/jsonschema/expected_string_sha512.json", cases)
 }
 
 func BenchmarkStringSHA512(b *testing.B) {
@@ -3060,10 +3722,15 @@ func benchmarkStringHashDigestRule(
 // examples: https://www.rfc-editor.org/rfc/rfc7519.html.
 // The b64=false case comes from the immutable RFC 7797 section 7 prohibition:
 // https://www.rfc-editor.org/rfc/rfc7797.html#section-7.
-var stringJWTTestCases = map[string]struct {
+const stringJWTJSONSchemaDifference = "JSON Schema's contentMediaType is an annotation and does not validate JWT contents."
+
+type stringJWTTestCase struct {
 	in                   string
 	expectedErrorDetails string
-}{
+	jsonSchemaDifference string
+}
+
+var stringJWTTestCases = map[string]stringJWTTestCase{
 	"signed token": {
 		in: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9." +
 			"eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ." +
@@ -3086,18 +3753,22 @@ var stringJWTTestCases = map[string]struct {
 		in: "eyJhbGciOiJub25lIn0.e30.",
 	},
 	"empty token": {
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
 		expectedErrorDetails: "expected exactly 3 JWT segments",
 	},
 	"one segment": {
 		in:                   "not-a-jwt",
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
 		expectedErrorDetails: "expected exactly 3 JWT segments",
 	},
 	"two segments": {
 		in:                   "eyJhbGciOiJIUzI1NiJ9.e30",
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
 		expectedErrorDetails: "expected exactly 3 JWT segments",
 	},
 	"four segments": {
 		in:                   "eyJhbGciOiJIUzI1NiJ9.e30.c2ln.ZXh0cmE",
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
 		expectedErrorDetails: "expected exactly 3 JWT segments",
 	},
 	"RFC 7519 encrypted JWE": {
@@ -3112,6 +3783,7 @@ var stringJWTTestCases = map[string]struct {
 			"MKOle7UQrG6nSxTLX6Mqwt0orbHvAKeWnDYvpIAeZ72deHxz3roJDXQyhxx0wKaM" +
 			"HDjUEOKIwrtkHthpqEanSBNYHZgmNOV7sln1Eu9g3J8." +
 			"fiK51VwhsxJ-siBMR-YFiA",
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
 		expectedErrorDetails: "expected exactly 3 JWT segments",
 	},
 	"RFC 7519 nested JWT": {
@@ -3135,127 +3807,156 @@ var stringJWTTestCases = map[string]struct {
 			"zBuo2WlgZ6hYi9-e3w29bR0C2-pp3jbqxEDw3iWaf2dc5b-LnR0FEYXvI_tYk5rd" +
 			"_J9N0mg0tQ6RbpxNEMNoA9QWk5lgdPvbh9BaO195abQ." +
 			"AVO9iT5AV4CzvDJCdhSFlQ",
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
 		expectedErrorDetails: "expected exactly 3 JWT segments",
 	},
 	"empty header segment": {
 		in:                   ".e30.c2ln",
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
 		expectedErrorDetails: "JWT header segment must not be empty",
 	},
 	"empty claims set segment": {
 		in:                   "eyJhbGciOiJIUzI1NiJ9..c2ln",
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
 		expectedErrorDetails: "JWT claims set segment must not be empty",
 	},
 	"padded header segment": {
 		in:                   "eyJhbGciOiJIUzI1NiJ9=.e30.c2ln",
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
 		expectedErrorDetails: "JWT header segment must be base64url encoded without padding",
 	},
 	"padded claims set segment": {
 		in:                   "eyJhbGciOiJIUzI1NiJ9.e30=.c2ln",
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
 		expectedErrorDetails: "JWT claims set segment must be base64url encoded without padding",
 	},
 	"padded signature segment": {
 		in:                   "eyJhbGciOiJIUzI1NiJ9.e30.c2ln=",
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
 		expectedErrorDetails: "JWT signature segment must be base64url encoded without padding",
 	},
 	"illegal alphabet in header segment": {
 		in:                   "*.e30.c2ln",
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
 		expectedErrorDetails: "JWT header segment must be base64url encoded without padding",
 	},
 	"illegal alphabet in claims set segment": {
 		in:                   "eyJhbGciOiJIUzI1NiJ9.*.c2ln",
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
 		expectedErrorDetails: "JWT claims set segment must be base64url encoded without padding",
 	},
 	"illegal alphabet in signature segment": {
 		in:                   "eyJhbGciOiJIUzI1NiJ9.e30.*",
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
 		expectedErrorDetails: "JWT signature segment must be base64url encoded without padding",
 	},
 	"impossible base64url length in header segment": {
-		in: "A.e30.c2ln",
+		in:                   "A.e30.c2ln",
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
 		expectedErrorDetails: "JWT header segment must be base64url encoded without padding: " +
 			"illegal base64 data at input byte 0",
 	},
 	"impossible base64url length in claims set segment": {
-		in: "eyJhbGciOiJIUzI1NiJ9.A.c2ln",
+		in:                   "eyJhbGciOiJIUzI1NiJ9.A.c2ln",
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
 		expectedErrorDetails: "JWT claims set segment must be base64url encoded without padding: " +
 			"illegal base64 data at input byte 0",
 	},
 	"impossible base64url length in signature segment": {
-		in: "eyJhbGciOiJIUzI1NiJ9.e30.A",
+		in:                   "eyJhbGciOiJIUzI1NiJ9.e30.A",
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
 		expectedErrorDetails: "JWT signature segment must be base64url encoded without padding: " +
 			"illegal base64 data at input byte 0",
 	},
 	"malformed header JSON": {
-		in: "eyJhbGciOiJIUzI1NiI.e30.c2ln",
+		in:                   "eyJhbGciOiJIUzI1NiI.e30.c2ln",
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
 		expectedErrorDetails: "JWT header segment must contain a JSON object: " +
 			"unexpected end of JSON input",
 	},
 	"malformed claims set JSON": {
-		in: "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOg.c2ln",
+		in:                   "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOg.c2ln",
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
 		expectedErrorDetails: "JWT claims set segment must contain a JSON object: " +
 			"unexpected end of JSON input",
 	},
 	"header segment is JSON array": {
-		in: "W10.e30.c2ln",
+		in:                   "W10.e30.c2ln",
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
 		expectedErrorDetails: "JWT header segment must contain a JSON object: " +
 			"json: cannot unmarshal array into Go value of type map[string]json.RawMessage",
 	},
 	"claims set segment is JSON array": {
-		in: "eyJhbGciOiJIUzI1NiJ9.W10.c2ln",
+		in:                   "eyJhbGciOiJIUzI1NiJ9.W10.c2ln",
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
 		expectedErrorDetails: "JWT claims set segment must contain a JSON object: " +
 			"json: cannot unmarshal array into Go value of type map[string]json.RawMessage",
 	},
 	"header segment is JSON null": {
 		in:                   "bnVsbA.e30.c2ln",
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
 		expectedErrorDetails: "JWT header segment must contain a JSON object",
 	},
 	"claims set segment is JSON null": {
 		in: "eyJhbGciOiJIUzI1NiJ9." +
 			"bnVsbA." +
 			"c2ln",
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
 		expectedErrorDetails: "JWT claims set segment must contain a JSON object",
 	},
 	"missing algorithm": {
 		in:                   "e30.e30.c2ln",
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
 		expectedErrorDetails: `JWT header must contain an "alg" string`,
 	},
 	"empty algorithm": {
 		in:                   "eyJhbGciOiIifQ.e30.c2ln",
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
 		expectedErrorDetails: `JWT header must contain an "alg" string`,
 	},
 	"null algorithm": {
 		in:                   "eyJhbGciOm51bGx9.e30.c2ln",
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
 		expectedErrorDetails: `JWT header must contain an "alg" string`,
 	},
 	"numeric algorithm": {
 		in:                   "eyJhbGciOjEyM30.e30.c2ln",
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
 		expectedErrorDetails: `JWT header must contain an "alg" string`,
 	},
 	"non-ASCII algorithm": {
 		in:                   "eyJhbGciOiLimIMifQ.e30.c2ln",
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
 		expectedErrorDetails: `JWT header must contain an "alg" string`,
 	},
 	"missing signature for signed token": {
 		in:                   "eyJhbGciOiJIUzI1NiJ9.e30.",
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
 		expectedErrorDetails: `JWT signature segment must not be empty unless alg is "none"`,
 	},
 	"signature present for none algorithm": {
 		in:                   "eyJhbGciOiJub25lIn0.e30.c2ln",
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
 		expectedErrorDetails: `JWT signature segment must be empty when alg is "none"`,
 	},
 	"leading token whitespace": {
 		in:                   " eyJhbGciOiJIUzI1NiJ9.e30.c2ln",
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
 		expectedErrorDetails: "JWT header segment must be base64url encoded without padding",
 	},
 	"raw Unicode signature": {
 		in:                   "eyJhbGciOiJIUzI1NiJ9.e30.雪",
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
 		expectedErrorDetails: "JWT signature segment must be base64url encoded without padding",
 	},
 	"invalid UTF-8 in header JSON": {
 		in:                   "eyJhbGciOiJIUzI1NiIsIngiOiL_In0.e30.c2ln",
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
 		expectedErrorDetails: "JWT header segment must contain valid UTF-8 JSON",
 	},
 	"invalid UTF-8 in claims set JSON": {
 		in:                   "eyJhbGciOiJIUzI1NiJ9.eyJ4Ijoi_yJ9.c2ln",
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
 		expectedErrorDetails: "JWT claims set segment must contain valid UTF-8 JSON",
 	},
 	"derived encoded payload option": {
@@ -3265,78 +3966,97 @@ var stringJWTTestCases = map[string]struct {
 	"RFC 7797 unencoded payload option": {
 		in: "eyJhbGciOiJIUzI1NiIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19." +
 			"e30.c2ln",
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
 		expectedErrorDetails: `JWT header must not set "b64" to false`,
 	},
 	"null b64 option": {
 		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6bnVsbH0.e30.c2ln",
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
 		expectedErrorDetails: `JWT header "b64" must be a boolean`,
 	},
 	"string b64 option": {
 		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6ImZhbHNlIn0.e30.c2ln",
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
 		expectedErrorDetails: `JWT header "b64" must be a boolean`,
 	},
 	"number b64 option": {
 		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6MH0.e30.c2ln",
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
 		expectedErrorDetails: `JWT header "b64" must be a boolean`,
 	},
 	"object b64 option": {
 		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6e319.e30.c2ln",
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
 		expectedErrorDetails: `JWT header "b64" must be a boolean`,
 	},
 	"array b64 option": {
 		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6W119.e30.c2ln",
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
 		expectedErrorDetails: `JWT header "b64" must be a boolean`,
 	},
 	"b64 option without crit": {
 		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZX0.e30.c2ln",
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
 		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
 	},
 	"b64 option with null crit": {
 		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6bnVsbH0.e30.c2ln",
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
 		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
 	},
 	"b64 option with string crit": {
 		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6ImI2NCJ9.e30.c2ln",
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
 		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
 	},
 	"b64 option with number crit": {
 		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6MH0.e30.c2ln",
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
 		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
 	},
 	"b64 option with object crit": {
 		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6e319.e30.c2ln",
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
 		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
 	},
 	"b64 option with empty crit": {
 		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6W119.e30.c2ln",
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
 		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
 	},
 	"b64 option with unrelated crit": {
 		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6WyJleHAiXX0.e30.c2ln",
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
 		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
 	},
 	"b64 option with non-string crit member": {
 		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6WzBdfQ.e30.c2ln",
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
 		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
 	},
 	"b64 option with null crit member": {
 		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6W251bGxdfQ.e30.c2ln",
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
 		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
 	},
 	"b64 option with boolean crit member": {
 		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6W3RydWVdfQ.e30.c2ln",
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
 		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
 	},
 	"b64 option with object crit member": {
 		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6W3t9XX0.e30.c2ln",
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
 		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
 	},
 	"b64 option with array crit member": {
 		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6W1tdXX0.e30.c2ln",
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
 		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
 	},
 	"b64 option with mixed crit members": {
 		in:                   "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZSwiY3JpdCI6WyJiNjQiLDBdfQ.e30.c2ln",
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
 		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
 	},
 }
@@ -3358,40 +4078,42 @@ func TestStringJWT(t *testing.T) {
 	}
 }
 
+var stringJWTErrorPrecedenceTestCases = map[string]stringJWTTestCase{
+	"algorithm before claims": {
+		in:                   "e30.eyJzdWIiOg.*",
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
+		expectedErrorDetails: `JWT header must contain an "alg" string`,
+	},
+	"b64 before claims": {
+		in: "eyJhbGciOiJIUzI1NiIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19." +
+			"eyJzdWIiOg.*",
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
+		expectedErrorDetails: `JWT header must not set "b64" to false`,
+	},
+	"crit before claims": {
+		in: "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZX0." +
+			"eyJzdWIiOg.*",
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
+		expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
+	},
+	"claims before signature": {
+		in: "eyJhbGciOiJIUzI1NiJ9." +
+			"eyJzdWIiOg.*",
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
+		expectedErrorDetails: "JWT claims set segment must contain a JSON object: " +
+			"unexpected end of JSON input",
+	},
+	"algorithm before signature": {
+		in:                   "e30.e30.*",
+		jsonSchemaDifference: stringJWTJSONSchemaDifference,
+		expectedErrorDetails: `JWT header must contain an "alg" string`,
+	},
+}
+
 func TestStringJWTErrorPrecedence(t *testing.T) {
 	const expectedErrorPrefix = "string must be a valid JSON Web Token (JWT): "
 
-	tests := map[string]struct {
-		in                   string
-		expectedErrorDetails string
-	}{
-		"algorithm before claims": {
-			in:                   "e30.eyJzdWIiOg.*",
-			expectedErrorDetails: `JWT header must contain an "alg" string`,
-		},
-		"b64 before claims": {
-			in: "eyJhbGciOiJIUzI1NiIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19." +
-				"eyJzdWIiOg.*",
-			expectedErrorDetails: `JWT header must not set "b64" to false`,
-		},
-		"crit before claims": {
-			in: "eyJhbGciOiJIUzI1NiIsImI2NCI6dHJ1ZX0." +
-				"eyJzdWIiOg.*",
-			expectedErrorDetails: `JWT header "crit" must be an array containing "b64" when "b64" is present`,
-		},
-		"claims before signature": {
-			in: "eyJhbGciOiJIUzI1NiJ9." +
-				"eyJzdWIiOg.*",
-			expectedErrorDetails: "JWT claims set segment must contain a JSON object: " +
-				"unexpected end of JSON input",
-		},
-		"algorithm before signature": {
-			in:                   "e30.e30.*",
-			expectedErrorDetails: `JWT header must contain an "alg" string`,
-		},
-	}
-
-	for name, tt := range tests {
+	for name, tt := range stringJWTErrorPrecedenceTestCases {
 		t.Run(name, func(t *testing.T) {
 			err := StringJWT().Validate(tt.in)
 			assert.Require(t, assert.Error(t, err))
@@ -3401,6 +4123,28 @@ func TestStringJWTErrorPrecedence(t *testing.T) {
 	}
 }
 
+func TestStringJWT_JSONSchema(t *testing.T) {
+	t.Parallel()
+
+	cases := make([]jsonschematest.Case[string], 0, len(stringJWTTestCases)+len(stringJWTErrorPrecedenceTestCases))
+	for group, tests := range map[string]map[string]stringJWTTestCase{
+		"tokens":           stringJWTTestCases,
+		"error precedence": stringJWTErrorPrecedenceTestCases,
+	} {
+		for name, tc := range tests {
+			cases = append(cases, jsonschematest.Case[string]{
+				Name:                 group + "/" + name,
+				Input:                tc.in,
+				Valid:                tc.expectedErrorDetails == "",
+				JSONSchemaDifference: tc.jsonSchemaDifference,
+			})
+		}
+	}
+	schema, err := govy.JSONSchema(govy.New(govy.For(govy.GetSelf[string]()).Rules(StringJWT())))
+	assert.Require(t, assert.NoError(t, err))
+	jsonschematest.Assert(t, schema, "testdata/jsonschema/expected_string_jwt.json", cases)
+}
+
 func BenchmarkStringJWT(b *testing.B) {
 	rule := StringJWT()
 
@@ -3408,8 +4152,11 @@ func BenchmarkStringJWT(b *testing.B) {
 		for _, tt := range stringJWTTestCases {
 			_ = rule.Validate(tt.in)
 		}
+		for _, tt := range stringJWTErrorPrecedenceTestCases {
+			_ = rule.Validate(tt.in)
+		}
 	}
-	b.ReportMetric(float64(len(stringJWTTestCases)), "validations/op")
+	b.ReportMetric(float64(len(stringJWTTestCases)+len(stringJWTErrorPrecedenceTestCases)), "validations/op")
 }
 
 var stringContainsTestCases = []*struct {
@@ -3417,10 +4164,6 @@ var stringContainsTestCases = []*struct {
 	substrings    []string
 	expectedError string
 }{
-	{
-		in:         "",
-		substrings: []string{""},
-	},
 	{
 		in:         "this",
 		substrings: []string{"his"},
@@ -3448,6 +4191,18 @@ var stringContainsTestCases = []*struct {
 		substrings:    []string{"that"},
 		expectedError: "string must contain the following substrings: 'that'",
 	},
+	{in: "", substrings: []string{"his"}, expectedError: "string must contain the following substrings: 'his'"},
+	{in: "is", substrings: []string{"this"}, expectedError: "string must contain the following substrings: 'this'"},
+	{
+		in:            "th",
+		substrings:    []string{"th", "is"},
+		expectedError: "string must contain the following substrings: 'th', 'is'",
+	},
+	{in: "this", substrings: []string{"th"}},
+	{in: "th ht", substrings: []string{"th", "ht"}},
+	{in: "that", substrings: []string{"that"}},
+	{in: "a t.h z", substrings: []string{"t.h"}},
+	{in: "a tXh z", substrings: []string{"t.h"}, expectedError: "string must contain the following substrings: 't.h'"},
 }
 
 func TestStringContains(t *testing.T) {
@@ -3460,6 +4215,23 @@ func TestStringContains(t *testing.T) {
 			assert.NoError(t, err)
 		}
 	}
+	t.Run("panic if substrings are empty", func(t *testing.T) {
+		assert.Panic(t, func() { StringContains() }, "substrings must not be empty")
+	})
+	t.Run("panic if a substring is empty", func(t *testing.T) {
+		assert.Panic(t,
+			func() { StringContains("value", "") },
+			"substrings must not contain empty strings")
+	})
+}
+
+func TestStringContains_JSONSchema(t *testing.T) {
+	t.Parallel()
+	cases := make([]stringTextArgumentCase, 0, len(stringContainsTestCases))
+	for _, tc := range stringContainsTestCases {
+		cases = append(cases, stringTextArgumentCase{tc.substrings, tc.in, tc.expectedError == ""})
+	}
+	assertStringArgumentsJSONSchema(t, "string_contains", StringContains, cases)
 }
 
 func BenchmarkStringContains(b *testing.B) {
@@ -3489,11 +4261,6 @@ var stringExcludesTestCases = []*struct {
 		substrings: []string{"that"},
 	},
 	{
-		in:            "",
-		substrings:    []string{""},
-		expectedError: "string must not contain any of the following substrings: ''",
-	},
-	{
 		in:            "this",
 		substrings:    []string{"his"},
 		expectedError: "string must not contain any of the following substrings: 'his'",
@@ -3508,6 +4275,30 @@ var stringExcludesTestCases = []*struct {
 		substrings:    []string{"th", "is"},
 		expectedError: "string must not contain any of the following substrings: 'th', 'is'",
 	},
+	{
+		in:            "this",
+		substrings:    []string{"th"},
+		expectedError: "string must not contain any of the following substrings: 'th'",
+	},
+	{
+		in:            "tho",
+		substrings:    []string{"tho", "ht"},
+		expectedError: "string must not contain any of the following substrings: 'tho', 'ht'",
+	},
+	{
+		in:            "that",
+		substrings:    []string{"that"},
+		expectedError: "string must not contain any of the following substrings: 'that'",
+	},
+	{in: "one", substrings: []string{"his"}},
+	{in: "one", substrings: []string{"this"}},
+	{in: "one", substrings: []string{"th", "is"}},
+	{in: "a tXh z", substrings: []string{"t.h"}},
+	{
+		in:            "a t.h z",
+		substrings:    []string{"t.h"},
+		expectedError: "string must not contain any of the following substrings: 't.h'",
+	},
 }
 
 func TestStringExcludes(t *testing.T) {
@@ -3520,6 +4311,23 @@ func TestStringExcludes(t *testing.T) {
 			assert.NoError(t, err)
 		}
 	}
+	t.Run("panic if substrings are empty", func(t *testing.T) {
+		assert.Panic(t, func() { StringExcludes() }, "substrings must not be empty")
+	})
+	t.Run("panic if a substring is empty", func(t *testing.T) {
+		assert.Panic(t,
+			func() { StringExcludes("value", "") },
+			"substrings must not contain empty strings")
+	})
+}
+
+func TestStringExcludes_JSONSchema(t *testing.T) {
+	t.Parallel()
+	cases := make([]stringTextArgumentCase, 0, len(stringExcludesTestCases))
+	for _, tc := range stringExcludesTestCases {
+		cases = append(cases, stringTextArgumentCase{tc.substrings, tc.in, tc.expectedError == ""})
+	}
+	assertStringArgumentsJSONSchema(t, "string_excludes", StringExcludes, cases)
 }
 
 func BenchmarkStringExcludes(b *testing.B) {
@@ -3554,6 +4362,15 @@ var stringStartsWithTestCases = []*struct {
 		prefixes:      []string{"th", "ht"},
 		expectedError: "string must start with one of the following prefixes: 'th', 'ht'",
 	},
+	{
+		in:            "one",
+		prefixes:      []string{"is", "th"},
+		expectedError: "string must start with one of the following prefixes: 'is', 'th'",
+	},
+	{in: "this", prefixes: []string{"th", "ht"}},
+	{in: ".this", prefixes: []string{".t"}},
+	{in: "xthis", prefixes: []string{".t"}, expectedError: "string must start with '.t' prefix"},
+	{in: "a\nthis", prefixes: []string{"th"}, expectedError: "string must start with 'th' prefix"},
 }
 
 func TestStringStartsWith(t *testing.T) {
@@ -3566,6 +4383,23 @@ func TestStringStartsWith(t *testing.T) {
 			assert.NoError(t, err)
 		}
 	}
+	t.Run("panic if prefixes are empty", func(t *testing.T) {
+		assert.Panic(t, func() { StringStartsWith() }, "prefixes must not be empty")
+	})
+	t.Run("panic if a prefix is empty", func(t *testing.T) {
+		assert.Panic(t,
+			func() { StringStartsWith("prefix", "") },
+			"prefixes must not contain empty strings")
+	})
+}
+
+func TestStringStartsWith_JSONSchema(t *testing.T) {
+	t.Parallel()
+	cases := make([]stringTextArgumentCase, 0, len(stringStartsWithTestCases))
+	for _, tc := range stringStartsWithTestCases {
+		cases = append(cases, stringTextArgumentCase{tc.prefixes, tc.in, tc.expectedError == ""})
+	}
+	assertStringArgumentsJSONSchema(t, "string_starts_with", StringStartsWith, cases)
 }
 
 func BenchmarkStringStartsWith(b *testing.B) {
@@ -3600,6 +4434,16 @@ var stringEndsWithTestCases = []*struct {
 		suffixes:      []string{"th", "ht"},
 		expectedError: "string must end with one of the following suffixes: 'th', 'ht'",
 	},
+	{in: "this\n", suffixes: []string{"is"}, expectedError: "string must end with 'is' suffix"},
+	{
+		in:            "one",
+		suffixes:      []string{"th", "is"},
+		expectedError: "string must end with one of the following suffixes: 'th', 'is'",
+	},
+	{in: "with", suffixes: []string{"th"}},
+	{in: "light", suffixes: []string{"th", "ht"}},
+	{in: "x.h", suffixes: []string{".h"}},
+	{in: "xxh", suffixes: []string{".h"}, expectedError: "string must end with '.h' suffix"},
 }
 
 func TestStringEndsWith(t *testing.T) {
@@ -3612,6 +4456,23 @@ func TestStringEndsWith(t *testing.T) {
 			assert.NoError(t, err)
 		}
 	}
+	t.Run("panic if suffixes are empty", func(t *testing.T) {
+		assert.Panic(t, func() { StringEndsWith() }, "suffixes must not be empty")
+	})
+	t.Run("panic if a suffix is empty", func(t *testing.T) {
+		assert.Panic(t,
+			func() { StringEndsWith("suffix", "") },
+			"suffixes must not contain empty strings")
+	})
+}
+
+func TestStringEndsWith_JSONSchema(t *testing.T) {
+	t.Parallel()
+	cases := make([]stringTextArgumentCase, 0, len(stringEndsWithTestCases))
+	for _, tc := range stringEndsWithTestCases {
+		cases = append(cases, stringTextArgumentCase{tc.suffixes, tc.in, tc.expectedError == ""})
+	}
+	assertStringArgumentsJSONSchema(t, "string_ends_with", StringEndsWith, cases)
 }
 
 func BenchmarkStringEndsWith(b *testing.B) {
@@ -3674,53 +4535,67 @@ var (
 )
 
 var stringGitRefTestCases = []*struct {
-	in          string
-	expectedErr error
+	in                   string
+	expectedErr          error
+	jsonSchemaDifference string
 }{
-	{"refs/heads/master", nil},
-	{"refs/notes/commits", nil},
-	{"refs/tags/this@", nil},
-	{"refs/remotes/origin/master", nil},
-	{"HEAD", nil},
-	{"refs/tags/v3.1.1", nil},
-	{"refs/pulls/1/head", nil},
-	{"refs/pulls/1/merge", nil},
-	{"refs/pulls/1/abc.123", nil},
-	{"refs/pulls", nil},
-	{"refs/-", nil},
-	{"refs", errGitRefAtLeastOneSlash},
-	{"refs/", errGitRefEmptyPart},
-	{"refs//", errGitRefEmptyPart},
-	{"refs/heads/\\", errGitRefForbiddenChars},
-	{"refs/heads/\\foo", errGitRefForbiddenChars},
-	{"refs/heads/\\foo/bar", errGitRefForbiddenChars},
-	{"abc", errGitRefAtLeastOneSlash},
-	{"", errGitRefEmpty},
-	{"refs/heads/ ", errGitRefForbiddenChars},
-	{"refs/heads/ /", errGitRefForbiddenChars},
-	{"refs/heads/ /foo", errGitRefForbiddenChars},
-	{"refs/heads/.", errGitRefEndsWithDot},
-	{"refs/heads/..", errGitRefEndsWithDot},
-	{"refs/heads/foo..", errGitRefEndsWithDot},
-	{"refs/heads/foo.lock", errGitRefForbiddenChars},
-	{"refs/heads/foo@{bar}", errGitRefForbiddenChars},
-	{"refs/heads/foo@{", errGitRefForbiddenChars},
-	{"refs/heads/foo[", errGitRefForbiddenChars},
-	{"refs/heads/foo~", errGitRefForbiddenChars},
-	{"refs/heads/foo^", errGitRefForbiddenChars},
-	{"refs/heads/foo:", errGitRefForbiddenChars},
-	{"refs/heads/foo?", errGitRefForbiddenChars},
-	{"refs/heads/foo*", errGitRefForbiddenChars},
-	{"refs/heads/foo[bar", errGitRefForbiddenChars},
-	{"refs/heads/foo\t", errGitRefForbiddenChars},
-	{"refs/heads/@", errGitRefForbiddenChars},
-	{"refs/heads/@{bar}", errGitRefForbiddenChars},
-	{"refs/heads/\n", errGitRefForbiddenChars},
-	{"refs/heads/-foo", errGitRefStartsWithDash},
-	{"refs/heads/foo..bar", errGitRefForbiddenChars},
-	{"refs/heads/-", errGitRefStartsWithDash},
-	{"refs/tags/-", errGitRefStartsWithDash},
-	{"refs/tags/-foo", errGitRefStartsWithDash},
+	{"refs/heads/master", nil, ""},
+	{"refs/notes/commits", nil, ""},
+	{"refs/tags/this@", nil, ""},
+	{"refs/remotes/origin/master", nil, ""},
+	{"HEAD", nil, ""},
+	{"refs/tags/v3.1.1", nil, ""},
+	{"refs/pulls/1/head", nil, ""},
+	{"refs/pulls/1/merge", nil, ""},
+	{"refs/pulls/1/abc.123", nil, ""},
+	{"refs/pulls", nil, ""},
+	{"refs/-", nil, ""},
+	{"refs", errGitRefAtLeastOneSlash, ""},
+	{"refs/", errGitRefEmptyPart, ""},
+	{"refs//", errGitRefEmptyPart, ""},
+	{"refs/heads/\\", errGitRefForbiddenChars, ""},
+	{"refs/heads/\\foo", errGitRefForbiddenChars, ""},
+	{"refs/heads/\\foo/bar", errGitRefForbiddenChars, ""},
+	{"abc", errGitRefAtLeastOneSlash, ""},
+	{"", errGitRefEmpty, ""},
+	{"refs/heads/ ", errGitRefForbiddenChars, ""},
+	{"refs/heads/ /", errGitRefForbiddenChars, ""},
+	{"refs/heads/ /foo", errGitRefForbiddenChars, ""},
+	{"refs/heads/.", errGitRefEndsWithDot, "JSON Schema does not reject a trailing dot."},
+	{"refs/heads/..", errGitRefEndsWithDot, "JSON Schema does not reject a trailing dot."},
+	{"refs/heads/foo..", errGitRefEndsWithDot, "JSON Schema does not reject a trailing dot."},
+	{"refs/heads/foo.lock", errGitRefForbiddenChars, "JSON Schema does not reject components that end with .lock."},
+	{"refs/heads/foo@{bar}", errGitRefForbiddenChars, "JSON Schema does not reject the @{ sequence."},
+	{"refs/heads/foo@{", errGitRefForbiddenChars, "JSON Schema does not reject the @{ sequence."},
+	{"refs/heads/foo[", errGitRefForbiddenChars, ""},
+	{"refs/heads/foo~", errGitRefForbiddenChars, ""},
+	{"refs/heads/foo^", errGitRefForbiddenChars, ""},
+	{"refs/heads/foo:", errGitRefForbiddenChars, ""},
+	{"refs/heads/foo?", errGitRefForbiddenChars, ""},
+	{"refs/heads/foo*", errGitRefForbiddenChars, ""},
+	{"refs/heads/foo[bar", errGitRefForbiddenChars, ""},
+	{"refs/heads/foo\t", errGitRefForbiddenChars, ""},
+	{"refs/heads/@", errGitRefForbiddenChars, "JSON Schema permits @ as a complete component."},
+	{"refs/heads/@{bar}", errGitRefForbiddenChars, "JSON Schema does not reject the @{ sequence."},
+	{"refs/heads/\n", errGitRefForbiddenChars, ""},
+	{
+		"refs/heads/-foo",
+		errGitRefStartsWithDash,
+		"JSON Schema does not reject leading dashes in branch or tag components.",
+	},
+	{"refs/heads/foo..bar", errGitRefForbiddenChars, "JSON Schema does not reject the .. sequence."},
+	{
+		"refs/heads/-",
+		errGitRefStartsWithDash,
+		"JSON Schema does not reject leading dashes in branch or tag components.",
+	},
+	{"refs/tags/-", errGitRefStartsWithDash, "JSON Schema does not reject leading dashes in branch or tag components."},
+	{
+		"refs/tags/-foo",
+		errGitRefStartsWithDash,
+		"JSON Schema does not reject leading dashes in branch or tag components.",
+	},
+	{"refs/heads/.hidden", errGitRefForbiddenChars, "JSON Schema does not reject components that start with a dot."},
 }
 
 func TestStringGitRef(t *testing.T) {
@@ -3740,6 +4615,18 @@ func TestStringGitRef(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestStringGitRef_JSONSchema(t *testing.T) {
+	t.Parallel()
+	cases := make([]jsonschematest.Case[string], 0, len(stringGitRefTestCases))
+	for _, tc := range stringGitRefTestCases {
+		cases = append(cases, jsonschematest.Case[string]{
+			Name: strconv.Quote(tc.in), Input: tc.in, Valid: tc.expectedErr == nil,
+			JSONSchemaDifference: tc.jsonSchemaDifference,
+		})
+	}
+	assertStringTextJSONSchema(t, StringGitRef(), "expected_string_git_ref.json", cases)
 }
 
 func BenchmarkStringGitRef(b *testing.B) {
@@ -4322,29 +5209,60 @@ func BenchmarkStringCrontab(b *testing.B) {
 }
 
 var stringDateTimeTestCases = []*struct {
-	layout string
-	in     string
-	errMsg string
+	layout               string
+	in                   string
+	errMsg               string
+	jsonSchemaDifference string
 }{
-	{time.RFC3339, "2024-01-01T15:00:00Z", ""},
-	{time.RFC3339, "2024-01-01T15:00:00+01:00", ""},
-	{time.DateTime, "2024-01-01 15:00:00", ""},
-	{time.DateOnly, "2024-01-01", ""},
-	{time.TimeOnly, "15:00:00", ""},
+	{time.RFC3339, "2024-01-01T15:00:00Z", "", ""},
+	{time.RFC3339, "2024-01-01T15:00:00+01:00", "", ""},
+	{time.RFC3339, "2024-02-29T15:00:00Z", "", ""},
+	{time.RFC3339Nano, "2024-01-01T15:00:00.123456789Z", "", ""},
+	{time.RFC3339Nano, "2024-01-01T15:00:00Z", "", ""},
+	{time.DateTime, "2024-01-01 15:00:00", "", ""},
+	{time.DateOnly, "2024-01-01", "", ""},
+	{time.TimeOnly, "15:00:00", "", ""},
 	{
 		"invalid-layout",
 		"2024-01-01T15:00:00Z",
 		"string must be a valid date and time in 'invalid-layout' format",
+		"JSON Schema does not constrain unsupported Go time layouts.",
 	},
 	{
 		time.RFC3339,
 		"2024-01-01 15:00:00Z",
 		"string must be a valid date and time in '2006-01-02T15:04:05Z07:00' format",
+		"Ajv accepts a space between the date and time; Go requires T for this layout.",
+	},
+	{
+		time.RFC3339,
+		"2024-01-01t15:00:00z",
+		"string must be a valid date and time in '2006-01-02T15:04:05Z07:00' format",
+		"Ajv accepts lowercase t and z; Go requires uppercase T and Z for this layout.",
+	},
+	{
+		time.RFC3339,
+		"2016-12-31T23:59:60Z",
+		"string must be a valid date and time in '2006-01-02T15:04:05Z07:00' format",
+		"Ajv accepts leap seconds; Go time.Parse rejects them.",
+	},
+	{
+		time.RFC3339,
+		"2023-02-29T15:00:00Z",
+		"string must be a valid date and time in '2006-01-02T15:04:05Z07:00' format",
+		"",
+	},
+	{
+		time.RFC3339Nano,
+		"2024-02-30T15:00:00.123456789Z",
+		"string must be a valid date and time in '2006-01-02T15:04:05.999999999Z07:00' format",
+		"",
 	},
 	{
 		"15:04",
 		"15:00:00",
 		"string must be a valid date and time in '15:04'",
+		"JSON Schema does not constrain unsupported Go time layouts.",
 	},
 }
 
@@ -4358,6 +5276,27 @@ func TestStringDateTime(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 			}
+		})
+	}
+}
+
+func TestStringDateTime_JSONSchema(t *testing.T) {
+	t.Parallel()
+	casesByLayout := make(map[string][]jsonschematest.Case[string])
+	for _, tc := range stringDateTimeTestCases {
+		casesByLayout[tc.layout] = append(casesByLayout[tc.layout], jsonschematest.Case[string]{
+			Name: strconv.Quote(tc.in), Input: tc.in, Valid: tc.errMsg == "",
+			JSONSchemaDifference: tc.jsonSchemaDifference,
+		})
+	}
+	for layout, cases := range casesByLayout {
+		t.Run(layout, func(t *testing.T) {
+			t.Parallel()
+			fixture := "expected_string_date_time_unsupported.json"
+			if layout == time.RFC3339 || layout == time.RFC3339Nano {
+				fixture = "expected_string_date_time.json"
+			}
+			assertStringTextJSONSchema(t, StringDateTime(layout), fixture, cases)
 		})
 	}
 }
@@ -4412,6 +5351,7 @@ var stringAlphaTestCases = []*struct {
 	in         string
 	shouldFail bool
 }{
+	{"", false},
 	{"test", false},
 	{"tEsT", false},
 	{"s", false},
@@ -4422,6 +5362,7 @@ var stringAlphaTestCases = []*struct {
 	{" ", true},
 	{"test1", true},
 	{"tęst", true},
+	{"test\n", true},
 }
 
 func TestStringAlpha(t *testing.T) {
@@ -4434,6 +5375,12 @@ func TestStringAlpha(t *testing.T) {
 			assert.NoError(t, err)
 		}
 	}
+}
+
+func TestStringAlpha_JSONSchema(t *testing.T) {
+	t.Parallel()
+	assertStringTextJSONSchema(t, StringAlpha(), "expected_string_alpha.json",
+		stringCharacterJSONSchemaCases(stringAlphaTestCases))
 }
 
 func BenchmarkStringAlpha(b *testing.B) {
@@ -4449,6 +5396,7 @@ var stringAlphanumericTestCases = []*struct {
 	in         string
 	shouldFail bool
 }{
+	{"", false},
 	{"test", false},
 	{"tEsT", false},
 	{"s", false},
@@ -4463,6 +5411,7 @@ var stringAlphanumericTestCases = []*struct {
 	{" ", true},
 	{"tęst", true},
 	{"tęst1", true},
+	{"test1\n", true},
 }
 
 func TestStringAlphanumeric(t *testing.T) {
@@ -4475,6 +5424,12 @@ func TestStringAlphanumeric(t *testing.T) {
 			assert.NoError(t, err)
 		}
 	}
+}
+
+func TestStringAlphanumeric_JSONSchema(t *testing.T) {
+	t.Parallel()
+	assertStringTextJSONSchema(t, StringAlphanumeric(), "expected_string_alphanumeric.json",
+		stringCharacterJSONSchemaCases(stringAlphanumericTestCases))
 }
 
 func BenchmarkStringAlphanumeric(b *testing.B) {
@@ -4490,6 +5445,7 @@ var stringAlphaUnicodeTestCases = []*struct {
 	in         string
 	shouldFail bool
 }{
+	{"", false},
 	{"test", false},
 	{"tEsT", false},
 	{"s", false},
@@ -4504,6 +5460,9 @@ var stringAlphaUnicodeTestCases = []*struct {
 	{"test1", true},
 	{"汉语!", true},
 	{"1汉语", true},
+	{"𐐀", false},
+	{"汉语\n", true},
+	{"e\u0301", true},
 }
 
 func TestStringAlphaUnicode(t *testing.T) {
@@ -4516,6 +5475,12 @@ func TestStringAlphaUnicode(t *testing.T) {
 			assert.NoError(t, err)
 		}
 	}
+}
+
+func TestStringAlphaUnicode_JSONSchema(t *testing.T) {
+	t.Parallel()
+	assertStringTextJSONSchema(t, StringAlphaUnicode(), "expected_string_alpha_unicode.json",
+		stringCharacterJSONSchemaCases(stringAlphaUnicodeTestCases))
 }
 
 func BenchmarkStringAlphaUnicode(b *testing.B) {
@@ -4531,6 +5496,7 @@ var stringAlphanumericUnicodeTestCases = []*struct {
 	in         string
 	shouldFail bool
 }{
+	{"", true},
 	{"test", false},
 	{"tEsT", false},
 	{"s", false},
@@ -4550,6 +5516,9 @@ var stringAlphanumericUnicodeTestCases = []*struct {
 	{"汉语!", true},
 	{"-921", true},
 	{" 1", true},
+	{"𐐀𐒠", false},
+	{"汉语1\n", true},
+	{"e\u0301", true},
 }
 
 func TestStringAlphanumericUnicode(t *testing.T) {
@@ -4562,6 +5531,12 @@ func TestStringAlphanumericUnicode(t *testing.T) {
 			assert.NoError(t, err)
 		}
 	}
+}
+
+func TestStringAlphanumericUnicode_JSONSchema(t *testing.T) {
+	t.Parallel()
+	assertStringTextJSONSchema(t, StringAlphanumericUnicode(), "expected_string_alphanumeric_unicode.json",
+		stringCharacterJSONSchemaCases(stringAlphanumericUnicodeTestCases))
 }
 
 func BenchmarkStringAlphanumericUnicode(b *testing.B) {
@@ -4611,6 +5586,12 @@ func TestStringFQDN(t *testing.T) {
 	}
 }
 
+func TestStringFQDN_JSONSchema(t *testing.T) {
+	t.Parallel()
+	assertStringTextJSONSchema(t, StringFQDN(), "expected_string_fqdn.json",
+		stringCharacterJSONSchemaCases(stringFQDNTestCases))
+}
+
 func BenchmarkStringFQDN(b *testing.B) {
 	for _, tc := range stringFQDNTestCases {
 		rule := StringFQDN()
@@ -4635,41 +5616,50 @@ var (
 )
 
 var stringK8sQualifiedNameTestCases = []*struct {
-	in          string
-	expectedErr error
+	in                   string
+	expectedErr          error
+	jsonSchemaDifference string
 }{
-	{"simple", nil},
-	{"now-with-dashes", nil},
-	{"1-starts-with-num", nil},
-	{"1234", nil},
-	{"simple/simple", nil},
-	{"now-with-dashes/simple", nil},
-	{"now-with-dashes/now-with-dashes", nil},
-	{"now.with.dots/simple", nil},
-	{"now-with.dashes-and.dots/simple", nil},
-	{"1-num.2-num/3-num", nil},
-	{"1234/5678", nil},
-	{"1.2.3.4/5678", nil},
-	{"Uppercase_Is_OK_123", nil},
-	{"example.com/Uppercase_Is_OK_123", nil},
-	{"requests.storage-foo", nil},
-	{strings.Repeat("a", 63), nil},
-	{strings.Repeat("a", 253) + "/" + strings.Repeat("b", 63), nil},
+	{"simple", nil, ""},
+	{"now-with-dashes", nil, ""},
+	{"1-starts-with-num", nil, ""},
+	{"1234", nil, ""},
+	{"simple/simple", nil, ""},
+	{"now-with-dashes/simple", nil, ""},
+	{"now-with-dashes/now-with-dashes", nil, ""},
+	{"now.with.dots/simple", nil, ""},
+	{"now-with.dashes-and.dots/simple", nil, ""},
+	{"1-num.2-num/3-num", nil, ""},
+	{"1234/5678", nil, ""},
+	{"1.2.3.4/5678", nil, ""},
+	{"Uppercase_Is_OK_123", nil, ""},
+	{"example.com/Uppercase_Is_OK_123", nil, ""},
+	{"requests.storage-foo", nil, ""},
+	{strings.Repeat("a", 63), nil, ""},
+	{strings.Repeat("a", 253) + "/" + strings.Repeat("b", 63), nil, ""},
 	// BAD
-	{"/", errK8sQualifiedNameEmptyPrefixPart},
-	{"nospecialchars%^=@", errK8sQualifiedNameNamePartRegexp},
-	{"cantendwithadash-", errK8sQualifiedNameNamePartRegexp},
-	{"-cantstartwithadash-", errK8sQualifiedNameNamePartRegexp},
-	{"example.com/abc$", errK8sQualifiedNameNamePartRegexp},
-	{"only/one/slash", errK8sQualifiedNameTooManyParts},
-	{"Example.com/abc", errK8sQualifiedNamePrefixRegexp},
-	{"example_com/abc", errK8sQualifiedNamePrefixRegexp},
-	{"example.com/", errK8sQualifiedNameEmptyNamePart},
-	{"/simple", errK8sQualifiedNameEmptyPrefixPart},
-	{"not.Valid/simple", errK8sQualifiedNamePrefixRegexp},
-	{strings.Repeat("a", 64), errK8sQualifiedNameNamePartLength},
-	{strings.Repeat("a", 254) + "/abc", errK8sQualifiedNamePrefixLength},
-	{strings.Repeat("a", 253) + "/" + strings.Repeat("b", 64), errors.New("length must be between 1 and 317")},
+	{"/", errK8sQualifiedNameEmptyPrefixPart, ""},
+	{"nospecialchars%^=@", errK8sQualifiedNameNamePartRegexp, ""},
+	{"cantendwithadash-", errK8sQualifiedNameNamePartRegexp, ""},
+	{"-cantstartwithadash-", errK8sQualifiedNameNamePartRegexp, ""},
+	{"example.com/abc$", errK8sQualifiedNameNamePartRegexp, ""},
+	{"only/one/slash", errK8sQualifiedNameTooManyParts, ""},
+	{"Example.com/abc", errK8sQualifiedNamePrefixRegexp, ""},
+	{"example_com/abc", errK8sQualifiedNamePrefixRegexp, ""},
+	{"example.com/", errK8sQualifiedNameEmptyNamePart, ""},
+	{"/simple", errK8sQualifiedNameEmptyPrefixPart, ""},
+	{"not.Valid/simple", errK8sQualifiedNamePrefixRegexp, ""},
+	{
+		strings.Repeat("a", 64),
+		errK8sQualifiedNameNamePartLength,
+		"JSON Schema limits total length but not the name part separately.",
+	},
+	{
+		strings.Repeat("a", 254) + "/abc",
+		errK8sQualifiedNamePrefixLength,
+		"JSON Schema limits total length but not the prefix separately.",
+	},
+	{strings.Repeat("a", 253) + "/" + strings.Repeat("b", 64), errors.New("length must be between 1 and 317"), ""},
 }
 
 func TestStringKubernetesQualifiedName(t *testing.T) {
@@ -4686,6 +5676,23 @@ func TestStringKubernetesQualifiedName(t *testing.T) {
 	}
 }
 
+func TestStringKubernetesQualifiedName_JSONSchema(t *testing.T) {
+	t.Parallel()
+	cases := make([]jsonschematest.Case[string], 0, len(stringK8sQualifiedNameTestCases))
+	for _, tc := range stringK8sQualifiedNameTestCases {
+		cases = append(cases, jsonschematest.Case[string]{
+			Name: strconv.Quote(tc.in), Input: tc.in, Valid: tc.expectedErr == nil,
+			JSONSchemaDifference: tc.jsonSchemaDifference,
+		})
+	}
+	assertStringTextJSONSchema(
+		t,
+		StringKubernetesQualifiedName(),
+		"expected_string_kubernetes_qualified_name.json",
+		cases,
+	)
+}
+
 func BenchmarkStringKubernetesQualifiedName(b *testing.B) {
 	for _, tc := range stringK8sQualifiedNameTestCases {
 		rule := StringKubernetesQualifiedName()
@@ -4698,15 +5705,12 @@ func BenchmarkStringKubernetesQualifiedName(b *testing.B) {
 func benchmarkStringPaymentBankingRule(
 	b *testing.B,
 	rule govy.Rule[string],
-	testCases stringPaymentBankingTestCases,
+	testCases []jsonschematest.Case[string],
 ) {
 	b.Helper()
 	for b.Loop() {
-		for _, in := range testCases.validInputs {
-			_ = rule.Validate(in)
-		}
-		for _, in := range testCases.invalidInputs {
-			_ = rule.Validate(in)
+		for _, tc := range testCases {
+			_ = rule.Validate(tc.Input)
 		}
 	}
 }
@@ -4714,25 +5718,21 @@ func benchmarkStringPaymentBankingRule(
 func assertPaymentBankingRule(
 	t *testing.T,
 	rule govy.Rule[string],
-	testCases stringPaymentBankingTestCases,
+	testCases []jsonschematest.Case[string],
 	expectedError string,
 	errorCode govy.ErrorCode,
 ) {
 	t.Helper()
-	t.Run("valid inputs", func(t *testing.T) {
-		for name, in := range testCases.validInputs {
-			t.Run(name, func(t *testing.T) {
-				assert.NoError(t, rule.Validate(in))
-			})
-		}
-	})
-	t.Run("invalid inputs", func(t *testing.T) {
-		for name, in := range testCases.invalidInputs {
-			t.Run(name, func(t *testing.T) {
-				assertPaymentBankingRuleError(t, rule.Validate(in), expectedError, errorCode)
-			})
-		}
-	})
+	for _, tc := range testCases {
+		t.Run(tc.Name, func(t *testing.T) {
+			err := rule.Validate(tc.Input)
+			if tc.Valid {
+				assert.NoError(t, err)
+				return
+			}
+			assertPaymentBankingRuleError(t, err, expectedError, errorCode)
+		})
+	}
 }
 
 func assertPaymentBankingRuleError(
@@ -4934,76 +5934,83 @@ func loadNISTDigestOutputs(t *testing.T, fixture string, expectedCount, digestLe
 	return digests
 }
 
-var validISBNTestCases = map[string]string{
-	"isbn 10 hyphenated":                  "0-306-40615-2",
-	"isbn 10 plain":                       "0306406152",
-	"isbn 10 x check":                     "0-9752298-0-X",
-	"isbn 10 spaced":                      "0 9752298 0 x",
-	"isbn 10 library converter numeric":   "0394170660",
-	"isbn 10 library converter alternate": "0717941728",
-	"isbn 10 library converter x check":   "087779443X",
-	"isbn 10 MARC hyphenated":             "0-87068-693-3",
-	"isbn 13 hyphenated":                  "978-0-306-40615-7",
-	"isbn 13 plain":                       "9780306406157",
-	"isbn 13 grouped":                     "978-3-16-148410-0",
-	"isbn 13 agency manual hyphenated":    "978-92-95055-12-4",
-	"isbn 13 agency manual spaced":        "978 92 95055 12 4",
-	"isbn 13 agency manual compact":       "9789295055124",
-	"isbn 13 agency manual hardback":      "978-951-45-9693-3",
-	"isbn 13 agency manual paperback":     "978-951-45-9694-0",
-	"isbn 13 agency manual PDF":           "978-951-45-9695-7",
-	"isbn 13 agency manual EPUB":          "978-951-45-9696-4",
-	"isbn 13 library converter first":     "9780060723804",
-	"isbn 13 library converter second":    "9780060799748",
-	"isbn 13 979 prefix":                  "979-10-90636-07-1",
-}
-
-var invalidISBNTestCases = map[string]string{
-	"empty":                               "",
-	"isbn 10 failed check":                "0-306-40615-3",
-	"isbn 10 x check mutation":            "0877794430",
-	"isbn 10 x in body":                   "08777X443X",
-	"isbn 10 x in fourth position":        "087X79443X",
-	"isbn 10 short":                       "087779443",
-	"isbn 10 trailing space":              "087779443X ",
-	"isbn 13 failed check":                "978-0-306-40615-8",
-	"isbn 13 manual check mutation":       "978-92-95055-12-5",
-	"isbn 13 checksum valid wrong prefix": "9779295055125",
-	"isbn 13 x in body":                   "978-92-X5055-12-4",
-	"isbn 13 x check":                     "978-92-95055-12-X",
-	"isbn 13 en dash separators":          "978–92–95055–12–4",
-	"isbn 13 full width digits":           "９７８９２９５０５５１２４",
-	"isbn 13 display prefix":              "ISBN 978-92-95055-12-4",
-	"repeated separator":                  "978--0-306-40615-7",
-	"letters":                             "abc",
+var isbnTestCases = []jsonschematest.Case[string]{
+	{Name: "isbn 10 hyphenated", Input: "0-306-40615-2", Valid: true},
+	{Name: "isbn 10 plain", Input: "0306406152", Valid: true},
+	{Name: "isbn 10 x check", Input: "0-9752298-0-X", Valid: true},
+	{Name: "isbn 10 spaced", Input: "0 9752298 0 x", Valid: true},
+	{Name: "isbn 10 library converter numeric", Input: "0394170660", Valid: true},
+	{Name: "isbn 10 library converter alternate", Input: "0717941728", Valid: true},
+	{Name: "isbn 10 library converter x check", Input: "087779443X", Valid: true},
+	{Name: "isbn 10 MARC hyphenated", Input: "0-87068-693-3", Valid: true},
+	{Name: "isbn 13 hyphenated", Input: "978-0-306-40615-7", Valid: true},
+	{Name: "isbn 13 plain", Input: "9780306406157", Valid: true},
+	{Name: "isbn 13 grouped", Input: "978-3-16-148410-0", Valid: true},
+	{Name: "isbn 13 agency manual hyphenated", Input: "978-92-95055-12-4", Valid: true},
+	{Name: "isbn 13 agency manual spaced", Input: "978 92 95055 12 4", Valid: true},
+	{Name: "isbn 13 agency manual compact", Input: "9789295055124", Valid: true},
+	{Name: "isbn 13 agency manual hardback", Input: "978-951-45-9693-3", Valid: true},
+	{Name: "isbn 13 agency manual paperback", Input: "978-951-45-9694-0", Valid: true},
+	{Name: "isbn 13 agency manual PDF", Input: "978-951-45-9695-7", Valid: true},
+	{Name: "isbn 13 agency manual EPUB", Input: "978-951-45-9696-4", Valid: true},
+	{Name: "isbn 13 library converter first", Input: "9780060723804", Valid: true},
+	{Name: "isbn 13 library converter second", Input: "9780060799748", Valid: true},
+	{Name: "isbn 13 979 prefix", Input: "979-10-90636-07-1", Valid: true},
+	{Name: "empty", Input: ""},
+	{
+		Name: "isbn 10 failed check", Input: "0-306-40615-3",
+		JSONSchemaDifference: "JSON Schema checks ISBN syntax but does not validate the checksum.",
+	},
+	{
+		Name: "isbn 10 x check mutation", Input: "0877794430",
+		JSONSchemaDifference: "JSON Schema checks ISBN syntax but does not validate the checksum.",
+	},
+	{Name: "isbn 10 x in body", Input: "08777X443X"},
+	{Name: "isbn 10 x in fourth position", Input: "087X79443X"},
+	{Name: "isbn 10 short", Input: "087779443"},
+	{Name: "isbn 10 trailing space", Input: "087779443X "},
+	{
+		Name: "isbn 13 failed check", Input: "978-0-306-40615-8",
+		JSONSchemaDifference: "JSON Schema checks ISBN syntax but does not validate the checksum.",
+	},
+	{
+		Name: "isbn 13 manual check mutation", Input: "978-92-95055-12-5",
+		JSONSchemaDifference: "JSON Schema checks ISBN syntax but does not validate the checksum.",
+	},
+	{Name: "isbn 13 checksum valid wrong prefix", Input: "9779295055125"},
+	{Name: "isbn 13 x in body", Input: "978-92-X5055-12-4"},
+	{Name: "isbn 13 x check", Input: "978-92-95055-12-X"},
+	{Name: "isbn 13 en dash separators", Input: "978–92–95055–12–4"},
+	{Name: "isbn 13 full width digits", Input: "９７８９２９５０５５１２４"},
+	{Name: "isbn 13 display prefix", Input: "ISBN 978-92-95055-12-4"},
+	{Name: "repeated separator", Input: "978--0-306-40615-7"},
+	{Name: "letters", Input: "abc"},
 }
 
 func TestStringISBN(t *testing.T) {
 	rule := StringISBN()
-	t.Run("valid inputs", func(t *testing.T) {
-		for name, input := range validISBNTestCases {
-			t.Run(name, func(t *testing.T) {
-				assert.NoError(t, rule.Validate(input))
-			})
-		}
-	})
-	t.Run("invalid inputs", func(t *testing.T) {
-		for name, input := range invalidISBNTestCases {
-			t.Run(name, func(t *testing.T) {
-				err := rule.Validate(input)
-				assert.EqualError(
-					t,
-					err,
-					"string must be a valid International Standard Book Number (ISBN) in ISBN-10 or ISBN-13 format",
-				)
-				assert.True(t, govy.HasErrorCode(err, ErrorCodeStringISBN))
-			})
-		}
-	})
+	for _, tc := range isbnTestCases {
+		t.Run(tc.Name, func(t *testing.T) {
+			err := rule.Validate(tc.Input)
+			if tc.Valid {
+				assert.NoError(t, err)
+				return
+			}
+			assert.EqualError(
+				t,
+				err,
+				"string must be a valid International Standard Book Number (ISBN) in ISBN-10 or ISBN-13 format",
+			)
+			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringISBN))
+		})
+	}
+}
+
+var isbnVeryLargeInvalidTestCase = jsonschematest.Case[string]{
+	Name: "very large invalid", Input: strings.Repeat("0", 1<<20),
 }
 
 func TestStringISBN_VeryLargeInvalid(t *testing.T) {
-	input := strings.Repeat("0", 1<<20)
 	tests := map[string]struct {
 		rule    govy.Rule[string]
 		message string
@@ -5027,246 +6034,268 @@ func TestStringISBN_VeryLargeInvalid(t *testing.T) {
 	}
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			err := test.rule.Validate(input)
+			err := test.rule.Validate(isbnVeryLargeInvalidTestCase.Input)
 			assert.EqualError(t, err, test.message)
 			assert.True(t, govy.HasErrorCode(err, test.code))
 		})
 	}
 }
 
+func TestStringISBN_JSONSchema(t *testing.T) {
+	t.Parallel()
+
+	schema, err := govy.JSONSchema(govy.New(govy.For(govy.GetSelf[string]()).Rules(StringISBN())))
+	assert.Require(t, assert.NoError(t, err))
+	jsonschematest.Assert(
+		t,
+		schema,
+		"testdata/jsonschema/expected_string_isbn.json",
+		slices.Concat(isbnTestCases, []jsonschematest.Case[string]{isbnVeryLargeInvalidTestCase}),
+	)
+}
+
 func BenchmarkStringISBN(b *testing.B) {
 	benchmarkStringPublicationRule(
 		b,
 		StringISBN(),
-		validISBNTestCases,
-		invalidISBNTestCases,
+		isbnTestCases,
 	)
 }
 
 func BenchmarkStringISBNVeryLargeInvalid(b *testing.B) {
 	rule := StringISBN()
-	input := strings.Repeat("0", 1<<20)
-
 	for b.Loop() {
-		_ = rule.Validate(input)
+		_ = rule.Validate(isbnVeryLargeInvalidTestCase.Input)
 	}
 	b.ReportMetric(1, "validations/op")
 }
 
-var validISBN10TestCases = map[string]string{
-	"hyphenated":                  "0-306-40615-2",
-	"plain":                       "0306406152",
-	"x check":                     "0-9752298-0-X",
-	"spaced":                      "0 9752298 0 x",
-	"library converter numeric":   "0394170660",
-	"library converter alternate": "0717941728",
-	"library converter x check":   "087779443X",
-	"MARC hyphenated":             "0-87068-693-3",
-}
-
-var invalidISBN10TestCases = map[string]string{
-	"empty":                "",
-	"failed check":         "0-306-40615-3",
-	"x check mutation":     "0877794430",
-	"x in body":            "08777X443X",
-	"x in fourth position": "087X79443X",
-	"short":                "087779443",
-	"trailing space":       "087779443X ",
-	"isbn 13":              "978-0-306-40615-7",
-	"isbn 13 plain":        "9780306406157",
-	"repeated separator":   "0-306--40615-2",
+var isbn10TestCases = []jsonschematest.Case[string]{
+	{Name: "hyphenated", Input: "0-306-40615-2", Valid: true},
+	{Name: "plain", Input: "0306406152", Valid: true},
+	{Name: "x check", Input: "0-9752298-0-X", Valid: true},
+	{Name: "spaced", Input: "0 9752298 0 x", Valid: true},
+	{Name: "library converter numeric", Input: "0394170660", Valid: true},
+	{Name: "library converter alternate", Input: "0717941728", Valid: true},
+	{Name: "library converter x check", Input: "087779443X", Valid: true},
+	{Name: "MARC hyphenated", Input: "0-87068-693-3", Valid: true},
+	{Name: "empty", Input: ""},
+	{
+		Name:                 "failed check",
+		Input:                "0-306-40615-3",
+		JSONSchemaDifference: "JSON Schema checks ISBN-10 syntax but does not validate the checksum.",
+	},
+	{
+		Name:                 "x check mutation",
+		Input:                "0877794430",
+		JSONSchemaDifference: "JSON Schema checks ISBN-10 syntax but does not validate the checksum.",
+	},
+	{Name: "x in body", Input: "08777X443X"},
+	{Name: "x in fourth position", Input: "087X79443X"},
+	{Name: "short", Input: "087779443"},
+	{Name: "trailing space", Input: "087779443X "},
+	{Name: "isbn 13", Input: "978-0-306-40615-7"},
+	{Name: "isbn 13 plain", Input: "9780306406157"},
+	{Name: "repeated separator", Input: "0-306--40615-2"},
 }
 
 func TestStringISBN10(t *testing.T) {
 	rule := StringISBN10()
-	t.Run("valid inputs", func(t *testing.T) {
-		for name, input := range validISBN10TestCases {
-			t.Run(name, func(t *testing.T) {
-				assert.NoError(t, rule.Validate(input))
-			})
-		}
-	})
-	t.Run("invalid inputs", func(t *testing.T) {
-		for name, input := range invalidISBN10TestCases {
-			t.Run(name, func(t *testing.T) {
-				err := rule.Validate(input)
-				assert.EqualError(
-					t,
-					err,
-					"string must be a valid International Standard Book Number (ISBN) in ISBN-10 format",
-				)
-				assert.True(t, govy.HasErrorCode(err, ErrorCodeStringISBN10))
-			})
-		}
-	})
+	for _, tc := range isbn10TestCases {
+		t.Run(tc.Name, func(t *testing.T) {
+			err := rule.Validate(tc.Input)
+			if tc.Valid {
+				assert.NoError(t, err)
+				return
+			}
+			assert.EqualError(
+				t,
+				err,
+				"string must be a valid International Standard Book Number (ISBN) in ISBN-10 format",
+			)
+			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringISBN10))
+		})
+	}
+}
+
+func TestStringISBN10_JSONSchema(t *testing.T) {
+	t.Parallel()
+
+	schema, err := govy.JSONSchema(govy.New(govy.For(govy.GetSelf[string]()).Rules(StringISBN10())))
+	assert.Require(t, assert.NoError(t, err))
+	cases := append([]jsonschematest.Case[string]{isbnVeryLargeInvalidTestCase}, isbn10TestCases...)
+	jsonschematest.Assert(t, schema, "testdata/jsonschema/expected_string_isbn10.json", cases)
 }
 
 func BenchmarkStringISBN10(b *testing.B) {
-	benchmarkStringPublicationRule(
-		b,
-		StringISBN10(),
-		validISBN10TestCases,
-		invalidISBN10TestCases,
-	)
+	rule := StringISBN10()
+	for b.Loop() {
+		for _, tc := range isbn10TestCases {
+			_ = rule.Validate(tc.Input)
+		}
+	}
+	b.ReportMetric(float64(len(isbn10TestCases)), "validations/op")
 }
 
-var validISBN13TestCases = map[string]string{
-	"hyphenated":               "978-0-306-40615-7",
-	"plain":                    "9780306406157",
-	"grouped":                  "978-3-16-148410-0",
-	"agency manual hyphenated": "978-92-95055-12-4",
-	"agency manual spaced":     "978 92 95055 12 4",
-	"agency manual compact":    "9789295055124",
-	"agency manual hardback":   "978-951-45-9693-3",
-	"agency manual paperback":  "978-951-45-9694-0",
-	"agency manual PDF":        "978-951-45-9695-7",
-	"agency manual EPUB":       "978-951-45-9696-4",
-	"library converter first":  "9780060723804",
-	"library converter second": "9780060799748",
-	"979 prefix":               "979-10-90636-07-1",
-}
-
-var invalidISBN13TestCases = map[string]string{
-	"empty":                       "",
-	"isbn 10":                     "0-306-40615-2",
-	"failed check":                "978-0-306-40615-8",
-	"manual check mutation":       "978-92-95055-12-5",
-	"checksum valid wrong prefix": "9779295055125",
-	"x in body":                   "978-92-X5055-12-4",
-	"x check":                     "978-92-95055-12-X",
-	"en dash separators":          "978–92–95055–12–4",
-	"full width digits":           "９７８９２９５０５５１２４",
-	"display prefix":              "ISBN 978-92-95055-12-4",
-	"invalid prefix":              "9770306406157",
-	"trailing space":              "978 0 306 40615 7 ",
+var isbn13TestCases = []jsonschematest.Case[string]{
+	{Name: "hyphenated", Input: "978-0-306-40615-7", Valid: true},
+	{Name: "plain", Input: "9780306406157", Valid: true},
+	{Name: "grouped", Input: "978-3-16-148410-0", Valid: true},
+	{Name: "agency manual hyphenated", Input: "978-92-95055-12-4", Valid: true},
+	{Name: "agency manual spaced", Input: "978 92 95055 12 4", Valid: true},
+	{Name: "agency manual compact", Input: "9789295055124", Valid: true},
+	{Name: "agency manual hardback", Input: "978-951-45-9693-3", Valid: true},
+	{Name: "agency manual paperback", Input: "978-951-45-9694-0", Valid: true},
+	{Name: "agency manual PDF", Input: "978-951-45-9695-7", Valid: true},
+	{Name: "agency manual EPUB", Input: "978-951-45-9696-4", Valid: true},
+	{Name: "library converter first", Input: "9780060723804", Valid: true},
+	{Name: "library converter second", Input: "9780060799748", Valid: true},
+	{Name: "979 prefix", Input: "979-10-90636-07-1", Valid: true},
+	{Name: "empty", Input: ""},
+	{Name: "isbn 10", Input: "0-306-40615-2"},
+	{
+		Name: "failed check", Input: "978-0-306-40615-8",
+		JSONSchemaDifference: "JSON Schema checks ISBN-13 syntax but does not validate the checksum.",
+	},
+	{
+		Name: "manual check mutation", Input: "978-92-95055-12-5",
+		JSONSchemaDifference: "JSON Schema checks ISBN-13 syntax but does not validate the checksum.",
+	},
+	{Name: "checksum valid wrong prefix", Input: "9779295055125"},
+	{Name: "x in body", Input: "978-92-X5055-12-4"},
+	{Name: "x check", Input: "978-92-95055-12-X"},
+	{Name: "en dash separators", Input: "978–92–95055–12–4"},
+	{Name: "full width digits", Input: "９７８９２９５０５５１２４"},
+	{Name: "display prefix", Input: "ISBN 978-92-95055-12-4"},
+	{Name: "invalid prefix", Input: "9770306406157"},
+	{Name: "trailing space", Input: "978 0 306 40615 7 "},
 }
 
 func TestStringISBN13(t *testing.T) {
 	rule := StringISBN13()
-	t.Run("valid inputs", func(t *testing.T) {
-		for name, input := range validISBN13TestCases {
-			t.Run(name, func(t *testing.T) {
-				assert.NoError(t, rule.Validate(input))
-			})
-		}
-	})
-	t.Run("invalid inputs", func(t *testing.T) {
-		for name, input := range invalidISBN13TestCases {
-			t.Run(name, func(t *testing.T) {
-				err := rule.Validate(input)
-				assert.EqualError(
-					t,
-					err,
-					"string must be a valid International Standard Book Number (ISBN) in ISBN-13 format",
-				)
-				assert.True(t, govy.HasErrorCode(err, ErrorCodeStringISBN13))
-			})
-		}
-	})
+	for _, tc := range isbn13TestCases {
+		t.Run(tc.Name, func(t *testing.T) {
+			err := rule.Validate(tc.Input)
+			if tc.Valid {
+				assert.NoError(t, err)
+				return
+			}
+			assert.EqualError(
+				t,
+				err,
+				"string must be a valid International Standard Book Number (ISBN) in ISBN-13 format",
+			)
+			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringISBN13))
+		})
+	}
 }
 
 func TestISBNPredicatesMatchReference(t *testing.T) {
 	tests := map[string]struct {
 		predicate func(string) bool
 		reference func(string) bool
-		inputs    []map[string]string
+		inputs    []jsonschematest.Case[string]
 	}{
 		"isbn": {
 			predicate: isISBN,
 			reference: referenceISBN,
-			inputs: []map[string]string{
-				validISBNTestCases,
-				invalidISBNTestCases,
-			},
+			inputs:    isbnTestCases,
 		},
 		"isbn-10": {
 			predicate: isISBN10,
 			reference: referenceISBN10,
-			inputs: []map[string]string{
-				validISBN10TestCases,
-				invalidISBN10TestCases,
-			},
+			inputs:    isbn10TestCases,
 		},
 		"isbn-13": {
 			predicate: isISBN13,
 			reference: referenceISBN13,
-			inputs: []map[string]string{
-				validISBN13TestCases,
-				invalidISBN13TestCases,
-			},
+			inputs:    isbn13TestCases,
 		},
 	}
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			testStringPredicateMatchesReference(t, test.predicate, test.reference, test.inputs...)
+			testStringPredicateMatchesReference(t, test.predicate, test.reference, test.inputs)
 		})
 	}
+}
+
+func TestStringISBN13_JSONSchema(t *testing.T) {
+	t.Parallel()
+
+	schema, err := govy.JSONSchema(govy.New(govy.For(govy.GetSelf[string]()).Rules(StringISBN13())))
+	assert.Require(t, assert.NoError(t, err))
+	jsonschematest.Assert(
+		t,
+		schema,
+		"testdata/jsonschema/expected_string_isbn13.json",
+		slices.Concat(isbn13TestCases, []jsonschematest.Case[string]{isbnVeryLargeInvalidTestCase}),
+	)
 }
 
 func BenchmarkStringISBN13(b *testing.B) {
 	benchmarkStringPublicationRule(
 		b,
 		StringISBN13(),
-		validISBN13TestCases,
-		invalidISBN13TestCases,
+		isbn13TestCases,
 	)
 }
 
-var validISSNTestCases = map[string]string{
-	"numeric check":       "2049-3630",
-	"numeric example":     "0378-5955",
-	"uppercase x":         "2434-561X",
-	"lowercase x":         "2434-561x",
-	"manual numeric":      "1106-1111",
-	"manual uppercase x":  "1092-003X",
-	"library check digit": "0317-8471",
-	"numeric 2162":        "2162-3546",
-	"numeric 1548":        "1548-7180",
-	"uppercase x 1204":    "1204-539X",
-}
-
-// invalidISSNTestCases includes exact compact construction examples from the
+// issnTestCases includes exact compact construction examples from the
 // [ISSN Manual, May 2025] because StringISSN requires the ASCII-hyphenated form.
-// Their derived hyphenated forms are accepted in validISSNTestCases.
+// Their derived hyphenated forms are also included as valid inputs.
 //
 // [ISSN Manual, May 2025]: https://www.issn.org/wp-content/uploads/2025/05/Manual-ISSN_ENG-marc21_May2025.pdf
-var invalidISSNTestCases = map[string]string{
-	"empty":                      "",
-	"missing hyphen":             "20493630",
-	"manual compact 2162":        "21623546",
-	"manual compact 1548":        "15487180",
-	"failed check":               "2049-3631",
-	"numeric check mutation":     "1106-1112",
-	"uppercase x check mutation": "1092-0030",
-	"wrong grouping":             "204-93630",
-	"x before check":             "2049-36X0",
-	"hyphen as check":            "2049-363-",
-	"unicode hyphen":             "1106–1111",
-	"U+2010 hyphen":              "1092‐003X",
-	"space separator":            "1106 1111",
-	"display prefix":             "ISSN 1106-1111",
-	"trailing newline":           "1106-1111\n",
-	"full width digits":          "１１０６-１１１１",
+var issnTestCases = []jsonschematest.Case[string]{
+	{Name: "numeric check", Input: "2049-3630", Valid: true},
+	{Name: "numeric example", Input: "0378-5955", Valid: true},
+	{Name: "uppercase x", Input: "2434-561X", Valid: true},
+	{Name: "lowercase x", Input: "2434-561x", Valid: true},
+	{Name: "manual numeric", Input: "1106-1111", Valid: true},
+	{Name: "manual uppercase x", Input: "1092-003X", Valid: true},
+	{Name: "library check digit", Input: "0317-8471", Valid: true},
+	{Name: "numeric 2162", Input: "2162-3546", Valid: true},
+	{Name: "numeric 1548", Input: "1548-7180", Valid: true},
+	{Name: "uppercase x 1204", Input: "1204-539X", Valid: true},
+	{Name: "empty", Input: ""},
+	{Name: "missing hyphen", Input: "20493630"},
+	{Name: "manual compact 2162", Input: "21623546"},
+	{Name: "manual compact 1548", Input: "15487180"},
+	{
+		Name: "failed check", Input: "2049-3631",
+		JSONSchemaDifference: "JSON Schema checks ISSN syntax but does not validate the checksum.",
+	},
+	{
+		Name: "numeric check mutation", Input: "1106-1112",
+		JSONSchemaDifference: "JSON Schema checks ISSN syntax but does not validate the checksum.",
+	},
+	{
+		Name: "uppercase x check mutation", Input: "1092-0030",
+		JSONSchemaDifference: "JSON Schema checks ISSN syntax but does not validate the checksum.",
+	},
+	{Name: "wrong grouping", Input: "204-93630"},
+	{Name: "x before check", Input: "2049-36X0"},
+	{Name: "hyphen as check", Input: "2049-363-"},
+	{Name: "unicode hyphen", Input: "1106–1111"},
+	{Name: "U+2010 hyphen", Input: "1092‐003X"},
+	{Name: "space separator", Input: "1106 1111"},
+	{Name: "display prefix", Input: "ISSN 1106-1111"},
+	{Name: "trailing newline", Input: "1106-1111\n"},
+	{Name: "full width digits", Input: "１１０６-１１１１"},
 }
 
 func TestStringISSN(t *testing.T) {
 	rule := StringISSN()
-	t.Run("valid inputs", func(t *testing.T) {
-		for name, input := range validISSNTestCases {
-			t.Run(name, func(t *testing.T) {
-				assert.NoError(t, rule.Validate(input))
-			})
-		}
-	})
-	t.Run("invalid inputs", func(t *testing.T) {
-		for name, input := range invalidISSNTestCases {
-			t.Run(name, func(t *testing.T) {
-				err := rule.Validate(input)
-				assert.EqualError(t, err, "string must be a valid International Standard Serial Number (ISSN)")
-				assert.True(t, govy.HasErrorCode(err, ErrorCodeStringISSN))
-			})
-		}
-	})
+	for _, tc := range issnTestCases {
+		t.Run(tc.Name, func(t *testing.T) {
+			err := rule.Validate(tc.Input)
+			if tc.Valid {
+				assert.NoError(t, err)
+				return
+			}
+			assert.EqualError(t, err, "string must be a valid International Standard Serial Number (ISSN)")
+			assert.True(t, govy.HasErrorCode(err, ErrorCodeStringISSN))
+		})
+	}
 }
 
 func TestISSNPredicateMatchesReference(t *testing.T) {
@@ -5277,52 +6306,49 @@ func TestISSNPredicateMatchesReference(t *testing.T) {
 		func(s string) bool {
 			return referenceISSN(format, s)
 		},
-		validISSNTestCases,
-		invalidISSNTestCases,
+		issnTestCases,
 	)
+}
+
+func TestStringISSN_JSONSchema(t *testing.T) {
+	t.Parallel()
+
+	schema, err := govy.JSONSchema(govy.New(govy.For(govy.GetSelf[string]()).Rules(StringISSN())))
+	assert.Require(t, assert.NoError(t, err))
+	jsonschematest.Assert(t, schema, "testdata/jsonschema/expected_string_issn.json", issnTestCases)
 }
 
 func BenchmarkStringISSN(b *testing.B) {
 	benchmarkStringPublicationRule(
 		b,
 		StringISSN(),
-		validISSNTestCases,
-		invalidISSNTestCases,
+		issnTestCases,
 	)
 }
 
 func Benchmark_isISSN(b *testing.B) {
 	for b.Loop() {
-		for name, input := range validISSNTestCases {
-			if !isISSN(input) {
-				b.Fatalf("%s: expected valid ISSN", name)
-			}
-		}
-		for name, input := range invalidISSNTestCases {
-			if isISSN(input) {
-				b.Fatalf("%s: expected invalid ISSN", name)
+		for _, tc := range issnTestCases {
+			if isISSN(tc.Input) != tc.Valid {
+				b.Fatalf("%s: expected ISSN validity %t", tc.Name, tc.Valid)
 			}
 		}
 	}
-	b.ReportMetric(float64(len(validISSNTestCases)+len(invalidISSNTestCases)), "validations/op")
+	b.ReportMetric(float64(len(issnTestCases)), "validations/op")
 }
 
 func benchmarkStringPublicationRule(
 	b *testing.B,
 	rule govy.Rule[string],
-	validInputs map[string]string,
-	invalidInputs map[string]string,
+	cases []jsonschematest.Case[string],
 ) {
 	b.Helper()
 	for b.Loop() {
-		for _, in := range validInputs {
-			_ = rule.Validate(in)
-		}
-		for _, in := range invalidInputs {
-			_ = rule.Validate(in)
+		for _, tc := range cases {
+			_ = rule.Validate(tc.Input)
 		}
 	}
-	b.ReportMetric(float64(len(validInputs)+len(invalidInputs)), "validations/op")
+	b.ReportMetric(float64(len(cases)), "validations/op")
 }
 
 type stringPredicate func(string) bool
@@ -5331,14 +6357,12 @@ func testStringPredicateMatchesReference(
 	t *testing.T,
 	predicate stringPredicate,
 	reference stringPredicate,
-	inputs ...map[string]string,
+	cases []jsonschematest.Case[string],
 ) {
 	t.Helper()
-	for _, inputSet := range inputs {
-		for name, input := range inputSet {
-			assertStringPredicateMatchesReference(t, predicate, reference, name, input)
-			testStringPredicateByteEdits(t, predicate, reference, input)
-		}
+	for _, tc := range cases {
+		assertStringPredicateMatchesReference(t, predicate, reference, tc.Name, tc.Input)
+		testStringPredicateByteEdits(t, predicate, reference, tc.Input)
 	}
 }
 
@@ -5502,4 +6526,115 @@ func referenceISSN(format *regexp.Regexp, s string) bool {
 		return false
 	}
 	return sum%11 == 0
+}
+
+func stringBooleanJSONSchemaCases(inputs []*struct {
+	in         string
+	shouldFail bool
+},
+) []jsonschematest.Case[string] {
+	cases := make([]jsonschematest.Case[string], len(inputs))
+	for i, tc := range inputs {
+		cases[i] = jsonschematest.Case[string]{Name: strconv.Quote(tc.in), Input: tc.in, Valid: !tc.shouldFail}
+	}
+	return cases
+}
+
+func stringRegexpJSONSchemaCases(inputs []*struct {
+	in            string
+	expectedError string
+},
+) []jsonschematest.Case[string] {
+	cases := make([]jsonschematest.Case[string], len(inputs))
+	for i, tc := range inputs {
+		cases[i] = jsonschematest.Case[string]{Name: strconv.Quote(tc.in), Input: tc.in, Valid: tc.expectedError == ""}
+	}
+	return cases
+}
+
+func stringNamedJSONSchemaCases(validInputs, invalidInputs map[string]string) []jsonschematest.Case[string] {
+	cases := make([]jsonschematest.Case[string], 0, len(validInputs)+len(invalidInputs))
+	for name, input := range validInputs {
+		cases = append(cases, jsonschematest.Case[string]{Name: "valid/" + name, Input: input, Valid: true})
+	}
+	for name, input := range invalidInputs {
+		cases = append(cases, jsonschematest.Case[string]{Name: "invalid/" + name, Input: input})
+	}
+	return cases
+}
+
+func taxJSONSchemaCases(groups ...[]stringTaxIDTestCase) []jsonschematest.Case[string] {
+	var cases []jsonschematest.Case[string]
+	for _, group := range groups {
+		for _, tc := range group {
+			cases = append(cases, jsonschematest.Case[string]{
+				Name:  tc.name,
+				Input: tc.in,
+				Valid: tc.shouldPass,
+			})
+		}
+	}
+	return cases
+}
+
+func assertStringTextJSONSchema(
+	t *testing.T,
+	rule govy.RulesInterface[string],
+	fixture string,
+	cases []jsonschematest.Case[string],
+) {
+	t.Helper()
+	schema, err := govy.JSONSchema(govy.New(govy.For(govy.GetSelf[string]()).Rules(rule)))
+	assert.Require(t, assert.NoError(t, err))
+	jsonschematest.Assert(t, schema, filepath.Join("testdata", "jsonschema", fixture), cases)
+}
+
+type stringTextArgumentCase struct {
+	arguments []string
+	input     string
+	valid     bool
+}
+
+func assertStringArgumentsJSONSchema(
+	t *testing.T,
+	fixturePrefix string,
+	constructor func(...string) govy.Rule[string],
+	cases []stringTextArgumentCase,
+) {
+	t.Helper()
+	type group struct {
+		arguments []string
+		cases     []jsonschematest.Case[string]
+	}
+	groups := make(map[string]*group)
+	for _, tc := range cases {
+		name := strings.Join(tc.arguments, "_")
+		if groups[name] == nil {
+			groups[name] = &group{arguments: tc.arguments}
+		}
+		groups[name].cases = append(groups[name].cases, jsonschematest.Case[string]{
+			Name: strconv.Quote(tc.input), Input: tc.input, Valid: tc.valid,
+		})
+	}
+	for name, group := range groups {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			fixture := "expected_" + fixturePrefix + "_" + name + ".json"
+			assertStringTextJSONSchema(t, constructor(group.arguments...), fixture, group.cases)
+		})
+	}
+}
+
+func stringCharacterJSONSchemaCases(cases []*struct {
+	in         string
+	shouldFail bool
+},
+) []jsonschematest.Case[string] {
+	result := make([]jsonschematest.Case[string], 0, len(cases))
+	for _, tc := range cases {
+		result = append(result, jsonschematest.Case[string]{
+			Name: strconv.Quote(tc.in), Input: tc.in, Valid: !tc.shouldFail,
+		})
+	}
+	return result
 }

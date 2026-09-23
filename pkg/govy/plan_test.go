@@ -59,87 +59,11 @@ type PodStatus struct {
 }
 
 func TestPlan(t *testing.T) {
-	metadataValidator := govy.New(
-		govy.For(func(p PodMetadata) string { return p.Name }).
-			WithName("name").
-			Required().
-			Rules(rules.StringNotEmpty()),
-		govy.For(func(p PodMetadata) string { return p.Namespace }).
-			WithName("namespace").
-			Required(),
-		govy.ForMap(func(p PodMetadata) Labels { return p.Labels }).
-			WithName("labels").
-			Rules(rules.MapMaxLength[Labels](10)).
-			RulesForKeys(rules.StringDNSLabel()).
-			RulesForValues(rules.StringMaxLength(120)),
-		govy.ForMap(func(p PodMetadata) Annotations { return p.Annotations }).
-			WithName("annotations").
-			Rules(rules.MapMaxLength[Annotations](10)).
-			RulesForItems(
-				govy.NewRule(func(a govy.MapItem[string, string]) error {
-					if a.Key == a.Value {
-						return errors.New("key and value must not be equal")
-					}
-					return nil
-				}).WithDescription("key and value must not be equal"),
-			),
-	)
-
-	specValidator := govy.New(
-		govy.For(func(p PodSpec) string { return p.DNSPolicy }).
-			WithName("dnsPolicy").
-			OmitEmpty().
-			Rules(rules.OneOf("ClusterFirst", "Default")),
-		govy.ForSlice(func(p PodSpec) []Container { return p.Containers }).
-			WithName("containers").
-			Rules(
-				rules.SliceMaxLength[[]Container](10),
-				rules.SliceUnique(func(c Container) string { return c.Name }),
-			).
-			IncludeForEach(govy.New(
-				govy.For(func(c Container) string { return c.Name }).
-					WithName("name").
-					Required().
-					Rules(rules.StringDNSLabel()),
-				govy.For(func(c Container) string { return c.Image }).
-					WithName("image").
-					Required().
-					Rules(rules.StringNotEmpty()),
-				govy.ForSlice(func(c Container) []EnvVar { return c.Env }).
-					WithName("env").
-					RulesForEach(
-						govy.NewRule(func(e EnvVar) error {
-							return nil
-						}).WithDescription("custom error!"),
-					),
-			)),
-	)
-
-	validator := govy.New(
-		govy.For(func(p Pod) string { return p.APIVersion }).
-			WithName("apiVersion").
-			Required().
-			Rules(rules.OneOf("v1", "v2")),
-		govy.For(func(p Pod) Kind { return p.Kind }).
-			WithName("kind").
-			Required().
-			Rules(rules.EQ[Kind]("Pod")),
-		govy.For(func(p Pod) PodMetadata { return p.Metadata }).
-			WithName("metadata").
-			Required().
-			Include(metadataValidator),
-		govy.For(func(p Pod) PodSpec { return p.Spec }).
-			WithName("spec").
-			Required().
-			Include(specValidator),
-	).
-		WithName("Pod")
-
-	plan, err := govy.Plan(validator)
+	plan, err := govy.Plan(newPodValidator())
 	assert.Require(t, assert.NoError(t, err))
 
 	actual := requireJSON(t, plan)
-	assert.Equal(t, readExpectedPlan(t, "expected_pod_plan.json"), actual)
+	assert.Equal(t, readTestData(t, "expected_pod_plan.json"), actual)
 }
 
 func TestPlan_mapKeyRulesUseStandardWildcardPath(t *testing.T) {
@@ -181,9 +105,13 @@ func TestPlan_mapKeyRulesUseStandardWildcardPath(t *testing.T) {
 		t.Fatal("expected a property plan for $.labels.*")
 	}
 
-	assert.Equal(t, govy.TypeInfo{Name: "string", Kind: "string"}, keyPlan.TypeInfo)
+	assert.Equal(t, "string", keyPlan.TypeInfo.Name)
+	assert.Equal(t, "string", keyPlan.TypeInfo.Kind)
+	assert.Equal(t, "", keyPlan.TypeInfo.Package)
 	assert.Equal(t, []govy.RulePlan{{Description: "key rule"}}, keyPlan.Rules)
-	assert.Equal(t, govy.TypeInfo{Name: "string", Kind: "string"}, valuePlan.TypeInfo)
+	assert.Equal(t, "string", valuePlan.TypeInfo.Name)
+	assert.Equal(t, "string", valuePlan.TypeInfo.Kind)
+	assert.Equal(t, "", valuePlan.TypeInfo.Package)
 	assert.Equal(t, []govy.RulePlan{{Description: "value rule"}}, valuePlan.Rules)
 }
 
@@ -268,7 +196,7 @@ func TestPlan_validValuesIntersection(t *testing.T) {
 	assert.Require(t, assert.NoError(t, err))
 
 	actual := requireJSON(t, plan)
-	assert.Equal(t, readExpectedPlan(t, "expected_values_intersection_plan.json"), actual)
+	assert.Equal(t, readTestData(t, "expected_values_intersection_plan.json"), actual)
 }
 
 func TestPlan_customSliceType(t *testing.T) {
@@ -286,7 +214,7 @@ func TestPlan_customSliceType(t *testing.T) {
 	assert.Require(t, assert.NoError(t, err))
 
 	actual := requireJSON(t, plan)
-	assert.Equal(t, readExpectedPlan(t, "expected_custom_slice_type_plan.json"), actual)
+	assert.Equal(t, readTestData(t, "expected_custom_slice_type_plan.json"), actual)
 }
 
 func TestPlan_conditionsWithoutRules(t *testing.T) {
@@ -322,7 +250,7 @@ func TestPlan_conditionsWithoutRules(t *testing.T) {
 	assert.Require(t, assert.NoError(t, err))
 
 	actual := requireJSON(t, plan)
-	assert.Equal(t, readExpectedPlan(t, "expected_conditions_without_rules_plan.json"), actual)
+	assert.Equal(t, readTestData(t, "expected_conditions_without_rules_plan.json"), actual)
 }
 
 func TestPlan_removeDuplicateRules(t *testing.T) {
@@ -340,7 +268,7 @@ func TestPlan_removeDuplicateRules(t *testing.T) {
 	assert.Require(t, assert.NoError(t, err))
 
 	actual := requireJSON(t, plan)
-	assert.Equal(t, readExpectedPlan(t, "expected_remove_duplicate_rules_plan.json"), actual)
+	assert.Equal(t, readTestData(t, "expected_remove_duplicate_rules_plan.json"), actual)
 }
 
 func TestPlan_optionalProperties(t *testing.T) {
@@ -358,7 +286,7 @@ func TestPlan_optionalProperties(t *testing.T) {
 	assert.Require(t, assert.NoError(t, err))
 
 	actual := requireJSON(t, plan)
-	assert.Equal(t, readExpectedPlan(t, "expected_optional_properties_plan.json"), actual)
+	assert.Equal(t, readTestData(t, "expected_optional_properties_plan.json"), actual)
 }
 
 func TestPlan_preservesConditionsAcrossSiblingProperties(t *testing.T) {
@@ -406,15 +334,6 @@ func TestPlan_preservesConditionsAcrossSiblingProperties(t *testing.T) {
 			"ratio is set", "metric is set", "source is set", "good is set",
 		},
 	}, conditionsByPath)
-}
-
-func requireJSON(t *testing.T, plan *govy.ValidatorPlan) string {
-	buf := bytes.Buffer{}
-	enc := json.NewEncoder(&buf)
-	enc.SetIndent("", "  ")
-	err := enc.Encode(plan)
-	assert.Require(t, assert.NoError(t, err))
-	return buf.String()
 }
 
 func TestPlanRequirePredicateDescriptions(t *testing.T) {
@@ -519,9 +438,100 @@ func TestPlanStrictMode(t *testing.T) {
 	})
 }
 
-func readExpectedPlan(t *testing.T, name string) string {
+func requireJSON(t *testing.T, plan *govy.ValidatorPlan) string {
+	t.Helper()
+
+	buf := bytes.Buffer{}
+	enc := json.NewEncoder(&buf)
+	enc.SetIndent("", "  ")
+	err := enc.Encode(plan)
+	assert.Require(t, assert.NoError(t, err))
+	return buf.String()
+}
+
+func readTestData(t *testing.T, name string) string {
+	t.Helper()
+
 	filename := filepath.Join(internal.FindModuleRoot(), "pkg", "govy", "test_data", name)
 	data, err := os.ReadFile(filename)
 	assert.Require(t, assert.NoError(t, err))
 	return string(data)
+}
+
+func newPodValidator() govy.Validator[Pod] {
+	metadataValidator := govy.New(
+		govy.For(func(p PodMetadata) string { return p.Name }).
+			WithName("name").
+			Required().
+			Rules(rules.StringNotEmpty()),
+		govy.For(func(p PodMetadata) string { return p.Namespace }).
+			WithName("namespace").
+			Required(),
+		govy.ForMap(func(p PodMetadata) Labels { return p.Labels }).
+			WithName("labels").
+			Rules(rules.MapMaxLength[Labels](10)).
+			RulesForKeys(rules.StringDNSLabel()).
+			RulesForValues(rules.StringMaxLength(120)),
+		govy.ForMap(func(p PodMetadata) Annotations { return p.Annotations }).
+			WithName("annotations").
+			Rules(rules.MapMaxLength[Annotations](10)).
+			RulesForItems(
+				govy.NewRule(func(a govy.MapItem[string, string]) error {
+					if a.Key == a.Value {
+						return errors.New("key and value must not be equal")
+					}
+					return nil
+				}).WithDescription("key and value must not be equal"),
+			),
+	)
+
+	specValidator := govy.New(
+		govy.For(func(p PodSpec) string { return p.DNSPolicy }).
+			WithName("dnsPolicy").
+			OmitEmpty().
+			Rules(rules.OneOf("ClusterFirst", "Default")),
+		govy.ForSlice(func(p PodSpec) []Container { return p.Containers }).
+			WithName("containers").
+			Rules(
+				rules.SliceMaxLength[[]Container](10),
+				rules.SliceUnique(func(c Container) string { return c.Name }),
+			).
+			IncludeForEach(govy.New(
+				govy.For(func(c Container) string { return c.Name }).
+					WithName("name").
+					Required().
+					Rules(rules.StringDNSLabel()),
+				govy.For(func(c Container) string { return c.Image }).
+					WithName("image").
+					Required().
+					Rules(rules.StringNotEmpty()),
+				govy.ForSlice(func(c Container) []EnvVar { return c.Env }).
+					WithName("env").
+					RulesForEach(
+						govy.NewRule(func(e EnvVar) error {
+							return nil
+						}).WithDescription("custom error!"),
+					),
+			)),
+	)
+
+	return govy.New(
+		govy.For(func(p Pod) string { return p.APIVersion }).
+			WithName("apiVersion").
+			Required().
+			Rules(rules.OneOf("v1", "v2")),
+		govy.For(func(p Pod) Kind { return p.Kind }).
+			WithName("kind").
+			Required().
+			Rules(rules.EQ[Kind]("Pod")),
+		govy.For(func(p Pod) PodMetadata { return p.Metadata }).
+			WithName("metadata").
+			Required().
+			Include(metadataValidator),
+		govy.For(func(p Pod) PodSpec { return p.Spec }).
+			WithName("spec").
+			Required().
+			Include(specValidator),
+	).
+		WithName("Pod")
 }

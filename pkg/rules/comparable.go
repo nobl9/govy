@@ -2,6 +2,7 @@ package rules
 
 import (
 	"cmp"
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"strings"
@@ -10,6 +11,7 @@ import (
 	"github.com/nobl9/govy/internal/collections"
 	"github.com/nobl9/govy/internal/messagetemplates"
 	"github.com/nobl9/govy/pkg/govy"
+	"github.com/nobl9/govy/pkg/jsonschema"
 )
 
 // EQ ensures the property's value is equal to the compared value.
@@ -30,7 +32,14 @@ func EQ[T comparable](compared T) govy.Rule[T] {
 		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: compared,
 		}).
-		WithPlanModifiers(govy.RulePlanModifierValidValues(compared))
+		WithPlanModifiers(govy.RulePlanModifierValidValues(compared)).
+		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+			value, err := jsonSchemaValue(compared)
+			if err != nil {
+				return nil, err
+			}
+			return &jsonschema.Schema{Const: ptr(value)}, nil
+		})
 }
 
 // NEQ ensures the property's value is not equal to the compared value.
@@ -50,6 +59,15 @@ func NEQ[T comparable](compared T) govy.Rule[T] {
 		WithMessageTemplate(tpl).
 		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: compared,
+		}).
+		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+			value, err := jsonSchemaValue(compared)
+			if err != nil {
+				return nil, err
+			}
+			return &jsonschema.Schema{
+				Not: &jsonschema.Schema{Const: ptr(value)},
+			}, nil
 		})
 }
 
@@ -70,6 +88,23 @@ func GT[T cmp.Ordered](compared T) govy.Rule[T] {
 		WithMessageTemplate(tpl).
 		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: compared,
+		}).
+		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+			if reflect.TypeOf(compared).Kind() == reflect.String {
+				return nil, nil
+			}
+			value, err := jsonSchemaValue(compared)
+			if err != nil {
+				return nil, err
+			}
+			number, ok := value.(json.Number)
+			if !ok {
+				return nil, fmt.Errorf(
+					"value marshaled as %T instead of a JSON number",
+					value,
+				)
+			}
+			return &jsonschema.Schema{ExclusiveMinimum: number}, nil
 		})
 }
 
@@ -90,6 +125,23 @@ func GTE[T cmp.Ordered](compared T) govy.Rule[T] {
 		WithMessageTemplate(tpl).
 		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: compared,
+		}).
+		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+			if reflect.TypeOf(compared).Kind() == reflect.String {
+				return nil, nil
+			}
+			value, err := jsonSchemaValue(compared)
+			if err != nil {
+				return nil, err
+			}
+			number, ok := value.(json.Number)
+			if !ok {
+				return nil, fmt.Errorf(
+					"value marshaled as %T instead of a JSON number",
+					value,
+				)
+			}
+			return &jsonschema.Schema{Minimum: number}, nil
 		})
 }
 
@@ -110,6 +162,23 @@ func LT[T cmp.Ordered](compared T) govy.Rule[T] {
 		WithMessageTemplate(tpl).
 		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: compared,
+		}).
+		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+			if reflect.TypeOf(compared).Kind() == reflect.String {
+				return nil, nil
+			}
+			value, err := jsonSchemaValue(compared)
+			if err != nil {
+				return nil, err
+			}
+			number, ok := value.(json.Number)
+			if !ok {
+				return nil, fmt.Errorf(
+					"value marshaled as %T instead of a JSON number",
+					value,
+				)
+			}
+			return &jsonschema.Schema{ExclusiveMaximum: number}, nil
 		})
 }
 
@@ -130,6 +199,23 @@ func LTE[T cmp.Ordered](compared T) govy.Rule[T] {
 		WithMessageTemplate(tpl).
 		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: compared,
+		}).
+		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+			if reflect.TypeOf(compared).Kind() == reflect.String {
+				return nil, nil
+			}
+			value, err := jsonSchemaValue(compared)
+			if err != nil {
+				return nil, err
+			}
+			number, ok := value.(json.Number)
+			if !ok {
+				return nil, fmt.Errorf(
+					"value marshaled as %T instead of a JSON number",
+					value,
+				)
+			}
+			return &jsonschema.Schema{Maximum: number}, nil
 		})
 }
 

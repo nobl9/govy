@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"log/slog"
+	"slices"
 	"strings"
 	"sync"
 	"text/template"
@@ -12,6 +13,7 @@ import (
 	"github.com/nobl9/govy/internal/collections"
 	"github.com/nobl9/govy/internal/logging"
 	"github.com/nobl9/govy/internal/messagetemplates"
+	"github.com/nobl9/govy/pkg/jsonschema"
 )
 
 // NewRule creates a new [Rule] instance.
@@ -31,14 +33,15 @@ func RuleToPointer[T any](rule Rule[T]) Rule[*T] {
 			}
 			return rule.validate(*v)
 		},
-		errorCode:       rule.errorCode,
-		details:         rule.details,
-		message:         rule.message,
-		messageTemplate: rule.messageTemplate,
-		examples:        rule.examples,
-		description:     rule.description,
-		descriptionTpl:  rule.descriptionTpl,
-		planModifiers:   rule.planModifiers,
+		errorCode:         rule.errorCode,
+		details:           rule.details,
+		message:           rule.message,
+		messageTemplate:   rule.messageTemplate,
+		examples:          rule.examples,
+		description:       rule.description,
+		descriptionTpl:    rule.descriptionTpl,
+		planModifiers:     rule.planModifiers,
+		jsonSchemaBuilder: rule.jsonSchemaBuilder,
 	}
 }
 
@@ -46,15 +49,16 @@ func RuleToPointer[T any](rule Rule[T]) Rule[*T] {
 // It evaluates the provided validation function and enhances it
 // with optional [ErrorCode] and arbitrary details.
 type Rule[T any] struct {
-	validate        func(v T) error
-	errorCode       ErrorCode
-	details         string
-	message         string
-	messageTemplate *template.Template
-	examples        []string
-	description     string
-	descriptionTpl  func() string
-	planModifiers   []RulePlanModifier
+	validate          func(v T) error
+	errorCode         ErrorCode
+	details           string
+	message           string
+	messageTemplate   *template.Template
+	examples          []string
+	description       string
+	descriptionTpl    func() string
+	planModifiers     []RulePlanModifier
+	jsonSchemaBuilder JSONSchemaBuilder
 }
 
 // Validate runs validation function on the provided value.
@@ -227,6 +231,16 @@ func (r Rule[T]) WithDescriptionTemplate(tpl *template.Template, vars TemplateVa
 	return r
 }
 
+// WithJSONSchema adds JSON Schema generation support to this [Rule].
+// The builder returns the constraints that the rule contributes for the
+// selected value. [JSONSchema] combines this contribution with the generated
+// schema and uses allOf when a keyword is already set. A nil schema contributes
+// no constraint.
+func (r Rule[T]) WithJSONSchema(builder JSONSchemaBuilder) Rule[T] {
+	r.jsonSchemaBuilder = builder
+	return r
+}
+
 // RulePlanModifier allows modifying [RulePlan] calculated when calling [Plan].
 type RulePlanModifier func(plan RulePlan) RulePlan
 
@@ -250,6 +264,40 @@ func (r Rule[T]) plan(builder planBuilder) {
 	}
 	for _, mod := range r.planModifiers {
 		rulePlan = mod(rulePlan)
+	}
+	if builder.options.recordJSONSchema {
+		var reason string
+		required := r.errorCode == internal.RequiredErrorCode
+		switch {
+		case builder.jsonSchemaTransformed && (builder.jsonSchemaOmitProperty || !required):
+			reason = "rule validates a transformed value"
+		case r.jsonSchemaBuilder == nil:
+			reason = "missing JSON Schema builder"
+		case slices.ContainsFunc(builder.jsonSchemaConditions, func(condition jsonSchemaCondition) bool {
+			return condition.builder == nil
+		}):
+			reason = "missing WhenJSONSchema builder"
+		default:
+			ruleBuilder := r.jsonSchemaBuilder
+			if builder.jsonSchemaTransformed {
+				// Preserve input presence without executing a builder for the transformed value.
+				ruleBuilder = func(JSONSchemaBuilderContext) (*jsonschema.Schema, error) { return nil, nil }
+			}
+			rulePlan.jsonSchemaBuilders = []*jsonSchemaPlanBuilder{
+				newJSONSchemaPlanBuilder(
+					builder.jsonSchemaConditions,
+					ruleBuilder,
+					required,
+				),
+			}
+		}
+		if omitted := builder.options.omittedJSONSchemaRules; reason != "" && omitted != nil {
+			*omitted = append(*omitted, jsonschema.OmittedRule{
+				Path:   builder.propertyPath.String(),
+				Rule:   string(rulePlan.ErrorCode),
+				Reason: reason,
+			})
+		}
 	}
 	builder.rulePlan = rulePlan
 	*builder.path = append(*builder.path, builder)
