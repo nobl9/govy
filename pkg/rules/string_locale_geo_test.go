@@ -7,16 +7,19 @@ import (
 	"encoding/hex"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 
 	"github.com/nobl9/govy/internal/assert"
+	"github.com/nobl9/govy/internal/jsonschematest"
 	"github.com/nobl9/govy/pkg/govy"
 )
 
 type stringRuleCase struct {
-	name  string
-	input string
+	name                 string
+	input                string
+	jsonSchemaDifference string
 }
 
 func TestLazyLookupMap(t *testing.T) {
@@ -368,6 +371,29 @@ func TestStringISO3166Alpha2(t *testing.T) {
 	})
 }
 
+func TestStringISO3166Alpha2_JSONSchema(t *testing.T) {
+	t.Parallel()
+
+	triplets := loadISO31661Triplets(t)
+	codes := make([]string, len(triplets))
+	for i, triplet := range triplets {
+		codes[i] = triplet.alpha2
+	}
+
+	schema, err := govy.JSONSchema(govy.New(govy.For(govy.GetSelf[string]()).Rules(StringISO3166Alpha2())))
+	assert.Require(t, assert.NoError(t, err))
+	jsonschematest.Assert(
+		t,
+		schema,
+		"testdata/jsonschema/expected_string_iso3166_alpha2.json",
+		localeGeoJSONSchemaCases(
+			validStringISO3166Alpha2Cases,
+			invalidStringISO3166Alpha2Cases,
+			localeGeoJSONSchemaCorpus(codes),
+		),
+	)
+}
+
 func BenchmarkStringISO3166Alpha2(b *testing.B) {
 	benchmarkStringRuleCases(
 		b,
@@ -425,6 +451,29 @@ func TestStringISO3166Alpha3(t *testing.T) {
 	})
 }
 
+func TestStringISO3166Alpha3_JSONSchema(t *testing.T) {
+	t.Parallel()
+
+	triplets := loadISO31661Triplets(t)
+	codes := make([]string, len(triplets))
+	for i, triplet := range triplets {
+		codes[i] = triplet.alpha3
+	}
+
+	schema, err := govy.JSONSchema(govy.New(govy.For(govy.GetSelf[string]()).Rules(StringISO3166Alpha3())))
+	assert.Require(t, assert.NoError(t, err))
+	jsonschematest.Assert(
+		t,
+		schema,
+		"testdata/jsonschema/expected_string_iso3166_alpha3.json",
+		localeGeoJSONSchemaCases(
+			validStringISO3166Alpha3Cases,
+			invalidStringISO3166Alpha3Cases,
+			localeGeoJSONSchemaCorpus(codes),
+		),
+	)
+}
+
 func BenchmarkStringISO3166Alpha3(b *testing.B) {
 	benchmarkStringRuleCases(
 		b,
@@ -478,6 +527,29 @@ func TestStringISO3166Numeric(t *testing.T) {
 		)
 		assert.True(t, govy.HasErrorCode(err, ErrorCodeStringISO3166Numeric))
 	})
+}
+
+func TestStringISO3166Numeric_JSONSchema(t *testing.T) {
+	t.Parallel()
+
+	triplets := loadISO31661Triplets(t)
+	codes := make([]string, len(triplets))
+	for i, triplet := range triplets {
+		codes[i] = triplet.numeric
+	}
+
+	schema, err := govy.JSONSchema(govy.New(govy.For(govy.GetSelf[string]()).Rules(StringISO3166Numeric())))
+	assert.Require(t, assert.NoError(t, err))
+	jsonschematest.Assert(
+		t,
+		schema,
+		"testdata/jsonschema/expected_string_iso3166_numeric.json",
+		localeGeoJSONSchemaCases(
+			validStringISO3166NumericCases,
+			invalidStringISO3166NumericCases,
+			localeGeoJSONSchemaCorpus(codes),
+		),
+	)
 }
 
 func BenchmarkStringISO3166Numeric(b *testing.B) {
@@ -566,6 +638,23 @@ func TestStringISO31662(t *testing.T) {
 		)
 		assert.True(t, govy.HasErrorCode(err, ErrorCodeStringISO31662))
 	})
+}
+
+func TestStringISO31662_JSONSchema(t *testing.T) {
+	t.Parallel()
+
+	schema, err := govy.JSONSchema(govy.New(govy.For(govy.GetSelf[string]()).Rules(StringISO31662())))
+	assert.Require(t, assert.NoError(t, err))
+	jsonschematest.Assert(
+		t,
+		schema,
+		"testdata/jsonschema/expected_string_iso3166_2.json",
+		localeGeoJSONSchemaCases(
+			validStringISO31662Cases,
+			invalidStringISO31662Cases,
+			localeGeoJSONSchemaCorpus(loadISO31662Codes(t)),
+		),
+	)
 }
 
 func BenchmarkStringISO31662(b *testing.B) {
@@ -673,6 +762,23 @@ func TestStringISO4217(t *testing.T) {
 	})
 }
 
+func TestStringISO4217_JSONSchema(t *testing.T) {
+	t.Parallel()
+
+	schema, err := govy.JSONSchema(govy.New(govy.For(govy.GetSelf[string]()).Rules(StringISO4217())))
+	assert.Require(t, assert.NoError(t, err))
+	jsonschematest.Assert(
+		t,
+		schema,
+		"testdata/jsonschema/expected_string_iso4217.json",
+		localeGeoJSONSchemaCases(
+			validStringISO4217Cases,
+			invalidStringISO4217Cases,
+			localeGeoJSONSchemaCorpus(loadISO4217Codes(t)),
+		),
+	)
+}
+
 func BenchmarkStringISO4217(b *testing.B) {
 	benchmarkStringRuleCases(
 		b,
@@ -712,13 +818,30 @@ var validStringLatitudeCases = []stringRuleCase{
 	{name: "high-precision south boundary", input: "-90.0000000000000000000"},
 	{name: "high-precision northern interior", input: "89.9999999999999999999"},
 	{name: "high-precision southern interior", input: "-89.9999999999999999999"},
+	{name: "positive sign", input: "+45"},
+	{name: "positive zero", input: "+0"},
+	{name: "leading decimal point", input: ".5"},
+	{name: "signed leading decimal point", input: "-.5"},
+	{name: "leading zero boundary", input: "00090.000"},
 }
 
 var invalidStringLatitudeCases = []stringRuleCase{
-	{name: "above north boundary", input: "90.1"},
-	{name: "below south boundary", input: "-90.1"},
-	{name: "high-precision above north boundary", input: "90.0000000000000000001"},
-	{name: "high-precision below south boundary", input: "-90.0000000000000000001"},
+	{
+		name: "above north boundary", input: "90.1",
+		jsonSchemaDifference: "JSON Schema checks decimal syntax but does not enforce the latitude range.",
+	},
+	{
+		name: "below south boundary", input: "-90.1",
+		jsonSchemaDifference: "JSON Schema checks decimal syntax but does not enforce the latitude range.",
+	},
+	{
+		name: "high-precision above north boundary", input: "90.0000000000000000001",
+		jsonSchemaDifference: "JSON Schema checks decimal syntax but does not enforce the latitude range.",
+	},
+	{
+		name: "high-precision below south boundary", input: "-90.0000000000000000001",
+		jsonSchemaDifference: "JSON Schema checks decimal syntax but does not enforce the latitude range.",
+	},
 	{name: "cardinal direction", input: "north"},
 	{name: "exponent notation", input: "1e1"},
 	{name: "not a number", input: "NaN"},
@@ -729,6 +852,17 @@ var invalidStringLatitudeCases = []stringRuleCase{
 	{name: "decimal comma", input: "45,5"},
 	{name: "full-width digits", input: "４５"},
 	{name: "empty", input: ""},
+	{name: "sign without digits", input: "-"},
+	{
+		name: "too many significant digits", input: "900",
+		jsonSchemaDifference: "JSON Schema checks decimal syntax but does not enforce the latitude range.",
+	},
+	{name: "non-digit in fractional part", input: "45.5a"},
+	{name: "missing fractional digits", input: "45."},
+	{name: "decimal point without digits", input: "."},
+	{name: "multiple decimal points", input: "1.2.3"},
+	{name: "non-decimal character after sign", input: "+x"},
+	{name: "trailing newline", input: "45\n"},
 }
 
 func TestStringLatitude(t *testing.T) {
@@ -742,6 +876,19 @@ func TestStringLatitude(t *testing.T) {
 		assert.EqualError(t, err, "string must be a valid latitude coordinate (e.g. '0', '-45.25', '90')")
 		assert.True(t, govy.HasErrorCode(err, ErrorCodeStringLatitude))
 	})
+}
+
+func TestStringLatitude_JSONSchema(t *testing.T) {
+	t.Parallel()
+
+	schema, err := govy.JSONSchema(govy.New(govy.For(govy.GetSelf[string]()).Rules(StringLatitude())))
+	assert.Require(t, assert.NoError(t, err))
+	jsonschematest.Assert(
+		t,
+		schema,
+		"testdata/jsonschema/expected_string_latitude.json",
+		localeGeoJSONSchemaCases(validStringLatitudeCases, invalidStringLatitudeCases, latitudeRFC5870Cases),
+	)
 }
 
 func BenchmarkStringLatitude(b *testing.B) {
@@ -765,13 +912,30 @@ var validStringLongitudeCases = []stringRuleCase{
 	{name: "high-precision west boundary", input: "-180.0000000000000000000"},
 	{name: "high-precision eastern interior", input: "179.9999999999999999999"},
 	{name: "high-precision western interior", input: "-179.9999999999999999999"},
+	{name: "positive sign", input: "+45"},
+	{name: "positive zero", input: "+0"},
+	{name: "leading decimal point", input: ".5"},
+	{name: "signed leading decimal point", input: "-.5"},
+	{name: "leading zero boundary", input: "000180.000"},
 }
 
 var invalidStringLongitudeCases = []stringRuleCase{
-	{name: "past east boundary", input: "180.1"},
-	{name: "past west boundary", input: "-180.1"},
-	{name: "high-precision past east boundary", input: "180.0000000000000000001"},
-	{name: "high-precision past west boundary", input: "-180.0000000000000000001"},
+	{
+		name: "past east boundary", input: "180.1",
+		jsonSchemaDifference: "JSON Schema checks decimal syntax but does not enforce the longitude range.",
+	},
+	{
+		name: "past west boundary", input: "-180.1",
+		jsonSchemaDifference: "JSON Schema checks decimal syntax but does not enforce the longitude range.",
+	},
+	{
+		name: "high-precision past east boundary", input: "180.0000000000000000001",
+		jsonSchemaDifference: "JSON Schema checks decimal syntax but does not enforce the longitude range.",
+	},
+	{
+		name: "high-precision past west boundary", input: "-180.0000000000000000001",
+		jsonSchemaDifference: "JSON Schema checks decimal syntax but does not enforce the longitude range.",
+	},
 	{name: "cardinal direction", input: "east"},
 	{name: "exponent notation", input: "1e2"},
 	{name: "not a number", input: "NaN"},
@@ -782,6 +946,17 @@ var invalidStringLongitudeCases = []stringRuleCase{
 	{name: "decimal comma", input: "45,5"},
 	{name: "full-width digits", input: "４５"},
 	{name: "empty", input: ""},
+	{name: "sign without digits", input: "-"},
+	{
+		name: "too many significant digits", input: "900",
+		jsonSchemaDifference: "JSON Schema checks decimal syntax but does not enforce the longitude range.",
+	},
+	{name: "non-digit in fractional part", input: "45.5a"},
+	{name: "missing fractional digits", input: "45."},
+	{name: "decimal point without digits", input: "."},
+	{name: "multiple decimal points", input: "1.2.3"},
+	{name: "non-decimal character after sign", input: "+x"},
+	{name: "trailing newline", input: "45\n"},
 }
 
 func TestStringLongitude(t *testing.T) {
@@ -797,6 +972,19 @@ func TestStringLongitude(t *testing.T) {
 	})
 }
 
+func TestStringLongitude_JSONSchema(t *testing.T) {
+	t.Parallel()
+
+	schema, err := govy.JSONSchema(govy.New(govy.For(govy.GetSelf[string]()).Rules(StringLongitude())))
+	assert.Require(t, assert.NoError(t, err))
+	jsonschematest.Assert(
+		t,
+		schema,
+		"testdata/jsonschema/expected_string_longitude.json",
+		localeGeoJSONSchemaCases(validStringLongitudeCases, invalidStringLongitudeCases, longitudeRFC5870Cases),
+	)
+}
+
 func BenchmarkStringLongitude(b *testing.B) {
 	benchmarkStringRuleCases(
 		b,
@@ -806,33 +994,6 @@ func BenchmarkStringLongitude(b *testing.B) {
 	)
 }
 
-func Test_isCoordinate(t *testing.T) {
-	tests := map[string]struct {
-		input        string
-		maxMagnitude string
-		expected     bool
-	}{
-		"positive sign":                    {input: "+45", maxMagnitude: "90", expected: true},
-		"positive zero":                    {input: "+0", maxMagnitude: "90", expected: true},
-		"leading decimal point":            {input: ".5", maxMagnitude: "90", expected: true},
-		"signed leading decimal point":     {input: "-.5", maxMagnitude: "90", expected: true},
-		"leading zero boundary":            {input: "00090.000", maxMagnitude: "90", expected: true},
-		"sign without digits":              {input: "-", maxMagnitude: "90", expected: false},
-		"too many significant digits":      {input: "900", maxMagnitude: "90", expected: false},
-		"non-digit in fractional part":     {input: "45.5a", maxMagnitude: "90", expected: false},
-		"missing fractional digits":        {input: "45.", maxMagnitude: "90", expected: false},
-		"decimal point without digits":     {input: ".", maxMagnitude: "90", expected: false},
-		"multiple decimal points":          {input: "1.2.3", maxMagnitude: "90", expected: false},
-		"non-decimal character after sign": {input: "+x", maxMagnitude: "90", expected: false},
-	}
-
-	for name, test := range tests {
-		t.Run(name, func(t *testing.T) {
-			assert.Equal(t, test.expected, isCoordinate(test.input, test.maxMagnitude))
-		})
-	}
-}
-
 // These tables contain every distinct latitude and longitude scalar literal
 // used by RFC 5870's geo URI examples and invalid-location example:
 // https://www.rfc-editor.org/rfc/rfc5870.txt
@@ -840,56 +1001,59 @@ func Test_isCoordinate(t *testing.T) {
 // Formatting variants such as 22.300/22.3, -118.44/-118.4400, and 66/66.0
 // remain distinct. Repeated literals, altitude, uncertainty, parameters, and
 // template placeholders are excluded. Latitude 94 is the RFC's invalid value.
+var latitudeRFC5870Cases = []jsonschematest.Case[string]{
+	{Name: "13.4125", Input: "13.4125", Valid: true},
+	{Name: "48.2010", Input: "48.2010", Valid: true},
+	{Name: "48.198634", Input: "48.198634", Valid: true},
+	{Name: "90", Input: "90", Valid: true},
+	{Name: "22.300", Input: "22.300", Valid: true},
+	{Name: "22.3", Input: "22.3", Valid: true},
+	{Name: "66", Input: "66", Valid: true},
+	{Name: "66.0", Input: "66.0", Valid: true},
+	{Name: "70", Input: "70", Valid: true},
+	{Name: "47", Input: "47", Valid: true},
+	{Name: "22", Input: "22", Valid: true},
+	{
+		Name: "94", Input: "94",
+		JSONSchemaDifference: "JSON Schema checks decimal syntax but does not enforce the latitude range.",
+	},
+}
+
+var longitudeRFC5870Cases = []jsonschematest.Case[string]{
+	{Name: "103.8667", Input: "103.8667", Valid: true},
+	{Name: "16.3695", Input: "16.3695", Valid: true},
+	{Name: "16.371648", Input: "16.371648", Valid: true},
+	{Name: "-22.43", Input: "-22.43", Valid: true},
+	{Name: "46", Input: "46", Valid: true},
+	{Name: "-118.44", Input: "-118.44", Valid: true},
+	{Name: "-118.4400", Input: "-118.4400", Valid: true},
+	{Name: "30", Input: "30", Valid: true},
+	{Name: "20", Input: "20", Valid: true},
+	{Name: "11", Input: "11", Valid: true},
+	{Name: "0", Input: "0", Valid: true},
+}
+
 func TestStringCoordinatesRFC5870ScalarCorpus(t *testing.T) {
-	type coordinateCase struct {
-		input string
-		valid bool
-	}
 	tests := map[string]struct {
 		rule  govy.Rule[string]
-		cases []coordinateCase
+		cases []jsonschematest.Case[string]
 	}{
 		"latitude": {
-			rule: StringLatitude(),
-			cases: []coordinateCase{
-				{input: "13.4125", valid: true},
-				{input: "48.2010", valid: true},
-				{input: "48.198634", valid: true},
-				{input: "90", valid: true},
-				{input: "22.300", valid: true},
-				{input: "22.3", valid: true},
-				{input: "66", valid: true},
-				{input: "66.0", valid: true},
-				{input: "70", valid: true},
-				{input: "47", valid: true},
-				{input: "22", valid: true},
-				{input: "94", valid: false},
-			},
+			rule:  StringLatitude(),
+			cases: latitudeRFC5870Cases,
 		},
 		"longitude": {
-			rule: StringLongitude(),
-			cases: []coordinateCase{
-				{input: "103.8667", valid: true},
-				{input: "16.3695", valid: true},
-				{input: "16.371648", valid: true},
-				{input: "-22.43", valid: true},
-				{input: "46", valid: true},
-				{input: "-118.44", valid: true},
-				{input: "-118.4400", valid: true},
-				{input: "30", valid: true},
-				{input: "20", valid: true},
-				{input: "11", valid: true},
-				{input: "0", valid: true},
-			},
+			rule:  StringLongitude(),
+			cases: longitudeRFC5870Cases,
 		},
 	}
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			for _, testCase := range test.cases {
-				t.Run(testCase.input, func(t *testing.T) {
-					err := test.rule.Validate(testCase.input)
-					if testCase.valid {
+				t.Run(testCase.Name, func(t *testing.T) {
+					err := test.rule.Validate(testCase.Input)
+					if testCase.Valid {
 						assert.NoError(t, err)
 					} else {
 						assert.Error(t, err)
@@ -1285,4 +1449,35 @@ func benchmarkStringRuleCases(
 			_ = rule.Validate(testCase.input)
 		}
 	}
+}
+
+func localeGeoJSONSchemaCases(
+	validCases []stringRuleCase,
+	invalidCases []stringRuleCase,
+	corpus []jsonschematest.Case[string],
+) []jsonschematest.Case[string] {
+	cases := make([]jsonschematest.Case[string], 0, len(validCases)+len(invalidCases)+len(corpus))
+	for _, tc := range validCases {
+		cases = append(cases, jsonschematest.Case[string]{
+			Name: "valid/" + tc.name, Input: tc.input, Valid: true,
+			JSONSchemaDifference: tc.jsonSchemaDifference,
+		})
+	}
+	for _, tc := range invalidCases {
+		cases = append(cases, jsonschematest.Case[string]{
+			Name: "invalid/" + tc.name, Input: tc.input,
+			JSONSchemaDifference: tc.jsonSchemaDifference,
+		})
+	}
+	return append(cases, corpus...)
+}
+
+func localeGeoJSONSchemaCorpus(codes []string) []jsonschematest.Case[string] {
+	cases := make([]jsonschematest.Case[string], len(codes))
+	for i, code := range codes {
+		cases[i] = jsonschematest.Case[string]{
+			Name: "corpus/" + strconv.Itoa(i+1) + "/" + code, Input: code, Valid: true,
+		}
+	}
+	return cases
 }

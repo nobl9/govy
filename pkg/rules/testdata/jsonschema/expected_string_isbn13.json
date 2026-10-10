@@ -1,0 +1,5 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "string",
+  "pattern": "^9[ \\-]?7[ \\-]?[89](?:[ \\-]?[0-9]){10}(?![\\s\\S])"
+}

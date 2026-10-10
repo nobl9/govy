@@ -3,6 +3,7 @@ package rules
 // cspell:ignore guoyu lojban mingo xiang
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"sync"
@@ -13,6 +14,8 @@ import (
 	"github.com/nobl9/govy/internal/messagetemplates"
 	"github.com/nobl9/govy/pkg/govy"
 )
+
+const coordinateJSONSchemaPattern = `^[+-]?([0-9]+(\.[0-9]+)?|\.[0-9]+)$`
 
 // These BCP 47 compatibility tables are derived from every applicable record
 // in the IANA Language Subtag Registry dated 2026-06-14. The source SHA-256 is
@@ -311,6 +314,22 @@ var iso3166Alpha2Codes = lazyLookupMap(func() map[string]struct{} {
 	}
 })
 
+var iso3166Alpha3Codes = lazyLookupMap(func() map[string]struct{} {
+	lookup := make(map[string]struct{}, len(iso3166Alpha2Codes()))
+	for code := range iso3166Alpha2Codes() {
+		lookup[language.MustParseRegion(code).ISO3()] = struct{}{}
+	}
+	return lookup
+})
+
+var iso3166NumericCodes = lazyLookupMap(func() map[string]struct{} {
+	lookup := make(map[string]struct{}, len(iso3166Alpha2Codes()))
+	for code := range iso3166Alpha2Codes() {
+		lookup[fmt.Sprintf("%03d", language.MustParseRegion(code).M49())] = struct{}{}
+	}
+	return lookup
+})
+
 // iso4217Codes returns current tender and non-tender ISO 4217 code elements.
 // ParseISO also recognizes withdrawn codes.
 var iso4217Codes = lazyLookupMap(buildISO4217Codes)
@@ -366,7 +385,8 @@ func StringISO3166Alpha2() govy.Rule[string] {
 		WithErrorCode(ErrorCodeStringISO3166Alpha2).
 		WithMessageTemplate(tpl).
 		WithExamples("US", "PL", "JP").
-		WithDescriptionTemplate(tpl, govy.TemplateVars{})
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
+		WithJSONSchema(jsonSchemaStringEnum(iso3166Alpha2Codes))
 }
 
 // StringISO3166Alpha3 ensures the property's value is a valid ISO 3166-1 alpha-3 country code.
@@ -384,7 +404,8 @@ func StringISO3166Alpha3() govy.Rule[string] {
 		WithErrorCode(ErrorCodeStringISO3166Alpha3).
 		WithMessageTemplate(tpl).
 		WithExamples("USA", "POL", "JPN").
-		WithDescriptionTemplate(tpl, govy.TemplateVars{})
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
+		WithJSONSchema(jsonSchemaStringEnum(iso3166Alpha3Codes))
 }
 
 // StringISO3166Numeric ensures the property's value is a valid ISO 3166-1 numeric-3 country code.
@@ -402,7 +423,8 @@ func StringISO3166Numeric() govy.Rule[string] {
 		WithErrorCode(ErrorCodeStringISO3166Numeric).
 		WithMessageTemplate(tpl).
 		WithExamples("840", "616", "392").
-		WithDescriptionTemplate(tpl, govy.TemplateVars{})
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
+		WithJSONSchema(jsonSchemaStringEnum(iso3166NumericCodes))
 }
 
 // StringISO31662 ensures the property's value is a valid ISO 3166-2 country subdivision code.
@@ -420,7 +442,8 @@ func StringISO31662() govy.Rule[string] {
 		WithErrorCode(ErrorCodeStringISO31662).
 		WithMessageTemplate(tpl).
 		WithExamples("US-CA", "GB-ENG", "PL-14").
-		WithDescriptionTemplate(tpl, govy.TemplateVars{})
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
+		WithJSONSchema(jsonSchemaStringEnum(iso31662Codes))
 }
 
 // StringISO4217 ensures the property's value is a valid ISO 4217 three-letter alphabetic currency code.
@@ -438,7 +461,8 @@ func StringISO4217() govy.Rule[string] {
 		WithErrorCode(ErrorCodeStringISO4217).
 		WithMessageTemplate(tpl).
 		WithExamples("USD", "EUR", "JPY").
-		WithDescriptionTemplate(tpl, govy.TemplateVars{})
+		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
+		WithJSONSchema(jsonSchemaStringEnum(iso4217Codes))
 }
 
 // StringLatitude ensures the property's value is a decimal latitude coordinate between -90 and 90 degrees.
@@ -456,7 +480,8 @@ func StringLatitude() govy.Rule[string] {
 		WithErrorCode(ErrorCodeStringLatitude).
 		WithMessageTemplate(tpl).
 		WithExamples("0", "-45.25", "90").
-		WithDescription("string must be a decimal latitude coordinate between -90 and 90 degrees")
+		WithDescription("string must be a decimal latitude coordinate between -90 and 90 degrees").
+		WithJSONSchema(jsonSchemaPattern(coordinateJSONSchemaPattern))
 }
 
 // StringLongitude ensures the property's value is a decimal longitude coordinate between -180 and 180 degrees.
@@ -474,7 +499,8 @@ func StringLongitude() govy.Rule[string] {
 		WithErrorCode(ErrorCodeStringLongitude).
 		WithMessageTemplate(tpl).
 		WithExamples("0", "-122.4194", "180").
-		WithDescription("string must be a decimal longitude coordinate between -180 and 180 degrees")
+		WithDescription("string must be a decimal longitude coordinate between -180 and 180 degrees").
+		WithJSONSchema(jsonSchemaPattern(coordinateJSONSchemaPattern))
 }
 
 func isBCP47LanguageTag(s string) bool {

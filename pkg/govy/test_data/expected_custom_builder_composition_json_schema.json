@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "string",
+  "allOf": [
+    {
+      "anyOf": [
+        {
+          "pattern": "end$"
+        },
+        {
+          "pattern": "stop$"
+        }
+      ]
+    },
+    {
+      "allOf": [
+        {
+          "not": {
+            "pattern": "bad"
+          }
+        }
+      ]
+    }
+  ],
+  "anyOf": [
+    {
+      "pattern": "^pre"
+    },
+    {
+      "pattern": "^alt"
+    }
+  ]
+}

@@ -6,6 +6,7 @@ Case 9 asks for an implementation from plain requirements without naming
 the construction APIs.
 Case 10 asks for an explanation of reuse, composition, and error paths.
 Use these cases to compare changes to the skill's introduction.
+Case 11 checks guidance for JSON Schema generation and its limits.
 
 ## Run a comparison
 
@@ -19,7 +20,8 @@ Use these cases to compare changes to the skill's introduction.
 4. For cases 1-9, run independent checks with [run-case.bash](run-case.bash).
    Use an installed Go toolchain that supports the checkout's `go.mod`.
    The checkout's dependencies must already be cached.
-   Case 10 needs only `explanation.md`; review it against the expectations.
+   Cases 10 and 11 need only `explanation.md`.
+   Review each against its expectations.
 5. Grade every expectation from the outputs and test results.
    Record evidence in `grading.json` with `text`, `passed`, and `evidence` fields.
 6. Compare correctness and reference selection before accepting the revision.
@@ -51,6 +53,8 @@ Record the entrypoint size and references read for each task.
 A narrow question must reach its relevant reference without loading every guide.
 For case 10, grade how the explanation applies the concepts to the task.
 Naming all four types without explaining their relationships is insufficient.
+For case 11, check builder scope, omission reporting, and semantic limits.
+Do not accept an answer that promises equivalent Govy and schema validation.
 Treat file size as a context estimate, not a measured model token count.
 One run per case checks coverage, not statistical improvement or output variance.
 Use repeated independent runs to check whether an observed difference recurs.

@@ -14,7 +14,26 @@ jobs:
     name: Coverage
     runs-on: ubuntu-latest
     steps:
-    - name: Test coverage diff
-      uses: kskitek/coverdiff@v0.6.0
-      env:
-        GITHUB_TOKEN: ${{ secrets.GO_COVERAGE_TOKEN }}
+    - name: Check out PR head
+      uses: actions/checkout@v7.0.1
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+        fetch-depth: 0
+        persist-credentials: false
+    - name: Install devbox
+      uses: jetpack-io/devbox-install-action@v0.15.0
+      with:
+        enable-cache: true
+        devbox-version: ${{ vars.DEVBOX_VERSION }}
+        disable-nix-access-token: true
+    - name: Compare coverage
+      id: coverage
+      uses: nieomylnieja/coverdiff@82a29c2609e490a3e70d4fe83449036239dbbf25
+      with:
+        test-command: devbox run -- make test
+    - name: Comment on PR
+      if: ${{ !cancelled() && steps.coverage.outputs.report-path != '' && github.event.pull_request.head.repo.full_name == github.repository }}
+      uses: nieomylnieja/coverdiff/comment@82a29c2609e490a3e70d4fe83449036239dbbf25
+      with:
+        report-path: ${{ steps.coverage.outputs.report-path }}
+        github-token: ${{ github.token }}

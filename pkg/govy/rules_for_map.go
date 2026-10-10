@@ -4,17 +4,21 @@ import (
 	"fmt"
 
 	"github.com/nobl9/govy/internal"
+	"github.com/nobl9/govy/internal/typeinfo"
 	"github.com/nobl9/govy/pkg/jsonpath"
 )
 
 // ForMap creates a new [PropertyRulesForMap] instance for a map property
 // which value is extracted through [PropertyGetter] function.
 func ForMap[M ~map[K]V, K comparable, V, P any](getter PropertyGetter[M, P]) PropertyRulesForMap[M, K, V, P] {
+	forItemRules := forConstructorWithoutPathInference(GetSelf[MapItem[K, V]]())
+	valueType := typeinfo.Get[V]()
+	forItemRules.originalType = &valueType
 	return PropertyRulesForMap[M, K, V, P]{
 		mapRules:      forConstructor(getter),
 		forKeyRules:   forConstructorWithoutPathInference(GetSelf[K]()),
 		forValueRules: forConstructorWithoutPathInference(GetSelf[V]()),
-		forItemRules:  forConstructorWithoutPathInference(GetSelf[MapItem[K, V]]()),
+		forItemRules:  forItemRules,
 		getter:        getter,
 	}
 }
@@ -270,7 +274,7 @@ func (r PropertyRulesForMap[M, K, V, P]) removePropertiesByID(removal *propertyR
 
 // plan constructs a validation plan for the property rules.
 func (r PropertyRulesForMap[M, K, V, P]) plan(builder planBuilder) {
-	builder = appendPredicatesToPlanBuilder(builder, r.predicates)
+	builder = appendPredicatesToPlanBuilder(builder, builder.propertyPath, r.predicates)
 	r.mapRules.plan(builder.setExamples(r.mapRules.examples...))
 	builder = builder.appendPath(r.mapRules.getPath())
 	if len(r.forKeyRules.rules) > 0 {
