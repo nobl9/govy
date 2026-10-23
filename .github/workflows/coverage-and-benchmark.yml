@@ -19,7 +19,7 @@ jobs:
           enable-cache: true
           devbox-version: ${{ vars.DEVBOX_VERSION }}
       - name: Update coverage report
-        uses: ncruces/go-coverage-report@v0.3.2
+        uses: ncruces/go-coverage-report@v0.3.3
         with:
           report: true
           chart: true
