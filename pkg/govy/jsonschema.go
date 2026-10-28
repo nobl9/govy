@@ -26,10 +26,11 @@ type JSONSchemaBuilder func(ctx JSONSchemaBuilderContext) (*jsonschema.Schema, e
 
 type jsonSchemaBuildContext struct {
 	JSONSchemaBuilderContext
-	root    *jsonschema.Schema
-	schema  *jsonschema.Schema
-	parent  *jsonschema.Schema
-	segment jsonpath.Segment
+	root       *jsonschema.Schema
+	schema     *jsonschema.Schema
+	parent     *jsonschema.Schema
+	segment    jsonpath.Segment
+	scopeTypes map[string]jsonschema.Type
 }
 
 type jsonSchemaCondition struct {
@@ -88,6 +89,7 @@ func JSONSchema[T any](v Validator[T], opts ...JSONSchemaOption) (*jsonschema.Do
 		Title: plan.Name,
 		Type:  schemaType,
 	}
+	scopeTypes := map[string]jsonschema.Type{jsonpath.NewRoot().String(): schemaType}
 
 	for _, prop := range plan.Properties {
 		ctx, err := newJSONSchemaBuildContext(schema, schema, prop.Path)
@@ -99,6 +101,8 @@ func JSONSchema[T any](v Validator[T], opts ...JSONSchemaOption) (*jsonschema.Do
 			return nil, fmt.Errorf("failed to generate JSON Schema type info for %q property: %w", prop.Path, err)
 		}
 		ctx.schema.Type = ctx.Type
+		scopeTypes[prop.Path.String()] = ctx.Type
+		ctx.scopeTypes = scopeTypes
 		for _, rule := range prop.Rules {
 			for _, builder := range rule.jsonSchemaBuilders {
 				if err = builder.Build(ctx); err != nil {
@@ -172,7 +176,7 @@ func (b *jsonSchemaPlanBuilder) Build(ctx jsonSchemaBuildContext) error {
 		}
 		conditionSchema, err := condition.builder(JSONSchemaBuilderContext{
 			Path: condition.scope,
-			Type: scopeContext.schema.Type,
+			Type: ctx.scopeTypes[condition.scope.String()],
 		})
 		if err != nil {
 			return fmt.Errorf("build JSON Schema condition at %q: %w", condition.scope, err)

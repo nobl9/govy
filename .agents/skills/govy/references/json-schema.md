@@ -107,6 +107,8 @@ and can check sibling properties.
 A rule-level predicate receives the selected value.
 Use `required` inside a condition when an absent property must not match.
 Govy supplies `if`/`then` and combines multiple conditions with AND semantics.
+Repeated conditions receive the same known type for their scope.
+Temporary conditional branches do not change the builder context type.
 
 Govy cannot infer a condition from a Go function or `WhenDescription`.
 Without a schema builder for every guarding predicate,
