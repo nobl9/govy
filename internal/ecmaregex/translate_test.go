@@ -136,6 +136,22 @@ func TestTranslate(t *testing.T) {
 			pattern:  `a*b+c?`,
 			expected: `a*b+c?`,
 		},
+		"repeated start assertion": {
+			pattern:  `^*a`,
+			expected: `(?:^)*a`,
+		},
+		"repeated boundary assertion": {
+			pattern:  `\b+word`,
+			expected: `(?:\b)+word`,
+		},
+		"repeated end assertion": {
+			pattern:  `a$+`,
+			expected: `a(?:(?![\s\S]))+`,
+		},
+		"counted start assertion": {
+			pattern:  `^{1,2}a`,
+			expected: `(?:^){1,2}a`,
+		},
 		"lazy repetitions": {
 			pattern:  `a*?b+?c??`,
 			expected: `a*?b+?c??`,
