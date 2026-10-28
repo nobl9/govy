@@ -267,7 +267,7 @@ func (r Rule[T]) plan(builder planBuilder) {
 	}
 	if builder.options.recordJSONSchema {
 		var reason string
-		required := r.errorCode == internal.RequiredErrorCode
+		required := r.errorCode.Has(internal.RequiredErrorCode)
 		switch {
 		case builder.jsonSchemaTransformed && (builder.jsonSchemaOmitProperty || !required):
 			reason = "rule validates a transformed value"
