@@ -11,14 +11,11 @@ import (
 // ForMap creates a new [PropertyRulesForMap] instance for a map property
 // which value is extracted through [PropertyGetter] function.
 func ForMap[M ~map[K]V, K comparable, V, P any](getter PropertyGetter[M, P]) PropertyRulesForMap[M, K, V, P] {
-	forItemRules := forConstructorWithoutPathInference(GetSelf[MapItem[K, V]]())
-	valueType := typeinfo.Get[V]()
-	forItemRules.originalType = &valueType
 	return PropertyRulesForMap[M, K, V, P]{
 		mapRules:      forConstructor(getter),
 		forKeyRules:   forConstructorWithoutPathInference(GetSelf[K]()),
 		forValueRules: forConstructorWithoutPathInference(GetSelf[V]()),
-		forItemRules:  forItemRules,
+		forItemRules:  forConstructorWithoutPathInference(GetSelf[MapItem[K, V]]()),
 		getter:        getter,
 	}
 }
@@ -284,6 +281,8 @@ func (r PropertyRulesForMap[M, K, V, P]) plan(builder planBuilder) {
 		r.forValueRules.plan(builder.appendPath(jsonpath.New().ValueWildcard()))
 	}
 	if len(r.forItemRules.rules) > 0 {
+		valueType := typeinfo.Get[V]()
+		r.forItemRules.originalType = &valueType
 		r.forItemRules.plan(builder.appendPath(jsonpath.New().ValueWildcard()))
 	}
 }

@@ -971,6 +971,119 @@ func TestJSONSchema_IncludedRequiredProperties(t *testing.T) {
 	jsonschematest.Assert(t, schema, "test_data/expected_included_required_properties_json_schema.json", cases)
 }
 
+func TestJSONSchema_IncludedRequiredConditions(t *testing.T) {
+	t.Parallel()
+
+	type document struct {
+		Enabled bool   `json:"enabled,omitempty"`
+		Name    string `json:"name,omitempty"`
+	}
+	leaf := govy.New(govy.For(govy.GetSelf[string]()).Required())
+	property := govy.For(func(v document) string { return v.Name }).WithName("name")
+	always := govy.WhenJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+		return &jsonschema.Schema{}, nil
+	})
+	never := govy.WhenJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+		return &jsonschema.Schema{Not: &jsonschema.Schema{}}, nil
+	})
+	emptyCollections := func() *jsonschema.Schema {
+		return &jsonschema.Schema{
+			Properties: map[string]*jsonschema.Schema{},
+			Required:   []string{},
+			AllOf:      []*jsonschema.Schema{},
+		}
+	}
+	alwaysWithEmptyCollections := govy.WhenJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+		return emptyCollections(), nil
+	})
+	neverWithEmptyCollections := govy.WhenJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+		return &jsonschema.Schema{Not: emptyCollections()}, nil
+	})
+	enabled := any(true)
+	whenEnabled := govy.WhenJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+		return &jsonschema.Schema{
+			Properties: map[string]*jsonschema.Schema{"enabled": {Const: &enabled}},
+			Required:   []string{"enabled"},
+		}, nil
+	})
+	conditioned := leaf.When(func(string) bool { return true }, always)
+	for _, tt := range []struct {
+		name             string
+		validator        govy.Validator[document]
+		fixture          string
+		required         bool
+		requiredIfActive bool
+	}{
+		{
+			name: "unconditioned", validator: govy.New(property.Include(leaf)),
+			fixture: "expected_included_required_condition_true.json", required: true,
+		},
+		{
+			name: "always true", validator: govy.New(property.Include(conditioned)),
+			fixture: "expected_included_required_condition_true.json", required: true,
+		},
+		{
+			name:      "repeated always true",
+			validator: govy.New(property.Include(conditioned.When(func(string) bool { return true }, always))),
+			fixture:   "expected_included_required_condition_true.json", required: true,
+		},
+		{
+			name: "always false", validator: govy.New(property.Include(leaf.When(func(string) bool { return false }, never))),
+			fixture: "expected_included_required_condition_false.json",
+		},
+		{
+			name:      "always true with empty collections",
+			validator: govy.New(property.Include(leaf.When(func(string) bool { return true }, alwaysWithEmptyCollections))),
+			fixture:   "expected_included_required_condition_true.json", required: true,
+		},
+		{
+			name:      "always false with empty collections",
+			validator: govy.New(property.Include(leaf.When(func(string) bool { return false }, neverWithEmptyCollections))),
+			fixture:   "expected_included_required_condition_false.json",
+		},
+		{
+			name:      "parent condition",
+			validator: govy.New(property.Include(conditioned).When(func(v document) bool { return v.Enabled }, whenEnabled)),
+			fixture:   "expected_included_required_condition_parent.json", requiredIfActive: true,
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			cases := []jsonschematest.Case[document]{
+				{Name: "absent", Input: document{}, Valid: !tt.required},
+				{Name: "present", Input: document{Name: "present"}, Valid: true},
+				{
+					Name:  "active and absent",
+					Input: document{Enabled: true},
+					Valid: !tt.required && !tt.requiredIfActive,
+				},
+				{Name: "active and present", Input: document{Enabled: true, Name: "present"}, Valid: true},
+			}
+			for _, tc := range cases {
+				assert.Equal(t, tc.Valid, tt.validator.Validate(tc.Input) == nil)
+			}
+			schema, err := govy.JSONSchema(tt.validator)
+			assert.Require(t, assert.NoError(t, err))
+			jsonschematest.Assert(t, schema, "test_data/"+tt.fixture, cases)
+		})
+	}
+	t.Run("value-dependent condition", func(t *testing.T) {
+		t.Parallel()
+		empty := any("")
+		v := govy.New(property.Include(leaf.When(func(v string) bool { return v == "" },
+			govy.WhenJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+				return &jsonschema.Schema{Const: &empty}, nil
+			}))))
+		schema, err := govy.JSONSchema(v)
+		assert.True(t, schema == nil)
+		assert.EqualError(
+			t,
+			err,
+			`failed to build JSON Schema for "$.name" property and "required" rule: cannot represent conditional presence at "$.name": apply the condition to the containing object`,
+		)
+	})
+}
+
 func TestJSONSchema_RemovePropertiesByID(t *testing.T) {
 	t.Parallel()
 
@@ -1250,6 +1363,15 @@ func TestJSONSchema_EncodedTypes(t *testing.T) {
 				{Name: "string property name", Input: value, Valid: true},
 			},
 		)
+		assertEncodedMapKeySchemas(t, json.Number("1"), json.Number("2"))
+	})
+	t.Run("custom JSON map keys", func(t *testing.T) {
+		t.Parallel()
+		assertEncodedMapKeySchemas(t, schemaJSONKey("1"), schemaJSONKey("2"))
+	})
+	t.Run("text map keys", func(t *testing.T) {
+		t.Parallel()
+		assertEncodedMapKeySchemas(t, schemaTextKey("1"), schemaTextKey("2"))
 	})
 }
 
@@ -1498,6 +1620,38 @@ func TestJSONSchema_ArrayIndexOutsideIntRange(t *testing.T) {
 	))
 }
 
+func assertEncodedMapKeySchemas[T ~string](t *testing.T, compared, other T) {
+	t.Helper()
+
+	for _, tt := range []struct {
+		name            string
+		rule            govy.Rule[T]
+		acceptsCompared bool
+	}{
+		{name: "eq", rule: rules.EQ(compared), acceptsCompared: true},
+		{name: "neq", rule: rules.NEQ(compared)},
+		{name: "one_of", rule: rules.OneOf(compared), acceptsCompared: true},
+		{name: "not_one_of", rule: rules.NotOneOf(compared)},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			v := govy.New(govy.ForMap(govy.GetSelf[map[T]string]()).RulesForKeys(tt.rule))
+			cases := []jsonschematest.Case[map[T]string]{
+				{Name: "empty map", Input: map[T]string{}, Valid: true},
+				{Name: "compared key", Input: map[T]string{compared: "value"}, Valid: tt.acceptsCompared},
+				{Name: "other key", Input: map[T]string{other: "value"}, Valid: !tt.acceptsCompared},
+				{Name: "mixed keys", Input: map[T]string{compared: "first", other: "second"}},
+			}
+			for _, tc := range cases {
+				assert.Equal(t, tc.Valid, v.Validate(tc.Input) == nil)
+			}
+			schema, err := govy.JSONSchema(v)
+			assert.Require(t, assert.NoError(t, err))
+			jsonschematest.Assert(t, schema, "test_data/expected_encoded_keys_"+tt.name+".json", cases)
+		})
+	}
+}
+
 func assertEncodedSchema[T comparable](t *testing.T, valid, invalid T, fixture string) {
 	t.Helper()
 	v := govy.New(govy.For(govy.GetSelf[T]()).Rules(rules.EQ(valid)))
@@ -1516,6 +1670,14 @@ func assertEncodedSchema[T comparable](t *testing.T, valid, invalid T, fixture s
 type schemaJSONValue struct{ Value int }
 
 func (v schemaJSONValue) MarshalJSON() ([]byte, error) { return json.Marshal(v.Value) }
+
+type schemaJSONKey string
+
+func (schemaJSONKey) MarshalJSON() ([]byte, error) { return []byte("123"), nil }
+
+type schemaTextKey string
+
+func (v schemaTextKey) MarshalText() ([]byte, error) { return []byte("encoded-" + v), nil }
 
 type schemaTextValue struct{ Value string }
 

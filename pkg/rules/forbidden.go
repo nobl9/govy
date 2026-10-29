@@ -22,8 +22,8 @@ func Forbidden[T any]() govy.Rule[T] {
 		WithErrorCode(ErrorCodeForbidden).
 		WithMessageTemplate(tpl).
 		WithDescriptionTemplate(tpl, govy.TemplateVars{}).
-		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
-			value, err := jsonSchemaValue(*new(T))
+		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+			value, err := jsonSchemaValue(ctx, *new(T))
 			if err != nil {
 				return nil, err
 			}

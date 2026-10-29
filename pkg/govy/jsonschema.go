@@ -64,6 +64,8 @@ func JSONSchemaIncludeOmittedRules() JSONSchemaOption {
 // It returns an error for Go kinds without a default JSON representation.
 // For [Transform], it preserves the input type and directly attached required constraints,
 // but omits other rules and properties of the transformed value.
+// For a required named property, conditions on its value support only an empty schema
+// or not: {}. Other conditions on its presence must apply to the containing object.
 // Omitted rules are not reported unless [JSONSchemaIncludeOmittedRules] is provided.
 //
 // The schema approximates Govy validation and does not replace [Validator.Validate].
@@ -197,6 +199,20 @@ func (b *jsonSchemaPlanBuilder) Build(ctx jsonSchemaBuildContext) error {
 		if conditionSchema == nil {
 			return nil
 		}
+		if b.required && conditionScopeDepth == propertyPath.Len() && ctx.segment.Kind() == jsonpath.SegmentName {
+			// JSON Schema cannot evaluate a value condition on an absent property.
+			// Constant conditions determine whether the required constraint applies.
+			if isEmptyJSONSchema(*conditionSchema) {
+				continue
+			}
+			if conditionSchema.Not != nil && isEmptyJSONSchema(*conditionSchema.Not) {
+				return nil
+			}
+			return fmt.Errorf(
+				"cannot represent conditional presence at %q: apply the condition to the containing object",
+				propertyPath,
+			)
+		}
 		conditionalSchema := &jsonschema.Schema{
 			If:   conditionSchema,
 			Then: new(jsonschema.Schema),
@@ -267,7 +283,7 @@ func (c jsonSchemaBuildContext) requireProperty() {
 }
 
 func mergeJSONSchemaContribution(target, contribution *jsonschema.Schema) {
-	if contribution == nil || isEmptyJSONSchemaValue(reflect.ValueOf(*contribution)) {
+	if contribution == nil || isEmptyJSONSchema(*contribution) {
 		return
 	}
 	// Child applicators share a lexical scope with properties and prefixItems.
@@ -291,6 +307,16 @@ func mergeJSONSchemaContribution(target, contribution *jsonschema.Schema) {
 			targetValue.Field(i).Set(contributionValue.Field(i))
 		}
 	}
+}
+
+func isEmptyJSONSchema(schema jsonschema.Schema) bool {
+	value := reflect.ValueOf(schema)
+	for i := range value.NumField() {
+		if !isEmptyJSONSchemaValue(value.Field(i)) {
+			return false
+		}
+	}
+	return true
 }
 
 func isEmptyJSONSchemaValue(value reflect.Value) bool {

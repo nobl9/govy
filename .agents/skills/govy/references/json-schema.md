@@ -23,6 +23,8 @@ Slice length rules contribute bounds only for JSON arrays.
 They do not constrain the length of base64 strings produced from byte slices.
 Unsupported Go kinds and builder errors stop generation.
 Map key rules require string keys.
+String-kind keys use their underlying strings for equality and enum constraints,
+even when their values have a custom JSON or text encoder.
 Generation rejects numeric or structured key rules because JSON property names are strings.
 For these maps, attach an explicit schema to the whole map instead of its Go keys.
 
@@ -123,6 +125,13 @@ Use `required` inside a condition when an absent property must not match.
 Govy supplies `if`/`then` and combines multiple conditions with AND semantics.
 Repeated conditions receive the same known type for their scope.
 Temporary conditional branches do not change the builder context type.
+
+Conditions that control a named property's required presence must select its containing object.
+An included scalar validator's condition instead selects the property value.
+At that scope, an empty schema is always true and `not: {}` is always false.
+Govy handles those two mappings directly.
+Other non-nil mappings return a generation error because their behavior for an absent property is unknown.
+Move those conditions to `When` on the containing `PropertyRules` or `Validator`.
 
 Govy cannot infer a condition from a Go function or `WhenDescription`.
 Without a schema builder for every guarding predicate,

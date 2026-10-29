@@ -12,10 +12,20 @@ import (
 	"github.com/nobl9/govy/internal/collections"
 	"github.com/nobl9/govy/internal/ecmaregex"
 	"github.com/nobl9/govy/pkg/govy"
+	"github.com/nobl9/govy/pkg/jsonpath"
 	"github.com/nobl9/govy/pkg/jsonschema"
 )
 
-func jsonSchemaValue(value any) (any, error) {
+func jsonSchemaValue(ctx govy.JSONSchemaBuilderContext, value any) (any, error) {
+	for i, segment := range ctx.Path.Segments() {
+		if i == ctx.Path.Len()-1 && segment.Kind() == jsonpath.SegmentKeyWildcard {
+			v := reflect.ValueOf(value)
+			if v.Kind() == reflect.String {
+				// String-kind map keys bypass value marshalers in encoding/json.
+				return v.String(), nil
+			}
+		}
+	}
 	data, err := json.Marshal(value)
 	if err != nil {
 		return nil, fmt.Errorf("marshal value: %w", err)
@@ -29,10 +39,10 @@ func jsonSchemaValue(value any) (any, error) {
 	return result, nil
 }
 
-func jsonSchemaValues[T any](values []T) ([]any, error) {
+func jsonSchemaValues[T any](ctx govy.JSONSchemaBuilderContext, values []T) ([]any, error) {
 	result := make([]any, 0, len(values))
 	for i, value := range values {
-		converted, err := jsonSchemaValue(value)
+		converted, err := jsonSchemaValue(ctx, value)
 		if err != nil {
 			return nil, fmt.Errorf("convert value at index %d: %w", i, err)
 		}

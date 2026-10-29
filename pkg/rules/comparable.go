@@ -33,8 +33,8 @@ func EQ[T comparable](compared T) govy.Rule[T] {
 			ComparisonValue: compared,
 		}).
 		WithPlanModifiers(govy.RulePlanModifierValidValues(compared)).
-		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
-			value, err := jsonSchemaValue(compared)
+		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+			value, err := jsonSchemaValue(ctx, compared)
 			if err != nil {
 				return nil, err
 			}
@@ -60,8 +60,8 @@ func NEQ[T comparable](compared T) govy.Rule[T] {
 		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: compared,
 		}).
-		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
-			value, err := jsonSchemaValue(compared)
+		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+			value, err := jsonSchemaValue(ctx, compared)
 			if err != nil {
 				return nil, err
 			}
@@ -89,11 +89,11 @@ func GT[T cmp.Ordered](compared T) govy.Rule[T] {
 		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: compared,
 		}).
-		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 			if reflect.TypeOf(compared).Kind() == reflect.String {
 				return nil, nil
 			}
-			value, err := jsonSchemaValue(compared)
+			value, err := jsonSchemaValue(ctx, compared)
 			if err != nil {
 				return nil, err
 			}
@@ -126,11 +126,11 @@ func GTE[T cmp.Ordered](compared T) govy.Rule[T] {
 		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: compared,
 		}).
-		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 			if reflect.TypeOf(compared).Kind() == reflect.String {
 				return nil, nil
 			}
-			value, err := jsonSchemaValue(compared)
+			value, err := jsonSchemaValue(ctx, compared)
 			if err != nil {
 				return nil, err
 			}
@@ -163,11 +163,11 @@ func LT[T cmp.Ordered](compared T) govy.Rule[T] {
 		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: compared,
 		}).
-		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 			if reflect.TypeOf(compared).Kind() == reflect.String {
 				return nil, nil
 			}
-			value, err := jsonSchemaValue(compared)
+			value, err := jsonSchemaValue(ctx, compared)
 			if err != nil {
 				return nil, err
 			}
@@ -200,11 +200,11 @@ func LTE[T cmp.Ordered](compared T) govy.Rule[T] {
 		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: compared,
 		}).
-		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
 			if reflect.TypeOf(compared).Kind() == reflect.String {
 				return nil, nil
 			}
-			value, err := jsonSchemaValue(compared)
+			value, err := jsonSchemaValue(ctx, compared)
 			if err != nil {
 				return nil, err
 			}

@@ -38,8 +38,8 @@ func OneOf[T comparable](values ...T) govy.Rule[T] {
 			ComparisonValue: values,
 		}).
 		WithPlanModifiers(govy.RulePlanModifierValidValues(values...)).
-		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
-			converted, err := jsonSchemaValues(values)
+		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+			converted, err := jsonSchemaValues(ctx, values)
 			if err != nil {
 				return nil, err
 			}
@@ -72,8 +72,8 @@ func NotOneOf[T comparable](values ...T) govy.Rule[T] {
 		WithDescriptionTemplate(tpl, govy.TemplateVars{
 			ComparisonValue: values,
 		}).
-		WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
-			converted, err := jsonSchemaValues(values)
+		WithJSONSchema(func(ctx govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+			converted, err := jsonSchemaValues(ctx, values)
 			if err != nil {
 				return nil, err
 			}
