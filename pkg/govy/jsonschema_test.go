@@ -1230,6 +1230,18 @@ func TestJSONSchema_RuleBuilderError(t *testing.T) {
 			expectedError: `failed to build JSON Schema for "$" property and "" rule: builder failed`,
 			expectedCause: builderError,
 		},
+		"map item builder": {
+			validator: govy.New(
+				govy.ForMap(func(struct{}) map[string]string { return nil }).WithName("items").RulesForItems(
+					govy.NewRule(func(govy.MapItem[string, string]) error { return nil }).
+						WithJSONSchema(func(govy.JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+							return nil, builderError
+						}),
+				),
+			),
+			expectedError: `failed to build JSON Schema for "$.items.*" property and "" rule: builder failed`,
+			expectedCause: builderError,
+		},
 		"value without a JSON representation": {
 			validator: govy.New(
 				govy.For(func(struct{}) any { return nil }).
@@ -1323,6 +1335,60 @@ func TestJSONSchema_EncodedTypes(t *testing.T) {
 	t.Run("pointer text marshaler", func(t *testing.T) {
 		t.Parallel()
 		assertEncodedSchema(t, &schemaPointerTextValue{Value: "a"}, &schemaPointerTextValue{Value: "b"}, "text")
+	})
+	for name, rule := range map[string]govy.RulesInterface[*schemaPointerTextValue]{
+		"converted rule": govy.RuleToPointer(rules.EQ(schemaPointerTextValue{Value: "a"})),
+		"converted rule set": govy.RuleSetToPointer(govy.NewRuleSet(
+			rules.EQ(schemaPointerTextValue{Value: "a"}),
+		)),
+	} {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			v := govy.New(govy.For(govy.GetSelf[*schemaPointerTextValue]()).Rules(rule))
+			schema, err := govy.JSONSchema(v)
+			assert.Require(t, assert.NoError(t, err))
+			cases := []jsonschematest.Case[*schemaPointerTextValue]{
+				{Name: "equal", Input: &schemaPointerTextValue{Value: "a"}, Valid: true},
+				{Name: "different", Input: &schemaPointerTextValue{Value: "b"}},
+			}
+			for _, tc := range cases {
+				assert.Equal(t, tc.Valid, v.Validate(tc.Input) == nil)
+			}
+			jsonschematest.Assert(t, schema, "test_data/expected_encoded_text.json", cases)
+		})
+	}
+	t.Run("converted pointer JSON marshaler", func(t *testing.T) {
+		t.Parallel()
+		value := schemaMixedEncoding{Value: "a"}
+		v := govy.New(govy.For(govy.GetSelf[*schemaMixedEncoding]()).Rules(govy.RuleToPointer(rules.EQ(value))))
+		schema, err := govy.JSONSchema(v)
+		assert.Require(t, assert.NoError(t, err))
+		cases := []jsonschematest.Case[*schemaMixedEncoding]{
+			{Name: "pointer JSON overrides value text", Input: &value, Valid: true},
+			{Name: "different pointer JSON", Input: &schemaMixedEncoding{Value: "b"}},
+		}
+		for _, tc := range cases {
+			assert.Equal(t, tc.Valid, v.Validate(tc.Input) == nil)
+		}
+		jsonschematest.Assert(t, schema, "test_data/expected_encoded_pointer_json.json", cases)
+	})
+	t.Run("twice converted rule", func(t *testing.T) {
+		t.Parallel()
+		value, other := schemaPointerTextValue{Value: "a"}, schemaPointerTextValue{Value: "b"}
+		valid, invalid := &value, &other
+		v := govy.New(govy.For(govy.GetSelf[**schemaPointerTextValue]()).Rules(
+			govy.RuleToPointer(govy.RuleToPointer(rules.EQ(value))),
+		))
+		schema, err := govy.JSONSchema(v)
+		assert.Require(t, assert.NoError(t, err))
+		cases := []jsonschematest.Case[**schemaPointerTextValue]{
+			{Name: "equal", Input: &valid, Valid: true},
+			{Name: "different", Input: &invalid},
+		}
+		for _, tc := range cases {
+			assert.Equal(t, tc.Valid, v.Validate(tc.Input) == nil)
+		}
+		jsonschematest.Assert(t, schema, "test_data/expected_encoded_unknown_text.json", cases)
 	})
 	t.Run("value with pointer text method", func(t *testing.T) {
 		t.Parallel()
@@ -1499,6 +1565,38 @@ func TestJSONSchema_MapItemUsesValueType(t *testing.T) {
 		assert.Equal(t, tc.Valid, validator.Validate(tc.Input) == nil)
 	}
 	jsonschematest.Assert(t, schema, "test_data/expected_map_item_json_schema.json", cases)
+
+	compared := govy.MapItem[string, string]{Key: "a", Value: "x"}
+	for _, tt := range []struct {
+		name            string
+		rule            govy.Rule[govy.MapItem[string, string]]
+		acceptsCompared bool
+	}{
+		{name: "equal tuple", rule: rules.EQ(compared), acceptsCompared: true},
+		{name: "unequal tuple", rule: rules.NEQ(compared)},
+		{name: "tuple enum", rule: rules.OneOf(compared), acceptsCompared: true},
+		{name: "excluded tuple enum", rule: rules.NotOneOf(compared)},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			v := govy.New(govy.ForMap(govy.GetSelf[map[string]string]()).RulesForItems(tt.rule))
+			schema, err := govy.JSONSchema(v)
+			assert.Require(t, assert.NoError(t, err))
+			cases := []jsonschematest.Case[map[string]string]{
+				{Name: "empty map", Input: map[string]string{}, Valid: true},
+				{Name: "matching item", Input: map[string]string{"a": "x"}, Valid: tt.acceptsCompared},
+				{Name: "different key", Input: map[string]string{"b": "x"}, Valid: !tt.acceptsCompared},
+				{Name: "different value", Input: map[string]string{"a": "y"}, Valid: !tt.acceptsCompared},
+			}
+			for i, tc := range cases {
+				assert.Equal(t, tc.Valid, v.Validate(tc.Input) == nil)
+				if !tc.Valid {
+					cases[i].JSONSchemaDifference = "Tuple comparisons cannot constrain the encoded map value."
+				}
+			}
+			jsonschematest.Assert(t, schema, "test_data/expected_map_item_comparison_omitted.json", cases)
+		})
+	}
 }
 
 func TestJSONSchema_FixedArrayIndexes(t *testing.T) {

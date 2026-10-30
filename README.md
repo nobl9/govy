@@ -756,6 +756,8 @@ func ExampleJSONSchema() {
 ```
 
 Custom rules can return their constraints through `Rule.WithJSONSchema`.
+Use `JSONSchemaBuilderContext.MarshalValue` for comparison constants
+so `RuleToPointer` preserves pointer JSON and text encoders.
 Govy combines the contributions and handles `allOf` when keywords overlap.
 Use `govy.WhenJSONSchema` to map Go predicates to schema conditions.
 Without a condition mapping, Govy omits the guarded rules from the schema.
@@ -763,10 +765,10 @@ See the [runnable examples](pkg/govy/jsonschema_example_test.go) for both APIs.
 
 Pass `govy.JSONSchemaIncludeOmittedRules()` to include `x-govy-omittedRules`
 on the document root.
-This annotation reports missing rule or condition builders
-and constraints on transformed values.
+This annotation reports missing rule or condition builders,
+constraints on transformed values, and unsupported `MapItem` tuple comparisons.
 It does not report approximate mappings or change schema validation.
-An executed builder that returns `nil` also produces no omission record.
+An executed builder that returns `nil, nil` also produces no omission record.
 Strict Ajv consumers must register this annotation with
 `ajv.addKeyword("x-govy-omittedRules")` before compiling the schema.
 
@@ -777,6 +779,9 @@ Keep these differences in mind:
   Optional pointers can be absent, but their schemas reject explicit `null`.
 - `Transform` preserves the input type and directly attached required constraints.
   It omits constraints and included structure for the transformed value.
+- `RulesForItems` builders describe the encoded map value, not the `MapItem` tuple.
+  Tuple equality and enum constraints are omitted.
+  Use an explicit `WithJSONSchema` builder for constraints on the map value.
 - Format assertions depend on the consumer's configuration.
   Content keywords are annotations, not checks of decoded content.
 

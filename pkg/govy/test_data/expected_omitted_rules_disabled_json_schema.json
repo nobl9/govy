@@ -5,6 +5,13 @@
     "anonymous": {
       "type": "string"
     },
+    "itemComparison": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
     "items": {
       "type": "array",
       "items": {

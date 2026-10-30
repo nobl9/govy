@@ -283,7 +283,14 @@ func (r PropertyRulesForMap[M, K, V, P]) plan(builder planBuilder) {
 	if len(r.forItemRules.rules) > 0 {
 		valueType := typeinfo.Get[V]()
 		r.forItemRules.originalType = &valueType
-		r.forItemRules.plan(builder.appendPath(jsonpath.New().ValueWildcard()))
+		itemBuilder := builder.appendPath(jsonpath.New().ValueWildcard())
+		itemBuilder.jsonSchemaValueMapper = func(value any) (any, error) {
+			if _, ok := value.(MapItem[K, V]); ok {
+				return nil, errJSONSchemaMapItemValue
+			}
+			return value, nil
+		}
+		r.forItemRules.plan(itemBuilder)
 	}
 }
 

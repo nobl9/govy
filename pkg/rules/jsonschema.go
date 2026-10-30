@@ -12,21 +12,11 @@ import (
 	"github.com/nobl9/govy/internal/collections"
 	"github.com/nobl9/govy/internal/ecmaregex"
 	"github.com/nobl9/govy/pkg/govy"
-	"github.com/nobl9/govy/pkg/jsonpath"
 	"github.com/nobl9/govy/pkg/jsonschema"
 )
 
 func jsonSchemaValue(ctx govy.JSONSchemaBuilderContext, value any) (any, error) {
-	for i, segment := range ctx.Path.Segments() {
-		if i == ctx.Path.Len()-1 && segment.Kind() == jsonpath.SegmentKeyWildcard {
-			v := reflect.ValueOf(value)
-			if v.Kind() == reflect.String {
-				// String-kind map keys bypass value marshalers in encoding/json.
-				return v.String(), nil
-			}
-		}
-	}
-	data, err := json.Marshal(value)
+	data, err := ctx.MarshalValue(value)
 	if err != nil {
 		return nil, fmt.Errorf("marshal value: %w", err)
 	}

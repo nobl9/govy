@@ -151,6 +151,20 @@
         "Describes feature stability consistently with the README, rejects exact equivalence, explains presence versus zero-value or null differences, and stays within 350 words."
       ],
       "files": []
+    },
+    {
+      "id": 12,
+      "name": "explain-encoded-comparisons",
+      "prompt": "Our pinned Govy checkout exports JSON Schema. We reuse rules.EQ(value) through RuleToPointer and RuleSetToPointer for a struct whose pointer implements MarshalText but whose value encodes as an object. A map validator also uses RulesForItems with equality or enum rules on govy.MapItem[string,string]. Explain the resulting schemas and their limits, how a custom comparison builder should encode constants, how to supply an explicit map-item builder, and how to inspect omitted comparisons. Keep the explanation within 300 words. Save explanation.md; no Go implementation is needed.",
+      "expected_output": "A precise explanation of pointer encoding, context-aware constants, synthetic map-item tuples, explicit value builders, and omission metadata.",
+      "expectations": [
+        "Explains that RuleToPointer and RuleSetToPointer encode comparison constants in pointer form, so pointer-only MarshalText yields a string constant rather than an object constant.",
+        "Uses JSONSchemaBuilderContext.MarshalValue for custom comparison constants and propagates its error; does not recommend encoding the original value directly with json.Marshal.",
+        "Explains that RulesForItems validates a synthetic MapItem tuple but its JSON Schema builder describes the encoded map value; automatic tuple equality and enum comparisons are omitted rather than imposing tuple objects on values.",
+        "Uses an explicit WithJSONSchema builder for map-value constraints and identifies JSONSchemaIncludeOmittedRules with x-govy-omittedRules as the way to inspect omitted tuple comparisons.",
+        "Keeps Govy validation authoritative, does not claim exact equivalence, stays within 300 words, and reads the JSON Schema reference."
+      ],
+      "files": []
     }
   ]
 }

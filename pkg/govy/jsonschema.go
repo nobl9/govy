@@ -1,6 +1,8 @@
 package govy
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"maps"
 	"math"
@@ -19,6 +21,53 @@ type JSONSchemaBuilderContext struct {
 	// validation plan has no type information for the selected path or its
 	// custom JSON encoding has an unknown type.
 	Type jsonschema.Type
+
+	valueMapper func(any) (any, error)
+}
+
+// MarshalValue encodes a rule value using the selected value's JSON representation.
+// Use it for comparison constants in [Rule.WithJSONSchema] builders.
+// [RuleToPointer] adapts matching values to pointers before encoding.
+// Comparing a [MapItem] tuple with an encoded map value is unsupported:
+// returning that error from a builder omits its contribution.
+func (c JSONSchemaBuilderContext) MarshalValue(value any) ([]byte, error) {
+	if c.valueMapper != nil {
+		var err error
+		value, err = c.valueMapper(value)
+		if err != nil {
+			return nil, err
+		}
+	}
+	for i, segment := range c.Path.Segments() {
+		if i == c.Path.Len()-1 && segment.Kind() == jsonpath.SegmentKeyWildcard {
+			if v := reflect.ValueOf(value); v.Kind() == reflect.String {
+				// String-kind map keys bypass value marshalers in encoding/json.
+				value = v.String()
+			}
+		}
+	}
+	return json.Marshal(value)
+}
+
+var errJSONSchemaMapItemValue = errors.New("rule compares a MapItem tuple instead of a JSON value")
+
+func jsonSchemaPointerBuilder[T any](builder JSONSchemaBuilder) JSONSchemaBuilder {
+	if builder == nil {
+		return nil
+	}
+	return func(ctx JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+		mapper := ctx.valueMapper
+		ctx.valueMapper = func(value any) (any, error) {
+			if typed, ok := value.(T); ok {
+				value = &typed
+			}
+			if mapper != nil {
+				return mapper(value)
+			}
+			return value, nil
+		}
+		return builder(ctx)
+	}
 }
 
 // JSONSchemaBuilder returns a JSON Schema contribution for the selected value.
@@ -50,8 +99,9 @@ type jsonSchemaOptions struct {
 type JSONSchemaOption func(options jsonSchemaOptions) jsonSchemaOptions
 
 // JSONSchemaIncludeOmittedRules adds x-govy-omittedRules to the document root
-// for rules without schema mappings, unmapped conditions, and transformed-value rules.
-// An executed builder that returns nil does not produce an omission record.
+// for rules without schema mappings, unmapped conditions, transformed-value rules,
+// and comparisons of synthetic [MapItem] tuples.
+// An executed builder that returns nil, nil does not produce an omission record.
 func JSONSchemaIncludeOmittedRules() JSONSchemaOption {
 	return func(options jsonSchemaOptions) jsonSchemaOptions {
 		options.includeOmittedRules = true

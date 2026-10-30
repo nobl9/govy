@@ -68,6 +68,11 @@ Descriptions, details, and error codes are optional for schema builders.
 Generation calls the builder and propagates its errors even without this metadata.
 The builder context exposes the selected value's absolute path and JSON type.
 It does not expose a mutable baseline schema.
+Use `ctx.MarshalValue(value)` to encode comparison constants.
+Return encoding errors to Govy.
+`RuleToPointer` and `RuleSetToPointer` adapt matching constants to pointers,
+so pointer JSON or text encoders take precedence over value encoders.
+String-kind map keys still use their underlying strings.
 Return only the constraints owned by the rule.
 Govy merges non-conflicting keywords and uses `allOf` when keywords overlap.
 Custom `additionalProperties` applies only to unnamed properties.
@@ -75,6 +80,12 @@ Custom `items` applies only after `prefixItems`.
 Govy keeps custom child applicators in separate `allOf` branches,
 so generated paths cannot change their scope.
 A builder that returns `nil, nil` contributes no constraint.
+
+For `RulesForItems`, the builder describes the encoded map value,
+not the synthetic `MapItem` tuple passed to Go validation.
+Tuple equality and enum comparisons cannot describe that value and are omitted.
+An explicit `WithJSONSchema` builder can describe the value's constraints.
+Returning the error from `ctx.MarshalValue` for a tuple also omits the contribution.
 
 [//]: # (embed: pkg/govy/jsonschema_example_test.go#ExampleRule_WithJSONSchema?comments=false)
 
@@ -188,8 +199,8 @@ func ExampleWhenJSONSchema() {
 Pass `govy.JSONSchemaIncludeOmittedRules()`
 to include the root annotation `x-govy-omittedRules`.
 Each record has a `path`, an optional rule error code in `rule`, and a `reason`.
-The annotation reports missing rule or condition builders
-and rules on transformed values.
+The annotation reports missing rule or condition builders,
+rules on transformed values, and unsupported `MapItem` tuple comparisons.
 It does not affect validation or classify approximate mappings.
 An executed builder that returns `nil, nil` produces no omission record.
 The annotation is absent when no omissions are recorded.

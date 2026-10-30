@@ -2,6 +2,7 @@ package govy
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"log/slog"
 	"slices"
@@ -41,7 +42,7 @@ func RuleToPointer[T any](rule Rule[T]) Rule[*T] {
 		description:       rule.description,
 		descriptionTpl:    rule.descriptionTpl,
 		planModifiers:     rule.planModifiers,
-		jsonSchemaBuilder: rule.jsonSchemaBuilder,
+		jsonSchemaBuilder: jsonSchemaPointerBuilder[T](rule.jsonSchemaBuilder),
 	}
 }
 
@@ -282,6 +283,24 @@ func (r Rule[T]) plan(builder planBuilder) {
 			if builder.jsonSchemaTransformed {
 				// Preserve input presence without executing a builder for the transformed value.
 				ruleBuilder = func(JSONSchemaBuilderContext) (*jsonschema.Schema, error) { return nil, nil }
+			}
+			if mapper := builder.jsonSchemaValueMapper; mapper != nil {
+				original := ruleBuilder
+				ruleBuilder = func(ctx JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
+					ctx.valueMapper = mapper
+					schema, err := original(ctx)
+					if !errors.Is(err, errJSONSchemaMapItemValue) {
+						return schema, err
+					}
+					if omitted := builder.options.omittedJSONSchemaRules; omitted != nil {
+						*omitted = append(*omitted, jsonschema.OmittedRule{
+							Path:   builder.propertyPath.String(),
+							Rule:   string(rulePlan.ErrorCode),
+							Reason: errJSONSchemaMapItemValue.Error(),
+						})
+					}
+					return nil, nil
+				}
 			}
 			rulePlan.jsonSchemaBuilders = []*jsonSchemaPlanBuilder{
 				newJSONSchemaPlanBuilder(

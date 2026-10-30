@@ -295,6 +295,7 @@ type planBuilder struct {
 	// A Transform retains its input property, but properties selected from its result do not describe the input.
 	jsonSchemaTransformed  bool
 	jsonSchemaOmitProperty bool
+	jsonSchemaValueMapper  func(any) (any, error)
 	options                planOptions
 }
 
@@ -305,6 +306,7 @@ func (p planBuilder) appendPath(path jsonpath.Path) planBuilder {
 		jsonSchemaConditions:   p.jsonSchemaConditions,
 		jsonSchemaTransformed:  p.jsonSchemaTransformed,
 		jsonSchemaOmitProperty: p.jsonSchemaOmitProperty,
+		jsonSchemaValueMapper:  p.jsonSchemaValueMapper,
 		options:                p.options,
 		rulePlan:               p.rulePlan,
 		propertyPlan:           p.propertyPlan,

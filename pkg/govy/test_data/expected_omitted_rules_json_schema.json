@@ -5,6 +5,13 @@
     "anonymous": {
       "type": "string"
     },
+    "itemComparison": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
     "items": {
       "type": "array",
       "items": {
@@ -83,6 +90,11 @@
       "path": "$.nested.value",
       "rule": "custom",
       "reason": "missing JSON Schema builder"
+    },
+    {
+      "path": "$.itemComparison.*",
+      "rule": "equal_to",
+      "reason": "rule compares a MapItem tuple instead of a JSON value"
     }
   ]
 }

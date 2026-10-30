@@ -38,6 +38,9 @@ func TestJSONSchema_OmittedRules(t *testing.T) {
 		govy.ForSlice(func(document) []item { return nil }).WithName("items").IncludeForEach(itemValidator),
 		govy.ForMap(func(document) map[string]string { return nil }).WithName("labels").
 			RulesForKeys(missing).RulesForValues(missing),
+		govy.ForMap(func(document) map[string]string { return nil }).WithName("itemComparison").
+			RulesForItems(rules.EQ(govy.MapItem[string, string]{Key: "a", Value: "x"})).
+			RulesForValues(rules.StringMinLength(1)),
 		govy.For(func(document) item { return item{} }).WithName("nested").Include(itemValidator),
 	)
 	includeOmitted := govy.JSONSchemaIncludeOmittedRules()
@@ -80,6 +83,12 @@ func TestJSONSchema_OmittedRules(t *testing.T) {
 					JSONSchemaDifference: "StringTimeZone has no JSON Schema builder, so the schema checks only the string type.",
 				},
 				{Name: "omission does not remove type", Input: json.RawMessage(`{"timezone":12}`)},
+				{
+					Name:  "tuple comparison omitted",
+					Input: json.RawMessage(`{"itemComparison":{"other":"value"}}`),
+					Valid: true,
+				},
+				{Name: "map value rule retained", Input: json.RawMessage(`{"itemComparison":{"a":""}}`)},
 			})
 		})
 	}
