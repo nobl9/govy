@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "first": {
+            "const": true
+          }
+        },
+        "required": [
+          "first"
+        ]
+      },
+      "then": {
+        "properties": {
+          "value": {}
+        },
+        "required": [
+          "value"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "second": {
+            "const": true
+          }
+        },
+        "required": [
+          "second"
+        ]
+      },
+      "then": {
+        "properties": {
+          "value": {}
+        },
+        "required": [
+          "value"
+        ]
+      }
+    }
+  ],
+  "properties": {
+    "value": {
+      "type": "string"
+    }
+  }
+}

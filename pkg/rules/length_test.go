@@ -1,25 +1,33 @@
 package rules
 
 import (
+	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/nobl9/govy/internal/assert"
-
+	"github.com/nobl9/govy/internal/jsonschematest"
 	"github.com/nobl9/govy/pkg/govy"
 )
 
-var stringLengthTestCases = []*struct {
-	value         string
-	minLen        int
-	maxLen        int
-	expectedError string
-}{
+type lengthTestCase[T any] struct {
+	value                T
+	minLen               int
+	maxLen               int
+	expectedError        string
+	jsonSchemaDifference string
+}
+
+var stringLengthTestCases = []*lengthTestCase[string]{
 	{value: "test", minLen: 4, maxLen: 4},
 	{value: "test", minLen: 4, maxLen: 6},
 	{value: "test", minLen: 2, maxLen: 4},
 	{value: "test", minLen: 2, maxLen: 6},
 	{value: "test", minLen: 5, maxLen: 6, expectedError: "length must be between 5 and 6"},
 	{value: "test", minLen: 1, maxLen: 3, expectedError: "length must be between 1 and 3"},
+	{value: "", minLen: 0, maxLen: 0},
+	{value: "a", minLen: 0, maxLen: 0, expectedError: "length must be between 0 and 0"},
+	{value: "€🤖e\u0301", minLen: 4, maxLen: 4},
 }
 
 func TestStringLength(t *testing.T) {
@@ -40,6 +48,11 @@ func TestStringLength(t *testing.T) {
 	})
 }
 
+func TestStringLength_JSONSchema(t *testing.T) {
+	t.Parallel()
+	assertLengthJSONSchema(t, "string_length", StringLength, stringLengthTestCases)
+}
+
 func BenchmarkStringLength(b *testing.B) {
 	for _, tc := range stringLengthTestCases {
 		rule := StringLength(tc.minLen, tc.maxLen)
@@ -49,15 +62,14 @@ func BenchmarkStringLength(b *testing.B) {
 	}
 }
 
-var stringMinLengthTestCases = []*struct {
-	value         string
-	minLen        int
-	expectedError string
-}{
+var stringMinLengthTestCases = []*lengthTestCase[string]{
 	{value: "test", minLen: 0},
 	{value: "test", minLen: 4},
 	{value: "test", minLen: 5, expectedError: "length must be greater than or equal to 5"},
 	{value: "test", minLen: 10, expectedError: "length must be greater than or equal to 10"},
+	{value: "", minLen: 0},
+	{value: "€🤖e\u0301", minLen: 4},
+	{value: "🤖ab", minLen: 4, expectedError: "length must be greater than or equal to 4"},
 }
 
 func TestStringMinLength(t *testing.T) {
@@ -73,6 +85,13 @@ func TestStringMinLength(t *testing.T) {
 	}
 }
 
+func TestStringMinLength_JSONSchema(t *testing.T) {
+	t.Parallel()
+	assertLengthJSONSchema(t, "string_min_length", func(minLen, _ int) govy.Rule[string] {
+		return StringMinLength(minLen)
+	}, stringMinLengthTestCases)
+}
+
 func BenchmarkStringMinLength(b *testing.B) {
 	for _, tc := range stringMinLengthTestCases {
 		rule := StringMinLength(tc.minLen)
@@ -82,15 +101,14 @@ func BenchmarkStringMinLength(b *testing.B) {
 	}
 }
 
-var stringMaxLengthTestCases = []*struct {
-	value         string
-	maxLen        int
-	expectedError string
-}{
+var stringMaxLengthTestCases = []*lengthTestCase[string]{
 	{value: "test", maxLen: 10},
 	{value: "test", maxLen: 4},
 	{value: "test", maxLen: 3, expectedError: "length must be less than or equal to 3"},
 	{value: "test", maxLen: 0, expectedError: "length must be less than or equal to 0"},
+	{value: "", maxLen: 0},
+	{value: "€🤖e\u0301", maxLen: 4},
+	{value: "🤖ab", maxLen: 3},
 }
 
 func TestStringMaxLength(t *testing.T) {
@@ -106,6 +124,13 @@ func TestStringMaxLength(t *testing.T) {
 	}
 }
 
+func TestStringMaxLength_JSONSchema(t *testing.T) {
+	t.Parallel()
+	assertLengthJSONSchema(t, "string_max_length", func(_, maxLen int) govy.Rule[string] {
+		return StringMaxLength(maxLen)
+	}, stringMaxLengthTestCases)
+}
+
 func BenchmarkStringMaxLength(b *testing.B) {
 	for _, tc := range stringMaxLengthTestCases {
 		rule := StringMaxLength(tc.maxLen)
@@ -115,18 +140,20 @@ func BenchmarkStringMaxLength(b *testing.B) {
 	}
 }
 
-var sliceLengthTestCases = []*struct {
-	value         []string
-	minLen        int
-	maxLen        int
-	expectedError string
-}{
+var sliceLengthTestCases = []*lengthTestCase[[]string]{
 	{value: []string{"a", "b", "c"}, minLen: 3, maxLen: 3},
 	{value: []string{"a", "b", "c"}, minLen: 1, maxLen: 4},
 	{value: []string{"a", "b", "c"}, minLen: 3, maxLen: 10},
 	{value: []string{"a", "b", "c"}, minLen: 0, maxLen: 3},
 	{value: []string{"a", "b", "c"}, minLen: 4, maxLen: 10, expectedError: "length must be between 4 and 10"},
 	{value: []string{"a", "b", "c"}, minLen: 1, maxLen: 2, expectedError: "length must be between 1 and 2"},
+	{value: []string{}, minLen: 0, maxLen: 0},
+	{value: []string{"a"}, minLen: 0, maxLen: 0, expectedError: "length must be between 0 and 0"},
+	{
+		value: nil, minLen: 0, maxLen: 0,
+		jsonSchemaDifference: "A nil slice marshals as null, but the generated schema requires an array.",
+	},
+	{value: nil, minLen: 1, maxLen: 2, expectedError: "length must be between 1 and 2"},
 }
 
 func TestSliceLength(t *testing.T) {
@@ -147,6 +174,79 @@ func TestSliceLength(t *testing.T) {
 	})
 }
 
+func TestSliceLength_JSONSchema(t *testing.T) {
+	t.Parallel()
+	assertLengthJSONSchema(t, "slice_length", SliceLength[[]string], sliceLengthTestCases)
+}
+
+func TestSliceLength_JSONSchema_EncodedBytes(t *testing.T) {
+	t.Parallel()
+	for _, tt := range []struct {
+		name  string
+		rule  govy.Rule[[]byte]
+		valid [4]bool
+	}{
+		{name: "both limits", rule: SliceLength[[]byte](1, 2), valid: [4]bool{false, true, true, false}},
+		{name: "minimum", rule: SliceMinLength[[]byte](1), valid: [4]bool{false, true, true, true}},
+		{name: "maximum", rule: SliceMaxLength[[]byte](2), valid: [4]bool{true, true, true, false}},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			v := govy.New(govy.For(govy.GetSelf[[]byte]()).Rules(tt.rule))
+			schema, err := govy.JSONSchema(v)
+			assert.Require(t, assert.NoError(t, err))
+			cases := make([]jsonschematest.Case[[]byte], 0, 4)
+			for i, input := range [][]byte{{}, {1}, {1, 2}, {1, 2, 3}} {
+				valid := tt.valid[i]
+				assert.Equal(t, valid, v.Validate(input) == nil)
+				var difference string
+				if !valid {
+					difference = "Byte counts do not map to the length of the base64 JSON string."
+				}
+				cases = append(
+					cases,
+					jsonschematest.Case[[]byte]{Input: input, Valid: valid, JSONSchemaDifference: difference},
+				)
+			}
+			jsonschematest.Assert(t, schema, "testdata/jsonschema/expected_encoded_bytes.json", cases)
+		})
+	}
+	t.Run("named byte slice", func(t *testing.T) {
+		t.Parallel()
+		type bytes []byte
+		v := govy.New(govy.For(govy.GetSelf[bytes]()).Rules(SliceMinLength[bytes](1)))
+		schema, err := govy.JSONSchema(v)
+		assert.Require(t, assert.NoError(t, err))
+		jsonschematest.Assert(
+			t,
+			schema,
+			"testdata/jsonschema/expected_encoded_bytes.json",
+			[]jsonschematest.Case[bytes]{
+				{Name: "base64", Input: bytes{1}, Valid: true},
+			},
+		)
+	})
+	t.Run("byte elements with JSON methods", func(t *testing.T) {
+		t.Parallel()
+		v := govy.New(govy.For(govy.GetSelf[[]schemaJSONByte]()).Rules(SliceLength[[]schemaJSONByte](1, 2)))
+		schema, err := govy.JSONSchema(v)
+		assert.Require(t, assert.NoError(t, err))
+		jsonschematest.Assert(
+			t,
+			schema,
+			"testdata/jsonschema/expected_encoded_byte_elements.json",
+			[]jsonschematest.Case[[]schemaJSONByte]{
+				{Name: "one element", Input: []schemaJSONByte{1}, Valid: true},
+				{Name: "too many elements", Input: []schemaJSONByte{1, 2, 3}},
+			},
+		)
+	})
+}
+
+type schemaJSONByte byte
+
+func (v schemaJSONByte) MarshalJSON() ([]byte, error) { return json.Marshal(byte(v)) }
+
 func BenchmarkSliceLength(b *testing.B) {
 	for _, tc := range sliceLengthTestCases {
 		rule := SliceLength[[]string](tc.minLen, tc.maxLen)
@@ -156,15 +256,17 @@ func BenchmarkSliceLength(b *testing.B) {
 	}
 }
 
-var sliceMinLengthTestCases = []*struct {
-	value         []string
-	minLen        int
-	expectedError string
-}{
+var sliceMinLengthTestCases = []*lengthTestCase[[]string]{
 	{value: []string{"a", "b", "c"}, minLen: 0},
 	{value: []string{"a", "b", "c"}, minLen: 3},
 	{value: []string{"a", "b", "c"}, minLen: 4, expectedError: "length must be greater than or equal to 4"},
 	{value: []string{"a", "b", "c"}, minLen: 10, expectedError: "length must be greater than or equal to 10"},
+	{value: []string{}, minLen: 0},
+	{
+		value: nil, minLen: 0,
+		jsonSchemaDifference: "A nil slice marshals as null, but the generated schema requires an array.",
+	},
+	{value: nil, minLen: 3, expectedError: "length must be greater than or equal to 3"},
 }
 
 func TestSliceMinLength(t *testing.T) {
@@ -180,6 +282,13 @@ func TestSliceMinLength(t *testing.T) {
 	}
 }
 
+func TestSliceMinLength_JSONSchema(t *testing.T) {
+	t.Parallel()
+	assertLengthJSONSchema(t, "slice_min_length", func(minLen, _ int) govy.Rule[[]string] {
+		return SliceMinLength[[]string](minLen)
+	}, sliceMinLengthTestCases)
+}
+
 func BenchmarkSliceMinLength(b *testing.B) {
 	for _, tc := range sliceMinLengthTestCases {
 		rule := SliceMinLength[[]string](tc.minLen)
@@ -189,15 +298,16 @@ func BenchmarkSliceMinLength(b *testing.B) {
 	}
 }
 
-var sliceMaxLengthTestCases = []*struct {
-	value         []string
-	maxLen        int
-	expectedError string
-}{
+var sliceMaxLengthTestCases = []*lengthTestCase[[]string]{
 	{value: []string{"a", "b", "c"}, maxLen: 10},
 	{value: []string{"a", "b", "c"}, maxLen: 3},
 	{value: []string{"a", "b", "c"}, maxLen: 2, expectedError: "length must be less than or equal to 2"},
 	{value: []string{"a", "b", "c"}, maxLen: 0, expectedError: "length must be less than or equal to 0"},
+	{value: []string{}, maxLen: 0},
+	{
+		value: nil, maxLen: 0,
+		jsonSchemaDifference: "A nil slice marshals as null, but the generated schema requires an array.",
+	},
 }
 
 func TestSliceMaxLength(t *testing.T) {
@@ -213,6 +323,13 @@ func TestSliceMaxLength(t *testing.T) {
 	}
 }
 
+func TestSliceMaxLength_JSONSchema(t *testing.T) {
+	t.Parallel()
+	assertLengthJSONSchema(t, "slice_max_length", func(_, maxLen int) govy.Rule[[]string] {
+		return SliceMaxLength[[]string](maxLen)
+	}, sliceMaxLengthTestCases)
+}
+
 func BenchmarkSliceMaxLength(b *testing.B) {
 	for _, tc := range sliceMaxLengthTestCases {
 		rule := SliceMaxLength[[]string](tc.maxLen)
@@ -222,12 +339,7 @@ func BenchmarkSliceMaxLength(b *testing.B) {
 	}
 }
 
-var mapLengthTestCases = []*struct {
-	value         map[string]string
-	minLen        int
-	maxLen        int
-	expectedError string
-}{
+var mapLengthTestCases = []*lengthTestCase[map[string]string]{
 	{value: map[string]string{"a": "b", "c": "d"}, minLen: 0, maxLen: 2},
 	{value: map[string]string{"a": "b", "c": "d"}, minLen: 1, maxLen: 3},
 	{
@@ -247,6 +359,13 @@ var mapLengthTestCases = []*struct {
 		maxLen:        1,
 		expectedError: "length must be between 1 and 1",
 	},
+	{value: map[string]string{}, minLen: 0, maxLen: 0},
+	{value: map[string]string{"a": "b"}, minLen: 0, maxLen: 0, expectedError: "length must be between 0 and 0"},
+	{
+		value: nil, minLen: 0, maxLen: 0,
+		jsonSchemaDifference: "A nil map marshals as null, but the generated schema requires an object.",
+	},
+	{value: nil, minLen: 1, maxLen: 1, expectedError: "length must be between 1 and 1"},
 }
 
 func TestMapLength(t *testing.T) {
@@ -267,6 +386,11 @@ func TestMapLength(t *testing.T) {
 	})
 }
 
+func TestMapLength_JSONSchema(t *testing.T) {
+	t.Parallel()
+	assertLengthJSONSchema(t, "map_length", MapLength[map[string]string], mapLengthTestCases)
+}
+
 func BenchmarkMapLength(b *testing.B) {
 	for _, tc := range mapLengthTestCases {
 		rule := MapLength[map[string]string](tc.minLen, tc.maxLen)
@@ -276,11 +400,7 @@ func BenchmarkMapLength(b *testing.B) {
 	}
 }
 
-var mapMinLengthTestCases = []*struct {
-	value         map[string]string
-	minLen        int
-	expectedError string
-}{
+var mapMinLengthTestCases = []*lengthTestCase[map[string]string]{
 	{value: map[string]string{"a": "b", "c": "d"}, minLen: 0},
 	{value: map[string]string{"a": "b", "c": "d"}, minLen: 2},
 	{
@@ -293,6 +413,12 @@ var mapMinLengthTestCases = []*struct {
 		minLen:        10,
 		expectedError: "length must be greater than or equal to 10",
 	},
+	{value: map[string]string{}, minLen: 0},
+	{
+		value: nil, minLen: 0,
+		jsonSchemaDifference: "A nil map marshals as null, but the generated schema requires an object.",
+	},
+	{value: nil, minLen: 2, expectedError: "length must be greater than or equal to 2"},
 }
 
 func TestMapMinLength(t *testing.T) {
@@ -308,6 +434,13 @@ func TestMapMinLength(t *testing.T) {
 	}
 }
 
+func TestMapMinLength_JSONSchema(t *testing.T) {
+	t.Parallel()
+	assertLengthJSONSchema(t, "map_min_length", func(minLen, _ int) govy.Rule[map[string]string] {
+		return MapMinLength[map[string]string](minLen)
+	}, mapMinLengthTestCases)
+}
+
 func BenchmarkMapMinLength(b *testing.B) {
 	for _, tc := range mapMinLengthTestCases {
 		rule := MapMinLength[map[string]string](tc.minLen)
@@ -317,11 +450,7 @@ func BenchmarkMapMinLength(b *testing.B) {
 	}
 }
 
-var mapMaxLengthTestCases = []*struct {
-	value         map[string]string
-	maxLen        int
-	expectedError string
-}{
+var mapMaxLengthTestCases = []*lengthTestCase[map[string]string]{
 	{value: map[string]string{"a": "b", "c": "d"}, maxLen: 10},
 	{value: map[string]string{"a": "b", "c": "d"}, maxLen: 2},
 	{
@@ -333,6 +462,11 @@ var mapMaxLengthTestCases = []*struct {
 		value:         map[string]string{"a": "b", "c": "d"},
 		maxLen:        0,
 		expectedError: "length must be less than or equal to 0",
+	},
+	{value: map[string]string{}, maxLen: 0},
+	{
+		value: nil, maxLen: 0,
+		jsonSchemaDifference: "A nil map marshals as null, but the generated schema requires an object.",
 	},
 }
 
@@ -349,11 +483,70 @@ func TestMapMaxLength(t *testing.T) {
 	}
 }
 
+func TestMapMaxLength_JSONSchema(t *testing.T) {
+	t.Parallel()
+	assertLengthJSONSchema(t, "map_max_length", func(_, maxLen int) govy.Rule[map[string]string] {
+		return MapMaxLength[map[string]string](maxLen)
+	}, mapMaxLengthTestCases)
+}
+
 func BenchmarkMapMaxLength(b *testing.B) {
 	for _, tc := range mapMaxLengthTestCases {
 		rule := MapMaxLength[map[string]string](tc.maxLen)
 		for range b.N {
 			_ = rule.Validate(tc.value)
 		}
+	}
+}
+
+func TestLengthRules_NegativeLimits(t *testing.T) {
+	tests := []struct {
+		name    string
+		newRule func()
+	}{
+		{name: "StringLength", newRule: func() { StringLength(-1, 0) }},
+		{name: "StringMinLength", newRule: func() { StringMinLength(-1) }},
+		{name: "StringMaxLength", newRule: func() { StringMaxLength(-1) }},
+		{name: "SliceLength", newRule: func() { SliceLength[[]string](-1, 0) }},
+		{name: "SliceMinLength", newRule: func() { SliceMinLength[[]string](-1) }},
+		{name: "SliceMaxLength", newRule: func() { SliceMaxLength[[]string](-1) }},
+		{name: "MapLength", newRule: func() { MapLength[map[string]string](-1, 0) }},
+		{name: "MapMinLength", newRule: func() { MapMinLength[map[string]string](-1) }},
+		{name: "MapMaxLength", newRule: func() { MapMaxLength[map[string]string](-1) }},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Panic(t, tc.newRule, "length limit '-1' is less than 0")
+		})
+	}
+}
+
+func assertLengthJSONSchema[T any](
+	t *testing.T,
+	name string,
+	newRule func(int, int) govy.Rule[T],
+	tests []*lengthTestCase[T],
+) {
+	t.Helper()
+
+	groups := make(map[[2]int][]jsonschematest.Case[T])
+	for i, tc := range tests {
+		limits := [2]int{tc.minLen, tc.maxLen}
+		groups[limits] = append(groups[limits], jsonschematest.Case[T]{
+			Name:                 fmt.Sprintf("%d/%v", i, tc.value),
+			Input:                tc.value,
+			Valid:                tc.expectedError == "",
+			JSONSchemaDifference: tc.jsonSchemaDifference,
+		})
+	}
+	for limits, cases := range groups {
+		t.Run(fmt.Sprintf("%d_%d", limits[0], limits[1]), func(t *testing.T) {
+			t.Parallel()
+			rule := newRule(limits[0], limits[1])
+			schema, err := govy.JSONSchema(govy.New(govy.For(govy.GetSelf[T]()).Rules(rule)))
+			assert.Require(t, assert.NoError(t, err))
+			fixture := fmt.Sprintf("testdata/jsonschema/expected_%s_%d_%d.json", name, limits[0], limits[1])
+			jsonschematest.Assert(t, schema, fixture, cases)
+		})
 	}
 }

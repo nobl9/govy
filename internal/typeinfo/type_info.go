@@ -1,15 +1,22 @@
 package typeinfo
 
 import (
+	"encoding"
+	"encoding/json"
 	"fmt"
 	"reflect"
+	"time"
 )
 
 // TypeInfo stores the Go type information.
 type TypeInfo struct {
-	Name    string
-	Kind    string
-	Package string
+	Name        string
+	Kind        string
+	Package     string
+	ReflectKind reflect.Kind
+	// JSONKind overrides ReflectKind for special encodings.
+	// Invalid means no override; Interface means an unknown custom JSON representation.
+	JSONKind reflect.Kind
 }
 
 // Get returns the information for the type T.
@@ -30,25 +37,61 @@ func Get[T any]() TypeInfo {
 	if typ == nil {
 		return TypeInfo{}
 	}
+	jsonType := jsonKind(typ)
 	if typ.Kind() == reflect.Pointer {
 		typ = typ.Elem()
 	}
-	result := TypeInfo{
-		Kind: getKindString(typ),
+	info := TypeInfo{
+		Kind:        getKindString(typ),
+		ReflectKind: typ.Kind(),
+		JSONKind:    jsonType,
 	}
 
 	if typ.PkgPath() == "" && typ.Kind() == reflect.Slice {
-		result.Name = "[]"
+		info.Name = "[]"
 		typ = typ.Elem()
 	}
 	switch {
 	case typ.PkgPath() == "":
-		result.Name += typ.String()
+		info.Name += typ.String()
 	default:
-		result.Name += typ.Name()
-		result.Package = typ.PkgPath()
+		info.Name += typ.Name()
+		info.Package = typ.PkgPath()
 	}
-	return result
+	return info
+}
+
+func jsonKind(typ reflect.Type) reflect.Kind {
+	base := typ
+	if base.Kind() == reflect.Pointer {
+		base = base.Elem()
+	}
+	switch base {
+	case reflect.TypeFor[json.Number]():
+		return reflect.Float64
+	case reflect.TypeFor[time.Time]():
+		return reflect.String
+	}
+	// Pointer methods can change the encoding of addressable struct fields.
+	// The selected property's type alone does not establish addressability.
+	if typ.Implements(reflect.TypeFor[json.Marshaler]()) ||
+		reflect.PointerTo(typ).Implements(reflect.TypeFor[json.Marshaler]()) {
+		return reflect.Interface
+	}
+	if typ.Implements(reflect.TypeFor[encoding.TextMarshaler]()) {
+		return reflect.String
+	}
+	if reflect.PointerTo(typ).Implements(reflect.TypeFor[encoding.TextMarshaler]()) {
+		return reflect.Interface
+	}
+	if base.Kind() == reflect.Slice && base.Elem().Kind() == reflect.Uint8 {
+		element := reflect.PointerTo(base.Elem())
+		if !element.Implements(reflect.TypeFor[json.Marshaler]()) &&
+			!element.Implements(reflect.TypeFor[encoding.TextMarshaler]()) {
+			return reflect.String
+		}
+	}
+	return reflect.Invalid
 }
 
 func getKindString(typ reflect.Type) string {

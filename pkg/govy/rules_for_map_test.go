@@ -20,6 +20,12 @@ func TestPropertyRulesForMap(t *testing.T) {
 		Labels    Labels
 	}
 
+	t.Run("recursive map values", func(t *testing.T) {
+		type tree map[string]tree
+		r := govy.ForMap(govy.GetSelf[tree]()).RulesForKeys(rules.StringNotEmpty())
+		assert.NoError(t, r.Validate(tree{"child": {"leaf": {}}}))
+	})
+
 	t.Run("no predicates, no error", func(t *testing.T) {
 		baseRules := govy.ForMap(func(m mockStruct) map[string]string { return map[string]string{"key": "value"} }).
 			WithPath(jsonpath.New().Name("test").Name("path"))

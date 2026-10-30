@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "enabled": {
+            "const": true
+          }
+        },
+        "required": [
+          "enabled"
+        ]
+      },
+      "then": {
+        "properties": {
+          "conditional": {}
+        },
+        "required": [
+          "conditional"
+        ]
+      }
+    }
+  ],
+  "properties": {
+    "array": {
+      "type": "array"
+    },
+    "conditional": {
+      "type": "string"
+    },
+    "normalized": {
+      "type": "string"
+    },
+    "number": {
+      "type": "string"
+    },
+    "plain": {
+      "type": "integer",
+      "const": 12
+    },
+    "requiredProperty": {
+      "type": "string"
+    },
+    "requiredRule": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "requiredProperty",
+    "requiredRule"
+  ]
+}

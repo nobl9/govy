@@ -134,6 +134,37 @@
         "The explanation stays within 200 words and uses real Govy APIs with task-relevant reference selection."
       ],
       "files": []
+    },
+    {
+      "id": 11,
+      "name": "explain-json-schema",
+      "prompt": "Our pinned Govy checkout exposes JSON Schema generation. We want a schema for an existing validator that includes a custom even-number rule, an address required only when mode is remote, and a duration string parsed with Transform before validation. Explain how to export the schema, extend the custom rule, map the condition, and inspect anything left out. Also explain conditions on an included required scalar and equality or enum rules on string map keys that have custom value encoders. Should our clients treat schema validation as equivalent to Govy? Mention stability and runtime dependencies. Keep the explanation within 350 words. Save explanation.md; no Go implementation is needed.",
+      "expected_output": "A concise account of the generation API, independent builder contributions, predicate scope, omission metadata, and semantic limits.",
+      "expectations": [
+        "Calls govy.JSONSchema on the validator and marshals the returned document, which declares Draft 2020-12; does not require Node.js or Ajv for generation.",
+        "Uses Rule.WithJSONSchema to return an independent *jsonschema.Schema with multipleOf for the even-number rule; Govy handles merging and allOf without a mutable baseline schema.",
+        "Uses WhenJSONSchema at the predicate scope, checks mode on the parent object, and distinguishes an absent mode with required; Govy provides if/then and omits guarded constraints when a condition mapping is missing.",
+        "Places conditions that control named property presence on the containing object; explains that a condition on an included required scalar supports only an empty true schema or not:{} false schema, and other mappings return a generation error.",
+        "Explains that equality and enum constraints on string-kind map keys use their underlying strings, even when value encoders produce another representation.",
+        "Uses JSONSchemaIncludeOmittedRules and x-govy-omittedRules to report missing mappings, without claiming that the annotation covers approximate mappings or executed nil builders.",
+        "Explains that Transform preserves the input type and directly attached required constraints, but omits constraints on the transformed value.",
+        "Describes feature stability consistently with the README, rejects exact equivalence, explains presence versus zero-value or null differences, and stays within 350 words."
+      ],
+      "files": []
+    },
+    {
+      "id": 12,
+      "name": "explain-encoded-comparisons",
+      "prompt": "Our pinned Govy checkout exports JSON Schema. We reuse rules.EQ(value) through RuleToPointer and RuleSetToPointer for a struct whose pointer implements MarshalText but whose value encodes as an object. A map validator also uses RulesForItems with equality or enum rules on govy.MapItem[string,string]. Explain the resulting schemas and their limits, how a custom comparison builder should encode constants, how to supply an explicit map-item builder, and how to inspect omitted comparisons. Keep the explanation within 300 words. Save explanation.md; no Go implementation is needed.",
+      "expected_output": "A precise explanation of pointer encoding, context-aware constants, synthetic map-item tuples, explicit value builders, and omission metadata.",
+      "expectations": [
+        "Explains that RuleToPointer and RuleSetToPointer encode comparison constants in pointer form, so pointer-only MarshalText yields a string constant rather than an object constant.",
+        "Uses JSONSchemaBuilderContext.MarshalValue for custom comparison constants and propagates its error; does not recommend encoding the original value directly with json.Marshal.",
+        "Explains that RulesForItems validates a synthetic MapItem tuple but its JSON Schema builder describes the encoded map value; automatic tuple equality and enum comparisons are omitted rather than imposing tuple objects on values.",
+        "Uses an explicit WithJSONSchema builder for map-value constraints and identifies JSONSchemaIncludeOmittedRules with x-govy-omittedRules as the way to inspect omitted tuple comparisons.",
+        "Keeps Govy validation authoritative, does not claim exact equivalence, stays within 300 words, and reads the JSON Schema reference."
+      ],
+      "files": []
     }
   ]
 }

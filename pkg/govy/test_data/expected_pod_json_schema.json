@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Pod",
+  "type": "object",
+  "properties": {
+    "apiVersion": {
+      "type": "string",
+      "enum": [
+        "v1",
+        "v2"
+      ]
+    },
+    "kind": {
+      "type": "string",
+      "const": "Pod"
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "annotations": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "maxProperties": 10
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "propertyNames": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 63,
+            "pattern": "^[0-9a-z](?:[\\-0-9a-z]*[0-9a-z])?(?![\\s\\S])"
+          },
+          "maxProperties": 10
+        },
+        "name": {
+          "type": "string",
+          "pattern": "[^\\u0009-\\u000D\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028-\\u2029\\u202F\\u205F\\u3000]"
+        },
+        "namespace": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "namespace"
+      ]
+    },
+    "spec": {
+      "type": "object",
+      "properties": {
+        "containers": {
+          "type": "array",
+          "items": {
+            "properties": {
+              "env": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              },
+              "image": {
+                "type": "string",
+                "pattern": "[^\\u0009-\\u000D\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028-\\u2029\\u202F\\u205F\\u3000]"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 63,
+                "pattern": "^[0-9a-z](?:[\\-0-9a-z]*[0-9a-z])?(?![\\s\\S])"
+              }
+            },
+            "required": [
+              "image",
+              "name"
+            ]
+          },
+          "maxItems": 10
+        },
+        "dnsPolicy": {
+          "type": "string",
+          "enum": [
+            "ClusterFirst",
+            "Default"
+          ]
+        }
+      }
+    }
+  },
+  "required": [
+    "apiVersion",
+    "kind",
+    "metadata",
+    "spec"
+  ]
+}

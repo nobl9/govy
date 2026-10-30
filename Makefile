@@ -81,7 +81,7 @@ check/trailing:
 ## Check markdown files for potential issues with markdownlint.
 check/markdown:
 	$(call _print_step,Verifying Markdown files)
-	markdownlint '**/*.md' --ignore node_modules
+	markdownlint '**/*.md' --ignore '**/node_modules/**'
 
 ## Verify if the auto generated code has been committed.
 check/generate:

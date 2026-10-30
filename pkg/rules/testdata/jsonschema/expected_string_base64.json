@@ -1,0 +1,6 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "string",
+  "pattern": "^(?:[+/-9A-Za-z]{4})*(?:[+/-9A-Za-z]{2}==|[+/-9A-Za-z]{3}=)?(?![\\s\\S])",
+  "contentEncoding": "base64"
+}

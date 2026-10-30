@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "enabled": {
+            "const": true
+          }
+        },
+        "required": [
+          "enabled"
+        ]
+      },
+      "then": {
+        "properties": {
+          "items": {
+            "items": {
+              "allOf": [
+                {
+                  "if": {
+                    "properties": {
+                      "kind": {
+                        "const": "required"
+                      }
+                    },
+                    "required": [
+                      "kind"
+                    ]
+                  },
+                  "then": {
+                    "properties": {
+                      "value": {}
+                    },
+                    "required": [
+                      "value"
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "enabled": {
+            "const": true
+          }
+        },
+        "required": [
+          "enabled"
+        ]
+      },
+      "then": {
+        "properties": {
+          "values": {
+            "additionalProperties": {
+              "allOf": [
+                {
+                  "if": {
+                    "properties": {
+                      "kind": {
+                        "const": "required"
+                      }
+                    },
+                    "required": [
+                      "kind"
+                    ]
+                  },
+                  "then": {
+                    "properties": {
+                      "value": {}
+                    },
+                    "required": [
+                      "value"
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  ],
+  "properties": {
+    "items": {
+      "type": "array",
+      "items": {
+        "properties": {
+          "value": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "values": {
+      "type": "object",
+      "additionalProperties": {
+        "properties": {
+          "value": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
