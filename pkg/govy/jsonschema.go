@@ -27,23 +27,23 @@ type JSONSchemaBuilderContext struct {
 
 // MarshalValue encodes a rule value using the selected value's JSON representation.
 // Use it for comparison constants in [Rule.WithJSONSchema] builders.
-// [RuleToPointer] adapts matching values to pointers before encoding.
+// [ForPointer] and [RuleToPointer] adapt matching values to pointers before encoding.
 // Comparing a [MapItem] tuple with an encoded map value is unsupported:
 // returning that error from a builder omits its contribution.
 func (c JSONSchemaBuilderContext) MarshalValue(value any) ([]byte, error) {
+	for i, segment := range c.Path.Segments() {
+		if i == c.Path.Len()-1 && segment.Kind() == jsonpath.SegmentKeyWildcard {
+			if v := reflect.ValueOf(value); v.Kind() == reflect.String {
+				// String-kind map keys bypass value marshalers and pointer adapters.
+				return json.Marshal(v.String())
+			}
+		}
+	}
 	if c.valueMapper != nil {
 		var err error
 		value, err = c.valueMapper(value)
 		if err != nil {
 			return nil, err
-		}
-	}
-	for i, segment := range c.Path.Segments() {
-		if i == c.Path.Len()-1 && segment.Kind() == jsonpath.SegmentKeyWildcard {
-			if v := reflect.ValueOf(value); v.Kind() == reflect.String {
-				// String-kind map keys bypass value marshalers in encoding/json.
-				value = v.String()
-			}
 		}
 	}
 	return json.Marshal(value)
@@ -56,17 +56,20 @@ func jsonSchemaPointerBuilder[T any](builder JSONSchemaBuilder) JSONSchemaBuilde
 		return nil
 	}
 	return func(ctx JSONSchemaBuilderContext) (*jsonschema.Schema, error) {
-		mapper := ctx.valueMapper
-		ctx.valueMapper = func(value any) (any, error) {
-			if typed, ok := value.(T); ok {
-				value = &typed
-			}
-			if mapper != nil {
-				return mapper(value)
-			}
-			return value, nil
-		}
+		ctx.valueMapper = jsonSchemaPointerValueMapper[T](ctx.valueMapper)
 		return builder(ctx)
+	}
+}
+
+func jsonSchemaPointerValueMapper[T any](mapper func(any) (any, error)) func(any) (any, error) {
+	return func(value any) (any, error) {
+		if typed, ok := value.(T); ok {
+			value = &typed
+		}
+		if mapper != nil {
+			return mapper(value)
+		}
+		return value, nil
 	}
 }
 

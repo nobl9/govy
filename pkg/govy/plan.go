@@ -312,6 +312,10 @@ func (p planBuilder) appendPath(path jsonpath.Path) planBuilder {
 		propertyPlan:           p.propertyPlan,
 		propertyPath:           p.propertyPath.Join(path),
 	}
+	if !builder.propertyPath.Equal(p.propertyPath) {
+		// Child properties have their own encodings. Only same-value includes retain the mapper.
+		builder.jsonSchemaValueMapper = nil
+	}
 	return builder
 }
 

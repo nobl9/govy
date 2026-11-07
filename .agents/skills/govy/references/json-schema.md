@@ -70,8 +70,14 @@ The builder context exposes the selected value's absolute path and JSON type.
 It does not expose a mutable baseline schema.
 Use `ctx.MarshalValue(value)` to encode comparison constants.
 Return encoding errors to Govy.
-`RuleToPointer` and `RuleSetToPointer` adapt matching constants to pointers,
-so pointer JSON or text encoders take precedence over value encoders.
+`RuleToPointer`, `RuleSetToPointer`, and `ForPointer`
+adapt matching constants to pointers.
+Pointer JSON or text encoders therefore take precedence over value encoders.
+`ForPointer` keeps the getter's pointer encoding
+for type inference and rule builders,
+even though Go rules validate its dereferenced value.
+The adaptation applies to that value and included rules at the same path.
+Child property paths use their own encoding context.
 String-kind map keys still use their underlying strings.
 Return only the constraints owned by the rule.
 Govy merges non-conflicting keywords and uses `allOf` when keywords overlap.

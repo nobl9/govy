@@ -2,6 +2,7 @@ package govy
 
 import (
 	"fmt"
+	"reflect"
 
 	"github.com/nobl9/govy/internal"
 	"github.com/nobl9/govy/internal/typeinfo"
@@ -285,7 +286,12 @@ func (r PropertyRulesForMap[M, K, V, P]) plan(builder planBuilder) {
 		r.forItemRules.originalType = &valueType
 		itemBuilder := builder.appendPath(jsonpath.New().ValueWildcard())
 		itemBuilder.jsonSchemaValueMapper = func(value any) (any, error) {
-			if _, ok := value.(MapItem[K, V]); ok {
+			// Pointer adapters still compare the synthetic tuple, not an encoded map value.
+			typ := reflect.TypeOf(value)
+			for typ != nil && typ.Kind() == reflect.Pointer && typ.Name() == "" {
+				typ = typ.Elem()
+			}
+			if typ == reflect.TypeFor[MapItem[K, V]]() {
 				return nil, errJSONSchemaMapItemValue
 			}
 			return value, nil

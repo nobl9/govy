@@ -337,14 +337,20 @@ func (r PropertyRules[T, P]) plan(builder planBuilder) {
 	predicateScope := builder.propertyPath
 	vOpts := newValidationOptions(r.validationOptions...)
 	builder.propertyPlan.IsHidden = vOpts.hideValue
-	if r.originalType != nil {
+	switch {
+	case r.originalType != nil:
 		builder.propertyPlan.TypeInfo = typeInfoFromInternal(*r.originalType)
-	} else {
+	case builder.options.recordJSONSchema && r.isPointer:
+		builder.propertyPlan.TypeInfo = typeInfoFromInternal(typeinfo.Get[*T]())
+	default:
 		builder.propertyPlan.TypeInfo = typeInfoFromInternal(typeinfo.Get[T]())
 	}
 	builder = builder.appendPath(r.getPath()).setExamples(r.examples...)
 	builder = appendPredicatesToPlanBuilder(builder, predicateScope, r.predicates)
 	if builder.options.recordJSONSchema {
+		if r.isPointer {
+			builder.jsonSchemaValueMapper = jsonSchemaPointerValueMapper[T](builder.jsonSchemaValueMapper)
+		}
 		builder.jsonSchemaOmitProperty = builder.jsonSchemaTransformed
 		if r.transformGetter != nil {
 			builder.jsonSchemaTransformed = true
