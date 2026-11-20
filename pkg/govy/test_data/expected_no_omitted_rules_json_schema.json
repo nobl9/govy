@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "empty": {
+      "type": "string"
+    },
+    "nestedEmpty": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "nestedPointer": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "nilCondition": {
+      "type": "string"
+    },
+    "nilRule": {
+      "type": "string"
+    },
+    "pointer": {
+      "type": "string",
+      "minLength": 1
+    },
+    "required": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "required"
+  ]
+}

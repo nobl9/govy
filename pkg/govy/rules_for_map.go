@@ -2,8 +2,10 @@ package govy
 
 import (
 	"fmt"
+	"reflect"
 
 	"github.com/nobl9/govy/internal"
+	"github.com/nobl9/govy/internal/typeinfo"
 	"github.com/nobl9/govy/pkg/jsonpath"
 )
 
@@ -270,7 +272,7 @@ func (r PropertyRulesForMap[M, K, V, P]) removePropertiesByID(removal *propertyR
 
 // plan constructs a validation plan for the property rules.
 func (r PropertyRulesForMap[M, K, V, P]) plan(builder planBuilder) {
-	builder = appendPredicatesToPlanBuilder(builder, r.predicates)
+	builder = appendPredicatesToPlanBuilder(builder, builder.propertyPath, r.predicates)
 	r.mapRules.plan(builder.setExamples(r.mapRules.examples...))
 	builder = builder.appendPath(r.mapRules.getPath())
 	if len(r.forKeyRules.rules) > 0 {
@@ -280,7 +282,21 @@ func (r PropertyRulesForMap[M, K, V, P]) plan(builder planBuilder) {
 		r.forValueRules.plan(builder.appendPath(jsonpath.New().ValueWildcard()))
 	}
 	if len(r.forItemRules.rules) > 0 {
-		r.forItemRules.plan(builder.appendPath(jsonpath.New().ValueWildcard()))
+		valueType := typeinfo.Get[V]()
+		r.forItemRules.originalType = &valueType
+		itemBuilder := builder.appendPath(jsonpath.New().ValueWildcard())
+		itemBuilder.jsonSchemaValueMapper = func(value any) (any, error) {
+			// Pointer adapters still compare the synthetic tuple, not an encoded map value.
+			typ := reflect.TypeOf(value)
+			for typ != nil && typ.Kind() == reflect.Pointer && typ.Name() == "" {
+				typ = typ.Elem()
+			}
+			if typ == reflect.TypeFor[MapItem[K, V]]() {
+				return nil, errJSONSchemaMapItemValue
+			}
+			return value, nil
+		}
+		r.forItemRules.plan(itemBuilder)
 	}
 }
 

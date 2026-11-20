@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "allOf": [
+    {
+      "additionalProperties": {
+        "minimum": 2
+      }
+    }
+  ],
+  "properties": {
+    "name": {
+      "type": "integer",
+      "minimum": 1
+    }
+  }
+}

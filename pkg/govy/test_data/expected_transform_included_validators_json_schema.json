@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "map": {
+      "type": "string"
+    },
+    "object": {
+      "type": "string"
+    },
+    "slice": {
+      "type": "string"
+    }
+  },
+  "x-govy-omittedRules": [
+    {
+      "path": "$.object",
+      "rule": "decoded",
+      "reason": "rule validates a transformed value"
+    },
+    {
+      "path": "$.object.name",
+      "rule": "required",
+      "reason": "rule validates a transformed value"
+    },
+    {
+      "path": "$.object.name",
+      "rule": "equal_to",
+      "reason": "rule validates a transformed value"
+    },
+    {
+      "path": "$.object.nested",
+      "rule": "required",
+      "reason": "rule validates a transformed value"
+    },
+    {
+      "path": "$.object.nested",
+      "rule": "equal_to",
+      "reason": "rule validates a transformed value"
+    },
+    {
+      "path": "$.slice",
+      "rule": "slice_min_length",
+      "reason": "rule validates a transformed value"
+    },
+    {
+      "path": "$.slice[*]",
+      "rule": "greater_than",
+      "reason": "rule validates a transformed value"
+    },
+    {
+      "path": "$.map.*~",
+      "rule": "string_min_length",
+      "reason": "rule validates a transformed value"
+    },
+    {
+      "path": "$.map.*",
+      "rule": "greater_than",
+      "reason": "rule validates a transformed value"
+    }
+  ]
+}

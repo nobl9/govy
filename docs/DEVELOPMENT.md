@@ -91,10 +91,10 @@ Most rule constructors follow the same shape:
    Return `govy.NewRuleErrorTemplate(govy.TemplateVars{...})`
    from the rule body so message rendering receives the failed value,
    comparison value, parse error, or custom fields it needs.
-4. Attach metadata to the returned rule:
-   `WithErrorCode`, `WithMessageTemplate`, and `WithDescription`
-   are expected for predefined rules.
-   Use `mustExecuteTemplate` for descriptions derived from the same template.
+4. Attach `WithErrorCode`, `WithMessageTemplate`, and a description
+   to the returned rule.
+   Use `WithDescription` for fixed text or `WithDescriptionTemplate`
+   for descriptions derived from a template.
 5. Add details, examples, cascade mode, and plan modifiers only when they are
    part of the rule contract.
    For example, composed DNS rules use `Cascade(govy.CascadeModeStop)`,
@@ -108,13 +108,42 @@ Use generics when the rule applies to a family of types;
 for example, length rules support strings, slices, and maps,
 while comparison rules use `comparable` or `cmp.Ordered` constraints.
 
-Every exported predefined rule must have unit tests and benchmarks.
-[`pkg/rules/rules_test.go`](../pkg/rules/rules_test.go)
-parses the package and fails if an exported rule constructor is missing a
-matching `Test...` or `Benchmark...` function.
-Keep test cases table-driven where that matches the surrounding file,
-assert the stable error code with `govy.HasErrorCode`,
-and assert the exact message when the rule has a specific rendered message.
+### Rule tests
+
+Keep each rule's tests together in the same `*_test.go` file, in this order:
+
+1. `Test<Rule>`: the standard table-driven validation test.
+2. `Test<Rule>_JSONSchema`: the JSON Schema test, when the rule has schema support.
+3. `Benchmark<Rule>`: the validation benchmark.
+
+Place shared inputs near this group.
+Use the same shared input tables for standard validation, JSON Schema, and benchmarks.
+Also include applicable published corpora in the JSON Schema test.
+Record expected JSON Schema differences on the input cases,
+with a reason in `JSONSchemaDifference` or the equivalent case field.
+
+Generate schemas through the public `govy.JSONSchema` function.
+Use `internal/jsonschematest` to compare the complete schema with a fixture
+in `pkg/rules/testdata/jsonschema`.
+The helper also validates the inputs with Ajv.
+Keep shared helpers and cross-rule schema cases in the matching rule test file.
+Do not add separate `*_jsonschema_test.go` files.
+
+A nonempty `JSONSchemaDifference` requires the schema result to differ from Govy.
+It does not skip the case.
+Both unexpected agreement and unexpected disagreement fail the test.
+Devbox supplies Ajv and `ajv-formats` for Draft 2020-12 validation
+with format assertions enabled in full mode.
+Content keywords remain annotations.
+See the [runner configuration](../internal/jsonschematest/testdata/validate.cjs)
+for its strictness settings.
+
+Every exported predefined rule must have a standard test and benchmark.
+The presence check in [`pkg/rules/rules_test.go`](../pkg/rules/rules_test.go)
+requires both functions for each exported rule constructor.
+Keep test cases table-driven where that matches the surrounding file.
+Assert the stable error code with `govy.HasErrorCode`.
+Assert the exact message when the rule has a specific rendered message.
 
 When adding a new rule, run at least:
 
@@ -123,8 +152,10 @@ make test
 make check/markdown
 ```
 
-Run the full `make check` before opening a pull request if the change touches
-templates, generated references, spelling-sensitive text, or public API.
+For changes to templates, generated references, spelling-sensitive text,
+or public API,
+run the full `make check`.
+Do this before opening a pull request.
 
 ## Dependencies
 

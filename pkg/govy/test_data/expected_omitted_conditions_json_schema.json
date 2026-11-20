@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "bothMissing": {
+      "type": "string"
+    },
+    "nested": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "string"
+        }
+      }
+    },
+    "property": {
+      "type": "string"
+    },
+    "unconditional": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "x-govy-omittedRules": [
+    {
+      "path": "$.property",
+      "rule": "required",
+      "reason": "missing WhenJSONSchema builder"
+    },
+    {
+      "path": "$.property",
+      "rule": "conditional",
+      "reason": "missing WhenJSONSchema builder"
+    },
+    {
+      "path": "$.nested.value",
+      "rule": "conditional",
+      "reason": "missing WhenJSONSchema builder"
+    },
+    {
+      "path": "$.bothMissing",
+      "rule": "unsupported",
+      "reason": "missing JSON Schema builder"
+    }
+  ]
+}

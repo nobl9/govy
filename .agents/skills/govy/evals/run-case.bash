@@ -8,8 +8,8 @@ fi
 
 case "$1" in
 [1-9]) ;;
-10)
-	printf 'Case 10 is explanation-only; grade explanation.md against evals.json.\n' >&2
+10 | 11)
+	printf 'Case %s is explanation-only; grade explanation.md against evals.json.\n' "$1" >&2
 	exit 2
 	;;
 *)
